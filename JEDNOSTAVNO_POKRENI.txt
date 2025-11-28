@@ -1,0 +1,43 @@
+═══════════════════════════════════════════════════════════
+  NAJJEDNOSTAVNIJI NAČIN - POKRENI APLIKACIJU
+═══════════════════════════════════════════════════════════
+
+📋 KORAK 1: Pronađi fajl "TEST.bat"
+   → U Cursor editoru, lijevi panel
+   → Folder "fitness-app"
+   → Fajl "TEST.bat"
+
+🖱️  KORAK 2: Dvaput klikni na "TEST.bat"
+   → Otvorit će se crni prozor
+   → Provjerit će sve fajlove
+   → Pokrenut će aplikaciju
+   → PRIČEKAJ da vidiš "Ready" (može potrajati 30 sekundi)
+
+🌐 KORAK 3: Otvori browser
+   → Chrome, Edge ili Firefox
+   → Upiši: localhost:3000
+   → Pritisni Enter
+
+═══════════════════════════════════════════════════════════
+
+⚠️  VAŽNO:
+   - NE ZATVARAJ crni prozor!
+   - Ako vidiš grešku u crnom prozoru, KOPIRAJ cijelu poruku
+   - Pošalji mi grešku ako nešto ne radi
+
+═══════════════════════════════════════════════════════════
+
+❓ Ako "TEST.bat" ne radi:
+
+1. Otvori PowerShell (Win + X → PowerShell)
+2. Upiši ove 3 linije (jednu po jednu):
+
+   cd "C:\Users\jasmi\Documents\Česta pitanja\fitness-app"
+   
+   "C:\Program Files\nodejs\npm.cmd" run dev
+
+3. Pričekaj da vidiš "Ready"
+4. Otvori browser i upiši: localhost:3000
+
+═══════════════════════════════════════════════════════════
+

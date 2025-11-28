@@ -1,0 +1,75 @@
+========================================
+  GDJE JE TVOJA APLIKACIJA
+========================================
+
+Puna putanja (path):
+
+C:\Users\jasmi\Documents\Česta pitanja\fitness-app
+
+
+RAZLOG ZAŠTO:
+=============
+
+Windows mapira folder "Česta pitanja" kao:
+
+"C:\Users\jasmi\Documents\Česta pitanja"
+
+A unutar tog foldera se nalazi:
+
+"fitness-app"
+
+Dakle puna putanja je:
+
+C:\Users\jasmi\Documents\Česta pitanja\fitness-app
+
+
+KAKO DOĆI DO NJE:
+=================
+
+Način 1: File Explorer
+----------------------
+1. Otvori File Explorer
+2. Idi u: C:\Users\jasmi\Documents
+3. Otvori folder: "Česta pitanja"
+4. Otvori folder: "fitness-app"
+
+Način 2: Command Prompt (CMD)
+-----------------------------
+1. Pritisni Win + R
+2. Upiši: cmd
+3. Pritisni Enter
+4. U CMD-u upiši:
+   cd "C:\Users\jasmi\Documents\Česta pitanja\fitness-app"
+
+Način 3: Direktno iz File Explorera
+-----------------------------------
+1. Otvori File Explorer
+2. Idi u folder: "C:\Users\jasmi\Documents\Česta pitanja\fitness-app"
+3. U adresnoj traci (na vrhu gdje piše putanja) upiši: cmd
+4. Pritisni Enter
+
+
+PROVJERA:
+=========
+
+Da provjeriš da si u pravom folderu:
+
+U CMD-u ili PowerShell-u upiši:
+  dir package.json
+
+Ako vidiš "package.json" - si u pravom folderu! ✅
+Ako vidiš "File not found" - nisi u pravom folderu! ❌
+
+
+KLJUČNI FAJLOVI U APLIKACIJI:
+==============================
+
+U folderu "fitness-app" se nalaze:
+
+- package.json (glavni konfiguracijski fajl)
+- env.local (Supabase varijable)
+- app/ (glavna aplikacija)
+- lib/ (biblioteke)
+- node_modules/ (instalirani paketi)
+- *.bat (batch fajlovi za pokretanje)
+

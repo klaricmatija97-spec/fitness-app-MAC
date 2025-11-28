@@ -1,0 +1,182 @@
+/* Hero Section Container */
+.hero {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Background Image Container */
+.heroBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* Background Image - starts blurred and low opacity, animates to sharp and visible */
+.heroImage {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  filter: blur(8px);
+  transition: opacity 0.8s ease-out, filter 0.8s ease-out;
+}
+
+.heroImageLoaded {
+  opacity: 1;
+  filter: blur(0);
+}
+
+/* Dark Overlay - gradient for better text readability */
+.heroOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 0, 0, 0.4) 50%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+  z-index: 1;
+}
+
+/* Content Container */
+.heroContent {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1200px;
+  padding: 2rem;
+  margin: 0 auto;
+}
+
+/* Text Container - starts below and invisible, animates up and fades in */
+.heroText {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+
+.heroTextVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Kicker Text - small uppercase text above heading */
+.heroKicker {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 1rem;
+  font-family: var(--font-inter), sans-serif;
+}
+
+/* Main Heading - large and bold (48-60px on desktop) */
+.heroHeading {
+  font-size: clamp(2rem, 4vw, 3.75rem); /* Mobile: 32px, Desktop: 60px */
+  font-weight: 800;
+  line-height: 1.1;
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+  font-family: var(--font-inter), sans-serif;
+}
+
+/* Subheading - lighter weight, more spacing (18-20px on desktop) */
+.heroSubheading {
+  font-size: clamp(1rem, 1.5vw, 1.25rem); /* Mobile: 16px, Desktop: 20px */
+  font-weight: 400;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 2.5rem;
+  max-width: 600px;
+  font-family: var(--font-inter), sans-serif;
+}
+
+/* CTA Button - with subtle box-shadow and smooth hover */
+.heroButton {
+  display: inline-block;
+  padding: 1rem 2.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: #4B0082;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(75, 0, 130, 0.3);
+  transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+  font-family: var(--font-inter), sans-serif;
+}
+
+.heroButton:hover {
+  background-color: #6B2A9F; /* Brighter purple on hover */
+  transform: translateY(-2px) scale(1.02); /* Slightly larger */
+  box-shadow: 0 6px 20px rgba(75, 0, 130, 0.4); /* Enhanced shadow on hover */
+}
+
+.heroButton:active {
+  transform: translateY(0) scale(1);
+  box-shadow: 0 2px 8px rgba(75, 0, 130, 0.3);
+}
+
+/* Responsive Design - Mobile optimization */
+@media (max-width: 768px) {
+  .heroContent {
+    padding: 1.5rem;
+  }
+
+  .heroKicker {
+    font-size: 0.7rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .heroHeading {
+    font-size: 2rem; /* 32px on mobile - ensures no overflow */
+    margin-bottom: 1rem;
+    line-height: 1.2;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .heroSubheading {
+    font-size: 1rem; /* 16px on mobile */
+    margin-bottom: 2rem;
+    max-width: 100%;
+  }
+
+  .heroButton {
+    width: 100%;
+    padding: 0.875rem 2rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Extra small devices - additional safety */
+@media (max-width: 480px) {
+  .heroContent {
+    padding: 1rem;
+  }
+
+  .heroHeading {
+    font-size: 1.75rem; /* 28px on very small screens */
+  }
+
+  .heroSubheading {
+    font-size: 0.95rem; /* ~15px on very small screens */
+  }
+}
+

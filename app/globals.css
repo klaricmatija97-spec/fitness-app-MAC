@@ -1,0 +1,325 @@
+@import "tailwindcss";
+
+:root {
+  /* CORPEX Design System - Premium Fitness Dark Theme */
+  
+  /* 🎨 Boje */
+  /* Primarna - CORPEX ljubičasto tamna */
+  --corpex-primary: #6B46C1;        /* Tamnoljubičasta */
+  --corpex-primary-hover: #7C3AED;  /* Svjetlija ljubičasta za hover */
+  --corpex-blue: #3A7CFF;            /* CORPEX Blue za gumbi */
+  --corpex-blue-hover: #4A8CFF;     /* 10% svjetlija za hover */
+  
+  /* Sekundarna - Jet Black / Gunmetal */
+  --jet-black: #0D0F10;             /* Pozadine, headeri, dark mode */
+  
+  /* Neutralna - High White */
+  --high-white: #F4F4F4;            /* Tekst na tamnom, kartice */
+  
+  /* Siva - Steel Grey */
+  --steel-grey: #A9B1B8;            /* Sekundarni tekst, opis, placeholderi */
+  
+  /* Overlay sistem */
+  --overlay-black: rgba(0, 0, 0, 0.375); /* 37.5% opacity (35-40% range) */
+  
+  /* Backgrounds */
+  --background: var(--jet-black);
+  --foreground: var(--high-white);
+  --card-bg: rgba(255, 255, 255, 0.08);
+  
+  /* Spacing - Premium razmaci */
+  --spacing-edge: 20px;              /* 20-24px od ruba ekrana */
+  --spacing-edge-lg: 24px;
+  --spacing-element: 16px;           /* 16px između gumba i tekstova */
+  --spacing-section: 24px;           /* 24-32px između sekcija */
+  --spacing-section-lg: 32px;
+  --spacing-header: 40px;             /* 40-60px u headerima */
+  --spacing-header-lg: 60px;
+  
+  /* Border radius */
+  --radius-button: 12px;             /* Gumbi i input polja */
+  --radius-card: 12px;
+  --radius-sm: 8px;
+  
+  /* Shadow - Premium sjene */
+  --shadow-button: 0px 4px 20px rgba(0, 0, 0, 0.25);
+  --shadow-card: 0px 4px 16px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0px 8px 32px rgba(0, 0, 0, 0.3);
+  
+  /* Input polja */
+  --input-height: 50px;               /* 48-52px */
+  --input-bg: rgba(255, 255, 255, 0.08);
+  --input-border: rgba(255, 255, 255, 0.2);
+  --input-text: #FFFFFF;
+  --input-placeholder: var(--steel-grey);
+  
+  /* Button heights */
+  --button-primary-height: 52px;      /* 50-54px */
+  
+  /* Tipografija - Inter */
+  --font-h1: 36px;                    /* 32-40px, Bold */
+  --font-h2: 26px;                    /* 24-28px, Semibold */
+  --font-h3: 19px;                    /* 18-20px, Medium */
+  --font-body: 16px;                  /* 15-16px, Regular */
+  --font-secondary: 14px;              /* 13-14px, Light */
+  
+  /* Animacije */
+  --transition-fast: 0.2s;
+  --transition-normal: 0.35s;
+  --transition-slow: 0.5s;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary-dark: var(--primary-dark);
+  --color-secondary-dark: var(--secondary-dark);
+  --color-accent-blue: var(--accent-blue);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-card-bg: var(--card-bg);
+  --font-inter: var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* CORPEX Typography System - Inter */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  overflow-y: auto; /* Enable vertical scroll for all pages */
+}
+
+/* Typography Scale - CORPEX System */
+.text-h1 {
+  font-size: var(--font-h1);
+  line-height: 1.2;
+  font-weight: 700; /* Bold */
+  color: var(--high-white);
+}
+
+.text-h2 {
+  font-size: var(--font-h2);
+  line-height: 1.3;
+  font-weight: 600; /* Semibold */
+  color: var(--high-white);
+}
+
+.text-h3 {
+  font-size: var(--font-h3);
+  line-height: 1.4;
+  font-weight: 500; /* Medium */
+  color: var(--high-white);
+}
+
+.text-body {
+  font-size: var(--font-body);
+  line-height: 1.6;
+  font-weight: 400; /* Regular */
+  color: var(--high-white);
+}
+
+.text-secondary {
+  font-size: var(--font-secondary);
+  line-height: 1.5;
+  font-weight: 300; /* Light */
+  color: var(--steel-grey);
+}
+
+/* CORPEX Button System */
+.btn-primary {
+  background: var(--corpex-primary);
+  color: #FFFFFF;
+  border-radius: var(--radius-button);
+  height: var(--button-primary-height);
+  padding: 0 var(--spacing-element);
+  font-weight: 600;
+  font-size: var(--font-body);
+  box-shadow: var(--shadow-button);
+  transition: all var(--transition-fast);
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: var(--corpex-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0px 6px 24px rgba(107, 70, 193, 0.3);
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--corpex-primary);
+  border: 2px solid var(--corpex-primary);
+  border-radius: var(--radius-button);
+  height: var(--button-primary-height);
+  padding: 0 var(--spacing-element);
+  font-weight: 600;
+  font-size: var(--font-body);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: rgba(107, 70, 193, 0.1);
+  border-color: var(--corpex-primary-hover);
+}
+
+.btn-secondary:active {
+  transform: scale(0.97);
+}
+
+/* CORPEX Input System */
+.input-field {
+  height: var(--input-height);
+  border-radius: var(--radius-button);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--input-text);
+  padding: 0 var(--spacing-element);
+  font-size: var(--font-body);
+  transition: all var(--transition-fast);
+}
+
+.input-field::placeholder {
+  color: var(--input-placeholder);
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--corpex-blue);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Overlay System */
+.overlay-dark {
+  position: absolute;
+  inset: 0;
+  background: var(--overlay-black);
+  pointer-events: none;
+}
+
+/* Performance Optimizations - GPU Acceleration */
+.transform-gpu {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+}
+
+.contain-layout {
+  contain: layout;
+}
+
+.contain-paint {
+  contain: paint;
+}
+
+/* Premium Combined Animations - GPU Optimized */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideRight {
+  from {
+    transform: translate3d(-20px, 0, 0);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideLeft {
+  from {
+    transform: translate3d(20px, 0, 0);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes compositeSlide {
+  from {
+    transform: translate3d(100%, 0, 0) scale(0.96) rotateY(5deg);
+    opacity: 0;
+    filter: blur(8px) brightness(0.8);
+  }
+  to {
+    transform: translate3d(0, 0, 0) scale(1) rotateY(0deg);
+    opacity: 1;
+    filter: blur(0px) brightness(1);
+  }
+}
+
+.fade-in {
+  animation: fadeIn var(--transition-fast) ease-out;
+  will-change: opacity;
+}
+
+.slide-right {
+  animation: slideRight var(--transition-normal) ease-out;
+  will-change: transform, opacity;
+}
+
+.slide-left {
+  animation: slideLeft var(--transition-normal) ease-out;
+  will-change: transform, opacity;
+}
+
+.composite-slide {
+  animation: compositeSlide 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  will-change: transform, opacity, filter;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Enable scroll for all pages by default */
+html, body {
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+/* Ensure main content area can scroll */
+#__next {
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+/* Ensure main element can scroll */
+main {
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+/* Slide-based layout (only for /app page) - prevent scroll */
+body.slide-based-layout {
+  height: 100vh;
+  overflow: hidden;
+}
+
+body.slide-based-layout #__next {
+  height: 100vh;
+  overflow: hidden;
+}
+
+body.slide-based-layout main {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}

@@ -1,0 +1,4931 @@
+"use client";
+
+import { useEffect, useState, useMemo, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import clsx from "clsx";
+import type { ReactNode } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { calculateBMR, calculateTDEE, calculateTargetCalories, calculateMacros, determineGoalType, determineActivityLevel, type Gender, type ActivityLevel, type GoalType } from "@/lib/calculations";
+import { healthyFoods, generateMealPlan, type Food } from "@/lib/foods";
+import { generateTrainingPlan, type TrainingPlan, type TrainingSplit, type TrainingFrequency as TrainingPlanFrequency, type TrainingType } from "@/lib/training-plans";
+import type { WeeklyPlan, WeeklyDay } from "@/lib/services/proMealPlanGenerator";
+import { useSlides, type SlideId } from "./slide-context";
+import FAQRotation from "./components/FAQRotation";
+import AIChat from "./components/AIChat";
+import PortfolioModal from "./components/PortfolioModal";
+import LoginSlideContent from "./components/LoginSlideContent";
+import EducationalOnboarding from "./components/EducationalOnboarding";
+import EducationalSlide from "./components/EducationalSlide";
+import EducationalWizard from "./components/EducationalWizard";
+import {
+  activityOptions,
+  ageOptions,
+  goalOptions,
+  heightUnits,
+  honorificOptions,
+  weightUnits,
+  trainingFrequencyOptions,
+  trainingDurationOptions,
+  trainingLocationOptions,
+  equipmentOptions,
+  experienceLevelOptions,
+  mealFrequencyOptions,
+  dietTypeOptions,
+  biggestChallengeOptions,
+  type ActivityPreference,
+  type AgeBucket,
+  type GoalPreference,
+  type HeightUnit,
+  type Honorific,
+  type WeightUnit,
+  type TrainingFrequency,
+  type TrainingDuration,
+  type TrainingLocation,
+  type EquipmentPreference,
+  type ExperienceLevel,
+  type MealFrequency,
+  type DietType,
+  type BiggestChallenge,
+} from "@/lib/intake-options";
+import { commonQuestions } from "@/lib/common-questions";
+import type { IntakePayload } from "@/lib/intake-schema";
+
+const slideOrder: SlideId[] = [
+  "login",
+  "intro",
+  "edu_wizard",
+  "honorific",
+  "age",
+  "weight",
+  "height",
+  "activities",
+  "goals",
+  "training-frequency",
+  "training-duration",
+  "training-location",
+  "equipment",
+  "experience",
+  "meal-frequency",
+  "allergies",
+  "diet-type",
+  "sleep",
+  "injuries",
+  "biggest-challenge",
+  "nutrition",
+  "calculators-intro",
+  "bmr-calc",
+  "tdee-calc",
+  "target-calc",
+  "macros",
+  "contact",
+  "meals",
+  "training",
+  "chat",
+];
+
+type IntakeFormState = {
+  honorific: Honorific | "";
+  ageRange: AgeBucket | "";
+  weight: { value: string; unit: WeightUnit };
+  height: { value: string; unit: HeightUnit };
+  activities: ActivityPreference[];
+  otherActivities: string;
+  goals: GoalPreference[];
+  otherGoals: string;
+  trainingFrequency: TrainingFrequency | "";
+  trainingDuration: TrainingDuration | "";
+  trainingLocation: TrainingLocation | "";
+  equipment: EquipmentPreference[];
+  experience: ExperienceLevel | "";
+  mealFrequency: MealFrequency | "";
+  allergies: string;
+  dietType: DietType | "";
+  otherDietType: string;
+  sleepHours: string;
+  injuries: string;
+  biggestChallenge: BiggestChallenge | "";
+  otherChallenge: string;
+  dietCleanliness: number;
+  name: string;
+  email: string;
+  phone: string;
+  notes: string;
+};
+
+const initialIntakeForm: IntakeFormState = {
+  honorific: "",
+  ageRange: "",
+  weight: { value: "", unit: "kg" },
+  height: { value: "", unit: "cm" },
+  activities: [],
+  otherActivities: "",
+  goals: [],
+  otherGoals: "",
+  trainingFrequency: "",
+  trainingDuration: "",
+  trainingLocation: "",
+  equipment: [],
+  experience: "",
+  mealFrequency: "",
+  allergies: "",
+  dietType: "",
+  otherDietType: "",
+  sleepHours: "",
+  injuries: "",
+  biggestChallenge: "",
+  otherChallenge: "",
+  dietCleanliness: 50,
+  name: "",
+  email: "",
+  phone: "",
+  notes: "",
+};
+
+
+function AppDashboardContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [clientData, setClientData] = useState<any>(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [direction, setDirection] = useState(0); // -1 for left, 1 for right
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
+  const [showPortfolio, setShowPortfolio] = useState(false);
+  const [userInitials, setUserInitials] = useState<string>("");
+  const [portfolioData, setPortfolioData] = useState<any>(null);
+  
+  // State za kalkulatore
+  const [showBMRCalc, setShowBMRCalc] = useState(false);
+  const [showTDEECalc, setShowTDEECalc] = useState(false);
+  const [showTargetCalc, setShowTargetCalc] = useState(false);
+  const [showMacrosCalc, setShowMacrosCalc] = useState(false);
+  
+  // Status kvačica za svaki slide
+  const [bmrConfirmed, setBMRConfirmed] = useState(false);
+  const [tdeeConfirmed, setTDEEConfirmed] = useState(false);
+  const [targetConfirmed, setTargetConfirmed] = useState(false);
+  const [macrosConfirmed, setMacrosConfirmed] = useState(false);
+  
+  // Plan prehrane
+  const [mealPlanPreference, setMealPlanPreference] = useState<"sweet" | "savory">("sweet");
+  const [generatedMealPlan, setGeneratedMealPlan] = useState<any>(null);
+  const [showMealPlan, setShowMealPlan] = useState(false);
+  const [generatingMealPlan, setGeneratingMealPlan] = useState(false);
+  const [mealPlanError, setMealPlanError] = useState<string | null>(null);
+  // Tjedni plan prehrane
+  const [weeklyMealPlan, setWeeklyMealPlan] = useState<any>(null);
+  const [generatingWeeklyPlan, setGeneratingWeeklyPlan] = useState(false);
+  const [weeklyPlanError, setWeeklyPlanError] = useState<string | null>(null);
+  
+  // Plan treninga
+  const [trainingSplit, setTrainingSplit] = useState<TrainingSplit>("push-pull-legs");
+  const [trainingFrequency, setTrainingFrequency] = useState<TrainingPlanFrequency>("3-days");
+  const [trainingType, setTrainingType] = useState<TrainingType>("gym");
+  const [trainingGender, setTrainingGender] = useState<Gender>("male");
+  const [generatedTrainingPlan, setGeneratedTrainingPlan] = useState<TrainingPlan | null>(null);
+  const [showTrainingPlan, setShowTrainingPlan] = useState(false);
+  const [selectedWorkout, setSelectedWorkout] = useState<number | null>(null);
+  const [showSlideMenu, setShowSlideMenu] = useState(false);
+  
+  // State za intake formu
+  const [intakeForm, setIntakeForm] = useState<IntakeFormState>(initialIntakeForm);
+  const [isSubmittingIntake, setIsSubmittingIntake] = useState(false);
+  const [intakeSubmitted, setIntakeSubmitted] = useState(false);
+  const [finalDataSubmitted, setFinalDataSubmitted] = useState(false);
+  const [isSubmittingFinalData, setIsSubmittingFinalData] = useState(false);
+  const [finalMacros, setFinalMacros] = useState<{
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  } | null>(null);
+  
+  // State za educational onboarding
+  const [showEducationalOnboarding, setShowEducationalOnboarding] = useState(false);
+  const [educationalOnboardingCompleted, setEducationalOnboardingCompleted] = useState(false);
+  
+  // Ref za video na slideovima sa porukama
+  const slideVideoRef = useRef<HTMLVideoElement>(null);
+  
+  // Inicijalizacija videa za slideove sa porukama
+  useEffect(() => {
+    // Ne pokreni video na intro, login ili edu_wizard slideovima
+    const currentId = slideOrder[currentSlide];
+    if (currentId === "intro" || currentId === "login" || currentId === "edu_wizard") {
+      console.log("⏭️ Skipping video init for slide:", currentId);
+      return;
+    }
+
+    let isMounted = true;
+    let cleanupFunctions: (() => void)[] = [];
+
+    // Kratko odgodi da se osigura da je video element u DOM-u
+    const timer = setTimeout(() => {
+      const video = slideVideoRef.current;
+      if (!video) {
+        console.warn("⚠️ Slide video ref is null");
+        return;
+      }
+
+      if (!isMounted) return;
+
+      console.log("🔄 Initializing slide video, currentId:", currentId, "readyState:", video.readyState);
+
+      const handleCanPlay = () => {
+        if (!isMounted || !video) return;
+        if (!document.contains(video)) {
+          console.warn("⚠️ Video element removed from DOM");
+          return;
+        }
+
+        console.log("✅ Slide video can play, attempting autoplay");
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((error) => {
+            if (error.name !== "AbortError") {
+              console.warn("❌ Slide video autoplay prevented:", error);
+            }
+          });
+        }
+      };
+
+      const handleLoadedMetadata = () => {
+        if (!isMounted || !video) return;
+        console.log("📊 Slide video metadata loaded, duration:", video.duration, "seconds");
+      };
+
+      const handleLoadStart = () => {
+        if (!isMounted || !video) return;
+        console.log("🔄 Slide video load started");
+      };
+
+      const handlePlaying = () => {
+        if (!isMounted || !video) return;
+        console.log("▶️ Slide video is playing");
+      };
+
+      const handleError = () => {
+        if (!isMounted || !video) return;
+        const error = video.error;
+        if (error) {
+          let errorMessage = "Unknown error";
+          switch (error.code) {
+            case error.MEDIA_ERR_ABORTED:
+              errorMessage = "Video loading aborted";
+              break;
+            case error.MEDIA_ERR_NETWORK:
+              errorMessage = "Network error while loading video";
+              break;
+            case error.MEDIA_ERR_DECODE:
+              errorMessage = "Video decoding error";
+              break;
+            case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+              errorMessage = "Video format not supported or source not found";
+              break;
+          }
+          console.error("❌ Slide video error in useEffect:", errorMessage, "Code:", error.code);
+        }
+      };
+
+      // Dodaj event listenere
+      video.addEventListener("canplay", handleCanPlay, { once: true });
+      video.addEventListener("loadedmetadata", handleLoadedMetadata);
+      video.addEventListener("loadstart", handleLoadStart);
+      video.addEventListener("playing", handlePlaying);
+      video.addEventListener("error", handleError);
+
+      // Cleanup funkcija za event listenere
+      cleanupFunctions.push(() => {
+        if (video && isMounted) {
+          video.removeEventListener("canplay", handleCanPlay);
+          video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+          video.removeEventListener("loadstart", handleLoadStart);
+          video.removeEventListener("playing", handlePlaying);
+          video.removeEventListener("error", handleError);
+        }
+      });
+
+      // Provjeri da li je video element u DOM-u
+      console.log("🔍 Video element check:", {
+        inDOM: document.contains(video),
+        width: video.offsetWidth,
+        height: video.offsetHeight,
+        src: video.currentSrc || video.src,
+        sources: Array.from(video.querySelectorAll('source')).map(s => s.src),
+      });
+
+      // Pokušaj eksplicitno učitati video
+      video.load();
+      
+      // Pokušaj reproducirati odmah ako je moguće
+      const tryPlay = () => {
+        if (!isMounted || !video) return;
+        if (!document.contains(video)) {
+          console.warn("⚠️ Video element not in DOM, cannot play");
+          return;
+        }
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log("✅ Video started playing successfully");
+            })
+            .catch((error) => {
+              console.warn("⚠️ Video play failed:", error);
+            });
+        }
+      };
+      
+      // Ako je video već spreman, pokušaj reproducirati
+      if (video.readyState >= 3) {
+        console.log("✅ Video already ready, playing immediately");
+        tryPlay();
+      } else {
+        // Sačekaj da se video učita
+        console.log("⏳ Waiting for video to load, readyState:", video.readyState);
+        
+        // Dodatni pokušaji nakon odgovarajućih intervala
+        const intervals = [500, 1000, 2000, 3000];
+        intervals.forEach((delay, index) => {
+          setTimeout(() => {
+            if (!isMounted || !video) return;
+            console.log(`🔄 Attempt ${index + 1} after ${delay}ms - readyState: ${video.readyState}`);
+            if (video.readyState >= 2) {
+              tryPlay();
+            }
+          }, delay);
+        });
+      }
+    }, 200); // Kratko odgodi da se osigura da je element u DOM-u
+
+    // Cleanup
+    return () => {
+      isMounted = false;
+      if (timer) {
+        clearTimeout(timer);
+      }
+      
+      // Pokreni sve cleanup funkcije
+      cleanupFunctions.forEach(cleanup => cleanup());
+      
+      // Pause video when unmounting
+      const video = slideVideoRef.current;
+      if (video) {
+        try {
+          video.pause();
+        } catch (e) {
+          // Ignoriraj greške pri pauziranju
+        }
+      }
+    };
+  }, [currentSlide]); // Pokreni ponovo kad se slide promijeni
+  
+  // Funkcije za intake formu
+  const updateIntakeForm = <K extends keyof IntakeFormState>(key: K, value: IntakeFormState[K]) => {
+    setIntakeForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const toggleIntakeArrayValue = (key: "activities" | "goals" | "equipment", value: string) => {
+    setIntakeForm((prev) => {
+      const list = prev[key].includes(value as never)
+        ? prev[key].filter((item) => item !== value)
+        : [...prev[key], value as never];
+      return { ...prev, [key]: list };
+    });
+  };
+
+  const submitIntake = async () => {
+    if (isSubmittingIntake) return;
+    setIsSubmittingIntake(true);
+
+    const clientId = localStorage.getItem("clientId");
+    if (!clientId) {
+      alert("Niste prijavljeni. Molimo se prijavite prvo.");
+      setIsSubmittingIntake(false);
+      return;
+    }
+
+    const payload: IntakePayload = {
+      name: intakeForm.name.trim() || "", // Opcionalno - može biti prazno
+      email: intakeForm.email.trim() || "", // Opcionalno - može biti prazno
+      phone: intakeForm.phone.trim() || "", // Opcionalno - može biti prazno
+      honorific: intakeForm.honorific || "other",
+      ageRange: intakeForm.ageRange || "other",
+      weight: {
+        value: parseFloat(intakeForm.weight.value),
+        unit: intakeForm.weight.unit,
+      },
+      height: {
+        value: parseFloat(intakeForm.height.value),
+        unit: intakeForm.height.unit,
+      },
+      activities: intakeForm.activities,
+      goals: intakeForm.goals,
+      dietCleanliness: intakeForm.dietCleanliness,
+      otherActivities: intakeForm.otherActivities.trim() || undefined,
+      otherGoals: intakeForm.otherGoals.trim() || undefined,
+      notes: intakeForm.notes.trim() || undefined,
+      // Nova polja
+      trainingFrequency: intakeForm.trainingFrequency || undefined,
+      trainingDuration: intakeForm.trainingDuration || undefined,
+      trainingLocation: intakeForm.trainingLocation || undefined,
+      equipment: intakeForm.equipment.length > 0 ? intakeForm.equipment : undefined,
+      experience: intakeForm.experience || undefined,
+      mealFrequency: intakeForm.mealFrequency || undefined,
+      allergies: intakeForm.allergies.trim() || undefined,
+      dietType: intakeForm.dietType || undefined,
+      otherDietType: intakeForm.otherDietType.trim() || undefined,
+      sleepHours: intakeForm.sleepHours ? parseFloat(intakeForm.sleepHours) : undefined,
+      injuries: intakeForm.injuries.trim() || undefined,
+      biggestChallenge: intakeForm.biggestChallenge || undefined,
+      otherChallenge: intakeForm.otherChallenge.trim() || undefined,
+    };
+
+    try {
+      const response = await fetch("/api/intake", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (data.ok && data.clientId) {
+        localStorage.setItem("clientId", data.clientId);
+        setClientData({ name: intakeForm.name });
+        
+        // Automatski izračunaj BMR, TDEE, target calories i makroe
+        try {
+          // Konvertuj weight i height u kg i cm
+          let weightKg = payload.weight.value;
+          if (payload.weight.unit === "lb") {
+            weightKg = weightKg * 0.453592; // lb to kg
+          }
+          
+          let heightCm = payload.height.value;
+          if (payload.height.unit === "in") {
+            heightCm = heightCm * 2.54; // inch to cm
+          }
+          
+          // Odredi gender iz honorific (mr = male, mrs/ms = female, other = default female)
+          const gender: Gender = payload.honorific === "mr" ? "male" : "female";
+          
+          // Odredi age iz ageRange (koristi srednju vrijednost)
+          let age = 30; // default
+          if (payload.ageRange && payload.ageRange !== "other") {
+            const [min, max] = payload.ageRange.split("-").map(Number);
+            if (min && max) {
+              age = Math.floor((min + max) / 2);
+            } else if (payload.ageRange.startsWith("70")) {
+              age = 75;
+            } else if (payload.ageRange.startsWith("10")) {
+              age = 15;
+            }
+          }
+          
+          // Izračunaj BMR, TDEE, target calories i makroe
+          const activityLevel = determineActivityLevel(payload.activities);
+          const bmr = calculateBMR(weightKg, heightCm, age, gender);
+          const tdee = calculateTDEE(bmr, activityLevel);
+          const goalType = determineGoalType(payload.goals);
+          const targetCalories = calculateTargetCalories(tdee, goalType);
+          const macros = calculateMacros(targetCalories, goalType, weightKg);
+          
+          // Spremi kalkulacije u localStorage i Supabase
+          try {
+            const { saveUserCalculationsLocal } = await import("@/lib/utils/userCalculationsLocal");
+            const calcData = {
+              totalCalories: targetCalories,
+              proteinGrams: macros.protein,
+              carbGrams: macros.carbs,
+              fatGrams: macros.fats,
+              bmr,
+              tdee,
+              goalType,
+              activityLevel,
+            };
+            console.log("📥 Spremam kalkulacije", calcData);
+            await saveUserCalculationsLocal(calcData);
+            console.log("✅ Spremljeno u localStorage i Supabase");
+          } catch (newFormatError) {
+            console.warn("Error saving calculations:", newFormatError);
+          }
+
+          // Spremi izračune (legacy format za kompatibilnost)
+          const calculationsResponse = await fetch("/api/calculations", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              clientId: data.clientId,
+              bmr,
+              tdee,
+              targetCalories,
+              goalType,
+              macros,
+              activityLevel,
+            }),
+          });
+
+          // Spremi sve podatke iz slajdova lokalno
+          const userDataResponse = await fetch("/api/user-data", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              clientId: data.clientId,
+              gender: payload.honorific === "mr" ? "male" : "female",
+              age: age,
+              weight: weightKg,
+              height: heightCm,
+              calculations: {
+                bmr,
+                tdee,
+                targetCalories,
+                goalType,
+                macros,
+                activityLevel,
+              },
+              goals: payload.goals,
+              activities: payload.activities,
+              allergies: payload.allergies ? [payload.allergies] : [],
+              dietaryRestrictions: payload.dietType ? [payload.dietType] : [],
+              injuries: payload.injuries ? [payload.injuries] : [],
+              mealPreferences: {
+                mealCount: payload.mealFrequency ? parseInt(payload.mealFrequency) : 3,
+              },
+              training: {
+                frequency: payload.trainingFrequency || "",
+                duration: payload.trainingDuration || "",
+                location: payload.trainingLocation || "",
+                type: "",
+                split: "",
+              },
+            }),
+          });
+          
+          const calculationsData = await calculationsResponse.json();
+          
+          if (calculationsResponse.ok && calculationsData.ok) {
+            console.log("✅ Izračuni spremljeni u Supabase");
+            
+            // Generiraj plan prehrane
+            const mealPlan = generateMealPlan(
+              targetCalories,
+              macros.protein,
+              macros.carbs,
+              macros.fats,
+              7
+            );
+            
+            // Spremi plan prehrane u Supabase
+            const mealsResponse = await fetch("/api/meals", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                clientId: data.clientId,
+                meals: mealPlan,
+              }),
+            });
+            
+            const mealsData = await mealsResponse.json();
+            if (mealsResponse.ok && mealsData.ok) {
+              console.log("✅ Plan prehrane spremljen u Supabase");
+            } else {
+              console.error("❌ Greška pri spremanju plana prehrane:", mealsData.message);
+            }
+            
+            // Generiraj i spremi plan treninga u Supabase
+            const trainingResponse = await fetch("/api/training/generate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                clientId: data.clientId,
+              }),
+            });
+            
+            const trainingData = await trainingResponse.json();
+            if (trainingResponse.ok && trainingData.ok) {
+              console.log("✅ Plan treninga spremljen u Supabase");
+            } else {
+              console.error("❌ Greška pri spremanju plana treninga:", trainingData.message);
+            }
+            
+            // Prikaži success poruku
+            setIntakeSubmitted(true);
+            
+            // Preusmjeri korisnika na prikaz prehrane i treninga nakon 2 sekunde
+            setTimeout(() => {
+        const calculatorsIntroIndex = slideOrder.indexOf("calculators-intro");
+        if (calculatorsIntroIndex !== -1) {
+          setCurrentSlide(calculatorsIntroIndex);
+          localStorage.setItem("appCurrentSlide", calculatorsIntroIndex.toString());
+        }
+            }, 2000);
+          } else {
+            console.error("❌ Greška pri spremanju izračuna:", calculationsData.message);
+            // Ipak prikaži success poruku i preusmjeri korisnika
+            setIntakeSubmitted(true);
+            setTimeout(() => {
+              const calculatorsIntroIndex = slideOrder.indexOf("calculators-intro");
+              if (calculatorsIntroIndex !== -1) {
+                setCurrentSlide(calculatorsIntroIndex);
+                localStorage.setItem("appCurrentSlide", calculatorsIntroIndex.toString());
+              }
+            }, 2000);
+          }
+        } catch (calcError) {
+          console.error("Error calculating and generating plans:", calcError);
+          // Ipak prikaži success poruku i preusmjeri korisnika čak i ako izračuni ne uspiju
+          setIntakeSubmitted(true);
+          setTimeout(() => {
+            const calculatorsIntroIndex = slideOrder.indexOf("calculators-intro");
+            if (calculatorsIntroIndex !== -1) {
+              setCurrentSlide(calculatorsIntroIndex);
+              localStorage.setItem("appCurrentSlide", calculatorsIntroIndex.toString());
+            }
+          }, 2000);
+        }
+      } else {
+        // Ako intake nije uspio, ipak prikaži poruku
+        setIntakeSubmitted(true);
+        setTimeout(() => {
+          const calculatorsIntroIndex = slideOrder.indexOf("calculators-intro");
+          if (calculatorsIntroIndex !== -1) {
+            setCurrentSlide(calculatorsIntroIndex);
+            localStorage.setItem("appCurrentSlide", calculatorsIntroIndex.toString());
+          }
+        }, 2000);
+      }
+    } catch (error) {
+      console.error("Error submitting intake:", error);
+      // Ipak prikaži success poruku
+      setIntakeSubmitted(true);
+      setTimeout(() => {
+        const calculatorsIntroIndex = slideOrder.indexOf("calculators-intro");
+        if (calculatorsIntroIndex !== -1) {
+          setCurrentSlide(calculatorsIntroIndex);
+          localStorage.setItem("appCurrentSlide", calculatorsIntroIndex.toString());
+        }
+      }, 2000);
+    } finally {
+      setIsSubmittingIntake(false);
+    }
+  };
+
+  // Funkcija za spremanje finalnih podataka (kalkulacije + intake) u clients tablicu
+  const submitFinalData = async () => {
+    if (isSubmittingFinalData) return;
+    setIsSubmittingFinalData(true);
+
+    const clientId = localStorage.getItem("clientId");
+    if (!clientId) {
+      alert("Niste prijavljeni. Molimo se prijavite prvo.");
+      setIsSubmittingFinalData(false);
+      return;
+    }
+
+    // Provjeri da li su sve kalkulacije izračunate
+    if (!bmrResult || !tdeeResult || !targetResult || !macrosResult) {
+      alert("Molimo izračunajte sve kalkulacije (BMR, TDEE, Target Calories, Makrosi) prije slanja podataka.");
+      setIsSubmittingFinalData(false);
+      return;
+    }
+
+    // Konvertuj weight i height u kg i cm
+    let weightKg = parseFloat(intakeForm.weight.value);
+    if (isNaN(weightKg) || weightKg <= 0) {
+      alert("Neispravna vrijednost težine. Molimo unesite valjanu težinu.");
+      setIsSubmittingFinalData(false);
+      return;
+    }
+    if (intakeForm.weight.unit === "lb") {
+      weightKg = weightKg * 0.453592;
+    }
+    
+    let heightCm = parseFloat(intakeForm.height.value);
+    if (isNaN(heightCm) || heightCm <= 0) {
+      alert("Neispravna vrijednost visine. Molimo unesite valjanu visinu.");
+      setIsSubmittingFinalData(false);
+      return;
+    }
+    if (intakeForm.height.unit === "in") {
+      heightCm = heightCm * 2.54;
+    }
+
+    // Odredi gender iz honorific
+    const gender: Gender = intakeForm.honorific === "mr" ? "male" : "female";
+    
+    // Odredi age iz ageRange
+    let age = 30;
+    if (intakeForm.ageRange && intakeForm.ageRange !== "other") {
+      const [min, max] = intakeForm.ageRange.split("-").map(Number);
+      if (min && max) {
+        age = Math.floor((min + max) / 2);
+      } else if (intakeForm.ageRange.startsWith("70")) {
+        age = 75;
+      } else if (intakeForm.ageRange.startsWith("10")) {
+        age = 15;
+      }
+    }
+
+    // Odredi goalType iz goals
+    const goalType = determineGoalType(intakeForm.goals);
+    const activityLevel = determineActivityLevel(intakeForm.activities);
+
+    // Kreiraj payload objekt za API
+    const payload: any = {
+      clientId,
+      // Osnovni podaci
+      name: intakeForm.name?.trim() || "",
+      email: intakeForm.email?.trim() || "",
+      phone: intakeForm.phone?.trim() || "",
+      honorific: intakeForm.honorific || "other",
+      // Fizički podaci
+      weight: weightKg,
+      height: heightCm,
+      ageRange: intakeForm.ageRange || "",
+      // Kalkulacije
+      bmr: bmrResult,
+      tdee: tdeeResult,
+      target_calories: targetResult,
+      goal_type: goalType,
+      activity_level: activityLevel,
+      protein_grams: macrosResult.protein,
+      carbs_grams: macrosResult.carbs,
+      fats_grams: macrosResult.fats,
+      // Dodatni podaci
+      activities: intakeForm.activities || [],
+      otherActivities: intakeForm.otherActivities || "",
+      goals: intakeForm.goals || [],
+      otherGoals: intakeForm.otherGoals || "",
+      dietCleanliness: intakeForm.dietCleanliness || 0,
+      notes: intakeForm.notes || "",
+    };
+
+    try {
+      // Spremi sve podatke u clients tablicu
+      const response = await fetch("/api/client/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      console.log("[submitFinalData] Response:", data);
+
+      if (data.ok) {
+        // Spremi kalkulacije u localStorage
+        try {
+          const { saveUserCalculationsLocal } = await import("@/lib/utils/userCalculationsLocal");
+          const calcData = {
+            totalCalories: targetResult,
+            proteinGrams: macrosResult.protein,
+            carbGrams: macrosResult.carbs,
+            fatGrams: macrosResult.fats,
+            bmr: bmrResult,
+            tdee: tdeeResult,
+            goalType,
+            activityLevel,
+          };
+          console.log("📥 Spremam kalkulacije", calcData);
+          await saveUserCalculationsLocal(calcData);
+          console.log("✅ Spremljeno u localStorage i Supabase");
+        } catch (calcError) {
+          console.warn("Error saving calculations:", calcError);
+        }
+
+        setFinalDataSubmitted(true);
+        alert("Podaci su uspješno spremljeni! Sada možete generirati plan prehrane.");
+      } else {
+        const errorMessage = data.message || "Greška pri spremanju podataka. Pokušajte ponovno.";
+        console.error("[submitFinalData] Error response:", data);
+        alert(`${errorMessage}${data.error ? `\n\nDetalji: ${data.error}` : ""}`);
+      }
+    } catch (error) {
+      console.error("Error submitting final data:", error);
+      const errorMessage = error instanceof Error ? error.message : "Greška pri spremanju podataka. Pokušajte ponovno.";
+      alert(`Greška pri spremanju podataka: ${errorMessage}`);
+    } finally {
+      setIsSubmittingFinalData(false);
+    }
+  };
+  
+  // Validacija za intake slideove
+  const intakeValidationMap = useMemo(() => {
+    const weightValue = parseFloat(intakeForm.weight.value);
+    const heightValue = parseFloat(intakeForm.height.value);
+    const sleepValue = parseFloat(intakeForm.sleepHours);
+
+    return {
+      intro: true,
+      honorific: Boolean(intakeForm.honorific),
+      age: Boolean(intakeForm.ageRange),
+      weight: Number.isFinite(weightValue) && weightValue > 0,
+      height: Number.isFinite(heightValue) && heightValue > 0,
+      activities: intakeForm.activities.length > 0 || intakeForm.otherActivities.trim().length > 2,
+      goals: intakeForm.goals.length > 0 || intakeForm.otherGoals.trim().length > 2,
+      "training-frequency": Boolean(intakeForm.trainingFrequency),
+      "training-duration": Boolean(intakeForm.trainingDuration),
+      "training-location": Boolean(intakeForm.trainingLocation),
+      equipment: true, // Opcionalno
+      experience: Boolean(intakeForm.experience),
+      "meal-frequency": Boolean(intakeForm.mealFrequency),
+      allergies: true, // Opcionalno
+      "diet-type": Boolean(intakeForm.dietType || intakeForm.otherDietType.trim().length > 0),
+      sleep: Number.isFinite(sleepValue) && sleepValue >= 4 && sleepValue <= 10,
+      injuries: true, // Opcionalno
+      "biggest-challenge": Boolean(intakeForm.biggestChallenge || intakeForm.otherChallenge.trim().length > 0),
+      nutrition: true,
+      contact: true, // Uvijek dozvoljeno jer se podaci šalju bez imena, emaila i telefona
+    } as Record<string, boolean>;
+  }, [intakeForm]);
+  
+  // Input podaci za kalkulatore
+  const [bmrInputs, setBMRInputs] = useState({ age: 30, gender: "male" as Gender, weight: 70, height: 175 });
+  const [tdeeInputs, setTDEEInputs] = useState({ bmr: 1700, activityLevel: "moderate" as ActivityLevel });
+  const [targetInputs, setTargetInputs] = useState({ tdee: 2500, goalType: "maintain" as GoalType });
+  const [macrosInputs, setMacrosInputs] = useState({ targetCalories: 2500, goalType: "maintain" as GoalType, weight: 70 });
+  
+  // Rezultati
+  const [bmrResult, setBMRResult] = useState<number | null>(null);
+  const [tdeeResult, setTDEEResult] = useState<number | null>(null);
+  const [targetResult, setTargetResult] = useState<number | null>(null);
+  const [macrosResult, setMacrosResult] = useState<{ protein: number; carbs: number; fats: number } | null>(null);
+
+  // Ref da spriječimo ponovno učitavanje iz localStorage
+  const hasLoadedRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    // Učitaj currentSlide iz localStorage samo jednom pri inicijalizaciji
+    if (!hasLoadedRef.current) {
+      const savedSlide = localStorage.getItem("appCurrentSlide");
+      if (savedSlide !== null) {
+        const slideIndex = parseInt(savedSlide, 10);
+        if (!isNaN(slideIndex) && slideIndex >= 0 && slideIndex < slideOrder.length) {
+          console.log("Loading saved slide from localStorage:", slideIndex);
+          setCurrentSlide(slideIndex);
+        }
+      }
+      hasLoadedRef.current = true;
+    }
+    
+    const clientId = localStorage.getItem("clientId");
+    if (clientId) {
+      fetch(`/api/client/${clientId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setClientData(data);
+          // Postavi inicijale
+          if (data.name) {
+            const names = data.name.split(" ");
+            const initials = names.map((n: string) => n[0] || "").join("").toUpperCase().slice(0, 2);
+            setUserInitials(initials || "U");
+          }
+        })
+        .catch(() => {
+          setClientData({ name: "Korisnik" });
+          setUserInitials("U");
+        });
+    } else {
+      setClientData({ name: "Korisnik" });
+      setUserInitials("U");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Učitaj samo jednom pri mount
+
+  // Funkcija za učitavanje portofolio podataka
+  const loadPortfolioData = async (clientId: string) => {
+    try {
+      // Učitaj treninge
+      const trainingsRes = await fetch(`/api/trainings/${clientId}`).catch(() => null);
+      const trainingsData = trainingsRes ? await trainingsRes.json().catch(() => null) : null;
+      
+      // Učitaj plan prehrane
+      const mealsRes = await fetch(`/api/meals/${clientId}`).catch(() => null);
+      const mealsData = mealsRes ? await mealsRes.json().catch(() => null) : null;
+      
+      // Učitaj podatke klijenta
+      const clientRes = await fetch(`/api/client/${clientId}`).catch(() => null);
+      const clientDataRes = clientRes ? await clientRes.json().catch(() => null) : null;
+      
+      // Učitaj pretplatu
+      const subscriptionRes = await fetch(`/api/subscription/${clientId}`).catch(() => null);
+      const subscriptionData = subscriptionRes ? await subscriptionRes.json().catch(() => null) : null;
+      
+      setPortfolioData({
+        trainings: trainingsData?.trainings || [],
+        meals: mealsData?.meals || null,
+        client: clientDataRes || null,
+        subscription: subscriptionData || null,
+      });
+    } catch (error) {
+      console.error("Error loading portfolio data:", error);
+    }
+  };
+
+
+  // Zatvori meni kada se klikne izvan njega
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (showSlideMenu && !target.closest('.slide-menu-container')) {
+        setShowSlideMenu(false);
+      }
+    };
+
+    if (showSlideMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showSlideMenu]);
+
+  const currentId = slideOrder[currentSlide];
+  const progress = ((currentSlide + 1) / slideOrder.length) * 100;
+  const isLastSlide = currentSlide === slideOrder.length - 1;
+  
+  // Sync sa contextom za navigaciju u headeru
+  const { setSlides: setContextSlides, setCurrentSlide: setContextSlide } = useSlides();
+
+  const nextSlide = () => {
+    if (currentSlide < slideOrder.length - 1) {
+      const currentId = slideOrder[currentSlide];
+      const newSlide = currentSlide + 1;
+      const nextSlideId = slideOrder[newSlide];
+      console.log("nextSlide: moving from", currentSlide, "(", currentId, ") to", newSlide, "(", nextSlideId, ")");
+      
+      // Provjeri da li je trenutni slide "intro" (drugi slajd, index 1) i da onboarding nije završen
+      const onboardingCompleted = localStorage.getItem("educationalOnboardingCompleted");
+      if (currentId === "intro" && onboardingCompleted !== "true") {
+        // Nakon intro slidea, prikaži edukativni onboarding
+        console.log("🚀 After intro slide, showing educational onboarding");
+        console.log("Setting showEducationalOnboarding to true");
+        setShowEducationalOnboarding(true);
+        setEducationalOnboardingCompleted(false);
+        // NE mijenjaj currentSlide sada - ostavi na intro dok se onboarding ne završi
+        // Onboarding će postaviti currentSlide na honorific kada se završi
+        return;
+      }
+      
+      setDirection(1);
+      setCurrentSlide(newSlide);
+      localStorage.setItem("appCurrentSlide", newSlide.toString());
+    } else {
+      console.log("nextSlide: already at last slide", currentSlide, "/", slideOrder.length - 1);
+    }
+  };
+
+  const prevSlide = () => {
+    if (currentSlide > 0) {
+      const newSlide = currentSlide - 1;
+      console.log("prevSlide: moving from", currentSlide, "to", newSlide);
+      setDirection(-1);
+      setCurrentSlide(newSlide);
+      localStorage.setItem("appCurrentSlide", newSlide.toString());
+    } else {
+      console.log("prevSlide: already at first slide");
+    }
+  };
+
+  // Premium Combined/Composite Slide Variants - GPU Optimized
+  // Koristi transform3d za hardware acceleration i kombinirane efekte
+  const slideVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? "100%" : "-100%",
+      opacity: 0,
+      scale: 0.96,
+      rotateY: direction > 0 ? 5 : -5, // Subtle 3D rotation
+      filter: "blur(8px) brightness(0.8)",
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+      scale: 1,
+      rotateY: 0,
+      filter: "blur(0px) brightness(1)",
+    },
+    exit: (direction: number) => ({
+      x: direction < 0 ? "100%" : "-100%",
+      opacity: 0,
+      scale: 1.04,
+      rotateY: direction < 0 ? -5 : 5,
+      filter: "blur(8px) brightness(0.8)",
+    }),
+  };
+
+  const slides = useMemo(() => buildSlides({
+    intakeForm,
+    updateIntakeForm,
+    toggleIntakeArrayValue,
+    intakeValidationMap,
+    showBMRCalc,
+    setShowBMRCalc,
+    showTDEECalc,
+    setShowTDEECalc,
+    showTargetCalc,
+    setShowTargetCalc,
+    showMacrosCalc,
+    setShowMacrosCalc,
+    bmrInputs,
+    setBMRInputs,
+    bmrResult,
+    setBMRResult,
+    tdeeInputs,
+    setTDEEInputs,
+    tdeeResult,
+    setTDEEResult,
+    targetInputs,
+    setTargetInputs,
+    targetResult,
+    setTargetResult,
+    macrosInputs,
+    setMacrosInputs,
+    macrosResult,
+    setMacrosResult,
+    bmrConfirmed,
+    setBMRConfirmed,
+    tdeeConfirmed,
+    setTDEEConfirmed,
+    targetConfirmed,
+    setTargetConfirmed,
+    macrosConfirmed,
+    setMacrosConfirmed,
+    mealPlanPreference,
+    setMealPlanPreference,
+    generatedMealPlan,
+    setGeneratedMealPlan,
+    showMealPlan,
+    setShowMealPlan,
+    trainingSplit,
+    setTrainingSplit,
+    trainingFrequency,
+    setTrainingFrequency,
+    trainingType,
+    setTrainingType,
+    trainingGender,
+    setTrainingGender,
+    generatedTrainingPlan,
+    setGeneratedTrainingPlan,
+    showTrainingPlan,
+    setShowTrainingPlan,
+    selectedWorkout,
+    setSelectedWorkout,
+    setCurrentSlide,
+    intakeSubmitted,
+    isSubmittingIntake,
+    submitIntake,
+    finalDataSubmitted,
+    isSubmittingFinalData,
+    submitFinalData,
+    generatingWeeklyPlan,
+    setGeneratingWeeklyPlan,
+    weeklyMealPlan,
+    setWeeklyMealPlan,
+    weeklyPlanError,
+    setWeeklyPlanError,
+    router,
+    mealPlanError,
+    setMealPlanError,
+    generatingMealPlan,
+    setGeneratingMealPlan,
+    finalMacros,
+    setFinalMacros,
+  }), [intakeForm, updateIntakeForm, toggleIntakeArrayValue, intakeValidationMap, showBMRCalc, showTDEECalc, showTargetCalc, showMacrosCalc, bmrInputs, bmrResult, tdeeInputs, tdeeResult, targetInputs, targetResult, macrosInputs, macrosResult, bmrConfirmed, tdeeConfirmed, targetConfirmed, macrosConfirmed, mealPlanPreference, generatedMealPlan, showMealPlan, trainingSplit, trainingFrequency, trainingType, trainingGender, generatedTrainingPlan, showTrainingPlan, selectedWorkout, setCurrentSlide, intakeSubmitted, isSubmittingIntake, submitIntake, finalDataSubmitted, isSubmittingFinalData, submitFinalData, generatingWeeklyPlan, weeklyMealPlan, weeklyPlanError, router, mealPlanError, generatingMealPlan, finalMacros, setFinalMacros]);
+
+  // Ref za praćenje prethodnih slideova da spriječimo beskonačnu petlju
+  const prevSlidesRef = useRef<string>("");
+
+  // Sync sa contextom za navigaciju u headeru - NAKON što su slides definirani
+  useEffect(() => {
+    const slideList = slides.map(s => ({ id: s.id, title: s.title }));
+    const slidesKey = JSON.stringify(slideList.map(s => s.id));
+    
+    // Provjeri je li se slides array promijenio (samo ID-ovi)
+    if (prevSlidesRef.current !== slidesKey) {
+      prevSlidesRef.current = slidesKey;
+    setContextSlides(slideList);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slides]); // slides se mijenja samo kada se dependencies u useMemo promijene
+  
+  // Ref za praćenje prethodnog currentSlide da spriječimo beskonačnu petlju
+  const prevCurrentSlideRef = useRef<number>(-1);
+  const isInitialMount = useRef<boolean>(true);
+  
+  useEffect(() => {
+    // Preskoči na prvi render (već je postavljen iz localStorage)
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      prevCurrentSlideRef.current = currentSlide;
+      return;
+    }
+    
+    // Provjeri je li se currentSlide promijenio
+    if (prevCurrentSlideRef.current !== currentSlide) {
+      console.log("currentSlide changed from", prevCurrentSlideRef.current, "to", currentSlide);
+      prevCurrentSlideRef.current = currentSlide;
+    setContextSlide(currentSlide);
+      // Sačuvaj currentSlide u localStorage kad god se promijeni
+      localStorage.setItem("appCurrentSlide", currentSlide.toString());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSlide]); // setContextSlide je stabilna funkcija iz contexta
+
+  // Provjeri da li je educational onboarding završen pri inicijalizaciji
+  useEffect(() => {
+    const onboardingCompleted = localStorage.getItem("educationalOnboardingCompleted");
+    if (onboardingCompleted === "true") {
+      setEducationalOnboardingCompleted(true);
+      setShowEducationalOnboarding(false);
+    }
+  }, []);
+  
+  // Provjeri da li treba prikazati onboarding kada se currentSlide promijeni
+  // Ovo je backup provjera - glavna logika je u nextSlide() funkciji
+  useEffect(() => {
+    const currentId: SlideId | undefined = slideOrder[currentSlide];
+    const onboardingCompleted = localStorage.getItem("educationalOnboardingCompleted");
+    
+    // Ako je korisnik na intro slideu i onboarding nije završen, i showEducationalOnboarding je postavljen na true
+    // to znači da je korisnik kliknuo naprijed sa intro slidea
+    if (currentId && currentId === "intro" && showEducationalOnboarding && onboardingCompleted !== "true" && !educationalOnboardingCompleted) {
+      console.log("📍 On intro slide with showEducationalOnboarding=true, onboarding should be visible");
+      // Onboarding se već postavlja u nextSlide() funkciji
+    } else if (currentId && currentId !== "intro" && currentId !== "honorific") {
+      // Ako nije na intro ili honorific, sakrij onboarding
+      if (showEducationalOnboarding) {
+        setShowEducationalOnboarding(false);
+      }
+    }
+  }, [currentSlide, showEducationalOnboarding, educationalOnboardingCompleted]);
+
+  // Rukovanje educational onboarding
+  const handleEducationalOnboardingComplete = () => {
+    setShowEducationalOnboarding(false);
+    setEducationalOnboardingCompleted(true);
+    localStorage.setItem("educationalOnboardingCompleted", "true");
+    // Preusmjeri na honorific slide (prvi slide upitnika)
+    const honorificIndex = slideOrder.indexOf("honorific");
+    if (honorificIndex !== -1) {
+      setCurrentSlide(honorificIndex);
+    }
+  };
+
+  const handleEducationalOnboardingSkip = () => {
+    setShowEducationalOnboarding(false);
+    setEducationalOnboardingCompleted(true);
+    localStorage.setItem("educationalOnboardingCompleted", "true");
+    // Preusmjeri na honorific slide (prvi slide upitnika)
+    const honorificIndex = slideOrder.indexOf("honorific");
+    if (honorificIndex !== -1) {
+      setCurrentSlide(honorificIndex);
+    }
+  };
+
+  // Provjeri da li treba prikazati onboarding PRIJE renderanja glavnog sadržaja
+  // Ovo mora biti poslije svih useEffect-ova i funkcija
+  const onboardingCompleted = typeof window !== "undefined" ? localStorage.getItem("educationalOnboardingCompleted") : null;
+  
+  // Provjeri da li treba prikazati onboarding:
+  // Ako je showEducationalOnboarding postavljen na true (iz nextSlide ili useEffect)
+  // I ako onboarding nije već završen
+  const shouldShowOnboarding = showEducationalOnboarding && !educationalOnboardingCompleted && onboardingCompleted !== "true";
+  
+  console.log("🔍 Onboarding check:", {
+    currentId,
+    currentSlide,
+    showEducationalOnboarding,
+    onboardingCompleted,
+    educationalOnboardingCompleted,
+    shouldShowOnboarding
+  });
+  
+  // Prikaži educational onboarding ako treba (prije honorific slidea)
+  if (shouldShowOnboarding) {
+    console.log("✅ Rendering EducationalOnboarding component");
+    return (
+      <EducationalOnboarding
+        onComplete={handleEducationalOnboardingComplete}
+        onSkip={handleEducationalOnboardingSkip}
+      />
+    );
+  }
+
+  return (
+    <main className={clsx(
+      "relative bg-[#0D0F10] flex flex-col",
+                    currentId === "intro" ? "h-screen w-screen fixed inset-0 overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "min-h-screen w-screen overflow-y-auto" : "min-h-screen w-screen overflow-y-auto"
+    )}>
+      {/* AI Chat Bubble - Persistent on all slides */}
+      <AIChat />
+
+      {/* Main Layout - 100vh, no scroll */}
+      <div className={clsx(
+        "flex flex-col min-h-0",
+        currentId === "intro" ? "h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 overflow-y-auto" : "flex-1 overflow-y-auto"
+      )}>
+        {/* Header/Sidebar - Hidden on intro, login and educational slides */}
+        {currentId !== "intro" && currentId !== "login" && currentId !== "edu_wizard" && (
+        <div className="flex-shrink-0 px-6 py-5 border-b border-gray-800 bg-[#0D0F10] relative">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            {/* Lijevo - Hamburger menu */}
+            <div className="flex items-center">
+                      <button
+                        onClick={() => setShowSlideMenu(!showSlideMenu)}
+                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-800 transition"
+                aria-label="Menu"
+                      >
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+                      </button>
+                      
+                      <AnimatePresence>
+                      {showSlideMenu && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                            transition={{ duration: 0.2, ease: [0.22, 0.61, 0.36, 1] }}
+                            className="absolute top-20 left-8 w-64 rounded-lg bg-[#1A1A1A] border border-gray-800 shadow-lg z-50 p-4 slide-menu-container"
+                          >
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                              Navigacija
+                            </p>
+                            {slides.map((slide, idx) => {
+                              const isActive = slide.id === currentId;
+                              return (
+                                <motion.button
+                                  key={slide.id}
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: idx * 0.03, duration: 0.2 }}
+                                  onClick={() => {
+                                    setCurrentSlide(idx);
+                                    setShowSlideMenu(false);
+                                  }}
+                                  className={clsx(
+                          "w-full text-left px-4 py-2 rounded-md text-sm transition mb-1",
+                                    isActive
+                            ? "bg-[#4B0082] text-white font-semibold"
+                            : "text-gray-300 hover:bg-gray-800"
+                                  )}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs opacity-60">
+                                      {String(idx + 1).padStart(2, "0")}
+                                    </span>
+                                    <span>{slide.title}</span>
+                                  </div>
+                                </motion.button>
+                              );
+                            })}
+                          </motion.div>
+                      )}
+                      </AnimatePresence>
+                    </div>
+
+            {/* Sredina - Logo/Naziv aplikacije */}
+            <div className="absolute left-1/2 transform -translate-x-1/2">
+              <h1 className="text-3xl font-bold text-white" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+                CORP<span className="text-purple-400">EX</span>
+              </h1>
+              </div>
+
+            {/* Desno - Inicijali korisnika (Portfolio) */}
+            <div className="flex items-center">
+              {userInitials ? (
+                <button
+                  onClick={() => {
+                    const clientId = localStorage.getItem("clientId");
+                    if (clientId) {
+                      loadPortfolioData(clientId);
+                    }
+                    setShowPortfolio(true);
+                  }}
+                  className="w-12 h-12 rounded-full bg-[#4B0082] text-white font-bold text-lg flex items-center justify-center hover:bg-[#5A1A92] transition-all duration-200 hover:scale-110 shadow-lg"
+                  aria-label="Portfolio"
+                >
+                  {userInitials}
+                </button>
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center">
+                  <span className="text-gray-500 text-sm">U</span>
+            </div>
+              )}
+          </div>
+          </div>
+        </div>
+        )}
+
+        {/* Slide Content - 100vh minus header/footer - Performance Optimized */}
+        <div 
+          className={clsx(
+          "relative",
+            currentId === "intro" || currentId === "login" || currentId === "edu_wizard" ? "fixed inset-0 z-30 h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 pb-20 overflow-y-auto min-h-0" : "flex-1 pb-20 overflow-y-auto min-h-0"
+          )}
+          style={{
+            willChange: "transform",
+            transform: "translateZ(0)",
+            contain: "layout paint",
+          }}
+        >
+          <AnimatePresence mode="wait" custom={direction} initial={false}>
+            {slides
+              .filter((slide) => slide.id === currentId)
+              .map((slide) => (
+                <motion.div
+                  key={`${slide.id}-${currentSlide}`}
+                  custom={direction}
+                  variants={slideVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{
+                    x: { 
+                      type: "spring", 
+                      stiffness: 400, 
+                      damping: 35, 
+                      mass: 0.8,
+                      duration: currentId === "edu_wizard" ? 0.65 : 0.55 
+                    },
+                    opacity: { 
+                      duration: currentId === "edu_wizard" ? 0.5 : 0.4,
+                      ease: [0.22, 0.61, 0.36, 1]
+                    },
+                    scale: { 
+                      duration: currentId === "edu_wizard" ? 0.5 : 0.4,
+                      ease: [0.22, 0.61, 0.36, 1]
+                    },
+                    rotateY: {
+                      duration: currentId === "edu_wizard" ? 0.5 : 0.4,
+                      ease: [0.22, 0.61, 0.36, 1]
+                    },
+                    filter: { 
+                      duration: currentId === "edu_wizard" ? 0.45 : 0.35,
+                      ease: [0.22, 0.61, 0.36, 1]
+                    },
+                  }}
+                  style={{
+                    willChange: "transform, opacity, filter",
+                    transformStyle: "preserve-3d",
+                    backfaceVisibility: "hidden",
+                    WebkitBackfaceVisibility: "hidden",
+                  }}
+                            className={clsx(
+                    "absolute inset-0 flex flex-col",
+                    currentId === "intro" ? "h-full" : "",
+                    currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "overflow-y-auto min-h-0" : "",
+                    // Performance optimizations
+                    "transform-gpu",
+                    "contain-layout",
+                    "contain-paint"
+                  )}
+                >
+                  {currentId === "intro" || currentId === "edu_wizard" ? (
+                    // Intro slide or educational wizard - full screen, no header
+                    <div className="h-full w-full relative">
+                      {slide.render}
+                  </div>
+                  ) : (
+                    // Other slides - with header, rotating background images, and navigation arrows
+                    <div className={clsx(
+                      "flex-1 relative bg-[#0D0F10] flex h-full",
+                      currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "overflow-y-auto min-h-0" : "overflow-y-auto min-h-0"
+                    )}>
+                      {/* LIJEVO - Motivacijski video iza naziva aplikacije */}
+                      <div className="relative w-[40%] overflow-hidden h-full bg-black">
+                        {/* Fallback pozadinska slika dok se video učitava */}
+                        <div 
+                          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                          style={{
+                            backgroundImage: "url(https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1920&q=80&auto=format&fit=crop)",
+                            zIndex: 0,
+                          }}
+                        />
+                        <div className="absolute inset-0 h-full w-full z-[1]">
+                        <video
+                            key={`slide-video-${currentSlide}`}
+                            ref={slideVideoRef}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                            preload="none"
+                          className="absolute inset-0 w-full h-full object-cover"
+                            style={{
+                            filter: "brightness(0.6) contrast(1.1)",
+                              width: "100%",
+                              height: "100%",
+                              minWidth: "100%",
+                              minHeight: "100%",
+                              zIndex: 1,
+                              display: "block",
+                              backgroundColor: "#000",
+                              opacity: 0,
+                              transition: "opacity 0.5s ease-in",
+                            }}
+                            onError={(e) => {
+                              const video = e.currentTarget as HTMLVideoElement;
+                              if (!video) {
+                                console.warn("⚠️ Video error event fired but video element is null");
+                                return;
+                              }
+                              
+                              const error = video.error;
+                              const networkState = video.networkState;
+                              const readyState = video.readyState;
+                              const currentSrc = video.currentSrc || video.src;
+                              
+                              if (error) {
+                                let errorMessage = "Unknown error";
+                                switch (error.code) {
+                                  case error.MEDIA_ERR_ABORTED:
+                                    errorMessage = "Video loading aborted";
+                                    break;
+                                  case error.MEDIA_ERR_NETWORK:
+                                    errorMessage = "Network error while loading video";
+                                    break;
+                                  case error.MEDIA_ERR_DECODE:
+                                    errorMessage = "Video decoding error";
+                                    break;
+                                  case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                                    errorMessage = "Video format not supported or source not found";
+                                    break;
+                                }
+                                console.error("❌ Slide video error:", errorMessage, "Code:", error.code);
+                                console.error("❌ Video src:", currentSrc);
+                                console.error("❌ Video networkState:", networkState);
+                                
+                                // Pokušaj učitati sljedeći source
+                                if (error.code === error.MEDIA_ERR_NETWORK || error.code === error.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+                                  console.log("🔄 Attempting to load next video source...");
+                                  setTimeout(() => {
+                                    if (slideVideoRef.current) {
+                                      slideVideoRef.current.load();
+                                    }
+                                  }, 1000);
+                                }
+                              } else {
+                                // Error event se okida ali nema error objekta - možda je samo network issue
+                                console.warn("⚠️ Video error event fired but no error object");
+                                console.warn("⚠️ networkState:", networkState, "readyState:", readyState, "src:", currentSrc);
+                                
+                                // Ako nema src ili je network problem, pokušaj reload
+                                if (!currentSrc || networkState === video.NETWORK_NO_SOURCE) {
+                                  console.log("🔄 No source loaded, attempting reload...");
+                                  setTimeout(() => {
+                                    if (slideVideoRef.current) {
+                                      slideVideoRef.current.load();
+                                    }
+                                  }, 1000);
+                                }
+                              }
+                            }}
+                            onLoadStart={() => {
+                              console.log("🔄 Video load started");
+                            }}
+                            onLoadedData={() => {
+                              console.log("✅ Video data loaded");
+                            }}
+                            onCanPlay={() => {
+                              console.log("✅ Video can play");
+                              if (slideVideoRef.current) {
+                                slideVideoRef.current.style.opacity = "1";
+                                const playPromise = slideVideoRef.current.play();
+                                if (playPromise !== undefined) {
+                                  playPromise.catch((err) => {
+                                    console.warn("⚠️ Slide video play failed:", err);
+                                  });
+                                }
+                              }
+                            }}
+                            onPlaying={() => {
+                              console.log("▶️ Video is now playing");
+                              if (slideVideoRef.current) {
+                                slideVideoRef.current.style.opacity = "1";
+                              }
+                            }}
+                            onWaiting={() => {
+                              console.log("⏳ Video is buffering...");
+                            }}
+                            onStalled={() => {
+                              console.warn("⚠️ Video stalled, trying to recover...");
+                              if (slideVideoRef.current) {
+                                setTimeout(() => {
+                                  if (slideVideoRef.current) {
+                                    slideVideoRef.current.load();
+                                  }
+                                }, 2000);
+                              }
+                            }}
+                          >
+                            {/* Prvi izbor - Lokalni fajl ako postoji */}
+            <source src="/videos/gym-motivational.mp4" type="video/mp4" />
+                            {/* Drugi izbor - Pexels workout video */}
+                            <source src="https://videos.pexels.com/video-files/2491284/2491284-hd_1920_1080_30fps.mp4" type="video/mp4" />
+                            {/* Treći izbor - Pexels gym video */}
+                            <source src="https://videos.pexels.com/video-files/3045163/3045163-hd_1920_1080_30fps.mp4" type="video/mp4" />
+                            {/* Fallback tekst ako video ne može učitati */}
+                            Vaš browser ne podržava video tag.
+                        </video>
+                          {/* Fallback pozadinska slika koja se vidi dok se video učitava ili ako ne radi */}
+                          <div 
+                            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
+                            style={{
+                              backgroundImage: "url(https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1920&q=80&auto=format&fit=crop)",
+                              zIndex: 0,
+                              opacity: (slideVideoRef.current?.readyState ?? 0) >= 3 ? 0 : 1,
+                            }}
+                          />
+                          {/* Debug info - samo u development */}
+                          {process.env.NODE_ENV === 'development' && (
+                            <div className="absolute bottom-2 left-2 text-xs text-white bg-black/50 px-2 py-1 rounded z-[20]">
+                              Video Status: {slideVideoRef.current?.readyState || 'loading'}
+                            </div>
+                          )}
+                            {/* CORPEX Overlay - #000000 sa 35-40% opacity */}
+                          <div className="absolute inset-0 bg-[rgba(0,0,0,0.375)] z-[2]" />
+            </div>
+
+                        {/* Naziv aplikacije - PUNI KONTRАST */}
+                        <div className="absolute inset-0 flex items-center justify-center z-[10] px-6">
+                          <motion.h1
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 1, delay: 0.3 }}
+                            className="text-6xl font-bold text-white drop-shadow-2xl tracking-tight"
+                            style={{
+                              textShadow: "0 6px 30px rgba(0,0,0,0.9), 0 4px 15px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)",
+                              fontFamily: "var(--font-inter), sans-serif"
+                            }}
+                          >
+                            CORP<span className="text-purple-400">EX</span>
+                          </motion.h1>
+                        </div>
+                      </div>
+
+                      {/* DESNO - Sadržaj sa porukama */}
+                      <div className={clsx(
+                        "flex-1 px-6 py-6 relative bg-[#0D0F10] flex flex-col",
+                        currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "overflow-y-auto min-h-0" : "overflow-y-auto min-h-0"
+                      )}>
+                      {/* Navigation Arrow - Left (Back) */}
+                      {currentSlide > 0 && (
+                        <motion.div
+                          className="absolute left-8 top-1/2 -translate-y-1/2 z-[100] group"
+                          initial={{ opacity: 0.7, scale: 1, x: 0 }}
+                          animate={{ 
+                            opacity: showLeftArrow ? 1 : 0.7,
+                            scale: showLeftArrow ? 1.2 : 1,
+                            x: showLeftArrow ? 10 : 0
+                          }}
+                          whileHover={{ scale: 1.9, x: 25 }}
+                          transition={{ duration: 0.3, ease: "easeOut" }}
+                          onMouseEnter={() => setShowLeftArrow(true)}
+                          onMouseLeave={() => setShowLeftArrow(false)}
+                        >
+              <button
+                onClick={() => {
+                              console.log("Natrag clicked, currentSlide:", currentSlide);
+                              prevSlide();
+                            }}
+                            className="w-18 h-18 rounded-full bg-[#1A1A1A]/90 backdrop-blur-md border-2 border-[#1A1A1A] flex items-center justify-center cursor-pointer transition-all duration-300 group-hover:bg-[#1A1A1A] group-hover:border-[#1A1A1A] group-hover:shadow-2xl"
+                            aria-label="Previous slide"
+                          >
+                            <motion.svg
+                              className="w-9 h-9 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              whileHover={{ x: -5 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={3}
+                                d="M15 19l-7-7 7-7"
+                              />
+                            </motion.svg>
+              </button>
+                        </motion.div>
+                      )}
+                      
+                      {/* Navigation Arrow - Right (Next) */}
+                      {!isLastSlide && (
+                        <motion.div
+                          className="absolute right-8 top-1/2 -translate-y-1/2 z-[100] group"
+                          initial={{ opacity: 0.7, scale: 1, x: 0 }}
+                          animate={{ 
+                            opacity: showRightArrow ? 1 : 0.7,
+                            scale: showRightArrow ? 1.2 : 1,
+                            x: showRightArrow ? -10 : 0
+                          }}
+                          whileHover={{ scale: 1.9, x: -25 }}
+                          transition={{ duration: 0.3, ease: "easeOut" }}
+                          onMouseEnter={() => setShowRightArrow(true)}
+                          onMouseLeave={() => setShowRightArrow(false)}
+                        >
+              <button
+                            onClick={async () => {
+                              console.log("Dalje clicked, currentId:", currentId, "currentSlide:", currentSlide);
+                              console.log("intakeValidationMap:", intakeValidationMap);
+                              
+                              // Ako je contact slide, omogući napredovanje samo ako su podaci spremljeni
+                              if (currentId === "contact") {
+                                if (!finalDataSubmitted) {
+                                  return; // Ne dozvoli napredovanje dok se podaci ne spreme
+                                }
+                                // Ako su podaci spremljeni, dozvoli navigaciju
+                              }
+                              
+                              // Provjeri validaciju samo za intake slideove (osim intro koji je uvijek validan)
+                              const intakeSlideIds = [
+                                "honorific", "age", "weight", "height", "activities", "goals",
+                                "training-frequency", "training-duration", "training-location", 
+                                "equipment", "experience", "meal-frequency", "allergies", 
+                                "diet-type", "sleep", "injuries", "biggest-challenge", "nutrition"
+                              ];
+                              
+                              if (intakeSlideIds.includes(currentId)) {
+                                const isValid = intakeValidationMap[currentId];
+                                console.log("Validation check for", currentId, ":", isValid);
+                                if (!isValid) {
+                                  console.log("Validation failed, blocking navigation");
+                                  return; // Ne dozvoli napredovanje ako nije validno
+                                }
+                              }
+                              
+                              nextSlide();
+                            }}
+                            disabled={currentId === "contact" && !finalDataSubmitted}
+                            className="w-18 h-18 rounded-full bg-[#1A1A1A]/90 backdrop-blur-md border-2 border-[#1A1A1A] flex items-center justify-center cursor-pointer transition-all duration-300 group-hover:bg-[#1A1A1A] group-hover:border-[#1A1A1A] group-hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed"
+                            aria-label="Next slide"
+                          >
+                            <motion.svg
+                              className="w-9 h-9 text-white"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                              whileHover={{ x: 5 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={3}
+                                d="M9 5l7 7-7 7"
+                              />
+                            </motion.svg>
+              </button>
+                        </motion.div>
+                      )}
+                      
+                        <div className="relative z-10 h-full max-w-4xl mx-auto flex flex-col">
+                        {/* Slide Header */}
+                        <div className="flex-shrink-0 mb-6">
+                          <p className="text-xs uppercase tracking-[0.4em] text-[#A9B1B8] mb-3" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+                            {String(slideOrder.indexOf(slide.id) + 1).padStart(2, "0")}
+                          </p>
+                          <h1 className="text-[36px] font-bold text-[#F4F4F4] mb-4" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+                            {slide.title}
+                          </h1>
+                          {slide.description && (
+                            <p className="text-base text-[#A9B1B8]" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+                              {slide.description}
+                            </p>
+                          )}
+            </div>
+
+                          {/* Slide Content - Allow scrolling for meal plan slide and calculator slides */}
+                          <div className={clsx(
+                            "flex-1 flex flex-col",
+                            (currentId === "meals" && (showMealPlan || weeklyMealPlan)) || currentId === "bmr-calc" || currentId === "tdee-calc" || currentId === "target-calc" || currentId === "macros" || currentId === "calculators-intro"
+                              ? "overflow-y-auto min-h-0" 
+                              : "overflow-y-auto min-h-0"
+                          )}>
+                          {slide.render}
+                          </div>
+          </div>
+      </div>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+          </AnimatePresence>
+          
+          {/* Slide Progress Dots - Tamno siva antracit boja */}
+          {currentId !== "intro" && currentId !== "edu_wizard" && (
+            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-1.5 z-20">
+              {slideOrder.map((_, idx) => (
+                <motion.div
+                  key={idx}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    idx === currentSlide
+                      ? "w-7 bg-[#4B0082] shadow-lg"
+                      : "w-2 bg-gray-700"
+                  }`}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: idx * 0.05 }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* Portfolio Modal */}
+      <PortfolioModal
+        isOpen={showPortfolio}
+        onClose={() => setShowPortfolio(false)}
+        portfolioData={portfolioData}
+        userName={clientData?.name || "Korisnik"}
+        userInitials={userInitials}
+      />
+    </main>
+  );
+}
+
+// Komponenta za prikaz dana u tjednom planu
+interface WeeklyDayCardInlineProps {
+  day: WeeklyDay;
+  dayNumber: number;
+}
+
+function WeeklyDayCardInline({ day, dayNumber }: WeeklyDayCardInlineProps) {
+  const dayNames = ['Ponedjeljak', 'Utorak', 'Srijeda', 'Četvrtak', 'Petak', 'Subota', 'Nedjelja'];
+  const dayName = dayNames[dayNumber - 1] || `Dan ${dayNumber}`;
+  const date = new Date(day.date);
+  const formattedDate = date.toLocaleDateString('hr-HR', { day: 'numeric', month: 'long' });
+
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white/70 backdrop-blur-sm p-4 shadow-lg">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h5 className="text-xl font-bold text-gray-900">{dayName}</h5>
+          <p className="text-sm text-gray-600">{formattedDate}</p>
+        </div>
+        {day.total && (
+          <div className="text-right">
+            <p className="text-xs text-gray-500">Ukupno</p>
+            <p className="text-lg font-bold text-gray-900">{day.total.calories.toFixed(0)} kcal</p>
+            <p className="text-xs text-gray-500">
+              P: {day.total.protein.toFixed(1)}g | C: {day.total.carbs.toFixed(1)}g | F: {day.total.fat.toFixed(1)}g
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <MealCardInline title="Doručak" meal={day.meals.breakfast} />
+        <MealCardInline title="Ručak" meal={day.meals.lunch} />
+        <MealCardInline title="Večera" meal={day.meals.dinner} />
+        <MealCardInline title="Užina" meal={day.meals.snack} />
+      </div>
+    </div>
+  );
+}
+
+interface MealCardInlineProps {
+  title: string;
+  meal: any;
+}
+
+function MealCardInline({ title, meal }: MealCardInlineProps) {
+  if (!meal) return null;
+
+  return (
+    <div className="rounded-xl bg-gray-50 p-3 border border-gray-200">
+      <h6 className="font-semibold text-gray-900 mb-2 text-sm">{title}</h6>
+      
+      <div className="mb-2">
+        <p className="text-base font-semibold text-gray-900">{meal.name}</p>
+        {meal.meta?.cuisine && (
+          <p className="text-xs text-gray-500 italic">{meal.meta.cuisine}</p>
+        )}
+      </div>
+
+      {/* Makroi */}
+      <div className="mb-2 space-y-0.5 text-xs">
+        <div className="flex justify-between">
+          <span className="text-gray-600">Kalorije:</span>
+          <span className="font-medium text-gray-900">{meal.calories.toFixed(0)} kcal</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-600">Proteini:</span>
+          <span className="font-medium text-gray-900">{meal.protein.toFixed(1)}g</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-600">Ugljikohidrati:</span>
+          <span className="font-medium text-gray-900">{meal.carbs.toFixed(1)}g</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-600">Masti:</span>
+          <span className="font-medium text-gray-900">{meal.fat.toFixed(1)}g</span>
+        </div>
+      </div>
+
+      {/* Score */}
+      {meal.score !== undefined && (
+        <div className="mt-2 pt-2 border-t border-gray-200">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-500">Score:</span>
+            <span className="text-xs font-semibold text-blue-600">
+              {(meal.score * 100).toFixed(1)}%
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function AppDashboard() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen w-screen items-center justify-center bg-[#1A1A1A]">
+        <div className="text-center">
+          <h1 className="text-5xl font-bold text-white mb-4 drop-shadow-2xl" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+            CORP<span className="text-purple-400">EX</span>
+          </h1>
+          <p className="text-white/70">Učitavanje...</p>
+        </div>
+      </div>
+    }>
+      <AppDashboardContent />
+    </Suspense>
+  );
+}
+
+// Most famous quotes from world athletes
+const athleteQuotes = [
+  { text: "I don't count my sit-ups; I only start counting when it starts hurting.", author: "Muhammad Ali" },
+  { text: "Impossible is a word to be found only in the dictionary of fools.", author: "Napoleon Bonaparte" },
+  { text: "It's not whether you get knocked down, it's whether you get up.", author: "Vince Lombardi" },
+  { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+  { text: "The resistance that you fight physically in the gym and the resistance that you fight in life can only build a strong character.", author: "Arnold Schwarzenegger" },
+  { text: "I want to be remembered as one of the best to ever pick up the gloves.", author: "Mike Tyson" },
+  { text: "Pain is temporary. It may last a minute, or an hour, or a day, or a year, but eventually it will subside and something else will take its place. If I quit, however, it lasts forever.", author: "Lance Armstrong" },
+  { text: "Hard work beats talent when talent fails to work hard.", author: "Kevin Durant" },
+  { text: "I don't stop when I'm tired. I stop when I'm done.", author: "Kobe Bryant" },
+  { text: "No excuses, only results.", author: "Cristiano Ronaldo" },
+];
+
+// Intro Slide Component - Split Screen
+function IntroSlideContent({ onNext, nextSlideIndex, userName = "", currentSlide = 1 }: { onNext: (slide: number) => void; nextSlideIndex: number; userName?: string; currentSlide?: number }) {
+  const [currentQuoteIndex, setCurrentQuoteIndex] = useState(-1); // -1 za pozdrav, 0+ za quotes
+  const [isPaused, setIsPaused] = useState(false);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
+  const [loggedInUserName, setLoggedInUserName] = useState<string>("");
+  const videoRef = useRef<HTMLVideoElement>(null);
+  
+  // Učitaj username ulogiranog korisnika (korisničko ime, ne ime)
+  useEffect(() => {
+    // Prvo provjeri localStorage (brže)
+    const savedUsername = localStorage.getItem("username");
+    if (savedUsername) {
+      setLoggedInUserName(savedUsername);
+      return;
+    }
+
+    // Ako nema u localStorage, učitaj iz API-ja
+    const clientId = localStorage.getItem("clientId");
+    if (clientId) {
+      fetch(`/api/client/${clientId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.ok && data.username) {
+            // Spremi u localStorage za sljedeći put
+            localStorage.setItem("username", data.username);
+            setLoggedInUserName(data.username);
+          } else {
+            // Ako nema username, pokušaj direktno iz user_accounts
+            fetch(`/api/user-account-by-client/${clientId}`)
+              .then((res) => res.json())
+              .then((accountData) => {
+                if (accountData.ok && accountData.username) {
+                  localStorage.setItem("username", accountData.username);
+                  setLoggedInUserName(accountData.username);
+                }
+              })
+              .catch(() => {
+                // Ignoriraj grešku
+              });
+          }
+        })
+        .catch(() => {
+          // Ignoriraj grešku
+        });
+    }
+  }, []);
+  
+  // Navigacija funkcije
+  const handleNext = () => {
+    // Provjeri da li je idući slide honorific i da onboarding nije završen
+    const onboardingCompleted = localStorage.getItem("educationalOnboardingCompleted");
+    if (nextSlideIndex === slideOrder.indexOf("honorific") && onboardingCompleted !== "true") {
+      // Umjesto prijelaza na honorific, pokaži onboarding
+      console.log("IntroSlideContent: Showing educational onboarding before honorific slide");
+      // Ne pozivaj onNext, nego pokaži onboarding preko parenta
+      // Parent će to riješiti kroz nextSlide funkciju
+      onNext(nextSlideIndex);
+      return;
+    }
+    onNext(nextSlideIndex);
+  };
+
+  // Osiguraj da se video pokrene kada se komponenta učita
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) {
+      console.warn("Video ref is null");
+      return;
+    }
+
+    let isMounted = true;
+    let playPromise: Promise<void> | null = null;
+
+    const handleCanPlay = () => {
+      if (!isMounted || !videoRef.current) return;
+      
+      // Provjeri da li je video element još u DOM-u
+      if (!document.contains(videoRef.current)) {
+        console.warn("Video element removed from DOM, skipping play");
+        return;
+      }
+
+      console.log("Video can play, attempting autoplay");
+      playPromise = videoRef.current.play().catch((error) => {
+        // Ignoriraj AbortError - to znači da je video uklonjen
+        if (error.name !== "AbortError") {
+          console.warn("Video autoplay prevented:", error);
+        }
+      });
+    };
+
+    const handleLoadedMetadata = () => {
+      if (!isMounted || !videoRef.current) return;
+      console.log("Video metadata loaded, duration:", videoRef.current.duration, "seconds");
+    };
+
+    const handleError = () => {
+      if (!isMounted || !videoRef.current) return;
+      const error = videoRef.current.error;
+      if (error) {
+        let errorMessage = "Unknown error";
+        switch (error.code) {
+          case error.MEDIA_ERR_ABORTED:
+            errorMessage = "Video loading aborted";
+            break;
+          case error.MEDIA_ERR_NETWORK:
+            errorMessage = "Network error while loading video";
+            break;
+          case error.MEDIA_ERR_DECODE:
+            errorMessage = "Video decoding error";
+            break;
+          case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+            errorMessage = "Video format not supported or source not found";
+            break;
+        }
+        console.error("Video error in useEffect:", errorMessage, "Code:", error.code);
+      }
+    };
+
+    // Ako je video već spreman, pokušaj reproducirati
+    if (video.readyState >= 3) { // HAVE_FUTURE_DATA ili više
+      handleCanPlay();
+    } else {
+      video.addEventListener("canplay", handleCanPlay, { once: true });
+    }
+
+    video.addEventListener("loadedmetadata", handleLoadedMetadata);
+    video.addEventListener("error", handleError);
+
+    // Cleanup funkcija
+    return () => {
+      isMounted = false;
+      
+      // Otkaži play() ako još traje
+      if (playPromise) {
+        playPromise.catch(() => {
+          // Ignoriraj greške pri cleanup-u
+        });
+      }
+
+      if (videoRef.current) {
+        videoRef.current.removeEventListener("canplay", handleCanPlay);
+        videoRef.current.removeEventListener("loadedmetadata", handleLoadedMetadata);
+        videoRef.current.removeEventListener("error", handleError);
+      }
+    };
+  }, []);
+
+  // Rotacija pozdrava i quotes (prvo pozdrav, zatim quotes)
+  useEffect(() => {
+    // Postavi početno stanje - prikaži pozdrav (isPaused = true znači vidljiv)
+    setIsPaused(true);
+    
+    let timeoutId: NodeJS.Timeout;
+    let intervalId: NodeJS.Timeout;
+    let quoteTimeoutId: NodeJS.Timeout;
+    
+    // Funkcija za promjenu quote-a
+    const changeQuote = (newIndex: number) => {
+      setIsPaused(false); // Zapocni animaciju izlaza
+      quoteTimeoutId = setTimeout(() => {
+        setCurrentQuoteIndex(newIndex);
+        setIsPaused(true); // Prikaži novi quote nakon animacije
+      }, 800); // Čekaj da se animacija izlaza završi
+    };
+    
+    // Nakon 3 sekunde prikaži prvi quote
+    timeoutId = setTimeout(() => {
+      changeQuote(0);
+      
+      // Zatim rotiraj quotes svakih 6 sekundi
+      intervalId = setInterval(() => {
+        setCurrentQuoteIndex((prev) => {
+          const nextIndex = (prev + 1) % athleteQuotes.length;
+          setIsPaused(false); // Zapocni animaciju izlaza
+          setTimeout(() => {
+            setCurrentQuoteIndex(nextIndex);
+            setIsPaused(true); // Prikaži novi quote nakon animacije
+          }, 800);
+          return prev; // Vratimo trenutni dok se animacija ne završi
+        });
+      }, 6000); // Ukupno 6 sekundi (3 sekunde prikaz + ~3 sekunde animacija)
+    }, 3000);
+
+    return () => {
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+      clearTimeout(quoteTimeoutId);
+    };
+  }, []); // Samo jednom na mount
+
+  return (
+    <div className="h-screen w-screen grid grid-cols-2 gap-0 relative">
+      {/* Navigation Arrow - Left side (nazad na login) */}
+      {currentSlide > 0 && (
+        <motion.div
+          className="absolute left-8 top-1/2 -translate-y-1/2 z-[100] group"
+          initial={{ opacity: 0.7, scale: 1, x: 0 }}
+          animate={{
+            opacity: showLeftArrow ? 1 : 0.7,
+            scale: showLeftArrow ? 1.2 : 1,
+            x: showLeftArrow ? 10 : 0,
+          }}
+          whileHover={{ scale: 1.9, x: 25 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          onMouseEnter={() => setShowLeftArrow(true)}
+          onMouseLeave={() => setShowLeftArrow(false)}
+        >
+          <button
+            onClick={() => {
+              // Idi natrag na login slide (slide 0)
+              onNext(0);
+            }}
+            className="w-18 h-18 rounded-full bg-[#1A1A1A]/90 backdrop-blur-md border-2 border-[#1A1A1A] flex items-center justify-center cursor-pointer transition-all duration-300 group-hover:bg-[#1A1A1A] group-hover:border-[#1A1A1A] group-hover:shadow-2xl"
+            aria-label="Back to login"
+          >
+            <motion.svg
+              className="w-9 h-9 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              whileHover={{ x: -5 }}
+              transition={{ duration: 0.2 }}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={3}
+                d="M15 19l-7-7 7-7"
+              />
+            </motion.svg>
+          </button>
+        </motion.div>
+      )}
+
+      {/* Navigation Arrow - Right side, elite hover effect - Always visible and prominent */}
+      <motion.div
+        className="absolute right-8 top-1/2 -translate-y-1/2 z-[100] group"
+        initial={{ opacity: 0.7, scale: 1, x: 0 }}
+        animate={{ 
+          opacity: showRightArrow ? 1 : 0.7,
+          scale: showRightArrow ? 1.2 : 1,
+          x: showRightArrow ? -10 : 0
+        }}
+        whileHover={{ scale: 1.9, x: -25 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        onMouseEnter={() => setShowRightArrow(true)}
+        onMouseLeave={() => setShowRightArrow(false)}
+      >
+        <button
+          onClick={handleNext}
+          className="w-18 h-18 rounded-full bg-[#1A1A1A]/90 backdrop-blur-md border-2 border-[#1A1A1A] flex items-center justify-center cursor-pointer transition-all duration-300 group-hover:bg-[#1A1A1A] group-hover:border-[#1A1A1A] group-hover:shadow-2xl"
+          aria-label="Next slide"
+        >
+          <motion.svg
+            className="w-9 h-9 text-white"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            whileHover={{ x: 5 }}
+            transition={{ duration: 0.2 }}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={3}
+              d="M9 5l7 7-7 7"
+            />
+          </motion.svg>
+        </button>
+      </motion.div>
+
+      {/* LIJEVO - Motivacijski video iz teretane + Naziv aplikacije */}
+      <div className="relative overflow-hidden bg-[#0D0F10] w-full h-full" style={{ minHeight: "100vh" }}>
+        {/* Video pozadina - Motivacijski edit iz teretane */}
+          <motion.div
+          className="absolute inset-0 z-0 w-full h-full"
+            initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          style={{ 
+            width: "100%", 
+            height: "100%",
+            minHeight: "100%"
+          }}
+        >
+          {/* Fallback pozadinska slika */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: "url(https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1920&q=80&auto=format&fit=crop)",
+              zIndex: 0,
+              filter: "brightness(0.6) contrast(1.1)",
+            }}
+          />
+          
+          {/* Video element */}
+          <video
+            ref={videoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            src="https://videos.pexels.com/video-files/2491284/2491284-hd_1920_1080_30fps.mp4"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{
+              filter: "brightness(0.6) contrast(1.1)",
+              minWidth: "100%",
+              minHeight: "100%",
+              zIndex: 1,
+              backgroundColor: "#000",
+              display: "block",
+            }}
+            onError={(e) => {
+              const video = e.currentTarget as HTMLVideoElement;
+              console.error("❌ Video error:", video.error?.code, "networkState:", video.networkState, "src:", video.currentSrc || video.src);
+              // Pokušaj učitati sljedeći source
+              if (video.error?.code === 4) { // MEDIA_ERR_SRC_NOT_SUPPORTED
+                console.log("🔄 Trying next video source...");
+                video.src = "https://videos.pexels.com/video-files/3045163/3045163-hd_1920_1080_30fps.mp4";
+                video.load();
+              }
+            }}
+            onLoadStart={() => {
+              console.log("🔄 Video load started");
+            }}
+            onLoadedData={() => {
+              console.log("✅ Video data loaded");
+            }}
+            onCanPlay={() => {
+              console.log("✅ Video can play");
+              if (videoRef.current) {
+                videoRef.current.play().catch((err) => {
+                  console.warn("⚠️ Play failed:", err);
+                });
+              }
+            }}
+            onPlaying={() => {
+              console.log("▶️ Video is playing");
+            }}
+            onWaiting={() => {
+              console.log("⏳ Video is buffering...");
+            }}
+          >
+            {/* Fallback source-ovi */}
+            <source src="https://videos.pexels.com/video-files/3045163/3045163-hd_1920_1080_30fps.mp4" type="video/mp4" />
+            <source src="/videos/gym-motivational.mp4" type="video/mp4" />
+            Vaš browser ne podržava video tag.
+          </video>
+          
+          {/* CORPEX Overlay - #000000 sa 35-40% opacity */}
+          <div className="absolute inset-0 bg-[rgba(0,0,0,0.375)] z-[2]" />
+          </motion.div>
+        
+        {/* Naziv aplikacije - PUNI KONTRАST */}
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.5, delay: 0.5 }}
+            className="text-8xl font-bold text-white drop-shadow-2xl tracking-tight"
+            style={{
+              textShadow: "0 6px 30px rgba(0,0,0,0.9), 0 4px 15px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)",
+            }}
+          >
+            CORP<span className="text-purple-400">EX</span>
+          </motion.h1>
+        </div>
+      </div>
+
+      {/* DESNO - Rotirajuća FAQ pitanja */}
+      <div className="relative flex items-center justify-center p-6 overflow-hidden bg-[#0D0F10]">
+        {/* Nike-style Textures and Overlays */}
+        {/* Film Grain Texture */}
+        <div 
+          className="absolute inset-0 z-[5] opacity-[0.15] pointer-events-none"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+            backgroundSize: '200px 200px',
+            mixBlendMode: 'multiply',
+          }}
+        />
+        
+        {/* Paper Texture Overlay */}
+        <div 
+          className="absolute inset-0 z-[6] opacity-[0.08] pointer-events-none"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='grain' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='25' cy='25' r='1' fill='%23000' opacity='0.1'/%3E%3Ccircle cx='75' cy='75' r='1' fill='%23000' opacity='0.1'/%3E%3Ccircle cx='50' cy='10' r='0.5' fill='%23000' opacity='0.15'/%3E%3Ccircle cx='10' cy='50' r='0.5' fill='%23000' opacity='0.15'/%3E%3Ccircle cx='90' cy='30' r='0.5' fill='%23000' opacity='0.1'/%3E%3Ccircle cx='30' cy='90' r='0.5' fill='%23000' opacity='0.1'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23grain)'/%3E%3C/svg%3E")`,
+            backgroundSize: '100px 100px',
+            mixBlendMode: 'overlay',
+          }}
+        />
+        
+        {/* Vintage Vignette Effect */}
+        <div 
+          className="absolute inset-0 z-[7] pointer-events-none"
+          style={{
+            background: `radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.03) 40%, rgba(0,0,0,0.08) 100%)`,
+          }}
+        />
+        
+        {/* Subtle Scan Lines (like old film) */}
+        <div 
+          className="absolute inset-0 z-[8] opacity-[0.05] pointer-events-none"
+          style={{
+            backgroundImage: `repeating-linear-gradient(
+              0deg,
+              transparent,
+              transparent 2px,
+              rgba(0,0,0,0.03) 2px,
+              rgba(0,0,0,0.03) 4px
+            )`,
+            mixBlendMode: 'multiply',
+          }}
+        />
+        
+        {/* Subtle Noise Overlay */}
+        <div 
+          className="absolute inset-0 z-[9] opacity-[0.12] pointer-events-none"
+          style={{
+            background: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+            backgroundSize: '150px 150px',
+            mixBlendMode: 'multiply',
+          }}
+        />
+        
+        {/* Retro Photo Border Effect */}
+        <div 
+          className="absolute inset-0 z-[10] pointer-events-none"
+          style={{
+            border: '1px solid rgba(0,0,0,0.06)',
+            boxShadow: 'inset 0 0 80px rgba(0,0,0,0.02), inset 0 0 40px rgba(0,0,0,0.03)',
+          }}
+        />
+        
+        {/* Content wrapper - Čisti tekst bez oblačića */}
+        <div className="relative z-[15] w-full h-full flex items-center justify-center px-12">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentQuoteIndex === -1 ? "greeting" : `quote-${currentQuoteIndex}`}
+            initial={{
+              opacity: 0,
+              scale: 0.8,
+              rotateY: 90,
+              x: 100,
+            }}
+            animate={{
+              opacity: isPaused ? 1 : 0,
+              scale: isPaused ? 1 : 0.8,
+              rotateY: isPaused ? 0 : -90,
+              x: isPaused ? 0 : -100,
+            }}
+            exit={{
+              opacity: 0,
+              scale: 0.8,
+              rotateY: -90,
+              x: -100,
+            }}
+            transition={{
+              duration: 0.8,
+              ease: [0.4, 0, 0.2, 1],
+            }}
+            className="w-full max-w-3xl text-center"
+          >
+            {currentQuoteIndex === -1 ? (
+              // Pozdrav
+              <div>
+                <h2 className="text-[36px] font-bold text-[#F4F4F4] mb-4 leading-tight" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+                  Dobar dan{loggedInUserName ? `, ${loggedInUserName}` : ""} 😊
+                </h2>
+              </div>
+            ) : (
+              // Quote sportaša
+              <div>
+                <blockquote className="text-[26px] font-semibold text-[#F4F4F4] leading-relaxed mb-6 italic" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+                  "{athleteQuotes[currentQuoteIndex].text}"
+                </blockquote>
+                <p className="text-[14px] text-[#A9B1B8] font-light" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+                  — {athleteQuotes[currentQuoteIndex].author}
+                </p>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// OptionButton component for intake form slides
+type OptionButtonProps = {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  variant?: "solid" | "ghost";
+};
+
+function OptionButton({
+  label,
+  active,
+  onClick,
+  variant = "solid",
+}: OptionButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={clsx(
+        "rounded-[12px] border-2 px-4 py-3 text-left text-sm font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4B0082]",
+        variant === "solid"
+          ? active
+            ? "border-[#4B0082] bg-[#4B0082] text-white shadow-[0px_4px_20px_rgba(0,0,0,0.25)]"
+            : "border-gray-700 bg-[rgba(255,255,255,0.08)] text-[#F4F4F4] hover:border-[#4B0082] hover:bg-[rgba(255,255,255,0.12)] shadow-md"
+          : active
+            ? "border-[#4B0082] bg-[#4B0082] text-white shadow-[0px_4px_20px_rgba(0,0,0,0.25)]"
+            : "border-gray-700 bg-[rgba(255,255,255,0.08)] text-[#F4F4F4] hover:border-[#4B0082] hover:bg-[rgba(255,255,255,0.12)] shadow-md",
+        "active:scale-[0.97]"
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+function getSlideLink(slideId: SlideId): string {
+  const links: Partial<Record<SlideId, string>> = {
+    "calculators-intro": "/app/calculator",
+    "bmr-calc": "/app/calculator",
+    "tdee-calc": "/app/calculator",
+    "target-calc": "/app/calculator",
+    macros: "/app/macros",
+    meals: "/app/meals",
+    training: "/app/training",
+    chat: "/app/chat",
+  };
+  return links[slideId] || "/app";
+}
+
+// Funkcija za generiranje plana prehrane s preferencom (slatko/slano)
+function generateMealPlanWithPreference(
+  targetCalories: number,
+  targetProtein: number,
+  targetCarbs: number,
+  targetFats: number,
+  preference: "sweet" | "savory",
+  days: number = 7
+) {
+  const meals: any[] = [];
+  
+  // Odaberi namirnice prema preferenci
+  const sweetFoods = {
+    protein: healthyFoods.filter(f => f.category === "protein" && (f.id === "greek-yogurt" || f.id === "cottage-cheese" || f.id === "eggs")),
+    carbs: healthyFoods.filter(f => f.category === "carbs" && (f.id === "oats" || f.id === "sweet-potatoes" || f.id === "banana")),
+    fats: healthyFoods.filter(f => f.category === "fats" && (f.id === "almonds" || f.id === "walnuts")),
+    fruits: healthyFoods.filter(f => f.category === "fruits"),
+  };
+  
+  const savoryFoods = {
+    protein: healthyFoods.filter(f => f.category === "protein" && (f.id === "chicken-breast" || f.id === "turkey" || f.id === "tuna" || f.id === "salmon")),
+    carbs: healthyFoods.filter(f => f.category === "carbs" && (f.id === "rice" || f.id === "potatoes" || f.id === "quinoa")),
+    fats: healthyFoods.filter(f => f.category === "fats" && (f.id === "avocado" || f.id === "olive-oil")),
+    vegetables: healthyFoods.filter(f => f.category === "vegetables"),
+  };
+  
+  const selectedFoods = preference === "sweet" ? sweetFoods : savoryFoods;
+  
+  for (let day = 0; day < days; day++) {
+    const dailyMeals = {
+      day: day + 1,
+      breakfast: generateMealWithPreference(targetCalories * 0.25, targetProtein * 0.25, targetCarbs * 0.25, targetFats * 0.25, selectedFoods, preference),
+      lunch: generateMealWithPreference(targetCalories * 0.35, targetProtein * 0.35, targetCarbs * 0.35, targetFats * 0.35, selectedFoods, preference),
+      dinner: generateMealWithPreference(targetCalories * 0.30, targetProtein * 0.30, targetCarbs * 0.30, targetFats * 0.30, selectedFoods, preference),
+      snacks: generateMealWithPreference(targetCalories * 0.10, targetProtein * 0.10, targetCarbs * 0.10, targetFats * 0.10, selectedFoods, preference),
+    };
+    meals.push(dailyMeals);
+  }
+  
+  return meals;
+}
+
+function generateMealWithPreference(
+  targetCal: number,
+  targetProt: number,
+  targetCarb: number,
+  targetFat: number,
+  selectedFoods: any,
+  preference: "sweet" | "savory"
+) {
+  const foods: any[] = [];
+  let currentCal = 0;
+  let currentProt = 0;
+  let currentCarb = 0;
+  let currentFat = 0;
+  
+  // Dodaj proteine
+  const proteins = selectedFoods.protein.length > 0 ? selectedFoods.protein : healthyFoods.filter(f => f.category === "protein");
+  while (currentProt < targetProt * 0.9 && proteins.length > 0) {
+    const food = proteins[Math.floor(Math.random() * proteins.length)];
+    const amount = Math.min(200, (targetProt - currentProt) / food.proteinPer100g * 100);
+    foods.push({ ...food, amount: Math.round(amount) });
+    currentCal += (food.caloriesPer100g * amount / 100);
+    currentProt += (food.proteinPer100g * amount / 100);
+  }
+  
+  // Dodaj ugljikohidrate
+  const carbs = selectedFoods.carbs.length > 0 ? selectedFoods.carbs : healthyFoods.filter(f => f.category === "carbs");
+  while (currentCarb < targetCarb * 0.9 && carbs.length > 0) {
+    const food = carbs[Math.floor(Math.random() * carbs.length)];
+    const amount = Math.min(300, (targetCarb - currentCarb) / food.carbsPer100g * 100);
+    foods.push({ ...food, amount: Math.round(amount) });
+    currentCal += (food.caloriesPer100g * amount / 100);
+    currentCarb += (food.carbsPer100g * amount / 100);
+  }
+  
+  // Dodaj masti
+  const fats = selectedFoods.fats.length > 0 ? selectedFoods.fats : healthyFoods.filter(f => f.category === "fats");
+  while (currentFat < targetFat * 0.9 && fats.length > 0) {
+    const food = fats[Math.floor(Math.random() * fats.length)];
+    const amount = Math.min(50, (targetFat - currentFat) / food.fatsPer100g * 100);
+    foods.push({ ...food, amount: Math.round(amount) });
+    currentCal += (food.caloriesPer100g * amount / 100);
+    currentFat += (food.fatsPer100g * amount / 100);
+  }
+  
+  // Dodaj voće/povrće
+  if (preference === "sweet" && selectedFoods.fruits && selectedFoods.fruits.length > 0) {
+    const fruit = selectedFoods.fruits[Math.floor(Math.random() * selectedFoods.fruits.length)];
+    foods.push({ ...fruit, amount: 100 });
+  } else if (preference === "savory" && selectedFoods.vegetables && selectedFoods.vegetables.length > 0) {
+    const veg = selectedFoods.vegetables[Math.floor(Math.random() * selectedFoods.vegetables.length)];
+    foods.push({ ...veg, amount: 150 });
+  }
+  
+  return {
+    foods,
+    totalCalories: Math.round(currentCal),
+    totalProtein: Math.round(currentProt),
+    totalCarbs: Math.round(currentCarb),
+    totalFats: Math.round(currentFat),
+  };
+}
+
+type SlideConfig = {
+  id: SlideId;
+  title: string;
+  description: string;
+  render: ReactNode;
+};
+
+type BuildSlidesProps = {
+  intakeForm: IntakeFormState;
+  updateIntakeForm: <K extends keyof IntakeFormState>(key: K, value: IntakeFormState[K]) => void;
+  toggleIntakeArrayValue: (key: "activities" | "goals" | "equipment", value: string) => void;
+  intakeValidationMap: Record<string, boolean>;
+  showBMRCalc: boolean;
+  setShowBMRCalc: (show: boolean) => void;
+  showTDEECalc: boolean;
+  setShowTDEECalc: (show: boolean) => void;
+  showTargetCalc: boolean;
+  setShowTargetCalc: (show: boolean) => void;
+  showMacrosCalc: boolean;
+  setShowMacrosCalc: (show: boolean) => void;
+  bmrInputs: { age: number; gender: Gender; weight: number; height: number };
+  setBMRInputs: (inputs: { age: number; gender: Gender; weight: number; height: number }) => void;
+  bmrResult: number | null;
+  setBMRResult: (result: number | null) => void;
+  tdeeInputs: { bmr: number; activityLevel: ActivityLevel };
+  setTDEEInputs: (inputs: { bmr: number; activityLevel: ActivityLevel }) => void;
+  tdeeResult: number | null;
+  setTDEEResult: (result: number | null) => void;
+  targetInputs: { tdee: number; goalType: GoalType };
+  setTargetInputs: (inputs: { tdee: number; goalType: GoalType }) => void;
+  targetResult: number | null;
+  setTargetResult: (result: number | null) => void;
+  macrosInputs: { targetCalories: number; goalType: GoalType; weight: number };
+  setMacrosInputs: (inputs: { targetCalories: number; goalType: GoalType; weight: number }) => void;
+  macrosResult: { protein: number; carbs: number; fats: number } | null;
+  setMacrosResult: (result: { protein: number; carbs: number; fats: number } | null) => void;
+  bmrConfirmed: boolean;
+  setBMRConfirmed: (confirmed: boolean) => void;
+  tdeeConfirmed: boolean;
+  setTDEEConfirmed: (confirmed: boolean) => void;
+  targetConfirmed: boolean;
+  setTargetConfirmed: (confirmed: boolean) => void;
+  macrosConfirmed: boolean;
+  setMacrosConfirmed: (confirmed: boolean) => void;
+  mealPlanPreference: "sweet" | "savory";
+  setMealPlanPreference: (preference: "sweet" | "savory") => void;
+  generatedMealPlan: any;
+  setGeneratedMealPlan: (plan: any) => void;
+  showMealPlan: boolean;
+  setShowMealPlan: (show: boolean) => void;
+  trainingSplit: TrainingSplit;
+  setTrainingSplit: (split: TrainingSplit) => void;
+  trainingFrequency: TrainingFrequency | TrainingPlanFrequency | "";
+  setTrainingFrequency: (frequency: TrainingPlanFrequency) => void;
+  trainingType: TrainingType;
+  setTrainingType: (type: TrainingType) => void;
+  trainingGender: Gender;
+  setTrainingGender: (gender: Gender) => void;
+  generatedTrainingPlan: TrainingPlan | null;
+  setGeneratedTrainingPlan: (plan: TrainingPlan | null) => void;
+  showTrainingPlan: boolean;
+  setShowTrainingPlan: (show: boolean) => void;
+  selectedWorkout: number | null;
+  setSelectedWorkout: (workout: number | null) => void;
+  setCurrentSlide: (slide: number) => void;
+  intakeSubmitted: boolean;
+  isSubmittingIntake: boolean;
+  submitIntake: () => Promise<void>;
+  finalDataSubmitted: boolean;
+  isSubmittingFinalData: boolean;
+  submitFinalData: () => Promise<void>;
+  generatingWeeklyPlan: boolean;
+  setGeneratingWeeklyPlan: (generating: boolean) => void;
+  weeklyMealPlan: any;
+  setWeeklyMealPlan: (plan: any) => void;
+  weeklyPlanError: string | null;
+  setWeeklyPlanError: (error: string | null) => void;
+  router: ReturnType<typeof useRouter>;
+  mealPlanError: string | null;
+  setMealPlanError: (error: string | null) => void;
+  generatingMealPlan: boolean;
+  setGeneratingMealPlan: (generating: boolean) => void;
+  finalMacros: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  } | null;
+  setFinalMacros: React.Dispatch<
+    React.SetStateAction<{
+      calories: number;
+      protein: number;
+      carbs: number;
+      fat: number;
+    } | null>
+  >;
+};
+
+// Helper component wrapper for FAQ in buildSlides
+const FAQWrapper = () => <FAQRotation />;
+
+function buildSlides(props: BuildSlidesProps): SlideConfig[] {
+  const {
+    showBMRCalc,
+    setShowBMRCalc,
+    showTDEECalc,
+    setShowTDEECalc,
+    showTargetCalc,
+    setShowTargetCalc,
+    showMacrosCalc,
+    setShowMacrosCalc,
+    bmrInputs,
+    setBMRInputs,
+    bmrResult,
+    setBMRResult,
+    tdeeInputs,
+    setTDEEInputs,
+    tdeeResult,
+    setTDEEResult,
+    targetInputs,
+    setTargetInputs,
+    targetResult,
+    setTargetResult,
+    macrosInputs,
+    setMacrosInputs,
+    macrosResult,
+    setMacrosResult,
+    bmrConfirmed,
+    setBMRConfirmed,
+    tdeeConfirmed,
+    setTDEEConfirmed,
+    targetConfirmed,
+    setTargetConfirmed,
+    macrosConfirmed,
+    setMacrosConfirmed,
+    mealPlanPreference,
+    setMealPlanPreference,
+    generatedMealPlan,
+    setGeneratedMealPlan,
+    showMealPlan,
+    setShowMealPlan,
+    trainingSplit,
+    setTrainingSplit,
+    trainingFrequency,
+    setTrainingFrequency,
+    trainingType,
+    setTrainingType,
+    trainingGender,
+    setTrainingGender,
+    generatedTrainingPlan,
+    setGeneratedTrainingPlan,
+    showTrainingPlan,
+    setShowTrainingPlan,
+    selectedWorkout,
+    setSelectedWorkout,
+    setCurrentSlide,
+    intakeForm,
+    updateIntakeForm,
+    toggleIntakeArrayValue,
+    intakeValidationMap,
+    intakeSubmitted,
+    isSubmittingIntake,
+    submitIntake,
+    finalDataSubmitted,
+    isSubmittingFinalData,
+    submitFinalData,
+    generatingWeeklyPlan,
+    setGeneratingWeeklyPlan,
+    weeklyMealPlan,
+    setWeeklyMealPlan,
+    weeklyPlanError,
+    setWeeklyPlanError,
+    router,
+    mealPlanError,
+    setMealPlanError,
+    generatingMealPlan,
+    setGeneratingMealPlan,
+    finalMacros,
+    setFinalMacros,
+  } = props;
+  return [
+    // LOGIN SLIDE - must be first
+    {
+      id: "login",
+      title: "",
+      description: "",
+      render: <LoginSlideContent onNext={setCurrentSlide} nextSlideIndex={1} onBack={undefined} />,
+    },
+    // INTAKE SLIDES - must match slideOrder
+    {
+      id: "intro",
+      title: "Upoznaj svog trenera",
+      description:
+        "Brzi upitnik koji će mi pomoći da sve prilagodim za tebe. Prođi kroz stranice, odaberi svoje odgovore, i personalizirat ću sve za tebe.",
+      render: <IntroSlideContent onNext={setCurrentSlide} nextSlideIndex={2} userName={intakeForm.name || ""} currentSlide={slideOrder.indexOf("intro")} />,
+    },
+    // EDUKATIVNI WIZARD - Prije prvog pitanja (honorific - "Kako da te oslovim?")
+    {
+      id: "edu_wizard",
+      title: "Program prehrane",
+      description: "Edukativni sadržaj",
+      render: (
+        <EducationalWizard
+          onComplete={() => {
+            // Nakon završetka wizarda, preusmjeri na sljedeći slide (honorific)
+            const honorificIndex = slideOrder.indexOf("honorific");
+            if (honorificIndex !== -1) {
+              setCurrentSlide(honorificIndex);
+            }
+          }}
+          onBack={() => {
+            // Vrati na prethodni slide (intro)
+            const introIndex = slideOrder.indexOf("intro");
+            if (introIndex !== -1) {
+              setCurrentSlide(introIndex);
+            }
+          }}
+        />
+      ),
+    },
+    {
+      id: "honorific",
+      title: "Kako da te oslovim?",
+      description: "Odaberi opciju koja ti najbolje odgovara ili odaberi Ostalo.",
+      render: (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {honorificOptions.map((option) => (
+            <OptionButton
+              key={option.value}
+              label={option.label}
+              active={intakeForm.honorific === option.value}
+              onClick={() => updateIntakeForm("honorific", option.value)}
+            />
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: "age",
+      title: "Dobna skupina",
+      description: "Pomaže mi prilagoditi oporavak, mobilnost i hormonsku podršku.",
+      render: (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {ageOptions.map((option) => (
+            <OptionButton
+              key={option.value}
+              label={option.label}
+              active={intakeForm.ageRange === option.value}
+              onClick={() => updateIntakeForm("ageRange", option.value)}
+            />
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: "weight",
+      title: "Trenutna težina",
+      description: "Upiši broj i odaberi kilograme ili funte.",
+      render: (
+        <div className="space-y-4">
+          <div className="flex items-end gap-4">
+            <input
+              type="number"
+              inputMode="decimal"
+              placeholder="68"
+              className="flex-1 rounded-[20px] border border-[#E8E8E8] bg-white px-4 py-3 text-lg text-[#1A1A1A] placeholder:text-gray-400 focus:border-[#1A1A1A] focus:outline-none"
+              value={intakeForm.weight.value}
+              onChange={(event) =>
+                updateIntakeForm("weight", {
+                  ...intakeForm.weight,
+                  value: event.target.value,
+                })
+              }
+            />
+            <div className="inline-flex rounded-[12px] border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.08)] backdrop-blur-sm p-1">
+              {weightUnits.map((unit) => (
+                <button
+                  type="button"
+                  key={unit.value}
+                  className={clsx(
+                    "rounded-[8px] px-3 py-2 text-sm font-semibold transition-colors",
+                    intakeForm.weight.unit === unit.value
+                      ? "bg-[#4B0082] text-white"
+                      : "text-[#A9B1B8] hover:bg-[rgba(255,255,255,0.12)]"
+                  )}
+                  onClick={() =>
+                    updateIntakeForm("weight", {
+                      ...intakeForm.weight,
+                      unit: unit.value,
+                    })
+                  }
+                >
+                  {unit.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <p className="text-xs text-[#A9B1B8]" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
+            Bez osuđivanja—tvoja početna točka je samo podatak za bolje programiranje.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: "height",
+      title: "Visina",
+      description: "Koristimo ovo za kalibraciju prehrane i standarda pokreta.",
+      render: (
+        <div className="space-y-4">
+          <div className="flex items-end gap-4">
+            <input
+              type="number"
+              inputMode="decimal"
+              placeholder="172"
+              className="flex-1 rounded-[20px] border border-[#E8E8E8] bg-white px-4 py-3 text-lg text-[#1A1A1A] placeholder:text-gray-400 focus:border-[#1A1A1A] focus:outline-none"
+              value={intakeForm.height.value}
+              onChange={(event) =>
+                updateIntakeForm("height", {
+                  ...intakeForm.height,
+                  value: event.target.value,
+                })
+              }
+            />
+            <div className="inline-flex rounded-[12px] border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.08)] backdrop-blur-sm p-1">
+              {heightUnits.map((unit) => (
+                <button
+                  type="button"
+                  key={unit.value}
+                  className={clsx(
+                    "rounded-[16px] px-3 py-2 text-sm font-semibold transition-colors",
+                    intakeForm.height.unit === unit.value
+                      ? "bg-[#1A1A1A] text-white"
+                      : "text-gray-600 hover:bg-gray-100"
+                  )}
+                  onClick={() =>
+                    updateIntakeForm("height", {
+                      ...intakeForm.height,
+                      unit: unit.value,
+                    })
+                  }
+                >
+                  {unit.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <p className="text-xs text-gray-600">
+            Ako znaš samo stope i inče, upiši samo vrijednost u inčima.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: "activities",
+      title: "Odaberi aktivnosti koje voliš",
+      description:
+        "Možeš odabrati više aktivnosti koje te energiziraju. Fokusirat ćemo se na njih pri programiranju.",
+      render: (
+        <div className="space-y-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {activityOptions.map((option) => (
+              <OptionButton
+                key={option.value}
+                label={option.label}
+                active={intakeForm.activities.includes(option.value)}
+                onClick={() => toggleIntakeArrayValue("activities", option.value)}
+                variant="ghost"
+              />
+            ))}
+          </div>
+          <textarea
+            placeholder="Nešto drugo? Odbojka na pijesku, planinarenje, skijanje..."
+            className="w-full rounded-[12px] border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.08)] px-4 py-3 text-sm text-[#F4F4F4] placeholder:text-[#A9B1B8] focus:border-[#6B46C1] focus:outline-none focus:bg-[rgba(255,255,255,0.12)] transition-all"
+            value={intakeForm.otherActivities}
+            onChange={(event) => updateIntakeForm("otherActivities", event.target.value)}
+          />
+        </div>
+      ),
+    },
+    {
+      id: "goals",
+      title: "Što želiš najviše postići sada?",
+      description:
+        "Ciljevi se mijenjaju. Danas odaberi rezultate koje želiš osjetiti u svom tijelu i umu.",
+      render: (
+        <div className="space-y-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {goalOptions.map((option) => (
+              <OptionButton
+                key={option.value}
+                label={option.label}
+                active={intakeForm.goals.includes(option.value)}
+                onClick={() => toggleIntakeArrayValue("goals", option.value)}
+                variant="ghost"
+              />
+            ))}
+          </div>
+          <textarea
+            placeholder="Druge motivacije? Priprema za vjenčanje, mentalno zdravlje, proba za tim..."
+            className="w-full rounded-[12px] border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.08)] px-4 py-3 text-sm text-[#F4F4F4] placeholder:text-[#A9B1B8] focus:border-[#6B46C1] focus:outline-none focus:bg-[rgba(255,255,255,0.12)] transition-all"
+            value={intakeForm.otherGoals}
+            onChange={(event) => updateIntakeForm("otherGoals", event.target.value)}
+          />
+        </div>
+      ),
+    },
+    // NOVI SLIDEOVI - Nakon "goals", prije "nutrition"
+    {
+      id: "training-frequency",
+      title: "Koliko puta tjedno možeš trenirati?",
+      description: "Odaberi broj treninga tjedno koje možeš realno uključiti u svoj raspored.",
+      render: (
+        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+          {trainingFrequencyOptions.map((option) => (
+            <OptionButton
+              key={option.value}
+              label={option.label}
+              active={intakeForm.trainingFrequency === option.value}
+              onClick={() => updateIntakeForm("trainingFrequency", option.value)}
+            />
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: "training-duration",
+      title: "Koliko vremena prosječno imaš za jedan trening?",
+      description: "Koliko minuta možeš posvetiti jednom treningu?",
+      render: (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {trainingDurationOptions.map((option) => (
+            <OptionButton
+              key={option.value}
+              label={option.label}
+              active={intakeForm.trainingDuration === option.value}
+              onClick={() => updateIntakeForm("trainingDuration", option.value)}
+            />
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: "training-location",
+      title: "Gdje najčešće treniraš?",
+      description: "Odaberi mjesto gdje obično treniraš. To će mi pomoći prilagoditi program.",
+      render: (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {trainingLocationOptions.map((option) => (
+            <OptionButton
+              key={option.value}
+              label={option.label}
+              active={intakeForm.trainingLocation === option.value}
+              onClick={() => updateIntakeForm("trainingLocation", option.value)}
+            />
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: "equipment",
+      title: "Koju opremu imaš na raspolaganju?",
+      description: "Možeš odabrati više opcija. Ovo će mi pomoći dizajnirati vježbe koje možeš raditi.",
+      render: (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {equipmentOptions.map((option) => (
+            <OptionButton
+              key={option.value}
+              label={option.label}
+              active={intakeForm.equipment.includes(option.value)}
+              onClick={() => toggleIntakeArrayValue("equipment", option.value)}
+              variant="ghost"
+            />
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: "experience",
+      title: "Koliko iskustva imaš u treningu?",
+      description: "Pomaže mi prilagoditi kompleksnost vježbi i program.",
+      render: (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {experienceLevelOptions.map((option) => (
+            <OptionButton
+              key={option.value}
+              label={option.label}
+              active={intakeForm.experience === option.value}
+              onClick={() => updateIntakeForm("experience", option.value)}
+            />
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: "meal-frequency",
+      title: "Koliko obroka dnevno preferiraš?",
+      description: "Koliko obroka želiš jesti tokom dana?",
+      render: (
+        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+          {mealFrequencyOptions.map((option) => (
+            <OptionButton
+              key={option.value}
+              label={option.label}
+              active={intakeForm.mealFrequency === option.value}
+              onClick={() => updateIntakeForm("mealFrequency", option.value)}
+            />
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: "allergies",
+      title: "Imaš li alergije, intolerancije ili namirnice koje želiš izbjegavati?",
+      description: "Opiši sve alergije, intolerancije ili namirnice koje ne možeš ili ne želiš jesti.",
+      render: (
+        <div className="space-y-4">
+          <textarea
+            placeholder="Npr. laktoza, gluten, orašasti plodovi, riba..."
+            className="w-full rounded-[20px] border border-[#E8E8E8] bg-white px-4 py-3 text-sm text-[#1A1A1A] placeholder:text-gray-400 focus:border-[#1A1A1A] focus:outline-none min-h-[120px]"
+            value={intakeForm.allergies}
+            onChange={(event) => updateIntakeForm("allergies", event.target.value)}
+          />
+          <p className="text-xs text-gray-600">
+            Ako nemaš alergije ili intolerancije, možeš ostaviti prazno.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: "diet-type",
+      title: "Slijediš li neki poseban način prehrane?",
+      description: "Odaberi način prehrane koji trenutno slijediš.",
+      render: (
+        <div className="space-y-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {dietTypeOptions.map((option) => (
+              <OptionButton
+                key={option.value}
+                label={option.label}
+                active={intakeForm.dietType === option.value}
+                onClick={() => updateIntakeForm("dietType", option.value)}
+                variant="ghost"
+              />
+            ))}
+          </div>
+          {intakeForm.dietType === "other" && (
+            <textarea
+              placeholder="Opiši svoj način prehrane..."
+              className="w-full rounded-[12px] border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.08)] px-4 py-3 text-sm text-[#F4F4F4] placeholder:text-[#A9B1B8] focus:border-[#6B46C1] focus:outline-none focus:bg-[rgba(255,255,255,0.12)] transition-all"
+              value={intakeForm.otherDietType}
+              onChange={(event) => updateIntakeForm("otherDietType", event.target.value)}
+            />
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "sleep",
+      title: "Koliko sati sna prosječno imaš po noći?",
+      description: "San je ključan za oporavak i rezultate. Koliko sati sna obično imaš?",
+      render: (
+        <div className="space-y-6">
+          <div className="rounded-[20px] border border-[#E8E8E8] bg-white/80 backdrop-blur-sm p-5">
+            <div className="flex items-center justify-between text-sm font-semibold text-[#1A1A1A] mb-4">
+              <span>Sati sna</span>
+              <span className="text-lg">{intakeForm.sleepHours || 7} sati</span>
+            </div>
+            <input
+              type="range"
+              min={4}
+              max={10}
+              step={0.5}
+              value={intakeForm.sleepHours || 7}
+              onChange={(event) => updateIntakeForm("sleepHours", event.target.value)}
+              className="mt-4 h-2 w-full cursor-pointer appearance-none rounded-full bg-[#E8E8E8] accent-[#1A1A1A]"
+            />
+            <div className="flex justify-between text-xs text-gray-600 mt-2">
+              <span>4h</span>
+              <span>7h</span>
+              <span>10h</span>
+            </div>
+          </div>
+          <p className="text-xs text-gray-600">
+            Preporučeno je 7-9 sati sna za optimalan oporavak i performanse.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: "injuries",
+      title: "Imaš li trenutne ozljede ili ograničenja u pokretu?",
+      description: "Opiši sve trenutne ozljede, bolove ili ograničenja koje imaš (leđa, koljena, ramena, itd.).",
+      render: (
+        <div className="space-y-4">
+          <textarea
+            placeholder="Npr. problemi s donjim dijelom leđa, bolovi u koljenima pri čučnjevima, ozljeda ramena..."
+            className="w-full rounded-[20px] border border-[#E8E8E8] bg-white px-4 py-3 text-sm text-[#1A1A1A] placeholder:text-gray-400 focus:border-[#1A1A1A] focus:outline-none min-h-[120px]"
+            value={intakeForm.injuries}
+            onChange={(event) => updateIntakeForm("injuries", event.target.value)}
+          />
+          <p className="text-xs text-gray-600">
+            Ako nemaš ozljeda ili ograničenja, možeš ostaviti prazno. Ovo mi pomaže dizajnirati siguran program.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: "biggest-challenge",
+      title: "Što ti je trenutno najveći izazov?",
+      description: "Što te najviše sprečava da postigneš svoje ciljeve?",
+      render: (
+        <div className="space-y-5">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {biggestChallengeOptions.map((option) => (
+              <OptionButton
+                key={option.value}
+                label={option.label}
+                active={intakeForm.biggestChallenge === option.value}
+                onClick={() => updateIntakeForm("biggestChallenge", option.value)}
+                variant="ghost"
+              />
+            ))}
+          </div>
+          {intakeForm.biggestChallenge === "other" && (
+            <textarea
+              placeholder="Opiši svoj najveći izazov..."
+              className="w-full rounded-[12px] border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.08)] px-4 py-3 text-sm text-[#F4F4F4] placeholder:text-[#A9B1B8] focus:border-[#6B46C1] focus:outline-none focus:bg-[rgba(255,255,255,0.12)] transition-all"
+              value={intakeForm.otherChallenge}
+              onChange={(event) => updateIntakeForm("otherChallenge", event.target.value)}
+            />
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "nutrition",
+      title: "Koliko čisto jedeš?",
+      description:
+        "Pomakni klizač da označiš % čiste hrane naspram udobne hrane. Ovo mi pomaže dizajnirati planove prehrane koje možeš stvarno slijediti.",
+      render: (
+        <div className="space-y-6">
+          <div className="rounded-[20px] border border-[#E8E8E8] bg-white/80 backdrop-blur-sm p-5">
+            <div className="flex items-center justify-between text-sm font-semibold text-[#1A1A1A]">
+              <span>{intakeForm.dietCleanliness}% čisto</span>
+              <span>{100 - intakeForm.dietCleanliness}% fleksibilno</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={intakeForm.dietCleanliness}
+              onChange={(event) => updateIntakeForm("dietCleanliness", Number(event.target.value))}
+              className="mt-4 h-2 w-full cursor-pointer appearance-none rounded-full bg-[#E8E8E8] accent-[#1A1A1A]"
+            />
+          </div>
+          <textarea
+            placeholder="Napiši sve preferencije hrane, alergije ili žudnje ovdje."
+            className="w-full rounded-[12px] border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.08)] px-4 py-3 text-sm text-[#F4F4F4] placeholder:text-[#A9B1B8] focus:border-[#6B46C1] focus:outline-none focus:bg-[rgba(255,255,255,0.12)] transition-all"
+            value={intakeForm.notes}
+            onChange={(event) => updateIntakeForm("notes", event.target.value)}
+          />
+        </div>
+      ),
+    },
+    // CALCULATOR SLIDES
+    {
+      id: "calculators-intro",
+      title: "Kalkulatori Kalorija",
+      description: "Upoznaj se s alatima za izračun kalorija. Svaki kalkulator ima svoju ulogu.",
+      render: (
+        <div className="h-full flex flex-col gap-8 overflow-y-auto">
+          {/* FAQ Rotation Section */}
+          <div className="relative flex-1 min-h-[300px] max-h-[400px] flex items-center justify-center">
+            <FAQWrapper />
+          </div>
+
+          {/* Calculator Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-shrink-0">
+            <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="text-2xl font-bold text-[#1A1A1A] mb-3">1</div>
+              <h3 className="text-lg font-semibold text-[#1A1A1A] mb-2">BMR Kalkulator</h3>
+              <p className="text-sm text-gray-600 leading-relaxed">
+              Izračunaj svoju bazalnu metaboličku stopu - kalorije koje sagoriš u mirovanju.
+            </p>
+          </div>
+            <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="text-2xl font-bold text-[#1A1A1A] mb-3">2</div>
+              <h3 className="text-lg font-semibold text-[#1A1A1A] mb-2">TDEE Kalkulator</h3>
+              <p className="text-sm text-gray-600 leading-relaxed">
+              Izračunaj ukupne dnevne potrebe za kalorijama uključujući sve aktivnosti.
+            </p>
+          </div>
+            <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg hover:shadow-xl transition-shadow">
+              <div className="text-2xl font-bold text-[#1A1A1A] mb-3">3</div>
+              <h3 className="text-lg font-semibold text-[#1A1A1A] mb-2">Target Calories Kalkulator</h3>
+              <p className="text-sm text-gray-600 leading-relaxed">
+              Odredi koliko kalorija trebaš jesti da postigneš svoj cilj (gubitak/održavanje/dobitak).
+            </p>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "bmr-calc",
+      title: "BMR Kalkulator",
+      description: "Izračunaj svoju bazalnu metaboličku stopu.",
+      render: (
+        <div className="h-full overflow-y-auto flex flex-col min-h-0">
+          <AnimatePresence mode="wait">
+          {!showBMRCalc ? (
+              <motion.div
+                key="info"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
+                className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-y-auto pb-4"
+              >
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Što je BMR?</h3>
+                <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                  <strong>BMR (Basal Metabolic Rate)</strong> je broj kalorija koje tvoje tijelo sagori u potpunom mirovanju - 
+                  samo za osnovne životne funkcije (disanje, cirkulacija, probava, održavanje temperature tijela).
+                </p>
+                <p className="text-gray-700 text-sm leading-relaxed">
+                  To je tvoja minimalna potreba za energijom - koliko bi sagorio da cijeli dan ležiš u krevetu.
+                </p>
+              </div>
+
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Kako se koristi?</h3>
+                <ol className="space-y-2 text-sm text-gray-600 list-decimal list-inside leading-relaxed">
+                  <li>Unesi svoju dob, spol, visinu i težinu</li>
+                  <li>Kalkulator koristi <strong>Mifflin-St Jeor formulu</strong></li>
+                  <li>Dobit ćeš svoj BMR u kalorijama</li>
+                  <li>Ovaj broj je osnova za izračun TDEE-a</li>
+                </ol>
+              </div>
+
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Formula</h3>
+                <p className="text-gray-600 text-sm mb-3 leading-relaxed">
+                  <strong>Za muškarce:</strong> BMR = 10 × težina(kg) + 6.25 × visina(cm) - 5 × dob + 5
+                </p>
+                <p className="text-gray-700 text-sm leading-relaxed">
+                  <strong>Za žene:</strong> BMR = 10 × težina(kg) + 6.25 × visina(cm) - 5 × dob - 161
+                </p>
+              </div>
+              <div className="lg:col-span-3 mt-6">
+                <button
+                  onClick={() => setShowBMRCalc(true)}
+                  className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-4 text-white font-semibold text-lg transition hover:-translate-y-0.5 hover:shadow-lg"
+                >
+                  ✓ Koristi kalkulator
+                </button>
+              </div>
+              </motion.div>
+          ) : (
+              <motion.div
+                key="calc"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
+                className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl overflow-y-auto flex flex-col min-h-0"
+                style={{ willChange: "transform, opacity", maxHeight: "100%" }}
+              >
+              <div className="flex justify-between items-center mb-6 flex-shrink-0">
+                <h3 className="text-2xl font-semibold text-[#1A1A1A]">BMR Kalkulator</h3>
+                <button
+                  onClick={() => setShowBMRCalc(false)}
+                  className="text-gray-500 hover:text-[#1A1A1A] text-2xl transition"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="space-y-4 pb-12 flex-1">
+                <div>
+                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Dob</label>
+                  <input
+                    type="number"
+                    value={bmrInputs.age}
+                    onChange={(e) => setBMRInputs({ ...bmrInputs, age: parseInt(e.target.value) || 0 })}
+                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Spol</label>
+                  <select
+                    value={bmrInputs.gender}
+                    onChange={(e) => setBMRInputs({ ...bmrInputs, gender: e.target.value as Gender })}
+                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
+                  >
+                    <option value="male">Muškarac</option>
+                    <option value="female">Žena</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Težina (kg)</label>
+                  <input
+                    type="number"
+                    value={bmrInputs.weight}
+                    onChange={(e) => setBMRInputs({ ...bmrInputs, weight: parseFloat(e.target.value) || 0 })}
+                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Visina (cm)</label>
+                  <input
+                    type="number"
+                    value={bmrInputs.height}
+                    onChange={(e) => setBMRInputs({ ...bmrInputs, height: parseFloat(e.target.value) || 0 })}
+                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition"
+                  />
+                </div>
+                
+                <button
+                  onClick={() => {
+                    const result = calculateBMR(bmrInputs.weight, bmrInputs.height, bmrInputs.age, bmrInputs.gender);
+                    setBMRResult(Math.round(result));
+                  }}
+                  className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-3 text-white font-semibold transition hover:-translate-y-0.5 hover:shadow-lg"
+                >
+                  Izračunaj BMR
+                </button>
+                
+                {bmrResult !== null && (
+                  <div className="space-y-4">
+                    <div className="rounded-[20px] bg-[#E8E8E8] p-6 text-center">
+                      <div className="text-sm text-gray-600 mb-1">Tvoj BMR</div>
+                      <div className="text-4xl font-bold text-[#1A1A1A]">{bmrResult}</div>
+                      <div className="text-sm text-gray-600 mt-1">kalorija/dan</div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setBMRConfirmed(true);
+                        setTDEEInputs({ ...tdeeInputs, bmr: bmrResult });
+                      }}
+                      className={`w-full rounded-[16px] px-6 py-3 font-semibold transition hover:-translate-y-0.5 hover:shadow-lg ${
+                        bmrConfirmed
+                          ? "bg-green-600 text-white"
+                          : "bg-[#1A1A1A] text-white"
+                      }`}
+                    >
+                      {bmrConfirmed ? "✓ Potvrđeno" : "✓ Potvrdi BMR"}
+                    </button>
+                  </div>
+                )}
+              </div>
+              </motion.div>
+          )}
+          </AnimatePresence>
+        </div>
+      ),
+    },
+    {
+      id: "tdee-calc",
+      title: "TDEE Kalkulator",
+      description: "Izračunaj svoje ukupne dnevne potrebe za kalorijama.",
+      render: (
+        <div className="h-full overflow-y-auto flex flex-col min-h-0">
+          <AnimatePresence mode="wait">
+          {!showTDEECalc ? (
+              <motion.div
+                key="info"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
+                className="flex-1 overflow-y-auto space-y-6 pb-4"
+              >
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Što je TDEE?</h3>
+                <p className="text-gray-600 text-sm mb-4">
+                  <strong>TDEE (Total Daily Energy Expenditure)</strong> je ukupan broj kalorija koje tvoje tijelo sagori 
+                  tijekom dana, uključujući sve aktivnosti - od spavanja do treninga.
+                </p>
+                <p className="text-gray-600 text-sm">
+                  To je tvoja stvarna dnevna potreba za kalorijama. Ako jedeš točno TDEE, održavat ćeš trenutnu težinu.
+                </p>
+              </div>
+
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Kako se koristi?</h3>
+                <ol className="space-y-2 text-sm text-gray-600 list-decimal list-inside mb-4">
+                  <li>Prvo izračunaj svoj BMR (koristi BMR kalkulator)</li>
+                  <li>Odaberi svoju razinu aktivnosti</li>
+                  <li>TDEE = BMR × aktivnostni multiplikator</li>
+                  <li>Dobit ćeš svoj TDEE u kalorijama</li>
+                </ol>
+                <div className="mt-4 space-y-2 text-sm text-gray-600">
+                  <p><strong>Aktivnostni multiplikatori:</strong></p>
+                  <ul className="list-disc list-inside ml-4 space-y-1">
+                    <li>Sjedilački (malo ili nimalo vježbanja): 1.2</li>
+                    <li>Lagana aktivnost (1-3 dana/tjedan): 1.375</li>
+                    <li>Umjerena aktivnost (3-5 dana/tjedan): 1.55</li>
+                    <li>Visoka aktivnost (6-7 dana/tjedan): 1.725</li>
+                    <li>Vrlo visoka aktivnost (2x dnevno): 1.9</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Zašto je važan?</h3>
+                <p className="text-gray-600 text-sm">
+                  TDEE je ključan za određivanje koliko kalorija trebaš jesti. Ako jedeš manje od TDEE-a, 
+                  gubit ćeš težinu. Ako jedeš više, dobivat ćeš težinu.
+                </p>
+              </div>
+              <div className="mt-6 pb-4">
+                <button
+                  onClick={() => setShowTDEECalc(true)}
+                  className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-4 text-white font-semibold text-lg transition hover:-translate-y-0.5 hover:shadow-lg"
+                >
+                  ✓ Koristi kalkulator
+                </button>
+              </div>
+              </motion.div>
+          ) : (
+              <motion.div
+                key="calc"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
+                className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl overflow-y-auto flex flex-col min-h-0"
+                style={{ willChange: "transform, opacity", maxHeight: "100%" }}
+              >
+              <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                <h3 className="text-2xl font-semibold text-[#1A1A1A]">TDEE Kalkulator</h3>
+                <button
+                  onClick={() => setShowTDEECalc(false)}
+                  className="text-gray-500 hover:text-[#1A1A1A] text-xl transition"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="space-y-4 pb-12 flex-1">
+                <div>
+                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">BMR (iz BMR kalkulatora)</label>
+                  <input
+                    type="number"
+                    value={tdeeInputs.bmr}
+                    onChange={(e) => setTDEEInputs({ ...tdeeInputs, bmr: parseInt(e.target.value) || 0 })}
+                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
+                    placeholder="Unesi svoj BMR"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Razina aktivnosti</label>
+                  <select
+                    value={tdeeInputs.activityLevel}
+                    onChange={(e) => setTDEEInputs({ ...tdeeInputs, activityLevel: e.target.value as ActivityLevel })}
+                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
+                  >
+                    <option value="sedentary">Sjedilački (1.2)</option>
+                    <option value="light">Lagana aktivnost (1.375)</option>
+                    <option value="moderate">Umjerena aktivnost (1.55)</option>
+                    <option value="active">Visoka aktivnost (1.725)</option>
+                    <option value="very_active">Vrlo visoka aktivnost (1.9)</option>
+                  </select>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    const result = calculateTDEE(tdeeInputs.bmr, tdeeInputs.activityLevel);
+                    setTDEEResult(result);
+                  }}
+                  className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-3 text-white font-semibold transition hover:-translate-y-0.5 hover:shadow-lg"
+                >
+                  Izračunaj TDEE
+                </button>
+                
+                {tdeeResult !== null && (
+                  <div className="space-y-4">
+                    <div className="rounded-[20px] bg-[#E8E8E8] p-6 text-center">
+                      <div className="text-sm text-gray-600 mb-1">Tvoj TDEE</div>
+                      <div className="text-4xl font-bold text-[#1A1A1A]">{tdeeResult}</div>
+                      <div className="text-sm text-gray-600 mt-1">kalorija/dan</div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setTDEEConfirmed(true);
+                        setTargetInputs({ ...targetInputs, tdee: tdeeResult });
+                      }}
+                      className={`w-full rounded-[16px] px-6 py-3 font-semibold transition hover:-translate-y-0.5 hover:shadow-lg ${
+                        tdeeConfirmed
+                          ? "bg-green-600 text-white"
+                          : "bg-[#1A1A1A] text-white"
+                      }`}
+                    >
+                      {tdeeConfirmed ? "✓ Potvrđeno" : "✓ Potvrdi TDEE"}
+                    </button>
+                  </div>
+                )}
+              </div>
+              </motion.div>
+          )}
+          </AnimatePresence>
+        </div>
+      ),
+    },
+    {
+      id: "target-calc",
+      title: "Target Calories Kalkulator",
+      description: "Odredi koliko kalorija trebaš jesti da postigneš svoj cilj.",
+      render: (
+        <div className="h-full overflow-y-auto flex flex-col min-h-0">
+          <AnimatePresence mode="wait">
+          {!showTargetCalc ? (
+              <motion.div
+                key="info"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
+                className="flex-1 overflow-y-auto space-y-6 pb-4"
+              >
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Što su Target Calories?</h3>
+                <p className="text-gray-600 text-sm mb-4">
+                  <strong>Target Calories (Ciljne Kalorije)</strong> su broj kalorija koje trebaš jesti dnevno 
+                  da postigneš svoj cilj - gubitak težine, održavanje težine ili povećanje težine.
+                </p>
+                <p className="text-gray-600 text-sm">
+                  Ove kalorije su prilagođene tvojim ciljevima i razini aktivnosti.
+                </p>
+              </div>
+
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Kako se koristi?</h3>
+                <ol className="space-y-2 text-sm text-gray-600 list-decimal list-inside mb-4">
+                  <li>Prvo izračunaj svoj TDEE (koristi TDEE kalkulator)</li>
+                  <li>Odaberi svoj cilj (gubitak/održavanje/dobitak)</li>
+                  <li>Kalkulator će automatski izračunati target calories</li>
+                </ol>
+                <div className="mt-4 space-y-3 text-sm text-gray-600">
+                  <div>
+                    <p><strong>Za gubitak težine:</strong></p>
+                    <p className="ml-4">Target = TDEE - 500 kcal</p>
+                    <p className="ml-4 text-xs text-gray-500">Gubitak ~0.5 kg/tjedan</p>
+                  </div>
+                  <div>
+                    <p><strong>Za održavanje težine:</strong></p>
+                    <p className="ml-4">Target = TDEE</p>
+                    <p className="ml-4 text-xs text-gray-500">Održava trenutnu težinu</p>
+                  </div>
+                  <div>
+                    <p><strong>Za povećanje težine:</strong></p>
+                    <p className="ml-4">Target = TDEE + 500 kcal</p>
+                    <p className="ml-4 text-xs text-gray-500">Dobitak ~0.5 kg/tjedan</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Zašto 500 kcal?</h3>
+                <p className="text-gray-600 text-sm mb-2">
+                  <strong>500 kcal/dan = ~3500 kcal/tjedan = ~0.5 kg masti</strong>
+                </p>
+                <p className="text-gray-600 text-sm">
+                  To je siguran i održiv tempo promjene. Prebrzi gubitak/dobitak može dovesti do gubitka mišića 
+                  ili nezdravog povećanja masti.
+                </p>
+              </div>
+              <div className="mt-6 pb-4">
+                <button
+                  onClick={() => setShowTargetCalc(true)}
+                  className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-4 text-white font-semibold text-lg transition hover:-translate-y-0.5 hover:shadow-lg"
+                >
+                  ✓ Koristi kalkulator
+                </button>
+              </div>
+              </motion.div>
+          ) : (
+              <motion.div
+                key="calc"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
+                className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl overflow-y-auto flex flex-col min-h-0"
+                style={{ willChange: "transform, opacity", maxHeight: "100%" }}
+              >
+              <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                <h3 className="text-2xl font-semibold text-[#1A1A1A]">Target Calories Kalkulator</h3>
+                <button
+                  onClick={() => setShowTargetCalc(false)}
+                  className="text-gray-500 hover:text-[#1A1A1A] text-xl transition"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="space-y-4 pb-12 flex-1">
+                <div>
+                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">TDEE (iz TDEE kalkulatora)</label>
+                  <input
+                    type="number"
+                    value={targetInputs.tdee}
+                    onChange={(e) => setTargetInputs({ ...targetInputs, tdee: parseInt(e.target.value) || 0 })}
+                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
+                    placeholder="Unesi svoj TDEE"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Cilj</label>
+                  <select
+                    value={targetInputs.goalType}
+                    onChange={(e) => setTargetInputs({ ...targetInputs, goalType: e.target.value as GoalType })}
+                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
+                  >
+                    <option value="lose">Gubitak težine (-500 kcal)</option>
+                    <option value="maintain">Održavanje težine (= TDEE)</option>
+                    <option value="gain">Povećanje težine (+500 kcal)</option>
+                  </select>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    const result = calculateTargetCalories(targetInputs.tdee, targetInputs.goalType);
+                    setTargetResult(result);
+                  }}
+                  className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-3 text-white font-semibold transition hover:-translate-y-0.5 hover:shadow-lg"
+                >
+                  Izračunaj Target Calories
+                </button>
+                
+                {targetResult !== null && (
+                  <div className="space-y-4">
+                    <div className="rounded-[20px] bg-[#E8E8E8] p-6 text-center">
+                      <div className="text-sm text-gray-600 mb-1">Tvoje Target Calories</div>
+                      <div className="text-4xl font-bold text-[#1A1A1A]">{targetResult}</div>
+                      <div className="text-sm text-gray-600 mt-1">
+                        kalorija/dan ({targetInputs.goalType === "lose" ? "Gubitak" : targetInputs.goalType === "gain" ? "Dobivanje" : "Održavanje"})
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setTargetConfirmed(true);
+                        setMacrosInputs({ ...macrosInputs, targetCalories: targetResult });
+                      }}
+                      className={`w-full rounded-[16px] px-6 py-3 font-semibold transition hover:-translate-y-0.5 hover:shadow-lg ${
+                        targetConfirmed
+                          ? "bg-green-600 text-white"
+                          : "bg-[#1A1A1A] text-white"
+                      }`}
+                    >
+                      {targetConfirmed ? "✓ Potvrđeno" : "✓ Potvrdi Target Calories"}
+                    </button>
+                  </div>
+                )}
+              </div>
+              </motion.div>
+          )}
+          </AnimatePresence>
+        </div>
+      ),
+    },
+    {
+      id: "macros",
+      title: "Makrosi (Makronutrijenti)",
+      description: "Proteini, ugljikohidrati i masti - tri ključna elementa tvoje prehrane.",
+      render: (
+        <div className="h-full overflow-y-auto flex flex-col min-h-0">
+          <AnimatePresence mode="wait">
+          {!showMacrosCalc ? (
+              <motion.div
+                key="info"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
+                className="flex-1 overflow-y-auto space-y-6 pb-4"
+              >
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Proteini</h3>
+                <p className="text-gray-600 text-sm mb-2">
+                  <strong>Što je:</strong> Građevni blokovi mišića. 1g proteina = 4 kcal.
+                </p>
+                <p className="text-gray-600 text-sm mb-2">
+                  <strong>Čemu služi:</strong> Rast i popravak mišića, osjećaj sitosti, podrška metabolizmu.
+                </p>
+                <p className="text-gray-600 text-sm">
+                  <strong>Preporuka:</strong> 1.9-2.2g po kg tjelesne težine. 2.2g/kg za gubitak masti, 
+                  2.0g/kg za povećanje mišića, 1.9g/kg za održavanje.
+                </p>
+              </div>
+
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Ugljikohidrati</h3>
+                <p className="text-gray-600 text-sm mb-2">
+                  <strong>Što je:</strong> Glavni izvor energije. 1g ugljikohidrata = 4 kcal.
+                </p>
+                <p className="text-gray-600 text-sm mb-2">
+                  <strong>Čemu služi:</strong> Energija za trening, oporavak, moždane funkcije.
+                </p>
+                <p className="text-gray-600 text-sm">
+                  <strong>Preporuka:</strong> Ostatak kalorija nakon proteina i masti. Automatski se izračunava 
+                  na temelju tvojih target kalorija.
+                </p>
+              </div>
+
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Masti</h3>
+                <p className="text-gray-600 text-sm mb-2">
+                  <strong>Što je:</strong> Koncentrirani izvor energije. 1g masti = 9 kcal.
+                </p>
+                <p className="text-gray-600 text-sm mb-2">
+                  <strong>Čemu služi:</strong> Hormonska produkcija, apsorpcija vitamina, osjećaj sitosti.
+                </p>
+                <p className="text-gray-600 text-sm">
+                  <strong>Preporuka:</strong> 0.8-1.0g po kg tjelesne težine (0.9g/kg). Dovoljno za hormonsku 
+                  funkciju, apsorpciju vitamina i osjećaj sitosti.
+                </p>
+              </div>
+              <div className="mt-6 pb-4">
+                <button
+                  onClick={() => setShowMacrosCalc(true)}
+                  className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-4 text-white font-semibold text-lg transition hover:-translate-y-0.5 hover:shadow-lg"
+                >
+                  ✓ Koristi kalkulator
+                </button>
+              </div>
+              </motion.div>
+          ) : (
+              <motion.div
+                key="calc"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
+                className="rounded-[16px] bg-white/80 backdrop-blur-sm border-2 border-gray-900 p-6 shadow-xl overflow-y-auto flex flex-col min-h-0"
+                style={{ willChange: "transform, opacity", maxHeight: "100%" }}
+              >
+              <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                <h3 className="text-2xl font-semibold text-gray-900">Kalkulator Makrosa</h3>
+                <button
+                  onClick={() => setShowMacrosCalc(false)}
+                  className="text-gray-500 hover:text-gray-900 text-xl"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="space-y-4 pb-12 flex-1">
+                <div>
+                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Target Calories (iz Target Calories kalkulatora)</label>
+                  <input
+                    type="number"
+                    value={macrosInputs.targetCalories}
+                    onChange={(e) => setMacrosInputs({ ...macrosInputs, targetCalories: parseInt(e.target.value) || 0 })}
+                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
+                    placeholder="Unesi target calories"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Težina (kg)</label>
+                  <input
+                    type="number"
+                    value={macrosInputs.weight}
+                    onChange={(e) => setMacrosInputs({ ...macrosInputs, weight: parseFloat(e.target.value) || 0 })}
+                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
+                    placeholder="Unesi svoju težinu"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Cilj</label>
+                  <select
+                    value={macrosInputs.goalType}
+                    onChange={(e) => setMacrosInputs({ ...macrosInputs, goalType: e.target.value as GoalType })}
+                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
+                  >
+                    <option value="lose">Gubitak težine</option>
+                    <option value="maintain">Održavanje težine</option>
+                    <option value="gain">Povećanje težine</option>
+                  </select>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    const result = calculateMacros(macrosInputs.targetCalories, macrosInputs.goalType, macrosInputs.weight);
+                    setMacrosResult(result);
+                    // Spremi finalne makrose
+                    setFinalMacros({
+                      calories: macrosInputs.targetCalories,
+                      protein: result.protein,
+                      carbs: result.carbs,
+                      fat: result.fats,
+                    });
+                  }}
+                  className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-3 text-white font-semibold transition hover:-translate-y-0.5 hover:shadow-lg"
+                >
+                  Izračunaj Makrose
+                </button>
+                
+                {macrosResult && (
+                  <div className="space-y-4">
+                    <div className="rounded-[20px] bg-[#E8E8E8] p-6">
+                      <div className="text-sm text-gray-600 mb-1">Proteini</div>
+                      <div className="text-3xl font-bold text-[#1A1A1A]">{macrosResult.protein}g</div>
+                      <div className="text-sm text-gray-600">
+                        {macrosInputs.weight > 0 ? `${(macrosResult.protein / macrosInputs.weight).toFixed(1)}g po kg` : ""}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {macrosInputs.goalType === "lose" 
+                          ? "2.2g/kg - više proteina za očuvanje mišića tijekom gubitka"
+                          : macrosInputs.goalType === "gain"
+                          ? "2.0g/kg - dovoljno za rast mišića"
+                          : "1.9g/kg - uravnoteženo za održavanje"}
+                      </div>
+                    </div>
+
+                    <div className="rounded-[20px] bg-[#E8E8E8] p-6">
+                      <div className="text-sm text-gray-600 mb-1">Ugljikohidrati</div>
+                      <div className="text-3xl font-bold text-[#1A1A1A]">{macrosResult.carbs}g</div>
+                      <div className="text-sm text-gray-600">
+                        {macrosInputs.targetCalories > 0 
+                          ? `${Math.round((macrosResult.carbs * 4 / macrosInputs.targetCalories) * 100)}% dnevnih kalorija`
+                          : ""}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Ostatak kalorija nakon proteina i masti - optimizirano za tvoj cilj
+                      </div>
+                    </div>
+
+                    <div className="rounded-[20px] bg-[#E8E8E8] p-6">
+                      <div className="text-sm text-gray-600 mb-1">Masti</div>
+                      <div className="text-3xl font-bold text-[#1A1A1A]">{macrosResult.fats}g</div>
+                      <div className="text-sm text-gray-600">
+                        {macrosInputs.targetCalories > 0 
+                          ? `${Math.round((macrosResult.fats * 9 / macrosInputs.targetCalories) * 100)}% dnevnih kalorija`
+                          : ""}
+                      </div>
+                      <div className="text-sm text-gray-600 mb-2">
+                        {macrosInputs.weight > 0 ? `${(macrosResult.fats / macrosInputs.weight).toFixed(1)}g po kg` : ""}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        0.9g/kg (raspon 0.8-1.0g/kg) - dovoljno za hormonsku funkciju i zdravlje
+                      </div>
+                    </div>
+
+                    <div className="rounded-[20px] bg-[#1A1A1A] text-white p-6 text-center">
+                      <div className="text-sm opacity-80 mb-1">Ukupno kalorija iz makrosa</div>
+                      <div className="text-2xl font-bold">
+                        {macrosResult.protein * 4 + macrosResult.carbs * 4 + macrosResult.fats * 9} kcal
+                      </div>
+                      <div className="text-xs opacity-70 mt-1">
+                        (od {macrosInputs.targetCalories} target calories)
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={() => {
+                        setMacrosConfirmed(true);
+                      }}
+                      className={`w-full rounded-[16px] px-6 py-3 font-semibold transition hover:-translate-y-0.5 hover:shadow-lg ${
+                        macrosConfirmed
+                          ? "bg-green-600 text-white"
+                          : "bg-[#1A1A1A] text-white"
+                      }`}
+                    >
+                      {macrosConfirmed ? "✓ Potvrđeno" : "✓ Potvrdi Makrose"}
+                    </button>
+                  </div>
+                )}
+              </div>
+              </motion.div>
+          )}
+          </AnimatePresence>
+        </div>
+      ),
+    },
+    {
+      id: "contact",
+      title: "Hajdemo početi",
+      description:
+        "Pregledaj svoje kalkulacije i pošalji sve podatke za generiranje plana prehrane.",
+      render: (
+        <div className="space-y-6 overflow-y-auto h-full">
+          {finalMacros && (
+            <div className="rounded-2xl border border-gray-600 bg-gray-900/40 px-4 py-3 text-sm text-gray-100">
+              <p className="font-semibold mb-2">Tvoj sažetak izračuna</p>
+              <ul className="grid gap-1 sm:grid-cols-2">
+                <li>
+                  Kalorije:{" "}
+                  <span className="font-semibold">{finalMacros.calories}</span> kcal/dan
+                </li>
+                <li>
+                  Proteini:{" "}
+                  <span className="font-semibold">{finalMacros.protein.toFixed(1)}</span> g/dan
+                </li>
+                <li>
+                  Ugljikohidrati:{" "}
+                  <span className="font-semibold">{finalMacros.carbs.toFixed(1)}</span> g/dan
+                </li>
+                <li>
+                  Masti:{" "}
+                  <span className="font-semibold">{finalMacros.fat.toFixed(1)}</span> g/dan
+                </li>
+              </ul>
+            </div>
+          )}
+          {finalDataSubmitted ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="flex flex-col items-center justify-center py-12 text-center"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                className="text-6xl mb-4"
+              >
+                ✓
+              </motion.div>
+              <motion.h2
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="text-3xl font-bold text-[#F4F4F4] mb-2"
+                style={{ fontFamily: "var(--font-inter), sans-serif" }}
+              >
+                Podaci su spremljeni! Sada možete generirati plan prehrane.
+              </motion.h2>
+            </motion.div>
+          ) : (
+            <>
+              {/* Input polja za kontakt podatke */}
+              <div className="rounded-[20px] border border-[#E8E8E8] bg-white/80 backdrop-blur-sm p-5 text-sm text-[#1A1A1A] space-y-4">
+                <p className="font-semibold text-[#1A1A1A] mb-4">Kontakt podaci</p>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ime (opcionalno)
+                  </label>
+                  <input
+                    type="text"
+                    value={intakeForm.name || ""}
+                    onChange={(e) => updateIntakeForm("name", e.target.value)}
+                    placeholder="Tvoje ime"
+                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm text-[#1A1A1A] focus:border-[#4B0082] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email (opcionalno)
+                  </label>
+                  <input
+                    type="email"
+                    value={intakeForm.email || ""}
+                    onChange={(e) => updateIntakeForm("email", e.target.value)}
+                    placeholder="tvoj@email.com"
+                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm text-[#1A1A1A] focus:border-[#4B0082] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Telefon (opcionalno)
+                  </label>
+                  <input
+                    type="tel"
+                    value={intakeForm.phone || ""}
+                    onChange={(e) => updateIntakeForm("phone", e.target.value)}
+                    placeholder="+385 12 345 678"
+                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm text-[#1A1A1A] focus:border-[#4B0082] focus:outline-none"
+                  />
+                </div>
+              </div>
+              
+              <div className="rounded-[20px] border border-[#E8E8E8] bg-white/80 backdrop-blur-sm p-5 text-sm text-[#1A1A1A]">
+                <p className="font-semibold text-[#1A1A1A] mb-4">Tvoje kalkulacije</p>
+                <div className="space-y-3">
+                  {bmrResult && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">BMR:</span>
+                      <span className="font-semibold text-[#1A1A1A]">{bmrResult.toFixed(0)} kcal</span>
+                    </div>
+                  )}
+                  {tdeeResult && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">TDEE:</span>
+                      <span className="font-semibold text-[#1A1A1A]">{tdeeResult.toFixed(0)} kcal</span>
+                    </div>
+                  )}
+                  {targetResult && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Target Calories:</span>
+                      <span className="font-semibold text-[#1A1A1A]">{targetResult.toFixed(0)} kcal</span>
+                    </div>
+                  )}
+                  {macrosResult && (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Proteini:</span>
+                        <span className="font-semibold text-[#1A1A1A]">{macrosResult.protein.toFixed(1)}g</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Ugljikohidrati:</span>
+                        <span className="font-semibold text-[#1A1A1A]">{macrosResult.carbs.toFixed(1)}g</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Masti:</span>
+                        <span className="font-semibold text-[#1A1A1A]">{macrosResult.fats.toFixed(1)}g</span>
+                      </div>
+                    </>
+                  )}
+                  {(!bmrResult || !tdeeResult || !targetResult || !macrosResult) && (
+                    <div className="text-red-600 text-sm mt-2">
+                      ⚠️ Molimo izračunajte sve kalkulacije (BMR, TDEE, Target Calories, Makrosi) prije slanja podataka.
+                    </div>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={submitFinalData}
+                disabled={isSubmittingFinalData || !bmrResult || !tdeeResult || !targetResult || !macrosResult}
+                className={clsx(
+                  "w-full rounded-[20px] bg-[#4B0082] px-6 py-4 text-lg font-semibold text-white transition-all",
+                  "hover:bg-[#5a0099] focus:outline-none focus:ring-2 focus:ring-[#4B0082] focus:ring-offset-2",
+                  "disabled:opacity-50 disabled:cursor-not-allowed"
+                )}
+                style={{ fontFamily: "var(--font-inter), sans-serif" }}
+              >
+                {isSubmittingFinalData ? "Šaljem..." : "Pošalji podatke"}
+              </button>
+            </>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "meals",
+      title: "Plan Prehrane",
+      description: "Personalizirani tjedni meni prilagođen tvojim kalorijama i makrosima.",
+      render: (
+        <div className="flex flex-col h-full w-full min-h-0 overflow-y-auto">
+          {weeklyMealPlan ? (
+            // Prikaz samo plana prehrane
+            <div className="flex-1 overflow-y-auto pb-32 px-1 min-h-0" style={{ paddingBottom: '10rem', height: '100%', maxHeight: 'none' }}>
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-3xl font-bold text-gray-900">Plan Prehrane</h2>
+                <button
+                  onClick={() => {
+                    setWeeklyMealPlan(null);
+                    setWeeklyPlanError(null);
+                  }}
+                  className="rounded-full bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-3 text-base font-semibold text-white transition hover:opacity-90 hover:shadow-xl"
+                >
+                  🆕 Novi plan prehrane
+                </button>
+              </div>
+
+              {/* Prikaz tjednog plana */}
+              <div className="space-y-6 pb-8">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-2xl font-bold text-gray-900 mb-2">Sedmodnevni Plan Prehrane</h4>
+                    <p className="text-gray-600 text-sm">
+                      Tjedan: {new Date(weeklyMealPlan.weekStartDate).toLocaleDateString('hr-HR', { 
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric' 
+                      })} - {new Date(new Date(weeklyMealPlan.weekStartDate).getTime() + 6 * 24 * 60 * 60 * 1000).toLocaleDateString('hr-HR', { 
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric' 
+                      })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Tjedni prosjek */}
+                {weeklyMealPlan.weeklyAverage && (
+                  <div className="rounded-2xl border border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 p-4 shadow-lg">
+                    <h5 className="text-lg font-semibold text-gray-900 mb-3">Tjedni Prosjek</h5>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500">Kalorije</p>
+                        <p className="text-xl font-bold text-gray-900">{weeklyMealPlan.weeklyAverage.calories.toFixed(0)}</p>
+                        <p className="text-xs text-gray-500">Dev: {weeklyMealPlan.weeklyAverage.deviation.calories.toFixed(1)}%</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Proteini</p>
+                        <p className="text-xl font-bold text-gray-900">{weeklyMealPlan.weeklyAverage.protein.toFixed(1)}g</p>
+                        <p className="text-xs text-gray-500">Dev: {weeklyMealPlan.weeklyAverage.deviation.protein.toFixed(1)}%</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Ugljikohidrati</p>
+                        <p className="text-xl font-bold text-gray-900">{weeklyMealPlan.weeklyAverage.carbs.toFixed(1)}g</p>
+                        <p className="text-xs text-gray-500">Dev: {weeklyMealPlan.weeklyAverage.deviation.carbs.toFixed(1)}%</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Masti</p>
+                        <p className="text-xl font-bold text-gray-900">{weeklyMealPlan.weeklyAverage.fat.toFixed(1)}g</p>
+                        <p className="text-xs text-gray-500">Dev: {weeklyMealPlan.weeklyAverage.deviation.fat.toFixed(1)}%</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-gray-300">
+                      <p className="text-xs text-gray-600">
+                        Ukupno odstupanje: <span className="text-base font-bold text-gray-900">{weeklyMealPlan.weeklyAverage.deviation.total.toFixed(1)}%</span>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Plan za svaki dan */}
+                {weeklyMealPlan.days && weeklyMealPlan.days.length > 0 ? (
+                  <div className="space-y-4">
+                    {weeklyMealPlan.days.map((day: any, index: number) => {
+                      const dayNames = ['Ponedjeljak', 'Utorak', 'Srijeda', 'Četvrtak', 'Petak', 'Subota', 'Nedjelja'];
+                      const dayName = dayNames[index] || `Dan ${index + 1}`;
+                      const date = day.date ? new Date(day.date).toLocaleDateString('hr-HR', { day: 'numeric', month: 'long' }) : '';
+                      
+                      const mealsArray = day.meals ? [
+                        { name: 'Doručak', meal: day.meals.breakfast },
+                        { name: 'Ručak', meal: day.meals.lunch },
+                        { name: 'Večera', meal: day.meals.dinner },
+                        { name: 'Užina', meal: day.meals.snack }
+                      ].filter(item => item.meal) : [];
+
+                      return (
+                        <div key={day.date || `day-${index}`} className="p-4 rounded-lg border border-gray-200 bg-white/70 backdrop-blur-sm shadow-lg space-y-3">
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="font-semibold text-lg text-gray-900">{dayName}</h3>
+                            {date && <p className="text-sm text-gray-600">{date}</p>}
+                            {day.total && (
+                              <div className="text-right">
+                                <p className="text-xs text-gray-500">Ukupno</p>
+                                <p className="text-base font-bold text-gray-900">{day.total.calories?.toFixed(0) || 0} kcal</p>
+                                <p className="text-xs text-gray-500">
+                                  P: {day.total.protein?.toFixed(1) || 0}g | C: {day.total.carbs?.toFixed(1) || 0}g | M: {day.total.fat?.toFixed(1) || 0}g
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="grid gap-3 md:grid-cols-2">
+                            {mealsArray.map((item, mealIndex) => (
+                              item.meal && (
+                                <div key={mealIndex} className="border border-gray-200 p-3 rounded-md bg-gray-50">
+                                  <div className="font-medium text-gray-900 mb-2">{item.name}: {item.meal.name || 'N/A'}</div>
+                                  <div className="text-sm text-gray-600 space-y-1">
+                                    <div className="flex justify-between">
+                                      <span>Kalorije:</span>
+                                      <span className="font-medium">{item.meal.calories?.toFixed(0) || 0} kcal</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span>Proteini:</span>
+                                      <span className="font-medium">{item.meal.protein?.toFixed(1) || 0}g</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span>Ugljikohidrati:</span>
+                                      <span className="font-medium">{item.meal.carbs?.toFixed(1) || 0}g</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span>Masti:</span>
+                                      <span className="font-medium">{item.meal.fat?.toFixed(1) || 0}g</span>
+                                    </div>
+                                  </div>
+                                  {item.meal.score !== undefined && (
+                                    <div className="mt-2 pt-2 border-t border-gray-200">
+                                      <div className="flex justify-between text-xs">
+                                        <span className="text-gray-500">Score:</span>
+                                        <span className="font-semibold text-blue-600">{(item.meal.score * 100).toFixed(1)}%</span>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : !showMealPlan ? (
+            <div className="flex-1 overflow-y-auto space-y-6 pb-32 px-1 min-h-0" style={{ paddingBottom: '10rem' }}>
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Kako funkcionira</h3>
+                <p className="text-gray-600 text-sm mb-4">
+                  Plan prehrane se generira na temelju tvojih izračunatih kalorija i makroa. 
+                  Svaki obrok je prilagođen tvojim ciljevima i preferencijama.
+                </p>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li>• <strong>Tjedni meni</strong> - 7 dana, 3-4 obroka dnevno</li>
+                  <li>• <strong>Zdrave namirnice</strong> - bez slatkiša, nezdravih masti, svinjetine</li>
+                  <li>• <strong>Dvije opcije</strong> - slatko ili slano, isti makrosi</li>
+                  <li>• <strong>Popis za kupnju</strong> - sve što trebaš za tjedan</li>
+                </ul>
+              </div>
+
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Što dobivaš</h3>
+                <p className="text-gray-600 text-sm mb-4">
+                  Svaki plan uključuje detaljne recepte, količine, kalorije i makroe po obroku. 
+                  Možeš prilagoditi prema svojim preferencijama i dostupnim namirnicama.
+                </p>
+              </div>
+
+              {/* Kvačica za generiranje plana prehrane */}
+              {macrosResult && macrosConfirmed && (
+                <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl">
+                  <div className="space-y-4">
+                    <div className="text-center">
+                      <h3 className="text-xl font-semibold text-[#1A1A1A] mb-2">Spremno za generiranje plana prehrane</h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Svi izračuni su potvrđeni. Odaberi preferencu i generiraj plan.
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Preferenca</label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <button
+                          onClick={() => setMealPlanPreference("sweet")}
+                          className={`rounded-[16px] border-2 p-4 text-center transition ${
+                            mealPlanPreference === "sweet"
+                              ? "border-[#1A1A1A] bg-[#1A1A1A] text-white"
+                              : "border-[#E8E8E8] bg-white text-[#1A1A1A] hover:border-[#1A1A1A]"
+                          }`}
+                        >
+                          <div className="font-semibold">Slatko</div>
+                          <div className="text-xs mt-1 opacity-80">Voće, zobene, med, jogurt</div>
+                        </button>
+                        <button
+                          onClick={() => setMealPlanPreference("savory")}
+                          className={`rounded-[16px] border-2 p-4 text-center transition ${
+                            mealPlanPreference === "savory"
+                              ? "border-gray-900 bg-gray-900 text-white"
+                              : "border-gray-300 bg-white text-gray-900 hover:border-gray-400"
+                          }`}
+                        >
+                          <div className="font-semibold">Slano</div>
+                          <div className="text-xs mt-1 opacity-80">Meso, povrće, riža, jaja</div>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={async () => {
+                        const clientId = localStorage.getItem("clientId");
+                        if (!clientId) {
+                          setMealPlanError("Prvo moraš izračunati svoje kalorije i makroe. Provjeri da li si prijavljen.");
+                          return;
+                        }
+
+                        setGeneratingMealPlan(true);
+                        setMealPlanError(null);
+
+                        try {
+                          const response = await fetch("/api/meal-plan/pro/generate", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ userId: clientId }),
+                          });
+
+                          if (!response.ok) {
+                            const errorData = await response.json().catch(() => ({}));
+                            throw new Error(errorData.message || "Greška pri generiranju plana prehrane");
+                          }
+
+                          const data = await response.json();
+                          if (!data.ok || !data.plan) {
+                            throw new Error(data.message || "Plan prehrane nije generiran");
+                          }
+
+                          // Konvertuj PRO plan u format koji se prikazuje
+                          const proPlan = data.plan;
+                          setGeneratedMealPlan(proPlan);
+                        setShowMealPlan(true);
+                        } catch (error) {
+                          console.error("Error generating meal plan:", error);
+                          setMealPlanError(error instanceof Error ? error.message : "Greška pri generiranju plana prehrane");
+                        } finally {
+                          setGeneratingMealPlan(false);
+                        }
+                      }}
+                      disabled={generatingMealPlan}
+                      className={clsx(
+                        "w-full rounded-[16px] px-6 py-3 text-white font-semibold transition hover:-translate-y-0.5 hover:shadow-lg",
+                        generatingMealPlan
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-[#1A1A1A] hover:bg-[#2A2A2A]"
+                      )}
+                    >
+                      {generatingMealPlan ? "⏳ Generiranje..." : "✓ Generiraj PRO Plan Prehrane"}
+                    </button>
+                    
+                    {mealPlanError && (
+                      <div className="mt-4 p-4 rounded-[12px] bg-red-50 border border-red-200">
+                        <p className="text-sm text-red-600">{mealPlanError}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex-1 overflow-y-auto pb-32 px-1 min-h-0 h-full" style={{ paddingBottom: '10rem', height: '100%', maxHeight: 'none' }}>
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl flex flex-col w-full">
+              <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                <h3 className="text-2xl font-semibold text-[#1A1A1A]">PRO Plan Prehrane</h3>
+                <button
+                  onClick={() => {
+                    setShowMealPlan(false);
+                    setGeneratedMealPlan(null);
+                    setMealPlanError(null);
+                  }}
+                  className="text-gray-500 hover:text-[#1A1A1A] text-xl transition"
+                >
+                  ×
+                </button>
+              </div>
+              
+              {generatedMealPlan && (
+                <div className="space-y-4">
+                  {/* PRO Plan Format */}
+                  {generatedMealPlan.breakfast ? (
+                    <>
+                      {/* Breakfast */}
+                      <div className="rounded-[16px] bg-gray-50 p-4">
+                        <h4 className="font-semibold text-gray-900 mb-3">🍳 Doručak: {generatedMealPlan.breakfast.name}</h4>
+                        <div className="text-xs text-gray-600 mb-2">
+                          {generatedMealPlan.breakfast.calories.toFixed(0)} kcal | P: {generatedMealPlan.breakfast.protein.toFixed(1)}g | U: {generatedMealPlan.breakfast.carbs.toFixed(1)}g | M: {generatedMealPlan.breakfast.fat.toFixed(1)}g
+                        </div>
+                        {generatedMealPlan.breakfast.score !== undefined && (
+                          <div className="text-xs text-gray-500">
+                            Score: {(generatedMealPlan.breakfast.score * 100).toFixed(1)}%
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Lunch */}
+                      <div className="rounded-[16px] bg-gray-50 p-4">
+                        <h4 className="font-semibold text-gray-900 mb-3">🍽️ Ručak: {generatedMealPlan.lunch.name}</h4>
+                        <div className="text-xs text-gray-600 mb-2">
+                          {generatedMealPlan.lunch.calories.toFixed(0)} kcal | P: {generatedMealPlan.lunch.protein.toFixed(1)}g | U: {generatedMealPlan.lunch.carbs.toFixed(1)}g | M: {generatedMealPlan.lunch.fat.toFixed(1)}g
+                        </div>
+                        {generatedMealPlan.lunch.score !== undefined && (
+                          <div className="text-xs text-gray-500">
+                            Score: {(generatedMealPlan.lunch.score * 100).toFixed(1)}%
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Dinner */}
+                      <div className="rounded-[16px] bg-gray-50 p-4">
+                        <h4 className="font-semibold text-gray-900 mb-3">🍲 Večera: {generatedMealPlan.dinner.name}</h4>
+                        <div className="text-xs text-gray-600 mb-2">
+                          {generatedMealPlan.dinner.calories.toFixed(0)} kcal | P: {generatedMealPlan.dinner.protein.toFixed(1)}g | U: {generatedMealPlan.dinner.carbs.toFixed(1)}g | M: {generatedMealPlan.dinner.fat.toFixed(1)}g
+                        </div>
+                        {generatedMealPlan.dinner.score !== undefined && (
+                          <div className="text-xs text-gray-500">
+                            Score: {(generatedMealPlan.dinner.score * 100).toFixed(1)}%
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Snack */}
+                      <div className="rounded-[16px] bg-gray-50 p-4">
+                        <h4 className="font-semibold text-gray-900 mb-3">🍎 Užina: {generatedMealPlan.snack.name}</h4>
+                        <div className="text-xs text-gray-600 mb-2">
+                          {generatedMealPlan.snack.calories.toFixed(0)} kcal | P: {generatedMealPlan.snack.protein.toFixed(1)}g | U: {generatedMealPlan.snack.carbs.toFixed(1)}g | M: {generatedMealPlan.snack.fat.toFixed(1)}g
+                        </div>
+                        {generatedMealPlan.snack.score !== undefined && (
+                          <div className="text-xs text-gray-500">
+                            Score: {(generatedMealPlan.snack.score * 100).toFixed(1)}%
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Total Summary */}
+                      {generatedMealPlan.total && (
+                        <div className="rounded-[16px] bg-[#1A1A1A] text-white p-4 mt-4">
+                          <h4 className="font-semibold mb-3">📊 Ukupno dnevno</h4>
+                          <div className="text-sm mb-2">
+                            {generatedMealPlan.total.calories.toFixed(0)} kcal | P: {generatedMealPlan.total.protein.toFixed(1)}g | U: {generatedMealPlan.total.carbs.toFixed(1)}g | M: {generatedMealPlan.total.fat.toFixed(1)}g
+                          </div>
+                          {generatedMealPlan.total.deviation && (
+                            <div className="text-xs text-gray-300">
+                              Odstupanje: {generatedMealPlan.total.deviation.total.toFixed(1)}%
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      <div className="text-center mt-4">
+                        <button
+                          onClick={() => {
+                            const clientId = localStorage.getItem("clientId");
+                            if (clientId) {
+                              window.location.href = `/app/meals`;
+                            }
+                          }}
+                          className="rounded-[16px] bg-[#1A1A1A] px-6 py-3 text-white font-semibold transition hover:bg-[#2A2A2A]"
+                        >
+                          Pregledaj Kompletan Plan →
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    // Legacy format (fallback)
+                    <>
+                  {generatedMealPlan.slice(0, 3).map((day: any, idx: number) => (
+                    <div key={idx} className="rounded-[16px] bg-gray-50 p-4">
+                      <h4 className="font-semibold text-gray-900 mb-3">Dan {day.day}</h4>
+                      <div className="space-y-3 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-700">Doručak: </span>
+                          <span className="text-gray-600">{day.breakfast.foods.map((f: any) => `${f.name} (${f.amount}g)`).join(", ")}</span>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {day.breakfast.totalCalories} kcal | P: {day.breakfast.totalProtein}g | U: {day.breakfast.totalCarbs}g | M: {day.breakfast.totalFats}g
+                          </div>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Ručak: </span>
+                          <span className="text-gray-600">{day.lunch.foods.map((f: any) => `${f.name} (${f.amount}g)`).join(", ")}</span>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {day.lunch.totalCalories} kcal | P: {day.lunch.totalProtein}g | U: {day.lunch.totalCarbs}g | M: {day.lunch.totalFats}g
+                          </div>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Večera: </span>
+                          <span className="text-gray-600">{day.dinner.foods.map((f: any) => `${f.name} (${f.amount}g)`).join(", ")}</span>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {day.dinner.totalCalories} kcal | P: {day.dinner.totalProtein}g | U: {day.dinner.totalCarbs}g | M: {day.dinner.totalFats}g
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="text-xs text-gray-500 text-center">
+                    (Prikazano prvih 3 dana. Kompletan plan ima 7 dana)
+                  </div>
+                    </>
+                  )}
+                  
+                  <p className="text-lg font-semibold text-gray-900 text-center mt-4" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+                    Dobar tek! 🍽️
+                  </p>
+                </div>
+              )}
+            </div>
+            </div>
+          )}
+
+          {/* Gumb za otvaranje stranice plana prehrane - SAKRIVEN KADA JE PLAN GENERIRAN */}
+          {!weeklyMealPlan && (
+            <div className="mt-6 mb-4 px-1">
+              <button
+                onClick={() => {
+                  if (typeof window !== "undefined" && router) {
+                    router.push("/app/meals");
+                  } else {
+                    window.location.href = "/app/meals";
+                  }
+                }}
+                className="w-full rounded-[16px] px-6 py-4 text-lg font-bold text-white bg-[#1A1A1A] hover:bg-[#2A2A2A] transition hover:-translate-y-0.5 hover:shadow-xl"
+                style={{ minHeight: '56px' }}
+              >
+                📋 Generiraj plan
+              </button>
+            </div>
+          )}
+
+          {/* Gumb za generiranje tjednog plana prehrane (7 dana) - SAKRIVEN KADA JE PLAN GENERIRAN */}
+          {!weeklyMealPlan && (
+          <div className="mt-6 mb-4 rounded-[24px] bg-gradient-to-r from-purple-50 to-purple-100 border-2 border-purple-300 p-6 shadow-xl flex-shrink-0" id="weekly-plan-generator">
+            <h3 className="text-xl font-bold text-[#1A1A1A] mb-3">Tjedni PRO Plan Prehrane (7 dana)</h3>
+                <p className="text-sm text-gray-700 mb-4">
+                  Generiraj kompletan tjedni plan prehrane (7 dana) sa raznolikošću i optimizacijom makronutrijenata sukladno tvojim unesenim vrijednostima.
+                </p>
+                <button
+                  onClick={async () => {
+                    const clientId = localStorage.getItem("clientId");
+                    if (!clientId) {
+                      setWeeklyPlanError("Prvo moraš izračunati svoje kalorije i makroe. Provjeri da li si prijavljen.");
+                      return;
+                    }
+
+                    setGeneratingWeeklyPlan(true);
+                    setWeeklyPlanError(null);
+
+                    try {
+                      const response = await fetch("/api/meal-plan/pro/weekly", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ userId: clientId }),
+                      });
+
+                      if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.message || "Greška pri generiranju tjednog plana");
+                      }
+
+                      const data = await response.json();
+
+                      console.log("📦 API Response:", data);
+                      console.log("📋 Plan data:", data.plan);
+                      console.log("📊 Plan days:", data.plan?.days?.length);
+
+                      if (!data.ok || !data.plan) {
+                        throw new Error(data.message || "Tjedni plan nije generiran");
+                      }
+
+                      setWeeklyMealPlan(data.plan);
+                      console.log("✅ Plan postavljen u state:", data.plan);
+                    } catch (error) {
+                      console.error("Error generating weekly meal plan:", error);
+                      setWeeklyPlanError(error instanceof Error ? error.message : "Greška pri generiranju tjednog plana");
+                    } finally {
+                      setGeneratingWeeklyPlan(false);
+                    }
+                  }}
+                  disabled={generatingWeeklyPlan}
+                  className={clsx(
+                    "w-full rounded-[16px] px-6 py-4 text-lg font-bold text-white transition hover:-translate-y-0.5 hover:shadow-xl",
+                    generatingWeeklyPlan
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+                  )}
+                  style={{ minHeight: '56px' }}
+                >
+                  {generatingWeeklyPlan ? "⏳ Generiram tjedni plan (7 dana)..." : "✓ Generiraj tjedni plan prehrane (7 dana)"}
+                </button>
+
+                {/* Prikaz greške */}
+                {weeklyPlanError && (
+                  <div className="mt-4 p-4 rounded-[12px] bg-red-50 border border-red-200">
+                    {weeklyPlanError.includes("Nisu pronađene kalkulacije") || weeklyPlanError.includes("kalkulacije") ? (
+                      <div>
+                        <p className="text-sm font-semibold text-red-700 mb-2">
+                          Prvo popuni kalkulator da izračunamo tvoj plan.
+                        </p>
+                        <p className="text-xs text-red-600 mb-3">
+                          Idi na{" "}
+                          <a href="/app/calculator" className="underline font-semibold">
+                            Kalkulator Kalorija
+                          </a>{" "}
+                          i izračunaj svoje dnevne potrebe za kalorijama i makronutrijentima.
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-red-600">{weeklyPlanError}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+          )}
+
+        </div>
+      ),
+    },
+    {
+      id: "training",
+      title: "Plan Treninga",
+      description: "Personalizirani plan treninga prilagođen tvojim ciljevima i aktivnostima.",
+      render: (
+        <div className="h-full overflow-y-auto flex flex-col min-h-0">
+          {!showTrainingPlan ? (
+            <div className="flex-1 overflow-y-auto space-y-6">
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Što uključuje</h3>
+                <ul className="space-y-2 text-sm text-gray-600 mb-4">
+                  <li>• <strong>Zagrijavanje</strong> - 3 opcije (treadmill, bike, bodyweight)</li>
+                  <li>• <strong>Vježbe</strong> - s mogućnošću slikanja sprava, ponavljanjima, setovima i odmorom</li>
+                  <li>• <strong>Alternative</strong> - zamjenske vježbe za svaku vježbu</li>
+                  <li>• <strong>4 serije do otkaza</strong> - za sve vježbe</li>
+                  <li>• <strong>Trbuh na kraju</strong> - svaki trening završava s trbušnjacima</li>
+                  <li>• <strong>Procijenjene kalorije</strong> - koliko sagoriš po treningu</li>
+                </ul>
+              </div>
+
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
+                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Tipovi treninga</h3>
+                <ul className="space-y-2 text-sm text-gray-600 mb-4">
+                  <li>• <strong>Push/Pull/Legs</strong> - Split za teretanu (3 ili 5 dana)</li>
+                  <li>• <strong>Kružni trening - Teretana</strong> - Po spravama</li>
+                  <li>• <strong>Kružni trening - Vlastito tijelo</strong> - Bodyweight + Tabata</li>
+                </ul>
+              </div>
+
+              {/* Odabir opcija za plan treninga */}
+              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl">
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <h3 className="text-xl font-semibold text-[#1A1A1A] mb-2">Kreiraj Plan Treninga</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Odaberi tip treninga, split, učestalost i spol.
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Tip Treninga</label>
+                    <div className="grid grid-cols-3 gap-3">
+                      <button
+                        onClick={() => setTrainingType("gym")}
+                        className={`rounded-[16px] border-2 p-3 text-center transition ${
+                          trainingType === "gym"
+                            ? "border-[#1A1A1A] bg-[#1A1A1A] text-white"
+                            : "border-[#E8E8E8] bg-white text-[#1A1A1A] hover:border-[#1A1A1A]"
+                        }`}
+                      >
+                        <div className="font-semibold text-sm">Teretana</div>
+                        <div className="text-xs mt-1 opacity-80">Split</div>
+                      </button>
+                      <button
+                        onClick={() => setTrainingType("circuit-gym")}
+                        className={`rounded-[16px] border-2 p-3 text-center transition ${
+                          trainingType === "circuit-gym"
+                            ? "border-[#1A1A1A] bg-[#1A1A1A] text-white"
+                            : "border-[#E8E8E8] bg-white text-[#1A1A1A] hover:border-[#1A1A1A]"
+                        }`}
+                      >
+                        <div className="font-semibold text-sm">Kružni</div>
+                        <div className="text-xs mt-1 opacity-80">Sprave</div>
+                      </button>
+                      <button
+                        onClick={() => setTrainingType("circuit-bodyweight")}
+                        className={`rounded-[16px] border-2 p-3 text-center transition ${
+                          trainingType === "circuit-bodyweight"
+                            ? "border-[#1A1A1A] bg-[#1A1A1A] text-white"
+                            : "border-[#E8E8E8] bg-white text-[#1A1A1A] hover:border-[#1A1A1A]"
+                        }`}
+                      >
+                        <div className="font-semibold text-sm">Kružni</div>
+                        <div className="text-xs mt-1 opacity-80">Tijelo</div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {trainingType === "gym" && (
+                      <div>
+                      <div>
+                        <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Split</label>
+                        <select
+                          value={trainingSplit}
+                          onChange={(e) => setTrainingSplit(e.target.value as TrainingSplit)}
+                          className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
+                        >
+                          <option value="push-pull-legs">Push/Pull/Legs</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Učestalost</label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <button
+                            onClick={() => setTrainingFrequency("3-days")}
+                            className={`rounded-[16px] border-2 p-3 text-center transition ${
+                              trainingFrequency === "3-days"
+                                ? "border-gray-900 bg-gray-900 text-white"
+                                : "border-gray-300 bg-white text-gray-900 hover:border-gray-400"
+                            }`}
+                          >
+                            <div className="font-semibold">3 dana</div>
+                          </button>
+                          <button
+                            onClick={() => setTrainingFrequency("5-days")}
+                            className={`rounded-[16px] border-2 p-3 text-center transition ${
+                              trainingFrequency === "5-days"
+                                ? "border-gray-900 bg-gray-900 text-white"
+                                : "border-gray-300 bg-white text-gray-900 hover:border-gray-400"
+                            }`}
+                          >
+                            <div className="font-semibold">5 dana</div>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Spol</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => setTrainingGender("male")}
+                        className={`rounded-[16px] border-2 p-3 text-center transition ${
+                          trainingGender === "male"
+                            ? "border-[#1A1A1A] bg-[#1A1A1A] text-white"
+                            : "border-[#E8E8E8] bg-white text-[#1A1A1A] hover:border-[#1A1A1A]"
+                        }`}
+                      >
+                        <div className="font-semibold">Muškarac</div>
+                      </button>
+                      <button
+                        onClick={() => setTrainingGender("female")}
+                        className={`rounded-[16px] border-2 p-3 text-center transition ${
+                          trainingGender === "female"
+                            ? "border-[#1A1A1A] bg-[#1A1A1A] text-white"
+                            : "border-[#E8E8E8] bg-white text-[#1A1A1A] hover:border-[#1A1A1A]"
+                        }`}
+                      >
+                        <div className="font-semibold">Žena</div>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={() => {
+                      const plan = generateTrainingPlan(
+                        trainingSplit,
+                        typeof trainingFrequency === "string" && (trainingFrequency === "3-days" || trainingFrequency === "5-days") ? trainingFrequency : "3-days",
+                        trainingType,
+                        trainingGender
+                      );
+                      setGeneratedTrainingPlan(plan);
+                      setShowTrainingPlan(true);
+                      setSelectedWorkout(0);
+                    }}
+                    className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-3 text-white font-semibold transition hover:-translate-y-0.5 hover:shadow-lg"
+                  >
+                    ✓ Generiraj Plan Treninga
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl h-full overflow-y-auto flex flex-col">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-2xl font-semibold text-[#1A1A1A]">{generatedTrainingPlan?.nameHr}</h3>
+                <button
+                  onClick={() => {
+                    setShowTrainingPlan(false);
+                    setSelectedWorkout(null);
+                  }}
+                  className="text-gray-500 hover:text-[#1A1A1A] text-xl transition"
+                >
+                  ×
+                </button>
+              </div>
+              
+              {generatedTrainingPlan && (
+                <div className="space-y-4">
+                  {/* Odabir treninga */}
+                  <div>
+                    <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Odaberi Trening</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {generatedTrainingPlan.workouts.map((workout, idx) => (
+                        <button
+                          key={workout.id}
+                          onClick={() => setSelectedWorkout(idx)}
+                          className={`rounded-[16px] border-2 p-3 text-center transition ${
+                            selectedWorkout === idx
+                              ? "border-gray-900 bg-gray-900 text-white"
+                              : "border-gray-300 bg-white text-gray-900 hover:border-gray-400"
+                          }`}
+                        >
+                          <div className="font-semibold text-sm">{workout.nameHr}</div>
+                          <div className="text-xs mt-1 opacity-80">Dan {workout.day}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Prikaz odabranog treninga */}
+                  {selectedWorkout !== null && generatedTrainingPlan.workouts[selectedWorkout] && (
+                    <div className="space-y-4 max-h-96 overflow-y-auto">
+                      {(() => {
+                        const workout = generatedTrainingPlan.workouts[selectedWorkout];
+                        return (
+                          <div>
+                            <div className="rounded-[16px] bg-gray-50 p-4">
+                              <h4 className="font-semibold text-gray-900 mb-2">Zagrijavanje</h4>
+                              <p className="text-sm text-gray-600">
+                                {workout.warmup.type === "treadmill" && "🏃 Treadmill"}
+                                {workout.warmup.type === "bike" && "🚴 Bicikl"}
+                                {workout.warmup.type === "bodyweight" && "🤸 Bodyweight"}
+                                {" - "}{workout.warmup.duration} minuta
+                              </p>
+                            </div>
+
+                            <div>
+                              <h4 className="font-semibold text-gray-900 mb-3">Vježbe</h4>
+                              <div className="space-y-3">
+                                {workout.exercises.map((ex, idx) => (
+                                  <div key={idx} className="rounded-[16px] bg-gray-50 p-4 border border-gray-200">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <div>
+                                        <h5 className="font-semibold text-gray-900">{ex.exercise.nameHr}</h5>
+                                        <p className="text-xs text-gray-500">{ex.exercise.muscleGroupHr} · {ex.exercise.equipmentHr}</p>
+                                      </div>
+                                      <button
+                                        className="text-xs text-gray-500 hover:text-gray-900 underline"
+                                        onClick={() => {
+                                          // TODO: Implementirati upload slike sprave
+                                          alert("Funkcionalnost za slikanje sprave će biti dodana.");
+                                        }}
+                                      >
+                                        📷 Slikaj spravu
+                                      </button>
+                                    </div>
+                                    <div className="text-sm text-gray-600 space-y-1">
+                                      <p>{ex.sets} serije × {ex.reps}</p>
+                                      <p>Odmor: {ex.restSeconds} sekundi</p>
+                                    </div>
+                                    {ex.alternatives.length > 0 && (
+                                      <div className="mt-2">
+                                        <p className="text-xs font-medium text-gray-700 mb-1">Alternative:</p>
+                                        <div className="flex flex-wrap gap-2">
+                                          {ex.alternatives.map((alt, altIdx) => (
+                                            <span key={altIdx} className="text-xs bg-gray-200 px-2 py-1 rounded">
+                                              {alt.nameHr}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div>
+                              <h4 className="font-semibold text-gray-900 mb-3">Trbuh</h4>
+                              <div className="space-y-3">
+                                {workout.coreExercises.map((ex, idx) => (
+                                  <div key={idx} className="rounded-[16px] bg-gray-50 p-4 border border-gray-200">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <div>
+                                        <h5 className="font-semibold text-gray-900">{ex.exercise.nameHr}</h5>
+                                        <p className="text-xs text-gray-500">{ex.exercise.muscleGroupHr}</p>
+                                      </div>
+                                    </div>
+                                    <div className="text-sm text-gray-600 space-y-1">
+                                      <p>{ex.sets} serije × {ex.reps}</p>
+                                      <p>Odmor: {ex.restSeconds} sekundi</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="rounded-[16px] bg-gray-900 text-white p-4 text-center">
+                              <div className="text-sm opacity-80 mb-1">Procijenjene kalorije</div>
+                              <div className="text-2xl font-bold">{workout.estimatedCalories}</div>
+                              <div className="text-xs opacity-70 mt-1">kcal</div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "chat",
+      title: "AI Chat",
+      description: "Pitaj bilo što o prehrani, treningu i zdravom načinu života.",
+      render: (
+        <div className="space-y-6">
+          <div className="rounded-[16px] bg-white/60 backdrop-blur-sm border border-gray-200 p-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">Kako funkcionira</h3>
+            <p className="text-gray-600 text-sm mb-4">
+              AI asistent je dostupan 24/7 da odgovori na tvoja pitanja. Koristi tvoje podatke 
+              (ciljeve, aktivnosti, izračune) da ti da personalizirane odgovore.
+            </p>
+            <ul className="space-y-2 text-sm text-gray-600">
+              <li>• Pitanja o kalorijama i makrosima</li>
+              <li>• Savjeti za trening i oporavak</li>
+              <li>• Prehrambene preporuke</li>
+              <li>• Odgovori na specifična pitanja</li>
+            </ul>
+          </div>
+
+          <div className="rounded-[16px] bg-white/60 backdrop-blur-sm border border-gray-200 p-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">Povijest razgovora</h3>
+            <p className="text-gray-600 text-sm mb-4">
+              Svi razgovori se spremaju, tako da možeš lako pronaći prethodne odgovore i 
+              pratiti svoj napredak kroz vrijeme.
+            </p>
+          </div>
+
+          <div className="rounded-[16px] bg-gradient-to-r from-gray-900 to-gray-700 p-6 text-white">
+            <h3 className="text-xl font-semibold mb-3">Gotovo!</h3>
+            <p className="text-sm opacity-90 mb-4">
+              Uspješno si prošao/la kroz sve alate i funkcionalnosti. Sada možeš nastaviti s 
+              plaćanjem i postavljanjem računa za pristup aplikaciji.
+            </p>
+            <p className="text-xs opacity-70">
+              Klikni "Dalje → Plaćanje" da nastaviš s plaćanjem i aktivacijom računa.
+            </p>
+          </div>
+        </div>
+      ),
+    },
+  ];
+}

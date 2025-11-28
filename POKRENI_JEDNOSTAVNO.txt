@@ -1,0 +1,38 @@
+========================================
+  JEDNOSTAVNO POKRETANJE - 3 KORAKA
+========================================
+
+KORAK 1: Otvori Command Prompt (CMD)
+------------------------------------
+1. Pritisni Win + R
+2. Upiši: cmd
+3. Pritisni Enter
+
+KORAK 2: Upiši OVE 3 KOMANDE (jednu po jednu)
+---------------------------------------------
+
+Komanda 1:
+cd "C:\Users\jasmi\Documents\Česta pitanja\fitness-app"
+
+Komanda 2:
+taskkill /F /IM node.exe
+
+Komanda 3:
+npm run dev
+
+KORAK 3: Sačekaj i Otvori Browser
+---------------------------------
+1. SAČEKAJ 30-60 SEKUNDI
+2. Trebao bi vidjeti: "Ready" ili "Local: http://localhost:3000"
+3. Otvori browser (Chrome/Edge/Firefox)
+4. Upiši: http://localhost:3000
+5. Pritisni Enter
+
+========================================
+  TREBAO BI VIDJETI APLIKACIJU!
+========================================
+
+Ako ne vidiš, javi mi:
+- Što piše u CMD prozoru?
+- Vidiš li grešku?
+

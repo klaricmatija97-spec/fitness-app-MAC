@@ -1,0 +1,53 @@
+═══════════════════════════════════════════════════════════
+  FINALNE UPUTE - POKRENI APLIKACIJU
+═══════════════════════════════════════════════════════════
+
+✅ APLIKACIJA SE POKREĆE U POZADINI!
+
+───────────────────────────────────────────────────────────
+
+📋 ŠTO SADA NAPRAVITI:
+
+1. PRIČEKAJ 30 SEKUNDI
+   → Aplikacija se učitava u pozadini
+
+2. OTVORI BROWSER
+   → Chrome, Edge ili Firefox
+
+3. UPIŠI U ADDRESS BAR:
+   localhost:3000
+   
+4. PRITISNI ENTER
+
+───────────────────────────────────────────────────────────
+
+✅ TREBAO BI VIDJETI:
+───────────────────────────────────────────────────────────
+
+✓ CORPEX naslov
+✓ Bijela pozadina
+✓ Rotirajuće sportske slike
+✓ Onboarding stranicu s pitanjima
+
+───────────────────────────────────────────────────────────
+
+🔄 ALI AKO NE RADI:
+───────────────────────────────────────────────────────────
+
+1. Pronađi fajl "POKRENI_SADA.bat" u folderu fitness-app
+2. Dvaput klikni na njega
+3. Pričekaj "Ready" (20-30 sekundi)
+4. Otvori browser: localhost:3000
+
+───────────────────────────────────────────────────────────
+
+❓ PROBLEMI?
+───────────────────────────────────────────────────────────
+
+Ako ne vidiš aplikaciju:
+→ Provjeri da li si upisao: localhost:3000 (bez http://)
+→ Provjeri da li vidiš crni prozor s "Ready" porukom
+→ Pošalji mi screenshot ako vidiš grešku
+
+═══════════════════════════════════════════════════════════
+

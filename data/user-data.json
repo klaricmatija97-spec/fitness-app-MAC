@@ -1,0 +1,39 @@
+[
+  {
+    "clientId": "9bfac057-5892-4692-85d1-e71d705e0aa3",
+    "gender": "male",
+    "age": 30,
+    "weight": 70,
+    "height": 175,
+    "calculations": {
+      "bmr": 1452,
+      "tdee": 1742,
+      "targetCalories": 1742,
+      "goalType": "maintain",
+      "macros": {
+        "protein": 133,
+        "carbs": 161,
+        "fats": 63
+      },
+      "activityLevel": "sedentary"
+    },
+    "goals": [],
+    "activities": [],
+    "allergies": [],
+    "dietaryRestrictions": [],
+    "injuries": [],
+    "mealPreferences": {
+      "sweet": false,
+      "savory": false,
+      "mealCount": 3
+    },
+    "training": {
+      "frequency": "",
+      "duration": "",
+      "location": "",
+      "type": "",
+      "split": ""
+    },
+    "lastUpdated": "2025-11-24T21:34:33.413Z"
+  }
+]

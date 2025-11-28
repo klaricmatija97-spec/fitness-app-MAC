@@ -1,0 +1,66 @@
+/* Dark Theme System - Crna + Plava */
+
+/* Boje */
+:root {
+  /* Glavne boje */
+  --primary-dark: #0A0A0A;
+  --secondary-dark: #1A1A1A;
+  
+  /* Naglasna boja - Plava */
+  --accent-blue: #3B82F6;
+  --accent-blue-hover: #2563EB;
+  
+  /* Tekst */
+  --text-primary: #FFFFFF;
+  --text-secondary: #E5E7EB;
+  --text-muted: #9CA3AF;
+  
+  /* Border radius - zaobljeni rubovi (8-12px) */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  
+  /* Shadow - moderne sjene (blur 20-30, opacity 0.1) */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1), 0 8px 32px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.1), 0 16px 48px rgba(0, 0, 0, 0.05);
+  --shadow-blue: 0 8px 24px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.1);
+  
+  /* Spacing - veći razmaci */
+  --spacing-xs: 8px;
+  --spacing-sm: 16px;
+  --spacing-md: 24px;
+  --spacing-lg: 32px;
+  --spacing-xl: 48px;
+}
+
+/* Utility klase za tamnu temu */
+.bg-dark-primary { background-color: var(--primary-dark); }
+.bg-dark-secondary { background-color: var(--secondary-dark); }
+.bg-accent-blue { background-color: var(--accent-blue); }
+
+.text-dark-primary { color: var(--text-primary); }
+.text-dark-secondary { color: var(--text-secondary); }
+.text-dark-muted { color: var(--text-muted); }
+
+.border-dark { border-color: #374151; }
+.border-blue { border-color: var(--accent-blue); }
+
+.rounded-dark-sm { border-radius: var(--radius-sm); }
+.rounded-dark-md { border-radius: var(--radius-md); }
+.rounded-dark-lg { border-radius: var(--radius-lg); }
+
+.shadow-dark-sm { box-shadow: var(--shadow-sm); }
+.shadow-dark-md { box-shadow: var(--shadow-md); }
+.shadow-dark-lg { box-shadow: var(--shadow-lg); }
+.shadow-blue { box-shadow: var(--shadow-blue); }
+
+
+
+
+
+
+
+
+
+

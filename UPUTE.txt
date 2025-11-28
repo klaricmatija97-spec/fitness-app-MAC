@@ -1,0 +1,63 @@
+═══════════════════════════════════════════════════════════
+        KAKO OTVORITI CORPEX APLIKACIJU
+═══════════════════════════════════════════════════════════
+
+📋 METODA 1: Batch fajl (NAJJEDNOSTAVNIJE)
+─────────────────────────────────────────
+
+1. U Cursor editoru, u lijevom panelu:
+   → Pronađi folder "fitness-app"
+   → Pronađi fajl "OTVORI_APLIKACIJU.bat"
+
+2. Dvaput klikni na "OTVORI_APLIKACIJU.bat"
+   → Otvorit će se crni prozor
+   → Pričekaj da vidiš "Ready" (10-30 sekundi)
+
+3. Otvori browser (Chrome/Edge/Firefox)
+   → Upiši: localhost:3000
+   → Pritisni Enter
+
+─────────────────────────────────────────
+
+📋 METODA 2: Direktno u browseru
+─────────────────────────────────────────
+
+Ako aplikacija već radi u pozadini:
+
+1. Otvori browser (Chrome/Edge/Firefox)
+2. Upiši u address bar: localhost:3000
+3. Pritisni Enter
+
+─────────────────────────────────────────
+
+✅ ŠTO TREBAŠ VIDJETI:
+─────────────────────────────────────────
+
+✓ CORPEX naslov (crno)
+✓ Bijela pozadina
+✓ Rotirajuće sportske slike u pozadini
+✓ Onboarding stranicu s pitanjima
+
+─────────────────────────────────────────
+
+⚠️  VAŽNO:
+─────────────────────────────────────────
+
+• NE ZATVARAJ crni prozor dok aplikacija radi!
+• Ako zatvoriš prozor, aplikacija će se zaustaviti
+• Da zaustaviš aplikaciju, pritisni Ctrl+C u crnom prozoru
+
+─────────────────────────────────────────
+
+❓ PROBLEMI?
+─────────────────────────────────────────
+
+Ako ne vidiš aplikaciju:
+
+1. Provjeri da li se crni prozor pojavio
+2. Provjeri da li vidiš "Ready" poruku
+3. Provjeri da li si upisao: localhost:3000 (bez http://)
+4. Ako vidiš grešku, pošalji mi screenshot
+
+═══════════════════════════════════════════════════════════
+

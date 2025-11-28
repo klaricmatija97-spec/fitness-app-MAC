@@ -1,0 +1,96 @@
+═══════════════════════════════════════════════════════════
+  KAKO PRONAĆI I POKRENUTI TEST.bat
+═══════════════════════════════════════════════════════════
+
+📁 KORAK 1: Pronađi fajl u Cursor editoru
+─────────────────────────────────────────
+
+1. Pogledaj LIJEVI PANEL u Cursor editoru
+   → To je panel gdje vidiš sve fajlove i foldere
+
+2. Pronađi folder "fitness-app"
+   → Možda je sklopljen (ima mali trokut ▶)
+   → Klikni na trokut da se otvori
+
+3. U folderu "fitness-app", pronadi fajl "TEST.bat"
+   → Ime fajla: TEST.bat
+   → Ikonica: Možda izgleda kao dokument ili zupčanik
+
+─────────────────────────────────────────
+
+🖱️  KORAK 2: Dvaput klikni na TEST.bat
+─────────────────────────────────────────
+
+1. Pronađi fajl "TEST.bat" u lijevom panelu
+2. Dvaput klikni na njega (brzo, dva puta lijevim klikom miša)
+3. Trebao bi se otvoriti CRNI PROZOR (Command Prompt)
+
+─────────────────────────────────────────
+
+👀 ŠTO ĆE SE DOGODITI:
+─────────────────────────────────────────
+
+✅ Otvorit će se CRNI PROZOR (Command Prompt)
+   → To je prozor s crnom pozadinom i bijelim tekstom
+
+✅ U prozoru će se vidjeti:
+   - Provjera fajlova (✅ ili ❌)
+   - Poruka "POKRETANJE APLIKACIJE..."
+   - Tekst koji pokazuje da se aplikacija pokreće
+
+✅ Nakon 20-30 sekundi, trebao bi vidjeti:
+   - "Ready" ili
+   - "Local: http://localhost:3000"
+
+─────────────────────────────────────────
+
+🌐 KORAK 3: Nakon što vidiš "Ready"
+─────────────────────────────────────────
+
+1. Otvori browser (Chrome, Edge, Firefox)
+2. U address bar (gore gdje upisuješ adrese) upiši:
+   localhost:3000
+3. Pritisni Enter
+
+─────────────────────────────────────────
+
+⚠️  VAŽNO:
+─────────────────────────────────────────
+
+• NE ZATVARAJ crni prozor dok aplikacija radi!
+• Ako zatvoriš prozor, aplikacija će se zaustaviti
+• Crni prozor mora ostati otvoren
+
+─────────────────────────────────────────
+
+❓ PROBLEMI?
+─────────────────────────────────────────
+
+Ako ne vidiš fajl "TEST.bat":
+→ Provjeri da li si u folderu "fitness-app"
+→ Provjeri da li vidiš druge fajlove (package.json, etc.)
+
+Ako se ništa ne dogodi nakon dvostrukog klika:
+→ Pokušaj desni klik → "Open" ili "Run"
+→ Ili koristi PowerShell (vidi dolje)
+
+─────────────────────────────────────────
+
+🔄 ALTERNATIVA: PowerShell
+─────────────────────────────────────────
+
+Ako dvostruki klik ne radi:
+
+1. Pritisni Win + X
+2. Odaberi "Windows PowerShell"
+3. Upiši (jednu po jednu):
+
+   cd "C:\Users\jasmi\Documents\Česta pitanja\fitness-app"
+   
+   "C:\Program Files\nodejs\npm.cmd" run dev
+
+4. Pričekaj "Ready"
+5. Otvori browser: localhost:3000
+
+═══════════════════════════════════════════════════════════
+

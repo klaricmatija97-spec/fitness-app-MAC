@@ -1,0 +1,40 @@
+═══════════════════════════════════════════════════════════
+  KAKO OTVORITI CORPEX APLIKACIJU - 3 JEDNOSTAVNA KORAKA
+═══════════════════════════════════════════════════════════
+
+📋 KORAK 1: Pronađi fajl "OTVORI_APLIKACIJU.bat"
+   → U Cursor editoru, u lijevom panelu, pronađi folder "fitness-app"
+   → U tom folderu, pronađi fajl "OTVORI_APLIKACIJU.bat"
+
+🖱️  KORAK 2: Dvaput klikni na "OTVORI_APLIKACIJU.bat"
+   → Otvorit će se crni prozor (Command Prompt)
+   → Pričekaj da vidiš poruku "Ready" (može potrajati 10-30 sekundi)
+
+🌐 KORAK 3: Otvori browser i upiši: localhost:3000
+   → Otvori Chrome, Edge ili Firefox
+   → U address bar upiši: localhost:3000
+   → Pritisni Enter
+   → Trebao bi se vidjeti CORPEX aplikacija!
+
+═══════════════════════════════════════════════════════════
+
+⚠️  VAŽNO:
+   - NE ZATVARAJ crni prozor dok aplikacija radi!
+   - Ako zatvoriš prozor, aplikacija će se zaustaviti
+   - Da zaustaviš aplikaciju, pritisni Ctrl+C u crnom prozoru
+
+═══════════════════════════════════════════════════════════
+
+❓ PROBLEMI?
+
+Ako vidiš grešku "npm is not recognized":
+   → Node.js nije instaliran ili nije u PATH-u
+   → Instaliraj Node.js s https://nodejs.org/
+
+Ako vidiš grešku "Cannot find module":
+   → Upiši u crni prozor: npm install
+   → Pričekaj da se završi
+   → Zatim ponovno pokreni OTVORI_APLIKACIJU.bat
+
+═══════════════════════════════════════════════════════════
+

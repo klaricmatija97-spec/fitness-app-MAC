@@ -1,0 +1,57 @@
+========================================
+  GDJE JE SPREMLJENA TVOJA APLIKACIJA
+========================================
+
+Puna putanja (path) tvoje aplikacije:
+
+C:\Users\jasmi\Documents\Česta pitanja\fitness-app
+
+
+To znači:
+- Folder: "Česta pitanja"
+- Podfolder: "fitness-app"
+- Unutar tog foldera su svi fajlovi tvoje aplikacije
+
+
+KLJUČNI FAJLOVI:
+================
+
+U folderu "fitness-app" se nalaze:
+
+1. package.json - glavni konfiguracijski fajl
+2. env.local - Supabase varijable (URL i KEY)
+3. app/ - glavna aplikacija (kod)
+4. lib/ - biblioteke (Supabase konekcija)
+5. node_modules/ - instalirani paketi (kreira se nakon npm install)
+
+
+KAKO DOĆI DO APLIKACIJE:
+========================
+
+Opcija 1: File Explorer
+1. Otvori File Explorer
+2. Idi u: C:\Users\jasmi\Documents\Česta pitanja
+3. Otvori folder: fitness-app
+
+Opcija 2: Command Prompt (CMD)
+1. Pritisni Win + R
+2. Upiši: cmd
+3. U CMD-u upiši:
+   cd "C:\Users\jasmi\Documents\Česta pitanja\fitness-app"
+
+Opcija 3: PowerShell
+1. Pritisni Win + X
+2. Odaberi PowerShell
+3. U PowerShell-u upiši:
+   cd "C:\Users\jasmi\Documents\Česta pitanja\fitness-app"
+
+
+PROVJERA:
+=========
+
+Da provjeriš da si u pravom folderu, u CMD-u ili PowerShell-u upiši:
+dir package.json
+
+Ako vidiš "package.json" - si u pravom folderu!
+Ako vidiš "File not found" - nisi u pravom folderu!
+

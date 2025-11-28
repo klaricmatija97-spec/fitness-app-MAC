@@ -1,0 +1,243 @@
+{
+  "breakfast": [
+    {
+      "name": "Jaja + tost + avokado",
+      "components": [
+        { "food": "Egg", "grams": 120 },
+        { "food": "Toast", "grams": 60 },
+        { "food": "Avocado", "grams": 50 }
+      ]
+    },
+    {
+      "name": "Zobena kaša s wheyom i bananom",
+      "components": [
+        { "food": "Oats", "grams": 80 },
+        { "food": "Whey", "grams": 30 },
+        { "food": "Banana", "grams": 100 }
+      ]
+    },
+    {
+      "name": "Grčki jogurt + zobene + višnje",
+      "components": [
+        { "food": "Greek yogurt", "grams": 170 },
+        { "food": "Oats", "grams": 40 },
+        { "food": "Cherries", "grams": 80 }
+      ]
+    },
+    {
+      "name": "Jaja + dimčena salama + tost",
+      "components": [
+        { "food": "Egg", "grams": 140 },
+        { "food": "Ham", "grams": 40 },
+        { "food": "Toast", "grams": 50 }
+      ]
+    },
+    {
+      "name": "Whey shake s bananom i mlijekom",
+      "components": [
+        { "food": "Whey", "grams": 30 },
+        { "food": "Banana", "grams": 100 },
+        { "food": "Milk", "grams": 200 }
+      ]
+    },
+    {
+      "name": "Grčki jogurt + zobene + mlijeko",
+      "components": [
+        { "food": "Greek yogurt", "grams": 180 },
+        { "food": "Oats", "grams": 50 },
+        { "food": "Milk", "grams": 150 }
+      ]
+    },
+    {
+      "name": "Omlet s avokadom + tost",
+      "components": [
+        { "food": "Egg", "grams": 130 },
+        { "food": "Avocado", "grams": 60 },
+        { "food": "Toast", "grams": 50 }
+      ]
+    },
+    {
+      "name": "Zobene + grčki jogurt + višnje",
+      "components": [
+        { "food": "Oats", "grams": 70 },
+        { "food": "Greek yogurt", "grams": 150 },
+        { "food": "Cherries", "grams": 70 }
+      ]
+    }
+  ],
+  "lunch": [
+    {
+      "name": "Piletina + riža + salata",
+      "components": [
+        { "food": "Chicken breast", "grams": 180 },
+        { "food": "Rice cooked", "grams": 200 },
+        { "food": "Lettuce", "grams": 80 }
+      ]
+    },
+    {
+      "name": "Piletina + tjestenina + salata",
+      "components": [
+        { "food": "Chicken breast", "grams": 170 },
+        { "food": "Pasta cooked", "grams": 200 },
+        { "food": "Lettuce", "grams": 70 }
+      ]
+    },
+    {
+      "name": "Piletina + krumpir + salata",
+      "components": [
+        { "food": "Chicken breast", "grams": 180 },
+        { "food": "Potatoes", "grams": 220 },
+        { "food": "Lettuce", "grams": 60 }
+      ]
+    },
+    {
+      "name": "Junetina + riža + salata",
+      "components": [
+        { "food": "Beef", "grams": 160 },
+        { "food": "Rice cooked", "grams": 180 },
+        { "food": "Lettuce", "grams": 80 }
+      ]
+    },
+    {
+      "name": "Junetina + tjestenina + salata",
+      "components": [
+        { "food": "Beef", "grams": 170 },
+        { "food": "Pasta cooked", "grams": 200 },
+        { "food": "Lettuce", "grams": 70 }
+      ]
+    },
+    {
+      "name": "Junetina + krumpir + salata",
+      "components": [
+        { "food": "Beef", "grams": 160 },
+        { "food": "Potatoes", "grams": 200 },
+        { "food": "Lettuce", "grams": 60 }
+      ]
+    },
+    {
+      "name": "Losos + riža + salata",
+      "components": [
+        { "food": "Salmon", "grams": 160 },
+        { "food": "Rice cooked", "grams": 180 },
+        { "food": "Lettuce", "grams": 80 }
+      ]
+    },
+    {
+      "name": "Losos + tjestenina + salata",
+      "components": [
+        { "food": "Salmon", "grams": 150 },
+        { "food": "Pasta cooked", "grams": 200 },
+        { "food": "Lettuce", "grams": 70 }
+      ]
+    },
+    {
+      "name": "Tuna + riža + salata",
+      "components": [
+        { "food": "Tuna", "grams": 140 },
+        { "food": "Rice cooked", "grams": 180 },
+        { "food": "Lettuce", "grams": 80 }
+      ]
+    },
+    {
+      "name": "Tuna + tjestenina + salata",
+      "components": [
+        { "food": "Tuna", "grams": 150 },
+        { "food": "Pasta cooked", "grams": 200 },
+        { "food": "Lettuce", "grams": 70 }
+      ]
+    },
+    {
+      "name": "Puretina + riža + salata",
+      "components": [
+        { "food": "Turkey breast", "grams": 170 },
+        { "food": "Rice cooked", "grams": 180 },
+        { "food": "Lettuce", "grams": 80 }
+      ]
+    }
+  ],
+  "dinner": [
+    {
+      "name": "Tuna salata",
+      "components": [
+        { "food": "Tuna", "grams": 140 },
+        { "food": "Lettuce", "grams": 100 },
+        { "food": "Tomato", "grams": 80 }
+      ]
+    },
+    {
+      "name": "Piletina + salata",
+      "components": [
+        { "food": "Chicken breast", "grams": 150 },
+        { "food": "Lettuce", "grams": 100 },
+        { "food": "Cucumber", "grams": 80 }
+      ]
+    },
+    {
+      "name": "Grčki jogurt + whey + zamrznuto voće",
+      "components": [
+        { "food": "Greek yogurt", "grams": 180 },
+        { "food": "Whey", "grams": 30 },
+        { "food": "Cherries", "grams": 100 }
+      ]
+    },
+    {
+      "name": "Tuna + povrće",
+      "components": [
+        { "food": "Tuna", "grams": 130 },
+        { "food": "Lettuce", "grams": 90 },
+        { "food": "Tomato", "grams": 70 }
+      ]
+    },
+    {
+      "name": "Piletina + povrće",
+      "components": [
+        { "food": "Chicken breast", "grams": 160 },
+        { "food": "Broccoli", "grams": 120 },
+        { "food": "Carrot", "grams": 80 }
+      ]
+    },
+    {
+      "name": "Grčki jogurt + whey + borovnice",
+      "components": [
+        { "food": "Greek yogurt", "grams": 170 },
+        { "food": "Whey", "grams": 30 },
+        { "food": "Blueberries", "grams": 90 }
+      ]
+    }
+  ],
+  "snack": [
+    {
+      "name": "Whey shake",
+      "components": [
+        { "food": "Whey", "grams": 30 },
+        { "food": "Milk", "grams": 200 }
+      ]
+    },
+    {
+      "name": "Voće",
+      "components": [
+        { "food": "Apple", "grams": 150 }
+      ]
+    },
+    {
+      "name": "Banana",
+      "components": [
+        { "food": "Banana", "grams": 120 }
+      ]
+    },
+    {
+      "name": "Whey + voće",
+      "components": [
+        { "food": "Whey", "grams": 25 },
+        { "food": "Apple", "grams": 100 }
+      ]
+    },
+    {
+      "name": "Grčki jogurt + borovnice",
+      "components": [
+        { "food": "Greek yogurt", "grams": 150 },
+        { "food": "Blueberries", "grams": 80 }
+      ]
+    }
+  ]
+}
