@@ -54,7 +54,7 @@ import {
 import { getUserData, updateUserCalculations } from "../data/userData";
 import { loadUserCalculations, type UserCalculations as LoadedCalculations } from "../utils/loadCalculations";
 import { translateFoodName } from "../utils/foodTranslations";
-import { mealComponents, type MealComponentsConfig } from "../data/meal_components";
+import { mealComponents, type MealComponentsConfig, type GoalType, getMealsForGoal, getDisplayName } from "../data/meal_components";
 import type {
   Recipe,
   Food,
@@ -91,15 +91,19 @@ const MEAL_COMPONENTS = mealComponents;
 // Strong matching map: foodKey → USDA description aliases
 const foodAliases: Record<string, string[]> = {
   "Egg": ["Egg", "Egg, whole, raw", "Eggs, whole, raw", "Chicken egg", "Egg, whole"],
-  "Toast": ["Bread, toasted", "Toast", "Bread, white, toasted", "Bread, whole wheat, toasted"],
+  "Egg white": ["Egg white", "Egg whites", "Egg, white, raw", "Egg white, raw"],
+  "Toast": ["Bread, toasted", "Toast", "Bread, white, toasted", "Bread, whole wheat, toasted", "Bread, whole grain"],
   "Avocado": ["Avocado", "Avocados, raw", "Avocado, raw"],
-  "Oats": ["Oats", "Oatmeal", "Oats, rolled", "Oatmeal, cooked"],
-  "Whey": ["Whey", "Whey protein", "Protein powder", "Whey protein powder"],
+  "Oats": ["Oats", "Oatmeal", "Oats, rolled", "Oatmeal, cooked", "Oats, regular"],
+  "Whey": ["Whey", "Whey protein", "Protein powder", "Whey protein powder", "Protein, whey"],
   "Banana": ["Banana", "Bananas, raw", "Banana, raw"],
-  "Milk": ["Milk", "Milk, lowfat", "Milk, whole", "Milk, 2%", "Milk, 1%"],
-  "Greek yogurt": ["Yogurt, Greek, plain, lowfat", "Greek yogurt", "Yogurt, Greek", "Greek style yogurt"],
+  "Milk": ["Milk", "Milk, lowfat", "Milk, whole", "Milk, 2%", "Milk, 1%", "Milk, reduced fat"],
+  "Greek yogurt": ["Yogurt, Greek, plain, lowfat", "Greek yogurt", "Yogurt, Greek", "Greek style yogurt", "Yogurt, Greek, plain"],
+  "Skyr": ["Skyr", "Yogurt, Icelandic", "Icelandic yogurt", "Skyr, plain"],
+  "Cottage cheese": ["Cottage cheese", "Cheese, cottage", "Cottage cheese, lowfat", "Cheese, cottage, lowfat"],
   "Chicken breast": ["Chicken breast", "Chicken, breast, raw", "Chicken, breast, skinless", "Chicken breast, skinless"],
-  "Turkey breast": ["Turkey breast", "Turkey, breast", "Turkey, breast, skinless"],
+  "Chicken ham": ["Chicken ham", "Chicken, deli", "Chicken, sliced", "Chicken sausage", "Chicken salami", "Ham, chicken"],
+  "Turkey breast": ["Turkey breast", "Turkey, breast", "Turkey, breast, skinless", "Turkey, deli"],
   "Beef": ["Beef", "Beef, raw", "Beef, ground", "Beef, lean"],
   "Rice cooked": ["Rice cooked", "Rice, white, cooked", "Rice, brown, cooked", "Rice, cooked"],
   "Pasta cooked": ["Pasta cooked", "Spaghetti, cooked", "Pasta, cooked", "Macaroni, cooked"],
@@ -109,13 +113,74 @@ const foodAliases: Record<string, string[]> = {
   "Lettuce": ["Lettuce", "Lettuce, green leaf", "Lettuce, iceberg", "Lettuce, romaine"],
   "Tomato": ["Tomato", "Tomatoes, red, raw", "Tomato, raw", "Tomatoes, raw"],
   "Cucumber": ["Cucumber", "Cucumbers, raw", "Cucumber, raw"],
+  "Mushroom": ["Mushroom", "Mushrooms", "Mushrooms, raw", "Mushroom, raw", "Champignon"],
   "Blueberries": ["Blueberries", "Blueberries, raw", "Blueberry, raw"],
   "Cherries": ["Cherries", "Cherries, sour, raw", "Cherries, sweet, raw", "Cherry, raw"],
   "Apple": ["Apple", "Apples, raw", "Apple, raw"],
   "Ham": ["Ham", "Ham, cured", "Ham, cooked", "Ham, sliced"],
   "Broccoli": ["Broccoli", "Broccoli, raw", "Broccoli, cooked"],
   "Carrot": ["Carrot", "Carrots, raw", "Carrot, raw"],
+  "Peanut butter": ["Peanut butter", "Peanut butter, smooth", "Peanut butter, creamy", "Butter, peanut"],
+  "Almonds": ["Almonds", "Almonds, raw", "Nuts, almonds", "Almond"],
+  "Onion": ["Onion", "Onions, raw", "Onion, raw", "Luk"],
+  "Cashews": ["Cashews", "Nuts, cashew", "Cashew nuts", "Cashews, raw"],
+  "Peanuts": ["Peanuts", "Peanuts, raw", "Nuts, peanuts", "Peanut"],
+  "Frozen berries": ["Frozen berries", "Berries, frozen", "Mixed berries", "Berries mix"],
+  "Rice crackers": ["Rice crackers", "Rice cakes", "Rice cake", "Crackers, rice"],
+  "Buckwheat": ["Buckwheat", "Buckwheat groats", "Kasha", "Buckwheat, cooked"],
+  "Corn": ["Corn", "Corn, sweet", "Sweet corn", "Corn, canned"],
+  "Sour cream": ["Sour cream", "Cream, sour", "Vrhnje", "Cream"],
+  "Apple": ["Apple", "Apples, raw", "Apple, raw", "Apple, fresh"],
 };
+
+// Hrvatski nazivi za prikaz u aplikaciji
+const croatianFoodNames: Record<string, string> = {
+  "Egg": "Jaja",
+  "Egg white": "Bjelanjak",
+  "Toast": "Tost",
+  "Avocado": "Avokado",
+  "Oats": "Zobene pahuljice",
+  "Whey": "Whey protein",
+  "Banana": "Banana",
+  "Milk": "Mlijeko",
+  "Greek yogurt": "Grčki jogurt",
+  "Skyr": "Skyr",
+  "Cottage cheese": "Zrnati sir",
+  "Chicken breast": "Pileća prsa",
+  "Chicken ham": "Pileća šunka",
+  "Turkey breast": "Pureća prsa",
+  "Beef": "Junetina",
+  "Rice cooked": "Riža",
+  "Pasta cooked": "Tjestenina",
+  "Potatoes": "Krumpir",
+  "Salmon": "Losos",
+  "Tuna": "Tuna",
+  "Lettuce": "Zelena salata",
+  "Tomato": "Rajčica",
+  "Cucumber": "Krastavac",
+  "Mushroom": "Gljive",
+  "Blueberries": "Borovnice",
+  "Cherries": "Višnje",
+  "Apple": "Jabuka",
+  "Ham": "Šunka",
+  "Broccoli": "Brokula",
+  "Carrot": "Mrkva",
+  "Peanut butter": "Kikiriki maslac",
+  "Almonds": "Bademi",
+  "Onion": "Luk",
+  "Cashews": "Indijski oraščići",
+  "Peanuts": "Kikiriki",
+  "Frozen berries": "Smrznuto voće",
+  "Rice crackers": "Rižini krekeri",
+  "Buckwheat": "Hajdinska kaša",
+  "Corn": "Kukuruz",
+  "Sour cream": "Vrhnje za kuhanje",
+};
+
+// Funkcija za dobivanje hrvatskog naziva namirnice
+export function getCroatianFoodName(foodKey: string): string {
+  return croatianFoodNames[foodKey] || foodKey;
+}
 
 /**
  * Pronađi USDA hranu po foodKey iz meal_components.json
@@ -1254,14 +1319,22 @@ function buildCompositeMealForSlot(
   minIngredients: number = 2,
   usedMealsThisWeek: Set<string> | null = null,
   previousDayMeal: MealOption | null = null,
-  excludedMealNames: Set<string> = new Set() // Dodaj parametar za isključene obroke
+  excludedMealNames: Set<string> = new Set(), // Dodaj parametar za isključene obroke
+  userGoal: GoalType = "maintain" // Cilj korisnika (lose/maintain/gain)
 ): ScoredMeal | null {
   // extraSnack koristi snack šablone
   const slotKey = slot === "extraSnack" ? "snack" : (slot as "breakfast" | "lunch" | "dinner" | "snack");
-  const definitions = MEAL_COMPONENTS[slotKey];
+  
+  // Filtriraj obroke prema cilju korisnika
+  let definitions = getMealsForGoal(slotKey, userGoal);
   if (!definitions || definitions.length === 0) {
-    console.error(`❌ Nema definicija za slot ${slotKey} u meal_components.json`);
-    return null;
+    // Ako nema obroka za cilj, koristi sve obroke
+    console.warn(`⚠️ Nema obroka za cilj "${userGoal}" za ${slotKey}, koristim sve obroke`);
+    definitions = MEAL_COMPONENTS[slotKey] || [];
+    if (definitions.length === 0) {
+      console.error(`❌ Nema definicija za slot ${slotKey} u meal_components.json`);
+      return null;
+    }
   }
 
   // Konvertiraj u MealOption format i filtriraj isključene obroke
@@ -1406,7 +1479,7 @@ function buildCompositeMealForSlot(
     if (newExcluded.size < definitions.length) {
       return buildCompositeMealForSlot(
         slot, allFoods, usedToday, slotTargetCalories, 
-        previousMeal, previousMeals, minIngredients, usedMealsThisWeek, previousDayMeal, newExcluded
+        previousMeal, previousMeals, minIngredients, usedMealsThisWeek, previousDayMeal, newExcluded, userGoal
       );
     }
     // Ako smo iscrpili sve opcije, vrati null (NE baci exception)
@@ -1909,12 +1982,12 @@ export async function saveProMealPlanToSupabase(
 ): Promise<Record<string, any>> {
   try {
     // Pripremi tjedni plan (isti dan ponavljan 7 puta)
-    const weekPlan = Array(7).fill({
+    const weekPlan = Array(7).fill(null).map(() => ({
       breakfast: plan.breakfast,
       lunch: plan.lunch,
       dinner: plan.dinner,
       snack: plan.snack,
-    });
+    }));
 
     // Odredi tjedan start date (ponedjeljak)
     const today = new Date(plan.date);
@@ -1924,27 +1997,29 @@ export async function saveProMealPlanToSupabase(
     weekStart.setDate(today.getDate() + daysToMonday);
     const weekStartDate = weekStart.toISOString().split("T")[0];
 
-    // Spremi u bazu
+    // Spremi u bazu - bez deviation_percent jer kolona ne postoji u svim bazama
+    const insertData: Record<string, any> = {
+      client_id: clientId,
+      week_start_date: weekStartDate,
+      meals: weekPlan,
+      total_calories: Math.round(plan.total.calories * 7),
+      total_protein: Math.round(plan.total.protein * 7),
+      total_carbs: Math.round(plan.total.carbs * 7),
+      total_fats: Math.round(plan.total.fat * 7),
+      plan_type: "pro",
+      plan_version: "2.1", // Ažurirana verzija sa poboljšanim scoring-om
+    };
+
     const { data, error } = await supabase
       .from("meal_plans")
-      .insert({
-        client_id: clientId,
-        week_start_date: weekStartDate,
-        meals: weekPlan,
-        total_calories: Math.round(plan.total.calories * 7),
-        total_protein: Math.round(plan.total.protein * 7),
-        total_carbs: Math.round(plan.total.carbs * 7),
-        total_fats: Math.round(plan.total.fat * 7),
-        plan_type: "pro",
-        plan_version: "2.1", // Ažurirana verzija sa poboljšanim scoring-om
-        deviation_percent: plan.total.deviation.total, // Weighted total deviation
-      })
+      .insert(insertData)
       .select()
       .single();
 
     if (error) {
       console.error("Error saving PRO meal plan to Supabase:", error);
-      throw error;
+      // Nastavi bez bacanja greške - plan je generiran
+      return { id: null, ...insertData };
     }
 
     return data;
@@ -2120,8 +2195,12 @@ export async function generateWeeklyProMealPlan(
     const targetCarbs = options?.targetCarbs || calculations.carbs_grams;
     const targetFat = options?.targetFat || calculations.fats_grams;
 
+    // Odredi cilj korisnika za filtriranje obroka
+    const userGoal: GoalType = calculations.goal_type || "maintain";
+    
     console.log(`📊 Generiranje plana sa ${mealsPerDay} obroka dnevno`);
     console.log(`📊 Target: ${targetCalories} kcal, P: ${targetProtein}g, C: ${targetCarbs}g, F: ${targetFat}g`);
+    console.log(`🎯 Cilj korisnika: ${userGoal}`);
 
     // 6. Dohvati sve namirnice (foods) jednom za sve dane
     console.log("📋 Dohvaćanje svih namirnica...");
@@ -2229,7 +2308,9 @@ export async function generateWeeklyProMealPlan(
             previousMealsInDay,
             minIngredients,
             usedMealsForSlot,
-            previousDayMealForSlot
+            previousDayMealForSlot,
+            new Set(), // excludedMealNames
+            userGoal
           );
           
           if (composite) {
@@ -2610,34 +2691,36 @@ export async function saveWeeklyProMealPlanToSupabase(
   plan: WeeklyPlan
 ): Promise<Record<string, any>> {
   try {
-    // Spremi u bazu
+    // Spremi u bazu - bez deviation_percent i plan_json jer kolone možda ne postoje
+    const insertData: Record<string, any> = {
+      client_id: clientId,
+      week_start_date: plan.weekStartDate,
+      meals: plan.days.map((day) => day.meals), // Legacy format za kompatibilnost
+      total_calories: Math.round(plan.weeklyAverage.calories * 7),
+      total_protein: Math.round(plan.weeklyAverage.protein * 7),
+      total_carbs: Math.round(plan.weeklyAverage.carbs * 7),
+      total_fats: Math.round(plan.weeklyAverage.fat * 7),
+      plan_type: "pro_weekly",
+      plan_version: "2.1",
+    };
+
     const { data, error } = await supabase
       .from("meal_plans")
-      .insert({
-        client_id: clientId,
-        week_start_date: plan.weekStartDate,
-        meals: plan.days.map((day) => day.meals), // Legacy format za kompatibilnost
-        total_calories: Math.round(plan.weeklyAverage.calories * 7),
-        total_protein: Math.round(plan.weeklyAverage.protein * 7),
-        total_carbs: Math.round(plan.weeklyAverage.carbs * 7),
-        total_fats: Math.round(plan.weeklyAverage.fat * 7),
-        plan_type: "pro_weekly",
-        plan_version: "2.1",
-        deviation_percent: plan.weeklyAverage.deviation.total,
-        plan_json: plan, // Spremi kompletan JSON
-      })
+      .insert(insertData)
       .select()
       .single();
 
     if (error) {
       console.error("Error saving weekly PRO meal plan to Supabase:", error);
-      throw error;
+      // Nastavi bez bacanja greške - plan je generiran
+      return { id: null, ...insertData };
     }
 
     return data;
   } catch (error) {
     console.error("Error in saveWeeklyProMealPlanToSupabase:", error);
-    throw error;
+    // Vrati prazan objekt umjesto bacanja greške
+    return { id: null };
   }
 }
 

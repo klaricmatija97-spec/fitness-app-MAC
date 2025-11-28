@@ -205,182 +205,6 @@ function AppDashboardContent() {
   const [showEducationalOnboarding, setShowEducationalOnboarding] = useState(false);
   const [educationalOnboardingCompleted, setEducationalOnboardingCompleted] = useState(false);
   
-  // Ref za video na slideovima sa porukama
-  const slideVideoRef = useRef<HTMLVideoElement>(null);
-  
-  // Inicijalizacija videa za slideove sa porukama
-  useEffect(() => {
-    // Ne pokreni video na intro, login ili edu_wizard slideovima
-    const currentId = slideOrder[currentSlide];
-    if (currentId === "intro" || currentId === "login" || currentId === "edu_wizard") {
-      console.log("⏭️ Skipping video init for slide:", currentId);
-      return;
-    }
-
-    let isMounted = true;
-    let cleanupFunctions: (() => void)[] = [];
-
-    // Kratko odgodi da se osigura da je video element u DOM-u
-    const timer = setTimeout(() => {
-      const video = slideVideoRef.current;
-      if (!video) {
-        console.warn("⚠️ Slide video ref is null");
-        return;
-      }
-
-      if (!isMounted) return;
-
-      console.log("🔄 Initializing slide video, currentId:", currentId, "readyState:", video.readyState);
-
-      const handleCanPlay = () => {
-        if (!isMounted || !video) return;
-        if (!document.contains(video)) {
-          console.warn("⚠️ Video element removed from DOM");
-          return;
-        }
-
-        console.log("✅ Slide video can play, attempting autoplay");
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((error) => {
-            if (error.name !== "AbortError") {
-              console.warn("❌ Slide video autoplay prevented:", error);
-            }
-          });
-        }
-      };
-
-      const handleLoadedMetadata = () => {
-        if (!isMounted || !video) return;
-        console.log("📊 Slide video metadata loaded, duration:", video.duration, "seconds");
-      };
-
-      const handleLoadStart = () => {
-        if (!isMounted || !video) return;
-        console.log("🔄 Slide video load started");
-      };
-
-      const handlePlaying = () => {
-        if (!isMounted || !video) return;
-        console.log("▶️ Slide video is playing");
-      };
-
-      const handleError = () => {
-        if (!isMounted || !video) return;
-        const error = video.error;
-        if (error) {
-          let errorMessage = "Unknown error";
-          switch (error.code) {
-            case error.MEDIA_ERR_ABORTED:
-              errorMessage = "Video loading aborted";
-              break;
-            case error.MEDIA_ERR_NETWORK:
-              errorMessage = "Network error while loading video";
-              break;
-            case error.MEDIA_ERR_DECODE:
-              errorMessage = "Video decoding error";
-              break;
-            case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-              errorMessage = "Video format not supported or source not found";
-              break;
-          }
-          console.error("❌ Slide video error in useEffect:", errorMessage, "Code:", error.code);
-        }
-      };
-
-      // Dodaj event listenere
-      video.addEventListener("canplay", handleCanPlay, { once: true });
-      video.addEventListener("loadedmetadata", handleLoadedMetadata);
-      video.addEventListener("loadstart", handleLoadStart);
-      video.addEventListener("playing", handlePlaying);
-      video.addEventListener("error", handleError);
-
-      // Cleanup funkcija za event listenere
-      cleanupFunctions.push(() => {
-        if (video && isMounted) {
-          video.removeEventListener("canplay", handleCanPlay);
-          video.removeEventListener("loadedmetadata", handleLoadedMetadata);
-          video.removeEventListener("loadstart", handleLoadStart);
-          video.removeEventListener("playing", handlePlaying);
-          video.removeEventListener("error", handleError);
-        }
-      });
-
-      // Provjeri da li je video element u DOM-u
-      console.log("🔍 Video element check:", {
-        inDOM: document.contains(video),
-        width: video.offsetWidth,
-        height: video.offsetHeight,
-        src: video.currentSrc || video.src,
-        sources: Array.from(video.querySelectorAll('source')).map(s => s.src),
-      });
-
-      // Pokušaj eksplicitno učitati video
-      video.load();
-      
-      // Pokušaj reproducirati odmah ako je moguće
-      const tryPlay = () => {
-        if (!isMounted || !video) return;
-        if (!document.contains(video)) {
-          console.warn("⚠️ Video element not in DOM, cannot play");
-          return;
-        }
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              console.log("✅ Video started playing successfully");
-            })
-            .catch((error) => {
-              console.warn("⚠️ Video play failed:", error);
-            });
-        }
-      };
-      
-      // Ako je video već spreman, pokušaj reproducirati
-      if (video.readyState >= 3) {
-        console.log("✅ Video already ready, playing immediately");
-        tryPlay();
-      } else {
-        // Sačekaj da se video učita
-        console.log("⏳ Waiting for video to load, readyState:", video.readyState);
-        
-        // Dodatni pokušaji nakon odgovarajućih intervala
-        const intervals = [500, 1000, 2000, 3000];
-        intervals.forEach((delay, index) => {
-          setTimeout(() => {
-            if (!isMounted || !video) return;
-            console.log(`🔄 Attempt ${index + 1} after ${delay}ms - readyState: ${video.readyState}`);
-            if (video.readyState >= 2) {
-              tryPlay();
-            }
-          }, delay);
-        });
-      }
-    }, 200); // Kratko odgodi da se osigura da je element u DOM-u
-
-    // Cleanup
-    return () => {
-      isMounted = false;
-      if (timer) {
-        clearTimeout(timer);
-      }
-      
-      // Pokreni sve cleanup funkcije
-      cleanupFunctions.forEach(cleanup => cleanup());
-      
-      // Pause video when unmounting
-      const video = slideVideoRef.current;
-      if (video) {
-        try {
-          video.pause();
-        } catch (e) {
-          // Ignoriraj greške pri pauziranju
-        }
-      }
-    };
-  }, [currentSlide]); // Pokreni ponovo kad se slide promijeni
-  
   // Funkcije za intake formu
   const updateIntakeForm = <K extends keyof IntakeFormState>(key: K, value: IntakeFormState[K]) => {
     setIntakeForm((prev) => ({ ...prev, [key]: value }));
@@ -1392,160 +1216,18 @@ function AppDashboardContent() {
                       "flex-1 relative bg-[#0D0F10] flex h-full",
                       currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "overflow-y-auto min-h-0" : "overflow-y-auto min-h-0"
                     )}>
-                      {/* LIJEVO - Motivacijski video iza naziva aplikacije */}
+                      {/* LIJEVO - Motivacijska slika */}
                       <div className="relative w-[40%] overflow-hidden h-full bg-black">
-                        {/* Fallback pozadinska slika dok se video učitava */}
+                        {/* Pozadinska slika */}
                         <div 
                           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
                           style={{
                             backgroundImage: "url(https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1920&q=80&auto=format&fit=crop)",
-                            zIndex: 0,
+                            filter: "brightness(0.6) contrast(1.1)",
                           }}
                         />
-                        <div className="absolute inset-0 h-full w-full z-[1]">
-                        <video
-                            key={`slide-video-${currentSlide}`}
-                            ref={slideVideoRef}
-                          autoPlay
-                          loop
-                          muted
-                          playsInline
-                            preload="none"
-                          className="absolute inset-0 w-full h-full object-cover"
-                            style={{
-                            filter: "brightness(0.6) contrast(1.1)",
-                              width: "100%",
-                              height: "100%",
-                              minWidth: "100%",
-                              minHeight: "100%",
-                              zIndex: 1,
-                              display: "block",
-                              backgroundColor: "#000",
-                              opacity: 0,
-                              transition: "opacity 0.5s ease-in",
-                            }}
-                            onError={(e) => {
-                              const video = e.currentTarget as HTMLVideoElement;
-                              if (!video) {
-                                console.warn("⚠️ Video error event fired but video element is null");
-                                return;
-                              }
-                              
-                              const error = video.error;
-                              const networkState = video.networkState;
-                              const readyState = video.readyState;
-                              const currentSrc = video.currentSrc || video.src;
-                              
-                              if (error) {
-                                let errorMessage = "Unknown error";
-                                switch (error.code) {
-                                  case error.MEDIA_ERR_ABORTED:
-                                    errorMessage = "Video loading aborted";
-                                    break;
-                                  case error.MEDIA_ERR_NETWORK:
-                                    errorMessage = "Network error while loading video";
-                                    break;
-                                  case error.MEDIA_ERR_DECODE:
-                                    errorMessage = "Video decoding error";
-                                    break;
-                                  case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                                    errorMessage = "Video format not supported or source not found";
-                                    break;
-                                }
-                                console.error("❌ Slide video error:", errorMessage, "Code:", error.code);
-                                console.error("❌ Video src:", currentSrc);
-                                console.error("❌ Video networkState:", networkState);
-                                
-                                // Pokušaj učitati sljedeći source
-                                if (error.code === error.MEDIA_ERR_NETWORK || error.code === error.MEDIA_ERR_SRC_NOT_SUPPORTED) {
-                                  console.log("🔄 Attempting to load next video source...");
-                                  setTimeout(() => {
-                                    if (slideVideoRef.current) {
-                                      slideVideoRef.current.load();
-                                    }
-                                  }, 1000);
-                                }
-                              } else {
-                                // Error event se okida ali nema error objekta - možda je samo network issue
-                                console.warn("⚠️ Video error event fired but no error object");
-                                console.warn("⚠️ networkState:", networkState, "readyState:", readyState, "src:", currentSrc);
-                                
-                                // Ako nema src ili je network problem, pokušaj reload
-                                if (!currentSrc || networkState === video.NETWORK_NO_SOURCE) {
-                                  console.log("🔄 No source loaded, attempting reload...");
-                                  setTimeout(() => {
-                                    if (slideVideoRef.current) {
-                                      slideVideoRef.current.load();
-                                    }
-                                  }, 1000);
-                                }
-                              }
-                            }}
-                            onLoadStart={() => {
-                              console.log("🔄 Video load started");
-                            }}
-                            onLoadedData={() => {
-                              console.log("✅ Video data loaded");
-                            }}
-                            onCanPlay={() => {
-                              console.log("✅ Video can play");
-                              if (slideVideoRef.current) {
-                                slideVideoRef.current.style.opacity = "1";
-                                const playPromise = slideVideoRef.current.play();
-                                if (playPromise !== undefined) {
-                                  playPromise.catch((err) => {
-                                    console.warn("⚠️ Slide video play failed:", err);
-                                  });
-                                }
-                              }
-                            }}
-                            onPlaying={() => {
-                              console.log("▶️ Video is now playing");
-                              if (slideVideoRef.current) {
-                                slideVideoRef.current.style.opacity = "1";
-                              }
-                            }}
-                            onWaiting={() => {
-                              console.log("⏳ Video is buffering...");
-                            }}
-                            onStalled={() => {
-                              console.warn("⚠️ Video stalled, trying to recover...");
-                              if (slideVideoRef.current) {
-                                setTimeout(() => {
-                                  if (slideVideoRef.current) {
-                                    slideVideoRef.current.load();
-                                  }
-                                }, 2000);
-                              }
-                            }}
-                          >
-                            {/* Prvi izbor - Lokalni fajl ako postoji */}
-            <source src="/videos/gym-motivational.mp4" type="video/mp4" />
-                            {/* Drugi izbor - Pexels workout video */}
-                            <source src="https://videos.pexels.com/video-files/2491284/2491284-hd_1920_1080_30fps.mp4" type="video/mp4" />
-                            {/* Treći izbor - Pexels gym video */}
-                            <source src="https://videos.pexels.com/video-files/3045163/3045163-hd_1920_1080_30fps.mp4" type="video/mp4" />
-                            {/* Fallback tekst ako video ne može učitati */}
-                            Vaš browser ne podržava video tag.
-                        </video>
-                          {/* Fallback pozadinska slika koja se vidi dok se video učitava ili ako ne radi */}
-                          <div 
-                            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
-                            style={{
-                              backgroundImage: "url(https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1920&q=80&auto=format&fit=crop)",
-                              zIndex: 0,
-                              opacity: (slideVideoRef.current?.readyState ?? 0) >= 3 ? 0 : 1,
-                            }}
-                          />
-                          {/* Debug info - samo u development */}
-                          {process.env.NODE_ENV === 'development' && (
-                            <div className="absolute bottom-2 left-2 text-xs text-white bg-black/50 px-2 py-1 rounded z-[20]">
-                              Video Status: {slideVideoRef.current?.readyState || 'loading'}
-                            </div>
-                          )}
-                            {/* CORPEX Overlay - #000000 sa 35-40% opacity */}
-                          <div className="absolute inset-0 bg-[rgba(0,0,0,0.375)] z-[2]" />
-            </div>
+                        {/* CORPEX Overlay - #000000 sa 35-40% opacity */}
+                        <div className="absolute inset-0 bg-[rgba(0,0,0,0.375)] z-[2]" />
 
                         {/* Naziv aplikacije - PUNI KONTRАST */}
                         <div className="absolute inset-0 flex items-center justify-center z-[10] px-6">
@@ -1880,7 +1562,6 @@ function IntroSlideContent({ onNext, nextSlideIndex, userName = "", currentSlide
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
   const [loggedInUserName, setLoggedInUserName] = useState<string>("");
-  const videoRef = useRef<HTMLVideoElement>(null);
   
   // Učitaj username ulogiranog korisnika (korisničko ime, ne ime)
   useEffect(() => {
@@ -1936,92 +1617,6 @@ function IntroSlideContent({ onNext, nextSlideIndex, userName = "", currentSlide
     }
     onNext(nextSlideIndex);
   };
-
-  // Osiguraj da se video pokrene kada se komponenta učita
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) {
-      console.warn("Video ref is null");
-      return;
-    }
-
-    let isMounted = true;
-    let playPromise: Promise<void> | null = null;
-
-    const handleCanPlay = () => {
-      if (!isMounted || !videoRef.current) return;
-      
-      // Provjeri da li je video element još u DOM-u
-      if (!document.contains(videoRef.current)) {
-        console.warn("Video element removed from DOM, skipping play");
-        return;
-      }
-
-      console.log("Video can play, attempting autoplay");
-      playPromise = videoRef.current.play().catch((error) => {
-        // Ignoriraj AbortError - to znači da je video uklonjen
-        if (error.name !== "AbortError") {
-          console.warn("Video autoplay prevented:", error);
-        }
-      });
-    };
-
-    const handleLoadedMetadata = () => {
-      if (!isMounted || !videoRef.current) return;
-      console.log("Video metadata loaded, duration:", videoRef.current.duration, "seconds");
-    };
-
-    const handleError = () => {
-      if (!isMounted || !videoRef.current) return;
-      const error = videoRef.current.error;
-      if (error) {
-        let errorMessage = "Unknown error";
-        switch (error.code) {
-          case error.MEDIA_ERR_ABORTED:
-            errorMessage = "Video loading aborted";
-            break;
-          case error.MEDIA_ERR_NETWORK:
-            errorMessage = "Network error while loading video";
-            break;
-          case error.MEDIA_ERR_DECODE:
-            errorMessage = "Video decoding error";
-            break;
-          case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-            errorMessage = "Video format not supported or source not found";
-            break;
-        }
-        console.error("Video error in useEffect:", errorMessage, "Code:", error.code);
-      }
-    };
-
-    // Ako je video već spreman, pokušaj reproducirati
-    if (video.readyState >= 3) { // HAVE_FUTURE_DATA ili više
-      handleCanPlay();
-    } else {
-      video.addEventListener("canplay", handleCanPlay, { once: true });
-    }
-
-    video.addEventListener("loadedmetadata", handleLoadedMetadata);
-    video.addEventListener("error", handleError);
-
-    // Cleanup funkcija
-    return () => {
-      isMounted = false;
-      
-      // Otkaži play() ako još traje
-      if (playPromise) {
-        playPromise.catch(() => {
-          // Ignoriraj greške pri cleanup-u
-        });
-      }
-
-      if (videoRef.current) {
-        videoRef.current.removeEventListener("canplay", handleCanPlay);
-        videoRef.current.removeEventListener("loadedmetadata", handleLoadedMetadata);
-        videoRef.current.removeEventListener("error", handleError);
-      }
-    };
-  }, []);
 
   // Rotacija pozdrava i quotes (prvo pozdrav, zatim quotes)
   useEffect(() => {
@@ -2161,70 +1756,14 @@ function IntroSlideContent({ onNext, nextSlideIndex, userName = "", currentSlide
             minHeight: "100%"
           }}
         >
-          {/* Fallback pozadinska slika */}
+          {/* Pozadinska slika */}
           <div 
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{
               backgroundImage: "url(https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1920&q=80&auto=format&fit=crop)",
-              zIndex: 0,
               filter: "brightness(0.6) contrast(1.1)",
             }}
           />
-          
-          {/* Video element */}
-          <video
-            ref={videoRef}
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="auto"
-            src="https://videos.pexels.com/video-files/2491284/2491284-hd_1920_1080_30fps.mp4"
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{
-              filter: "brightness(0.6) contrast(1.1)",
-              minWidth: "100%",
-              minHeight: "100%",
-              zIndex: 1,
-              backgroundColor: "#000",
-              display: "block",
-            }}
-            onError={(e) => {
-              const video = e.currentTarget as HTMLVideoElement;
-              console.error("❌ Video error:", video.error?.code, "networkState:", video.networkState, "src:", video.currentSrc || video.src);
-              // Pokušaj učitati sljedeći source
-              if (video.error?.code === 4) { // MEDIA_ERR_SRC_NOT_SUPPORTED
-                console.log("🔄 Trying next video source...");
-                video.src = "https://videos.pexels.com/video-files/3045163/3045163-hd_1920_1080_30fps.mp4";
-                video.load();
-              }
-            }}
-            onLoadStart={() => {
-              console.log("🔄 Video load started");
-            }}
-            onLoadedData={() => {
-              console.log("✅ Video data loaded");
-            }}
-            onCanPlay={() => {
-              console.log("✅ Video can play");
-              if (videoRef.current) {
-                videoRef.current.play().catch((err) => {
-                  console.warn("⚠️ Play failed:", err);
-                });
-              }
-            }}
-            onPlaying={() => {
-              console.log("▶️ Video is playing");
-            }}
-            onWaiting={() => {
-              console.log("⏳ Video is buffering...");
-            }}
-          >
-            {/* Fallback source-ovi */}
-            <source src="https://videos.pexels.com/video-files/3045163/3045163-hd_1920_1080_30fps.mp4" type="video/mp4" />
-            <source src="/videos/gym-motivational.mp4" type="video/mp4" />
-            Vaš browser ne podržava video tag.
-          </video>
           
           {/* CORPEX Overlay - #000000 sa 35-40% opacity */}
           <div className="absolute inset-0 bg-[rgba(0,0,0,0.375)] z-[2]" />
@@ -3228,7 +2767,7 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
       title: "BMR Kalkulator",
       description: "Izračunaj svoju bazalnu metaboličku stopu.",
       render: (
-        <div className="h-full overflow-y-auto flex flex-col min-h-0">
+        <div className="h-full overflow-y-auto">
           <AnimatePresence mode="wait">
           {!showBMRCalc ? (
               <motion.div
@@ -3237,7 +2776,7 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-                className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-y-auto pb-4"
+                className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-8"
               >
               <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
                 <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Što je BMR?</h3>
@@ -3269,7 +2808,7 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                   <strong>Za žene:</strong> BMR = 10 × težina(kg) + 6.25 × visina(cm) - 5 × dob - 161
                 </p>
               </div>
-              <div className="lg:col-span-3 mt-6">
+              <div className="lg:col-span-3 pb-8">
                 <button
                   onClick={() => setShowBMRCalc(true)}
                   className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-4 text-white font-semibold text-lg transition hover:-translate-y-0.5 hover:shadow-lg"
@@ -3285,8 +2824,8 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-                className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl overflow-y-auto flex flex-col min-h-0"
-                style={{ willChange: "transform, opacity", maxHeight: "100%" }}
+                className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl flex-1 overflow-y-auto"
+                style={{ willChange: "transform, opacity" }}
               >
               <div className="flex justify-between items-center mb-6 flex-shrink-0">
                 <h3 className="text-2xl font-semibold text-[#1A1A1A]">BMR Kalkulator</h3>
@@ -3362,6 +2901,8 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                       onClick={() => {
                         setBMRConfirmed(true);
                         setTDEEInputs({ ...tdeeInputs, bmr: bmrResult });
+                        // Sinkroniziraj težinu na macros kalkulator
+                        setMacrosInputs(prev => ({ ...prev, weight: bmrInputs.weight }));
                       }}
                       className={`w-full rounded-[16px] px-6 py-3 font-semibold transition hover:-translate-y-0.5 hover:shadow-lg ${
                         bmrConfirmed
@@ -3385,7 +2926,7 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
       title: "TDEE Kalkulator",
       description: "Izračunaj svoje ukupne dnevne potrebe za kalorijama.",
       render: (
-        <div className="h-full overflow-y-auto flex flex-col min-h-0">
+        <div className="h-full overflow-y-auto">
           <AnimatePresence mode="wait">
           {!showTDEECalc ? (
               <motion.div
@@ -3394,7 +2935,7 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-                className="flex-1 overflow-y-auto space-y-6 pb-4"
+                className="space-y-6 pb-8"
               >
               <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
                 <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Što je TDEE?</h3>
@@ -3434,7 +2975,7 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                   gubit ćeš težinu. Ako jedeš više, dobivat ćeš težinu.
                 </p>
               </div>
-              <div className="mt-6 pb-4">
+              <div className="pb-8">
                 <button
                   onClick={() => setShowTDEECalc(true)}
                   className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-4 text-white font-semibold text-lg transition hover:-translate-y-0.5 hover:shadow-lg"
@@ -3450,8 +2991,8 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-                className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl overflow-y-auto flex flex-col min-h-0"
-                style={{ willChange: "transform, opacity", maxHeight: "100%" }}
+                className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl flex-1 overflow-y-auto"
+                style={{ willChange: "transform, opacity" }}
               >
               <div className="flex justify-between items-center mb-4 flex-shrink-0">
                 <h3 className="text-2xl font-semibold text-[#1A1A1A]">TDEE Kalkulator</h3>
@@ -3534,7 +3075,7 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
       title: "Target Calories Kalkulator",
       description: "Odredi koliko kalorija trebaš jesti da postigneš svoj cilj.",
       render: (
-        <div className="h-full overflow-y-auto flex flex-col min-h-0">
+        <div className="h-full overflow-y-auto">
           <AnimatePresence mode="wait">
           {!showTargetCalc ? (
               <motion.div
@@ -3543,7 +3084,7 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-                className="flex-1 overflow-y-auto space-y-6 pb-4"
+                className="space-y-6 pb-8"
               >
               <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
                 <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Što su Target Calories?</h3>
@@ -3592,7 +3133,7 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                   ili nezdravog povećanja masti.
                 </p>
               </div>
-              <div className="mt-6 pb-4">
+              <div className="pb-8">
                 <button
                   onClick={() => setShowTargetCalc(true)}
                   className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-4 text-white font-semibold text-lg transition hover:-translate-y-0.5 hover:shadow-lg"
@@ -3608,8 +3149,8 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-                className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl overflow-y-auto flex flex-col min-h-0"
-                style={{ willChange: "transform, opacity", maxHeight: "100%" }}
+                className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl flex-1 overflow-y-auto"
+                style={{ willChange: "transform, opacity" }}
               >
               <div className="flex justify-between items-center mb-4 flex-shrink-0">
                 <h3 className="text-2xl font-semibold text-[#1A1A1A]">Target Calories Kalkulator</h3>
@@ -3668,7 +3209,12 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                     <button
                       onClick={() => {
                         setTargetConfirmed(true);
-                        setMacrosInputs({ ...macrosInputs, targetCalories: targetResult });
+                        // Sinkroniziraj targetCalories i goalType na macros kalkulator
+                        setMacrosInputs(prev => ({ 
+                          ...prev, 
+                          targetCalories: targetResult,
+                          goalType: targetInputs.goalType 
+                        }));
                       }}
                       className={`w-full rounded-[16px] px-6 py-3 font-semibold transition hover:-translate-y-0.5 hover:shadow-lg ${
                         targetConfirmed
@@ -3692,7 +3238,7 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
       title: "Makrosi (Makronutrijenti)",
       description: "Proteini, ugljikohidrati i masti - tri ključna elementa tvoje prehrane.",
       render: (
-        <div className="h-full overflow-y-auto flex flex-col min-h-0">
+        <div className="h-full overflow-y-auto">
           <AnimatePresence mode="wait">
           {!showMacrosCalc ? (
               <motion.div
@@ -3701,7 +3247,7 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-                className="flex-1 overflow-y-auto space-y-6 pb-4"
+                className="space-y-6 pb-8"
               >
               <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
                 <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Proteini</h3>
@@ -3744,7 +3290,7 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                   funkciju, apsorpciju vitamina i osjećaj sitosti.
                 </p>
               </div>
-              <div className="mt-6 pb-4">
+              <div className="pb-8">
                 <button
                   onClick={() => setShowMacrosCalc(true)}
                   className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-4 text-white font-semibold text-lg transition hover:-translate-y-0.5 hover:shadow-lg"
@@ -3760,8 +3306,8 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-                className="rounded-[16px] bg-white/80 backdrop-blur-sm border-2 border-gray-900 p-6 shadow-xl overflow-y-auto flex flex-col min-h-0"
-                style={{ willChange: "transform, opacity", maxHeight: "100%" }}
+                className="rounded-[16px] bg-white/80 backdrop-blur-sm border-2 border-gray-900 p-6 shadow-xl flex-1 overflow-y-auto"
+                style={{ willChange: "transform, opacity" }}
               >
               <div className="flex justify-between items-center mb-4 flex-shrink-0">
                 <h3 className="text-2xl font-semibold text-gray-900">Kalkulator Makrosa</h3>

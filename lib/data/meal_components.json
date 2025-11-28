@@ -1,243 +1,575 @@
 {
   "breakfast": [
     {
-      "name": "Jaja + tost + avokado",
+      "id": "breakfast_1",
+      "name": "Jaja s bjelanjkom i zobenom kašom",
+      "description": "Proteinski bogat doručak s ugljikohidratima",
       "components": [
-        { "food": "Egg", "grams": 120 },
-        { "food": "Toast", "grams": 60 },
-        { "food": "Avocado", "grams": 50 }
-      ]
+        { "food": "Egg", "grams": 100, "displayName": "Jaja (2 kom)" },
+        { "food": "Egg white", "grams": 60, "displayName": "Bjelanjak (2 kom)" },
+        { "food": "Oats", "grams": 50, "displayName": "Zobene pahuljice" },
+        { "food": "Banana", "grams": 100, "displayName": "Banana" },
+        { "food": "Milk", "grams": 150, "displayName": "Mlijeko 1.5%" }
+      ],
+      "tags": ["high-protein", "balanced"],
+      "suitableFor": ["lose", "maintain", "gain"]
     },
     {
-      "name": "Zobena kaša s wheyom i bananom",
+      "id": "breakfast_2",
+      "name": "Zobena kaša s wheyem i bananom",
+      "description": "Slatka proteinska zobena kaša",
       "components": [
-        { "food": "Oats", "grams": 80 },
-        { "food": "Whey", "grams": 30 },
-        { "food": "Banana", "grams": 100 }
-      ]
+        { "food": "Oats", "grams": 60, "displayName": "Zobene pahuljice" },
+        { "food": "Milk", "grams": 200, "displayName": "Mlijeko 1.5%" },
+        { "food": "Whey", "grams": 30, "displayName": "Whey protein" },
+        { "food": "Banana", "grams": 100, "displayName": "Banana" },
+        { "food": "Almonds", "grams": 15, "displayName": "Bademi" }
+      ],
+      "tags": ["sweet", "high-protein"],
+      "suitableFor": ["maintain", "gain"]
     },
     {
-      "name": "Grčki jogurt + zobene + višnje",
+      "id": "breakfast_3",
+      "name": "Omlet s povrćem i purećom salamom",
+      "description": "Slani proteinski doručak",
       "components": [
-        { "food": "Greek yogurt", "grams": 170 },
-        { "food": "Oats", "grams": 40 },
-        { "food": "Cherries", "grams": 80 }
-      ]
+        { "food": "Egg", "grams": 150, "displayName": "Jaja (3 kom)" },
+        { "food": "Mushroom", "grams": 50, "displayName": "Gljive" },
+        { "food": "Onion", "grams": 30, "displayName": "Luk" },
+        { "food": "Turkey breast", "grams": 50, "displayName": "Pureća salama" },
+        { "food": "Toast", "grams": 50, "displayName": "Integralni tost" }
+      ],
+      "tags": ["high-protein", "savory"],
+      "suitableFor": ["lose", "maintain", "gain"]
     },
     {
-      "name": "Jaja + dimčena salama + tost",
+      "id": "breakfast_4",
+      "name": "Skyr s wheyem i smrznutim voćem",
+      "description": "Kremasti proteinski doručak",
       "components": [
-        { "food": "Egg", "grams": 140 },
-        { "food": "Ham", "grams": 40 },
-        { "food": "Toast", "grams": 50 }
-      ]
+        { "food": "Skyr", "grams": 200, "displayName": "Skyr" },
+        { "food": "Whey", "grams": 25, "displayName": "Whey protein" },
+        { "food": "Blueberries", "grams": 80, "displayName": "Borovnice" },
+        { "food": "Banana", "grams": 80, "displayName": "Banana" }
+      ],
+      "tags": ["high-protein", "sweet", "light"],
+      "suitableFor": ["lose", "maintain"]
     },
     {
-      "name": "Whey shake s bananom i mlijekom",
+      "id": "breakfast_5",
+      "name": "Toast s purećom salamom i grčkim jogurtom",
+      "description": "Uravnotežen slani doručak",
       "components": [
-        { "food": "Whey", "grams": 30 },
-        { "food": "Banana", "grams": 100 },
-        { "food": "Milk", "grams": 200 }
-      ]
+        { "food": "Toast", "grams": 60, "displayName": "Integralni tost (2 kriške)" },
+        { "food": "Turkey breast", "grams": 60, "displayName": "Pureća salama" },
+        { "food": "Greek yogurt", "grams": 150, "displayName": "Grčki jogurt" },
+        { "food": "Banana", "grams": 100, "displayName": "Banana" }
+      ],
+      "tags": ["balanced", "high-protein"],
+      "suitableFor": ["lose", "maintain", "gain"]
     },
     {
-      "name": "Grčki jogurt + zobene + mlijeko",
+      "id": "breakfast_6",
+      "name": "Zrnati sir s voćem i bademima",
+      "description": "Lagani proteinski doručak",
       "components": [
-        { "food": "Greek yogurt", "grams": 180 },
-        { "food": "Oats", "grams": 50 },
-        { "food": "Milk", "grams": 150 }
-      ]
+        { "food": "Cottage cheese", "grams": 200, "displayName": "Zrnati sir" },
+        { "food": "Banana", "grams": 100, "displayName": "Banana" },
+        { "food": "Almonds", "grams": 20, "displayName": "Bademi" },
+        { "food": "Blueberries", "grams": 50, "displayName": "Borovnice" }
+      ],
+      "tags": ["high-protein", "light"],
+      "suitableFor": ["lose", "maintain"]
     },
     {
-      "name": "Omlet s avokadom + tost",
+      "id": "breakfast_7",
+      "name": "Rižini krekeri s kikiriki maslacem i bananom",
+      "description": "Brzi energetski doručak",
       "components": [
-        { "food": "Egg", "grams": 130 },
-        { "food": "Avocado", "grams": 60 },
-        { "food": "Toast", "grams": 50 }
-      ]
+        { "food": "Rice crackers", "grams": 40, "displayName": "Rižini krekeri" },
+        { "food": "Peanut butter", "grams": 30, "displayName": "Kikiriki maslac" },
+        { "food": "Banana", "grams": 120, "displayName": "Banana" },
+        { "food": "Greek yogurt", "grams": 150, "displayName": "Grčki jogurt" }
+      ],
+      "tags": ["quick", "balanced"],
+      "suitableFor": ["maintain", "gain"]
     },
     {
-      "name": "Zobene + grčki jogurt + višnje",
+      "id": "breakfast_8",
+      "name": "Grčki jogurt bowl sa zobenim i voćem",
+      "description": "Kremasti doručak s vlaknima",
       "components": [
-        { "food": "Oats", "grams": 70 },
-        { "food": "Greek yogurt", "grams": 150 },
-        { "food": "Cherries", "grams": 70 }
-      ]
+        { "food": "Greek yogurt", "grams": 200, "displayName": "Grčki jogurt" },
+        { "food": "Oats", "grams": 40, "displayName": "Zobene pahuljice" },
+        { "food": "Banana", "grams": 80, "displayName": "Banana" },
+        { "food": "Blueberries", "grams": 60, "displayName": "Borovnice" },
+        { "food": "Cashews", "grams": 15, "displayName": "Indijski oraščići" }
+      ],
+      "tags": ["balanced", "fiber-rich"],
+      "suitableFor": ["lose", "maintain", "gain"]
+    },
+    {
+      "id": "breakfast_9",
+      "name": "Proteinski doručak za masu",
+      "description": "Visokokalorični doručak za povećanje mišićne mase",
+      "components": [
+        { "food": "Egg", "grams": 150, "displayName": "Jaja (3 kom)" },
+        { "food": "Toast", "grams": 80, "displayName": "Integralni tost (2 kriške)" },
+        { "food": "Peanut butter", "grams": 30, "displayName": "Kikiriki maslac" },
+        { "food": "Turkey breast", "grams": 50, "displayName": "Pureća salama" },
+        { "food": "Milk", "grams": 250, "displayName": "Mlijeko 1.5%" }
+      ],
+      "tags": ["high-calorie", "high-protein", "mass-gain"],
+      "suitableFor": ["gain"]
+    },
+    {
+      "id": "breakfast_10",
+      "name": "Whey shake sa zobenim i bananom",
+      "description": "Brzi proteinski doručak",
+      "components": [
+        { "food": "Whey", "grams": 30, "displayName": "Whey protein" },
+        { "food": "Milk", "grams": 250, "displayName": "Mlijeko 1.5%" },
+        { "food": "Oats", "grams": 50, "displayName": "Zobene pahuljice" },
+        { "food": "Banana", "grams": 100, "displayName": "Banana" }
+      ],
+      "tags": ["quick", "high-protein"],
+      "suitableFor": ["lose", "maintain", "gain"]
+    },
+    {
+      "id": "breakfast_11",
+      "name": "Jaja na oko s tostom i skyrom",
+      "description": "Klasičan proteinski doručak",
+      "components": [
+        { "food": "Egg", "grams": 120, "displayName": "Jaja (2 kom)" },
+        { "food": "Toast", "grams": 60, "displayName": "Integralni tost (2 kriške)" },
+        { "food": "Skyr", "grams": 150, "displayName": "Skyr" },
+        { "food": "Banana", "grams": 80, "displayName": "Banana" }
+      ],
+      "tags": ["balanced", "classic"],
+      "suitableFor": ["lose", "maintain", "gain"]
+    },
+    {
+      "id": "breakfast_12",
+      "name": "Zobena kaša s indijskim oraščićima",
+      "description": "Kremasta zobena kaša sa zdravim mastima",
+      "components": [
+        { "food": "Oats", "grams": 60, "displayName": "Zobene pahuljice" },
+        { "food": "Milk", "grams": 200, "displayName": "Mlijeko 1.5%" },
+        { "food": "Cashews", "grams": 25, "displayName": "Indijski oraščići" },
+        { "food": "Banana", "grams": 100, "displayName": "Banana" },
+        { "food": "Whey", "grams": 20, "displayName": "Whey protein" }
+      ],
+      "tags": ["healthy-fats", "balanced"],
+      "suitableFor": ["maintain", "gain"]
     }
   ],
   "lunch": [
     {
-      "name": "Piletina + riža + salata",
+      "id": "lunch_1",
+      "name": "Piletina s tjesteninom i salatom",
+      "description": "Klasičan fitness ručak",
       "components": [
-        { "food": "Chicken breast", "grams": 180 },
-        { "food": "Rice cooked", "grams": 200 },
-        { "food": "Lettuce", "grams": 80 }
-      ]
+        { "food": "Chicken breast", "grams": 180, "displayName": "Pileća prsa" },
+        { "food": "Pasta cooked", "grams": 200, "displayName": "Tjestenina" },
+        { "food": "Lettuce", "grams": 80, "displayName": "Zelena salata" },
+        { "food": "Tomato", "grams": 80, "displayName": "Rajčica" }
+      ],
+      "tags": ["high-protein", "balanced"],
+      "suitableFor": ["lose", "maintain", "gain"]
     },
     {
-      "name": "Piletina + tjestenina + salata",
+      "id": "lunch_2",
+      "name": "Piletina s pire krumpirom i krastavcima",
+      "description": "Tradicionalni ručak",
       "components": [
-        { "food": "Chicken breast", "grams": 170 },
-        { "food": "Pasta cooked", "grams": 200 },
-        { "food": "Lettuce", "grams": 70 }
-      ]
+        { "food": "Chicken breast", "grams": 180, "displayName": "Pileća prsa" },
+        { "food": "Potatoes", "grams": 250, "displayName": "Pire krumpir" },
+        { "food": "Cucumber", "grams": 100, "displayName": "Krastavci" },
+        { "food": "Lettuce", "grams": 50, "displayName": "Zelena salata" }
+      ],
+      "tags": ["traditional", "balanced"],
+      "suitableFor": ["maintain", "gain"]
     },
     {
-      "name": "Piletina + krumpir + salata",
+      "id": "lunch_3",
+      "name": "Puretina s kuhanim krumpirom i salatom",
+      "description": "Lagani proteinski ručak",
       "components": [
-        { "food": "Chicken breast", "grams": 180 },
-        { "food": "Potatoes", "grams": 220 },
-        { "food": "Lettuce", "grams": 60 }
-      ]
+        { "food": "Turkey breast", "grams": 180, "displayName": "Pureća prsa" },
+        { "food": "Potatoes", "grams": 200, "displayName": "Kuhani krumpir" },
+        { "food": "Lettuce", "grams": 80, "displayName": "Zelena salata" },
+        { "food": "Tomato", "grams": 80, "displayName": "Rajčica" }
+      ],
+      "tags": ["high-protein", "light"],
+      "suitableFor": ["lose", "maintain"]
     },
     {
-      "name": "Junetina + riža + salata",
+      "id": "lunch_4",
+      "name": "Losos s kuhanim krumpirom i povrćem",
+      "description": "Bogat omega-3 masnim kiselinama",
       "components": [
-        { "food": "Beef", "grams": 160 },
-        { "food": "Rice cooked", "grams": 180 },
-        { "food": "Lettuce", "grams": 80 }
-      ]
+        { "food": "Salmon", "grams": 180, "displayName": "Losos" },
+        { "food": "Potatoes", "grams": 200, "displayName": "Kuhani krumpir" },
+        { "food": "Cucumber", "grams": 80, "displayName": "Krastavci" },
+        { "food": "Lettuce", "grams": 60, "displayName": "Zelena salata" }
+      ],
+      "tags": ["omega-3", "healthy-fats"],
+      "suitableFor": ["lose", "maintain", "gain"]
     },
     {
-      "name": "Junetina + tjestenina + salata",
+      "id": "lunch_5",
+      "name": "Tuna s tjesteninom i kukuruzom",
+      "description": "Brzi proteinski ručak",
       "components": [
-        { "food": "Beef", "grams": 170 },
-        { "food": "Pasta cooked", "grams": 200 },
-        { "food": "Lettuce", "grams": 70 }
-      ]
+        { "food": "Tuna", "grams": 150, "displayName": "Tuna (konzerva)" },
+        { "food": "Pasta cooked", "grams": 200, "displayName": "Tjestenina" },
+        { "food": "Corn", "grams": 80, "displayName": "Kukuruz" },
+        { "food": "Cucumber", "grams": 80, "displayName": "Krastavci" }
+      ],
+      "tags": ["quick", "high-protein"],
+      "suitableFor": ["lose", "maintain", "gain"]
     },
     {
-      "name": "Junetina + krumpir + salata",
+      "id": "lunch_6",
+      "name": "Pečeno pile s krumpirom i salatom",
+      "description": "Tradicionalno pečeno pile",
       "components": [
-        { "food": "Beef", "grams": 160 },
-        { "food": "Potatoes", "grams": 200 },
-        { "food": "Lettuce", "grams": 60 }
-      ]
+        { "food": "Chicken breast", "grams": 200, "displayName": "Pečeno pile" },
+        { "food": "Potatoes", "grams": 200, "displayName": "Kuhani krumpir" },
+        { "food": "Lettuce", "grams": 80, "displayName": "Zelena salata" },
+        { "food": "Tomato", "grams": 60, "displayName": "Rajčica" }
+      ],
+      "tags": ["traditional", "high-protein"],
+      "suitableFor": ["maintain", "gain"]
     },
     {
-      "name": "Losos + riža + salata",
+      "id": "lunch_7",
+      "name": "Piletina s hajdinskom kašom i salatom",
+      "description": "Zdrav ručak bez glutena",
       "components": [
-        { "food": "Salmon", "grams": 160 },
-        { "food": "Rice cooked", "grams": 180 },
-        { "food": "Lettuce", "grams": 80 }
-      ]
+        { "food": "Chicken breast", "grams": 180, "displayName": "Pileća prsa" },
+        { "food": "Buckwheat", "grams": 150, "displayName": "Hajdinska kaša" },
+        { "food": "Lettuce", "grams": 80, "displayName": "Zelena salata" },
+        { "food": "Tomato", "grams": 80, "displayName": "Rajčica" }
+      ],
+      "tags": ["gluten-free", "healthy"],
+      "suitableFor": ["lose", "maintain", "gain"]
     },
     {
-      "name": "Losos + tjestenina + salata",
+      "id": "lunch_8",
+      "name": "Tjestenina s piletinom i vrhnjem",
+      "description": "Kremasta tjestenina s piletinom",
       "components": [
-        { "food": "Salmon", "grams": 150 },
-        { "food": "Pasta cooked", "grams": 200 },
-        { "food": "Lettuce", "grams": 70 }
-      ]
+        { "food": "Chicken breast", "grams": 150, "displayName": "Pileća prsa" },
+        { "food": "Pasta cooked", "grams": 200, "displayName": "Tjestenina" },
+        { "food": "Sour cream", "grams": 50, "displayName": "Vrhnje za kuhanje" },
+        { "food": "Lettuce", "grams": 60, "displayName": "Zelena salata" }
+      ],
+      "tags": ["creamy", "comfort-food"],
+      "suitableFor": ["maintain", "gain"]
     },
     {
-      "name": "Tuna + riža + salata",
+      "id": "lunch_9",
+      "name": "Losos s tjesteninom i povrćem",
+      "description": "Hranjiv ručak s ribom",
       "components": [
-        { "food": "Tuna", "grams": 140 },
-        { "food": "Rice cooked", "grams": 180 },
-        { "food": "Lettuce", "grams": 80 }
-      ]
+        { "food": "Salmon", "grams": 150, "displayName": "Losos" },
+        { "food": "Pasta cooked", "grams": 180, "displayName": "Tjestenina" },
+        { "food": "Tomato", "grams": 80, "displayName": "Rajčica" },
+        { "food": "Lettuce", "grams": 60, "displayName": "Zelena salata" }
+      ],
+      "tags": ["omega-3", "balanced"],
+      "suitableFor": ["maintain", "gain"]
     },
     {
-      "name": "Tuna + tjestenina + salata",
+      "id": "lunch_10",
+      "name": "Puretina s hajdinskom kašom i krastavcima",
+      "description": "Lagani bezglutenski ručak",
       "components": [
-        { "food": "Tuna", "grams": 150 },
-        { "food": "Pasta cooked", "grams": 200 },
-        { "food": "Lettuce", "grams": 70 }
-      ]
+        { "food": "Turkey breast", "grams": 180, "displayName": "Pureća prsa" },
+        { "food": "Buckwheat", "grams": 150, "displayName": "Hajdinska kaša" },
+        { "food": "Cucumber", "grams": 100, "displayName": "Krastavci" },
+        { "food": "Tomato", "grams": 60, "displayName": "Rajčica" }
+      ],
+      "tags": ["gluten-free", "light"],
+      "suitableFor": ["lose", "maintain"]
     },
     {
-      "name": "Puretina + riža + salata",
+      "id": "lunch_11",
+      "name": "Piletina s pire krumpirom i rajčicom",
+      "description": "Klasičan ugodan ručak",
       "components": [
-        { "food": "Turkey breast", "grams": 170 },
-        { "food": "Rice cooked", "grams": 180 },
-        { "food": "Lettuce", "grams": 80 }
-      ]
+        { "food": "Chicken breast", "grams": 180, "displayName": "Pileća prsa" },
+        { "food": "Potatoes", "grams": 250, "displayName": "Pire krumpir" },
+        { "food": "Tomato", "grams": 100, "displayName": "Rajčica" },
+        { "food": "Lettuce", "grams": 50, "displayName": "Zelena salata" }
+      ],
+      "tags": ["comfort-food", "traditional"],
+      "suitableFor": ["maintain", "gain"]
+    },
+    {
+      "id": "lunch_12",
+      "name": "Tuna salata s kukuruzom i krastavcima",
+      "description": "Lagani ručak bez ugljikohidrata",
+      "components": [
+        { "food": "Tuna", "grams": 180, "displayName": "Tuna (konzerva)" },
+        { "food": "Corn", "grams": 100, "displayName": "Kukuruz" },
+        { "food": "Cucumber", "grams": 100, "displayName": "Krastavci" },
+        { "food": "Lettuce", "grams": 100, "displayName": "Zelena salata" },
+        { "food": "Tomato", "grams": 80, "displayName": "Rajčica" }
+      ],
+      "tags": ["low-carb", "high-protein"],
+      "suitableFor": ["lose", "maintain"]
     }
   ],
   "dinner": [
     {
-      "name": "Tuna salata",
+      "id": "dinner_1",
+      "name": "Tuna salata s krastavcima",
+      "description": "Lagana proteinska večera",
       "components": [
-        { "food": "Tuna", "grams": 140 },
-        { "food": "Lettuce", "grams": 100 },
-        { "food": "Tomato", "grams": 80 }
-      ]
+        { "food": "Tuna", "grams": 150, "displayName": "Tuna (konzerva)" },
+        { "food": "Cucumber", "grams": 120, "displayName": "Krastavci" },
+        { "food": "Lettuce", "grams": 80, "displayName": "Zelena salata" },
+        { "food": "Rice crackers", "grams": 30, "displayName": "Rižini krekeri" }
+      ],
+      "tags": ["light", "high-protein"],
+      "suitableFor": ["lose", "maintain"]
     },
     {
-      "name": "Piletina + salata",
+      "id": "dinner_2",
+      "name": "Grčki jogurt s wheyem i voćem",
+      "description": "Slatka proteinska večera",
       "components": [
-        { "food": "Chicken breast", "grams": 150 },
-        { "food": "Lettuce", "grams": 100 },
-        { "food": "Cucumber", "grams": 80 }
-      ]
+        { "food": "Greek yogurt", "grams": 200, "displayName": "Grčki jogurt" },
+        { "food": "Whey", "grams": 25, "displayName": "Whey protein" },
+        { "food": "Blueberries", "grams": 80, "displayName": "Borovnice" },
+        { "food": "Banana", "grams": 80, "displayName": "Banana" }
+      ],
+      "tags": ["sweet", "high-protein"],
+      "suitableFor": ["lose", "maintain", "gain"]
     },
     {
-      "name": "Grčki jogurt + whey + zamrznuto voće",
+      "id": "dinner_3",
+      "name": "Losos s povrćem i avokadom",
+      "description": "Bogata omega-3 večera",
       "components": [
-        { "food": "Greek yogurt", "grams": 180 },
-        { "food": "Whey", "grams": 30 },
-        { "food": "Cherries", "grams": 100 }
-      ]
+        { "food": "Salmon", "grams": 150, "displayName": "Losos" },
+        { "food": "Avocado", "grams": 60, "displayName": "Avokado" },
+        { "food": "Cucumber", "grams": 100, "displayName": "Krastavci" },
+        { "food": "Lettuce", "grams": 60, "displayName": "Zelena salata" }
+      ],
+      "tags": ["omega-3", "healthy-fats"],
+      "suitableFor": ["lose", "maintain", "gain"]
     },
     {
-      "name": "Tuna + povrće",
+      "id": "dinner_4",
+      "name": "Zrnati sir s rižinim krekerima i voćem",
+      "description": "Lagana večera bogata proteinima",
       "components": [
-        { "food": "Tuna", "grams": 130 },
-        { "food": "Lettuce", "grams": 90 },
-        { "food": "Tomato", "grams": 70 }
-      ]
+        { "food": "Cottage cheese", "grams": 200, "displayName": "Zrnati sir" },
+        { "food": "Rice crackers", "grams": 30, "displayName": "Rižini krekeri" },
+        { "food": "Blueberries", "grams": 60, "displayName": "Borovnice" },
+        { "food": "Banana", "grams": 60, "displayName": "Banana" }
+      ],
+      "tags": ["light", "high-protein"],
+      "suitableFor": ["lose", "maintain"]
     },
     {
-      "name": "Piletina + povrće",
+      "id": "dinner_5",
+      "name": "Jaja s avokadom i salatom",
+      "description": "Jednostavna večera sa zdravim mastima",
       "components": [
-        { "food": "Chicken breast", "grams": 160 },
-        { "food": "Broccoli", "grams": 120 },
-        { "food": "Carrot", "grams": 80 }
-      ]
+        { "food": "Egg", "grams": 120, "displayName": "Jaja (2 kom)" },
+        { "food": "Avocado", "grams": 80, "displayName": "Avokado" },
+        { "food": "Lettuce", "grams": 80, "displayName": "Zelena salata" },
+        { "food": "Tomato", "grams": 60, "displayName": "Rajčica" }
+      ],
+      "tags": ["healthy-fats", "balanced"],
+      "suitableFor": ["lose", "maintain"]
     },
     {
-      "name": "Grčki jogurt + whey + borovnice",
+      "id": "dinner_6",
+      "name": "Tuna s rižinim krekerima i salatom",
+      "description": "Brza proteinska večera",
       "components": [
-        { "food": "Greek yogurt", "grams": 170 },
-        { "food": "Whey", "grams": 30 },
-        { "food": "Blueberries", "grams": 90 }
-      ]
+        { "food": "Tuna", "grams": 150, "displayName": "Tuna (konzerva)" },
+        { "food": "Rice crackers", "grams": 40, "displayName": "Rižini krekeri" },
+        { "food": "Lettuce", "grams": 80, "displayName": "Zelena salata" },
+        { "food": "Cucumber", "grams": 80, "displayName": "Krastavci" }
+      ],
+      "tags": ["quick", "high-protein"],
+      "suitableFor": ["lose", "maintain"]
+    },
+    {
+      "id": "dinner_7",
+      "name": "Skyr protein bowl",
+      "description": "Kremasta proteinska večera",
+      "components": [
+        { "food": "Skyr", "grams": 200, "displayName": "Skyr" },
+        { "food": "Whey", "grams": 20, "displayName": "Whey protein" },
+        { "food": "Blueberries", "grams": 80, "displayName": "Borovnice" },
+        { "food": "Banana", "grams": 60, "displayName": "Banana" }
+      ],
+      "tags": ["sweet", "high-protein", "light"],
+      "suitableFor": ["lose", "maintain"]
+    },
+    {
+      "id": "dinner_8",
+      "name": "Losos s krastavcima i kikiriki maslacem",
+      "description": "Proteinska večera sa zdravim mastima",
+      "components": [
+        { "food": "Salmon", "grams": 140, "displayName": "Losos" },
+        { "food": "Cucumber", "grams": 100, "displayName": "Krastavci" },
+        { "food": "Peanut butter", "grams": 15, "displayName": "Kikiriki maslac" },
+        { "food": "Rice crackers", "grams": 25, "displayName": "Rižini krekeri" }
+      ],
+      "tags": ["omega-3", "healthy-fats"],
+      "suitableFor": ["maintain", "gain"]
+    },
+    {
+      "id": "dinner_9",
+      "name": "Zrnati sir s kikiriki maslacem i bananom",
+      "description": "Slatko-slana kombinacija",
+      "components": [
+        { "food": "Cottage cheese", "grams": 180, "displayName": "Zrnati sir" },
+        { "food": "Peanut butter", "grams": 20, "displayName": "Kikiriki maslac" },
+        { "food": "Banana", "grams": 80, "displayName": "Banana" }
+      ],
+      "tags": ["balanced", "satisfying"],
+      "suitableFor": ["maintain", "gain"]
+    },
+    {
+      "id": "dinner_10",
+      "name": "Grčki jogurt s avokadom i borovnicama",
+      "description": "Kremasta večera sa zdravim mastima",
+      "components": [
+        { "food": "Greek yogurt", "grams": 200, "displayName": "Grčki jogurt" },
+        { "food": "Avocado", "grams": 50, "displayName": "Avokado" },
+        { "food": "Blueberries", "grams": 80, "displayName": "Borovnice" },
+        { "food": "Whey", "grams": 15, "displayName": "Whey protein" }
+      ],
+      "tags": ["healthy-fats", "high-protein"],
+      "suitableFor": ["lose", "maintain"]
     }
   ],
   "snack": [
     {
-      "name": "Whey shake",
+      "id": "snack_1",
+      "name": "Whey shake s bananom i borovnicama",
+      "description": "Klasični proteinski shake",
       "components": [
-        { "food": "Whey", "grams": 30 },
-        { "food": "Milk", "grams": 200 }
-      ]
+        { "food": "Whey", "grams": 30, "displayName": "Whey protein" },
+        { "food": "Milk", "grams": 250, "displayName": "Mlijeko 1.5%" },
+        { "food": "Banana", "grams": 80, "displayName": "Banana" },
+        { "food": "Blueberries", "grams": 50, "displayName": "Borovnice" }
+      ],
+      "tags": ["high-protein", "quick"],
+      "suitableFor": ["lose", "maintain", "gain"]
     },
     {
-      "name": "Voće",
+      "id": "snack_2",
+      "name": "Skyr s bananom",
+      "description": "Jednostavna proteinska užina",
       "components": [
-        { "food": "Apple", "grams": 150 }
-      ]
+        { "food": "Skyr", "grams": 150, "displayName": "Skyr" },
+        { "food": "Banana", "grams": 100, "displayName": "Banana" }
+      ],
+      "tags": ["simple", "high-protein"],
+      "suitableFor": ["lose", "maintain", "gain"]
     },
     {
-      "name": "Banana",
+      "id": "snack_3",
+      "name": "Grčki jogurt s wheyem i voćem",
+      "description": "Kremasta proteinska užina",
       "components": [
-        { "food": "Banana", "grams": 120 }
-      ]
+        { "food": "Greek yogurt", "grams": 150, "displayName": "Grčki jogurt" },
+        { "food": "Whey", "grams": 20, "displayName": "Whey protein" },
+        { "food": "Blueberries", "grams": 60, "displayName": "Borovnice" }
+      ],
+      "tags": ["high-protein", "sweet"],
+      "suitableFor": ["lose", "maintain"]
     },
     {
-      "name": "Whey + voće",
+      "id": "snack_4",
+      "name": "Banana s bademima",
+      "description": "Voćna užina sa zdravim mastima",
       "components": [
-        { "food": "Whey", "grams": 25 },
-        { "food": "Apple", "grams": 100 }
-      ]
+        { "food": "Banana", "grams": 150, "displayName": "Banana" },
+        { "food": "Almonds", "grams": 20, "displayName": "Bademi" }
+      ],
+      "tags": ["fruit", "simple"],
+      "suitableFor": ["lose", "maintain", "gain"]
     },
     {
-      "name": "Grčki jogurt + borovnice",
+      "id": "snack_5",
+      "name": "Rižini krekeri s kikiriki maslacem",
+      "description": "Hrskava užina sa zdravim mastima",
       "components": [
-        { "food": "Greek yogurt", "grams": 150 },
-        { "food": "Blueberries", "grams": 80 }
-      ]
+        { "food": "Rice crackers", "grams": 30, "displayName": "Rižini krekeri" },
+        { "food": "Peanut butter", "grams": 25, "displayName": "Kikiriki maslac" },
+        { "food": "Banana", "grams": 60, "displayName": "Banana" }
+      ],
+      "tags": ["crunchy", "satisfying"],
+      "suitableFor": ["maintain", "gain"]
+    },
+    {
+      "id": "snack_6",
+      "name": "Whey protein shake",
+      "description": "Čisti proteinski shake",
+      "components": [
+        { "food": "Whey", "grams": 30, "displayName": "Whey protein" },
+        { "food": "Milk", "grams": 300, "displayName": "Mlijeko 1.5%" }
+      ],
+      "tags": ["high-protein", "simple"],
+      "suitableFor": ["lose", "maintain", "gain"]
+    },
+    {
+      "id": "snack_7",
+      "name": "Skyr s borovnicama",
+      "description": "Antioksidansna užina",
+      "components": [
+        { "food": "Skyr", "grams": 150, "displayName": "Skyr" },
+        { "food": "Blueberries", "grams": 80, "displayName": "Borovnice" }
+      ],
+      "tags": ["antioxidant", "light"],
+      "suitableFor": ["lose", "maintain"]
+    },
+    {
+      "id": "snack_8",
+      "name": "Grčki jogurt s bananom i bademima",
+      "description": "Zasitna užina",
+      "components": [
+        { "food": "Greek yogurt", "grams": 150, "displayName": "Grčki jogurt" },
+        { "food": "Banana", "grams": 80, "displayName": "Banana" },
+        { "food": "Almonds", "grams": 15, "displayName": "Bademi" }
+      ],
+      "tags": ["satisfying", "balanced"],
+      "suitableFor": ["lose", "maintain", "gain"]
+    },
+    {
+      "id": "snack_9",
+      "name": "Rižini krekeri sa zrnatim sirom",
+      "description": "Hrskava proteinska užina",
+      "components": [
+        { "food": "Rice crackers", "grams": 30, "displayName": "Rižini krekeri" },
+        { "food": "Cottage cheese", "grams": 100, "displayName": "Zrnati sir" }
+      ],
+      "tags": ["crunchy", "high-protein"],
+      "suitableFor": ["lose", "maintain", "gain"]
+    },
+    {
+      "id": "snack_10",
+      "name": "Protein smoothie s voćem",
+      "description": "Gusti voćni shake",
+      "components": [
+        { "food": "Whey", "grams": 25, "displayName": "Whey protein" },
+        { "food": "Milk", "grams": 200, "displayName": "Mlijeko 1.5%" },
+        { "food": "Banana", "grams": 100, "displayName": "Banana" },
+        { "food": "Blueberries", "grams": 60, "displayName": "Borovnice" }
+      ],
+      "tags": ["smoothie", "high-protein"],
+      "suitableFor": ["lose", "maintain", "gain"]
     }
   ]
 }
