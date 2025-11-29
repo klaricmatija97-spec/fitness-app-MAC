@@ -1,575 +1,615 @@
 {
+  "goalNotes": {
+    "lose": "🎯 NAPOMENA ZA SKIDANJE KILAŽE:\n\n• Pripremaj hranu u air fryeru, kuhanjem ili na tavi sa sprej uljem - tako značajno smanjuješ kalorije iz masti.\n• Biraj hranu visokog volumena i niske kalorijske gustoće (krumpir, povrće, bjelanjci).\n• Proteini su ključni za očuvanje mišićne mase tijekom deficita.\n• Pij puno vode - pomaže sitosti i metabolizmu.\n• Izbjegavaj prerađenu hranu i skrivene kalorije iz umaka i preliva.",
+    "maintain": "⚖️ NAPOMENA ZA ODRŽAVANJE KILAŽE:\n\n• Zlatna sredina između deficita i suficita - slušaj svoje tijelo.\n• Pripremaj hranu zdravim metodama: air fryer, pećnica, kuhanje, tava sa sprej uljem.\n• Održavaj balans proteina, ugljikohidrata i masti.\n• Uživaj u raznolikosti namirnica bez pretjerivanja.\n• Redovita tjelesna aktivnost pomaže održavanju kompozicije tijela.",
+    "gain": "💪 NAPOMENA ZA DOBIVANJE MIŠIĆNE MASE:\n\n• Budi u kalorijskom suficitu, ali iz kvalitetne hrane - ne junk opcija!\n• Fokus na proteine (1.6-2.2g/kg) i ugljikohidrate; masti drži pod kontrolom.\n• Uzimaj kreatin (3-5g dnevno) ako nemaš prepreka i pij PUNO vode.\n• Dobar dio kalorija uzimaj kroz shakeove - lakše je unijeti tekuće kalorije.\n• Ubaci kratki kardio (10-15 min) za bolji apetit i kondiciju.\n• Pazi da se ne nakuplja previše tjelesne masti - suficit od 300-500 kcal je dovoljan.\n• Pripremaj hranu u air fryeru ili pećnici za zdravije opcije s više kalorija."
+  },
   "breakfast": [
     {
-      "id": "breakfast_1",
-      "name": "Jaja s bjelanjkom i zobenom kašom",
-      "description": "Proteinski bogat doručak s ugljikohidratima",
+      "id": "breakfast_lose_1",
+      "name": "Proteinska kajgana s bjelanjcima i zobenima",
+      "description": "Niskokalorični doručak s visokim unosom proteina. Kombinacija jednog cijelog jaja s četiri bjelanjka daje maksimum proteina uz minimalne masti. Zobene na vodi i banana osiguravaju energiju za cijelo jutro.",
+      "image": "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=300&fit=crop",
+      "preparationTip": "Jaja i bjelanjke isprži na tavi sa sprej uljem - BEZ dodanog ulja ili maslaca. Zobene kuhaj na vodi.",
       "components": [
-        { "food": "Egg", "grams": 100, "displayName": "Jaja (2 kom)" },
-        { "food": "Egg white", "grams": 60, "displayName": "Bjelanjak (2 kom)" },
-        { "food": "Oats", "grams": 50, "displayName": "Zobene pahuljice" },
-        { "food": "Banana", "grams": 100, "displayName": "Banana" },
-        { "food": "Milk", "grams": 150, "displayName": "Mlijeko 1.5%" }
+        { "food": "Egg", "grams": 50, "displayName": "Cijelo jaje (1 kom)" },
+        { "food": "Egg white", "grams": 120, "displayName": "Bjelanjci (4 kom)" },
+        { "food": "Oats", "grams": 50, "displayName": "Zobene na vodi" },
+        { "food": "Banana", "grams": 100, "displayName": "Svježa banana" }
       ],
-      "tags": ["high-protein", "balanced"],
-      "suitableFor": ["lose", "maintain", "gain"]
+      "tags": ["high-protein", "low-fat", "high-volume", "eggs-daily"],
+      "suitableFor": ["lose"]
     },
     {
-      "id": "breakfast_2",
-      "name": "Zobena kaša s wheyem i bananom",
-      "description": "Slatka proteinska zobena kaša",
+      "id": "breakfast_lose_2",
+      "name": "Lagana jaja s bjelanjcima i voćem",
+      "description": "Jednostavan proteinski doručak za deficit. Jedno cijelo jaje daje okus, bjelanjci čisti protein bez masti. Uz voće i posni jogurt - savršena kombinacija za skidanje kilaže.",
+      "image": "https://images.unsplash.com/photo-1510693206972-df098062cb71?w=400&h=300&fit=crop",
+      "preparationTip": "Pripremi jaja na tavi sa sprej uljem. Jogurt biraj 0% mm. Voće dodaj svježe.",
       "components": [
-        { "food": "Oats", "grams": 60, "displayName": "Zobene pahuljice" },
-        { "food": "Milk", "grams": 200, "displayName": "Mlijeko 1.5%" },
-        { "food": "Whey", "grams": 30, "displayName": "Whey protein" },
-        { "food": "Banana", "grams": 100, "displayName": "Banana" },
+        { "food": "Egg", "grams": 50, "displayName": "Cijelo jaje (1 kom)" },
+        { "food": "Egg white", "grams": 90, "displayName": "Bjelanjci (3 kom)" },
+        { "food": "Greek yogurt", "grams": 150, "displayName": "Grčki jogurt 0%" },
+        { "food": "Banana", "grams": 100, "displayName": "Svježa banana" }
+      ],
+      "tags": ["high-protein", "low-fat", "eggs-daily"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "breakfast_lose_3",
+      "name": "Kajgana s bjelanjcima i cottage sirom",
+      "description": "Proteinska bomba za definiciju! Jaje i bjelanjci pružaju aminokiseline, posni zrnati sir dodaje kazein za dugotrajnu sitost. Idealno za očuvanje mišića tijekom mršavljenja.",
+      "image": "https://images.unsplash.com/photo-1464454709131-ffd692591ee5?w=400&h=300&fit=crop",
+      "preparationTip": "Isprži jaja sa sprej uljem. Koristi posni zrnati sir do 5% mm. Bananu nasjeckaj uz obrok.",
+      "components": [
+        { "food": "Egg", "grams": 50, "displayName": "Cijelo jaje (1 kom)" },
+        { "food": "Egg white", "grams": 120, "displayName": "Bjelanjci (4 kom)" },
+        { "food": "Cottage cheese", "grams": 150, "displayName": "Posni zrnati sir" },
+        { "food": "Banana", "grams": 80, "displayName": "Svježa banana" }
+      ],
+      "tags": ["high-protein", "low-fat", "eggs-daily"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "breakfast_lose_4",
+      "name": "Bjelanjci sa zobenima i wheyem",
+      "description": "Ultra-lagani doručak fokusiran na čiste proteine. Bjelanjci bez žutanjka, zobene na vodi i whey isolat daju maksimum proteina s minimalnim mastima i kalorijama.",
+      "image": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=300&fit=crop",
+      "preparationTip": "Bjelanjke isprži na tavi sa sprej uljem. Zobene kuhaj na vodi, whey dodaj nakon kuhanja.",
+      "components": [
+        { "food": "Egg white", "grams": 150, "displayName": "Bjelanjci (5 kom)" },
+        { "food": "Oats", "grams": 50, "displayName": "Zobene na vodi" },
+        { "food": "Whey", "grams": 25, "displayName": "Proteinski isolat" },
+        { "food": "Banana", "grams": 100, "displayName": "Svježa banana" }
+      ],
+      "tags": ["high-protein", "ultra-low-fat", "eggs-daily"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "breakfast_maintain_1",
+      "name": "Klasična kajgana s tostom",
+      "description": "Uravnotežen doručak s cijelim jajima - zlatna sredina. Dva do tri jaja pružaju kompletne proteine i zdrave masti, integralni tost složene ugljikohidrate za energiju.",
+      "image": "https://images.unsplash.com/photo-1510693206972-df098062cb71?w=400&h=300&fit=crop",
+      "preparationTip": "Pripremi kajganu na tavi sa malo sprej ulja. Toast prepeci u tosteru. Jaja mogu biti i na oko.",
+      "components": [
+        { "food": "Egg", "grams": 150, "displayName": "Jaja (3 kom)" },
+        { "food": "Toast", "grams": 60, "displayName": "Integralni tost (2 kriške)" },
+        { "food": "Banana", "grams": 100, "displayName": "Svježa banana" }
+      ],
+      "tags": ["balanced", "classic", "eggs-daily"],
+      "suitableFor": ["maintain"]
+    },
+    {
+      "id": "breakfast_maintain_2",
+      "name": "Jaja na oko s grčkim jogurtom",
+      "description": "Jednostavan ali kompletan doručak. Cijela jaja osiguravaju kolin i omega-3, grčki jogurt probiotike i dodatne proteine. Idealna kombinacija za održavanje forme.",
+      "image": "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=300&fit=crop",
+      "preparationTip": "Jaja pripremi na oko sa malo sprej ulja. Jogurt posluži uz, može i s bananom.",
+      "components": [
+        { "food": "Egg", "grams": 100, "displayName": "Jaja na oko (2 kom)" },
+        { "food": "Greek yogurt", "grams": 150, "displayName": "Grčki jogurt" },
+        { "food": "Banana", "grams": 100, "displayName": "Svježa banana" },
         { "food": "Almonds", "grams": 15, "displayName": "Bademi" }
       ],
-      "tags": ["sweet", "high-protein"],
-      "suitableFor": ["maintain", "gain"]
+      "tags": ["balanced", "simple", "eggs-daily"],
+      "suitableFor": ["maintain"]
     },
     {
-      "id": "breakfast_3",
-      "name": "Omlet s povrćem i purećom salamom",
-      "description": "Slani proteinski doručak",
+      "id": "breakfast_maintain_3",
+      "name": "Kajgana sa skyrom i voćem",
+      "description": "Kombinacija cijelih jaja i islandskog skyra pruža sve esencijalne aminokiseline. Skyr ima najviše proteina od svih jogurta, jaja dodaju zdrave masti za hormone.",
+      "image": "https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=400&h=300&fit=crop",
+      "preparationTip": "Isprži jaja na tavi. Skyr posluži u zdjelici s narezanom bananom i borovnicama.",
       "components": [
-        { "food": "Egg", "grams": 150, "displayName": "Jaja (3 kom)" },
-        { "food": "Mushroom", "grams": 50, "displayName": "Gljive" },
-        { "food": "Onion", "grams": 30, "displayName": "Luk" },
-        { "food": "Turkey breast", "grams": 50, "displayName": "Pureća salama" },
-        { "food": "Toast", "grams": 50, "displayName": "Integralni tost" }
-      ],
-      "tags": ["high-protein", "savory"],
-      "suitableFor": ["lose", "maintain", "gain"]
-    },
-    {
-      "id": "breakfast_4",
-      "name": "Skyr s wheyem i smrznutim voćem",
-      "description": "Kremasti proteinski doručak",
-      "components": [
-        { "food": "Skyr", "grams": 200, "displayName": "Skyr" },
-        { "food": "Whey", "grams": 25, "displayName": "Whey protein" },
-        { "food": "Blueberries", "grams": 80, "displayName": "Borovnice" },
-        { "food": "Banana", "grams": 80, "displayName": "Banana" }
-      ],
-      "tags": ["high-protein", "sweet", "light"],
-      "suitableFor": ["lose", "maintain"]
-    },
-    {
-      "id": "breakfast_5",
-      "name": "Toast s purećom salamom i grčkim jogurtom",
-      "description": "Uravnotežen slani doručak",
-      "components": [
-        { "food": "Toast", "grams": 60, "displayName": "Integralni tost (2 kriške)" },
-        { "food": "Turkey breast", "grams": 60, "displayName": "Pureća salama" },
-        { "food": "Greek yogurt", "grams": 150, "displayName": "Grčki jogurt" },
-        { "food": "Banana", "grams": 100, "displayName": "Banana" }
-      ],
-      "tags": ["balanced", "high-protein"],
-      "suitableFor": ["lose", "maintain", "gain"]
-    },
-    {
-      "id": "breakfast_6",
-      "name": "Zrnati sir s voćem i bademima",
-      "description": "Lagani proteinski doručak",
-      "components": [
-        { "food": "Cottage cheese", "grams": 200, "displayName": "Zrnati sir" },
-        { "food": "Banana", "grams": 100, "displayName": "Banana" },
-        { "food": "Almonds", "grams": 20, "displayName": "Bademi" },
+        { "food": "Egg", "grams": 100, "displayName": "Jaja (2 kom)" },
+        { "food": "Skyr", "grams": 150, "displayName": "Islandski skyr" },
+        { "food": "Banana", "grams": 80, "displayName": "Svježa banana" },
         { "food": "Blueberries", "grams": 50, "displayName": "Borovnice" }
       ],
-      "tags": ["high-protein", "light"],
-      "suitableFor": ["lose", "maintain"]
+      "tags": ["high-protein", "balanced", "eggs-daily"],
+      "suitableFor": ["maintain"]
     },
     {
-      "id": "breakfast_7",
-      "name": "Rižini krekeri s kikiriki maslacem i bananom",
-      "description": "Brzi energetski doručak",
+      "id": "breakfast_maintain_4",
+      "name": "Omlet sa zobenima",
+      "description": "Klasičan fitness doručak - omlet od cijelih jaja uz zobenu kašu. Kompletan nutritivni profil za aktivan dan, savršen balans makronutrijenata.",
+      "image": "https://images.unsplash.com/photo-1495214783159-3503fd1b572d?w=400&h=300&fit=crop",
+      "preparationTip": "Pripremi omlet na tavi. Zobene kuhaj u mlijeku ili vodi, ovisno o preferenciji.",
       "components": [
-        { "food": "Rice crackers", "grams": 40, "displayName": "Rižini krekeri" },
-        { "food": "Peanut butter", "grams": 30, "displayName": "Kikiriki maslac" },
-        { "food": "Banana", "grams": 120, "displayName": "Banana" },
-        { "food": "Greek yogurt", "grams": 150, "displayName": "Grčki jogurt" }
+        { "food": "Egg", "grams": 100, "displayName": "Jaja (2 kom)" },
+        { "food": "Oats", "grams": 50, "displayName": "Zobene pahuljice" },
+        { "food": "Milk", "grams": 150, "displayName": "Mlijeko" },
+        { "food": "Banana", "grams": 100, "displayName": "Svježa banana" }
       ],
-      "tags": ["quick", "balanced"],
-      "suitableFor": ["maintain", "gain"]
+      "tags": ["balanced", "classic", "eggs-daily"],
+      "suitableFor": ["maintain"]
     },
     {
-      "id": "breakfast_8",
-      "name": "Grčki jogurt bowl sa zobenim i voćem",
-      "description": "Kremasti doručak s vlaknima",
+      "id": "breakfast_gain_1",
+      "name": "Power omlet sa salamom i sirom",
+      "description": "Kalorijski bogat doručak za izgradnju mišića! Omlet od 3-4 jaja s pilećom salamom i sirom pruža visok unos proteina i kalorija. Tost i sok dodaju ugljikohidrate za anabolizam.",
+      "image": "https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?w=400&h=300&fit=crop",
+      "preparationTip": "Pripremi bogati omlet na tavi. Sir dodaj dok je omlet još vruć da se rastopi. Uz to tost i sok.",
       "components": [
-        { "food": "Greek yogurt", "grams": 200, "displayName": "Grčki jogurt" },
-        { "food": "Oats", "grams": 40, "displayName": "Zobene pahuljice" },
-        { "food": "Banana", "grams": 80, "displayName": "Banana" },
-        { "food": "Blueberries", "grams": 60, "displayName": "Borovnice" },
-        { "food": "Cashews", "grams": 15, "displayName": "Indijski oraščići" }
+        { "food": "Egg", "grams": 200, "displayName": "Jaja (4 kom)" },
+        { "food": "Turkey breast", "grams": 60, "displayName": "Pileća salama" },
+        { "food": "Cottage cheese", "grams": 50, "displayName": "Sir" },
+        { "food": "Toast", "grams": 80, "displayName": "Tost (2 kriške)" },
+        { "food": "Milk", "grams": 200, "displayName": "Sok od naranče" }
       ],
-      "tags": ["balanced", "fiber-rich"],
-      "suitableFor": ["lose", "maintain", "gain"]
-    },
-    {
-      "id": "breakfast_9",
-      "name": "Proteinski doručak za masu",
-      "description": "Visokokalorični doručak za povećanje mišićne mase",
-      "components": [
-        { "food": "Egg", "grams": 150, "displayName": "Jaja (3 kom)" },
-        { "food": "Toast", "grams": 80, "displayName": "Integralni tost (2 kriške)" },
-        { "food": "Peanut butter", "grams": 30, "displayName": "Kikiriki maslac" },
-        { "food": "Turkey breast", "grams": 50, "displayName": "Pureća salama" },
-        { "food": "Milk", "grams": 250, "displayName": "Mlijeko 1.5%" }
-      ],
-      "tags": ["high-calorie", "high-protein", "mass-gain"],
+      "tags": ["high-calorie", "high-protein", "mass-gain", "eggs-daily"],
       "suitableFor": ["gain"]
     },
     {
-      "id": "breakfast_10",
-      "name": "Whey shake sa zobenim i bananom",
-      "description": "Brzi proteinski doručak",
+      "id": "breakfast_gain_2",
+      "name": "Bogati omlet s tostom i kikiriki maslacem",
+      "description": "Kombinacija jaja, tosta i kikiriki maslaca daje visok unos kalorija i proteina. Idealno za dobivanje mase - lako se jede, a pruža sve potrebno za rast mišića.",
+      "image": "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=400&h=300&fit=crop",
+      "preparationTip": "Isprži jaja kao omlet ili kajganu. Tost namazi kikiriki maslacem. Bananu pojedi uz obrok.",
       "components": [
-        { "food": "Whey", "grams": 30, "displayName": "Whey protein" },
-        { "food": "Milk", "grams": 250, "displayName": "Mlijeko 1.5%" },
-        { "food": "Oats", "grams": 50, "displayName": "Zobene pahuljice" },
-        { "food": "Banana", "grams": 100, "displayName": "Banana" }
+        { "food": "Egg", "grams": 150, "displayName": "Jaja (3 kom)" },
+        { "food": "Toast", "grams": 80, "displayName": "Tost (2 kriške)" },
+        { "food": "Peanut butter", "grams": 30, "displayName": "Kikiriki maslac" },
+        { "food": "Banana", "grams": 120, "displayName": "Svježa banana" }
       ],
-      "tags": ["quick", "high-protein"],
-      "suitableFor": ["lose", "maintain", "gain"]
+      "tags": ["high-calorie", "quick", "eggs-daily"],
+      "suitableFor": ["gain"]
     },
     {
-      "id": "breakfast_11",
-      "name": "Jaja na oko s tostom i skyrom",
-      "description": "Klasičan proteinski doručak",
+      "id": "breakfast_gain_3",
+      "name": "Omlet za masu s mlijekom i zobenima",
+      "description": "Kompletan doručak za ozbiljno dobivanje mišića. Omlet s više jaja, zobene na mlijeku i shake - sve što trebaš za jutarnju anaboličku eksploziju.",
+      "image": "https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=400&h=300&fit=crop",
+      "preparationTip": "Pripremi omlet od svih jaja. Zobene kuhaj na punomasnom mlijeku. Može i proteinski shake uz obrok.",
       "components": [
-        { "food": "Egg", "grams": 120, "displayName": "Jaja (2 kom)" },
-        { "food": "Toast", "grams": 60, "displayName": "Integralni tost (2 kriške)" },
-        { "food": "Skyr", "grams": 150, "displayName": "Skyr" },
-        { "food": "Banana", "grams": 80, "displayName": "Banana" }
-      ],
-      "tags": ["balanced", "classic"],
-      "suitableFor": ["lose", "maintain", "gain"]
-    },
-    {
-      "id": "breakfast_12",
-      "name": "Zobena kaša s indijskim oraščićima",
-      "description": "Kremasta zobena kaša sa zdravim mastima",
-      "components": [
+        { "food": "Egg", "grams": 150, "displayName": "Jaja (3 kom)" },
         { "food": "Oats", "grams": 60, "displayName": "Zobene pahuljice" },
-        { "food": "Milk", "grams": 200, "displayName": "Mlijeko 1.5%" },
-        { "food": "Cashews", "grams": 25, "displayName": "Indijski oraščići" },
-        { "food": "Banana", "grams": 100, "displayName": "Banana" },
-        { "food": "Whey", "grams": 20, "displayName": "Whey protein" }
+        { "food": "Milk", "grams": 300, "displayName": "Punomasno mlijeko" },
+        { "food": "Whey", "grams": 30, "displayName": "Proteinski isolat" },
+        { "food": "Banana", "grams": 100, "displayName": "Svježa banana" }
       ],
-      "tags": ["healthy-fats", "balanced"],
-      "suitableFor": ["maintain", "gain"]
+      "tags": ["high-calorie", "mass-gain", "eggs-daily"],
+      "suitableFor": ["gain"]
+    },
+    {
+      "id": "breakfast_gain_4",
+      "name": "Jaja sa salamom, sirom i tostom",
+      "description": "Klasičan 'bulking' doručak! Jaja na oko ili kajgana sa salamom i sirom na tostu. Visoke kalorije, visoki proteini - sve što treba za rast.",
+      "image": "https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=400&h=300&fit=crop",
+      "preparationTip": "Isprži jaja, posloži na tost sa salamom i sirom. Može i kao sendvič za veći obrok.",
+      "components": [
+        { "food": "Egg", "grams": 150, "displayName": "Jaja (3 kom)" },
+        { "food": "Turkey breast", "grams": 80, "displayName": "Pileća salama" },
+        { "food": "Cottage cheese", "grams": 60, "displayName": "Sir" },
+        { "food": "Toast", "grams": 100, "displayName": "Tost (3 kriške)" }
+      ],
+      "tags": ["high-calorie", "high-protein", "eggs-daily"],
+      "suitableFor": ["gain"]
     }
   ],
   "lunch": [
     {
-      "id": "lunch_1",
-      "name": "Piletina s tjesteninom i salatom",
-      "description": "Klasičan fitness ručak",
+      "id": "lunch_lose_1",
+      "name": "Piletina iz air fryera s kuhanim krumpirom",
+      "description": "Savršen obrok za definiciju - visok volumen, niske kalorije. Pileća prsa pripremljena u air fryeru bez ulja zadržavaju sočnost. Kuhani krumpir ima niži glikemijski indeks od pečenog i daje dugotrajnu sitost.",
+      "image": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=300&fit=crop",
+      "preparationTip": "Piletinu začini solju i paprom, peci u air fryeru 18-20 min na 200°C. Krumpir kuhaj u slanoj vodi dok ne omekša.",
       "components": [
-        { "food": "Chicken breast", "grams": 180, "displayName": "Pileća prsa" },
-        { "food": "Pasta cooked", "grams": 200, "displayName": "Tjestenina" },
-        { "food": "Lettuce", "grams": 80, "displayName": "Zelena salata" },
-        { "food": "Tomato", "grams": 80, "displayName": "Rajčica" }
+        { "food": "Chicken breast", "grams": 200, "displayName": "Pileća prsa (air fryer)" },
+        { "food": "Potatoes", "grams": 300, "displayName": "Kuhani krumpir" },
+        { "food": "Lettuce", "grams": 100, "displayName": "Zelena salata" },
+        { "food": "Cucumber", "grams": 100, "displayName": "Svježi krastavci" }
       ],
-      "tags": ["high-protein", "balanced"],
-      "suitableFor": ["lose", "maintain", "gain"]
+      "tags": ["high-protein", "low-fat", "high-volume"],
+      "suitableFor": ["lose"]
     },
     {
-      "id": "lunch_2",
-      "name": "Piletina s pire krumpirom i krastavcima",
-      "description": "Tradicionalni ručak",
+      "id": "lunch_lose_2",
+      "name": "Juneća pljeskavica s pire krumpirom",
+      "description": "Posna junetina bogata željezom i cinkom. Pljeskavica od junećeg buta s minimalnim dodacima (sol + krušne mrvice) daje maksimum proteina. Pire krumpir bez maslaca je lagan ali zasitan.",
+      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop",
+      "preparationTip": "Na 500g junećeg buta dodaj sol i 2 žlice krušnih mrvica. Oblikuj pljeskavice i peci u air fryeru 12-15 min. Pire radi s malo mlijeka, bez maslaca.",
       "components": [
-        { "food": "Chicken breast", "grams": 180, "displayName": "Pileća prsa" },
-        { "food": "Potatoes", "grams": 250, "displayName": "Pire krumpir" },
-        { "food": "Cucumber", "grams": 100, "displayName": "Krastavci" },
-        { "food": "Lettuce", "grams": 50, "displayName": "Zelena salata" }
+        { "food": "Beef", "grams": 150, "displayName": "Juneća pljeskavica (but)" },
+        { "food": "Potatoes", "grams": 250, "displayName": "Pire krumpir (bez maslaca)" },
+        { "food": "Lettuce", "grams": 80, "displayName": "Miješana salata" },
+        { "food": "Tomato", "grams": 80, "displayName": "Svježe rajčice" }
       ],
-      "tags": ["traditional", "balanced"],
-      "suitableFor": ["maintain", "gain"]
+      "tags": ["high-protein", "iron-rich", "low-fat"],
+      "suitableFor": ["lose"]
     },
     {
-      "id": "lunch_3",
-      "name": "Puretina s kuhanim krumpirom i salatom",
-      "description": "Lagani proteinski ručak",
+      "id": "lunch_lose_3",
+      "name": "Tuna salata s kuhanim krumpirom",
+      "description": "Lagana ali proteinski bogata opcija. Tuna u salamuri (ne ulju!) pruža čiste proteine bez dodatnih masti. Kuhani krumpir i svježe povrće daju volumen za sitost.",
+      "image": "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop",
+      "preparationTip": "Koristi tunu u salamuri, dobro iscijedi tekućinu. Krumpir kuhaj u kori za više nutrijenata.",
       "components": [
-        { "food": "Turkey breast", "grams": 180, "displayName": "Pureća prsa" },
+        { "food": "Tuna", "grams": 150, "displayName": "Tuna u salamuri" },
         { "food": "Potatoes", "grams": 200, "displayName": "Kuhani krumpir" },
-        { "food": "Lettuce", "grams": 80, "displayName": "Zelena salata" },
-        { "food": "Tomato", "grams": 80, "displayName": "Rajčica" }
-      ],
-      "tags": ["high-protein", "light"],
-      "suitableFor": ["lose", "maintain"]
-    },
-    {
-      "id": "lunch_4",
-      "name": "Losos s kuhanim krumpirom i povrćem",
-      "description": "Bogat omega-3 masnim kiselinama",
-      "components": [
-        { "food": "Salmon", "grams": 180, "displayName": "Losos" },
-        { "food": "Potatoes", "grams": 200, "displayName": "Kuhani krumpir" },
-        { "food": "Cucumber", "grams": 80, "displayName": "Krastavci" },
-        { "food": "Lettuce", "grams": 60, "displayName": "Zelena salata" }
-      ],
-      "tags": ["omega-3", "healthy-fats"],
-      "suitableFor": ["lose", "maintain", "gain"]
-    },
-    {
-      "id": "lunch_5",
-      "name": "Tuna s tjesteninom i kukuruzom",
-      "description": "Brzi proteinski ručak",
-      "components": [
-        { "food": "Tuna", "grams": 150, "displayName": "Tuna (konzerva)" },
-        { "food": "Pasta cooked", "grams": 200, "displayName": "Tjestenina" },
-        { "food": "Corn", "grams": 80, "displayName": "Kukuruz" },
-        { "food": "Cucumber", "grams": 80, "displayName": "Krastavci" }
-      ],
-      "tags": ["quick", "high-protein"],
-      "suitableFor": ["lose", "maintain", "gain"]
-    },
-    {
-      "id": "lunch_6",
-      "name": "Pečeno pile s krumpirom i salatom",
-      "description": "Tradicionalno pečeno pile",
-      "components": [
-        { "food": "Chicken breast", "grams": 200, "displayName": "Pečeno pile" },
-        { "food": "Potatoes", "grams": 200, "displayName": "Kuhani krumpir" },
-        { "food": "Lettuce", "grams": 80, "displayName": "Zelena salata" },
-        { "food": "Tomato", "grams": 60, "displayName": "Rajčica" }
-      ],
-      "tags": ["traditional", "high-protein"],
-      "suitableFor": ["maintain", "gain"]
-    },
-    {
-      "id": "lunch_7",
-      "name": "Piletina s hajdinskom kašom i salatom",
-      "description": "Zdrav ručak bez glutena",
-      "components": [
-        { "food": "Chicken breast", "grams": 180, "displayName": "Pileća prsa" },
-        { "food": "Buckwheat", "grams": 150, "displayName": "Hajdinska kaša" },
-        { "food": "Lettuce", "grams": 80, "displayName": "Zelena salata" },
-        { "food": "Tomato", "grams": 80, "displayName": "Rajčica" }
-      ],
-      "tags": ["gluten-free", "healthy"],
-      "suitableFor": ["lose", "maintain", "gain"]
-    },
-    {
-      "id": "lunch_8",
-      "name": "Tjestenina s piletinom i vrhnjem",
-      "description": "Kremasta tjestenina s piletinom",
-      "components": [
-        { "food": "Chicken breast", "grams": 150, "displayName": "Pileća prsa" },
-        { "food": "Pasta cooked", "grams": 200, "displayName": "Tjestenina" },
-        { "food": "Sour cream", "grams": 50, "displayName": "Vrhnje za kuhanje" },
-        { "food": "Lettuce", "grams": 60, "displayName": "Zelena salata" }
-      ],
-      "tags": ["creamy", "comfort-food"],
-      "suitableFor": ["maintain", "gain"]
-    },
-    {
-      "id": "lunch_9",
-      "name": "Losos s tjesteninom i povrćem",
-      "description": "Hranjiv ručak s ribom",
-      "components": [
-        { "food": "Salmon", "grams": 150, "displayName": "Losos" },
-        { "food": "Pasta cooked", "grams": 180, "displayName": "Tjestenina" },
-        { "food": "Tomato", "grams": 80, "displayName": "Rajčica" },
-        { "food": "Lettuce", "grams": 60, "displayName": "Zelena salata" }
-      ],
-      "tags": ["omega-3", "balanced"],
-      "suitableFor": ["maintain", "gain"]
-    },
-    {
-      "id": "lunch_10",
-      "name": "Puretina s hajdinskom kašom i krastavcima",
-      "description": "Lagani bezglutenski ručak",
-      "components": [
-        { "food": "Turkey breast", "grams": 180, "displayName": "Pureća prsa" },
-        { "food": "Buckwheat", "grams": 150, "displayName": "Hajdinska kaša" },
-        { "food": "Cucumber", "grams": 100, "displayName": "Krastavci" },
-        { "food": "Tomato", "grams": 60, "displayName": "Rajčica" }
-      ],
-      "tags": ["gluten-free", "light"],
-      "suitableFor": ["lose", "maintain"]
-    },
-    {
-      "id": "lunch_11",
-      "name": "Piletina s pire krumpirom i rajčicom",
-      "description": "Klasičan ugodan ručak",
-      "components": [
-        { "food": "Chicken breast", "grams": 180, "displayName": "Pileća prsa" },
-        { "food": "Potatoes", "grams": 250, "displayName": "Pire krumpir" },
-        { "food": "Tomato", "grams": 100, "displayName": "Rajčica" },
-        { "food": "Lettuce", "grams": 50, "displayName": "Zelena salata" }
-      ],
-      "tags": ["comfort-food", "traditional"],
-      "suitableFor": ["maintain", "gain"]
-    },
-    {
-      "id": "lunch_12",
-      "name": "Tuna salata s kukuruzom i krastavcima",
-      "description": "Lagani ručak bez ugljikohidrata",
-      "components": [
-        { "food": "Tuna", "grams": 180, "displayName": "Tuna (konzerva)" },
-        { "food": "Corn", "grams": 100, "displayName": "Kukuruz" },
         { "food": "Cucumber", "grams": 100, "displayName": "Krastavci" },
         { "food": "Lettuce", "grams": 100, "displayName": "Zelena salata" },
-        { "food": "Tomato", "grams": 80, "displayName": "Rajčica" }
+        { "food": "Corn", "grams": 50, "displayName": "Kukuruz" }
       ],
-      "tags": ["low-carb", "high-protein"],
-      "suitableFor": ["lose", "maintain"]
+      "tags": ["high-protein", "low-fat", "omega-3"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "lunch_lose_4",
+      "name": "Piletina s rižom i kuhanim povrćem",
+      "description": "Klasičan bodybuilding obrok za definiciju. Piletina iz air fryera s rižom i povrćem kuhano na pari - jednostavno, čisto i učinkovito za gubitak masti uz očuvanje mišića.",
+      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
+      "preparationTip": "Rižu kuhaj bez ulja i maslaca. Povrće pripremi na pari ili kuhanjem. Piletinu peci u air fryeru.",
+      "components": [
+        { "food": "Chicken breast", "grams": 180, "displayName": "Pileća prsa (air fryer)" },
+        { "food": "Buckwheat", "grams": 150, "displayName": "Kuhana riža" },
+        { "food": "Broccoli", "grams": 100, "displayName": "Kuhana brokula" },
+        { "food": "Carrot", "grams": 80, "displayName": "Kuhana mrkva" }
+      ],
+      "tags": ["clean", "high-protein", "meal-prep"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "lunch_maintain_1",
+      "name": "Pileća prsa s krumpirom iz pećnice",
+      "description": "Uravnotežen obrok s umjerenim kalorijama. Krumpir iz pećnice daje bolji okus od kuhanog, a piletina osigurava kvalitetne proteine. Salata dodaje vlakna i vitamine.",
+      "image": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400&h=300&fit=crop",
+      "preparationTip": "Krumpir izreži na kockice, poprskaj sprej uljem i peci na 200°C 25-30 min. Piletinu pripremi u air fryeru ili na tavi.",
+      "components": [
+        { "food": "Chicken breast", "grams": 180, "displayName": "Pileća prsa" },
+        { "food": "Potatoes", "grams": 250, "displayName": "Krumpir iz pećnice" },
+        { "food": "Lettuce", "grams": 80, "displayName": "Miješana salata" },
+        { "food": "Tomato", "grams": 80, "displayName": "Cherry rajčice" }
+      ],
+      "tags": ["balanced", "classic"],
+      "suitableFor": ["maintain"]
+    },
+    {
+      "id": "lunch_maintain_2",
+      "name": "Junetina s rižom i salatom",
+      "description": "Bogat izvor željeza i cinka iz junetine uz složene ugljikohidrate iz riže. Idealan za održavanje mišićne mase i energije tijekom dana.",
+      "image": "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&h=300&fit=crop",
+      "preparationTip": "Junetinu pripremi na tavi sa sprej uljem ili u air fryeru. Rižu kuhaj standardno, može i s malo soli.",
+      "components": [
+        { "food": "Beef", "grams": 150, "displayName": "Juneći but" },
+        { "food": "Buckwheat", "grams": 180, "displayName": "Kuhana riža" },
+        { "food": "Lettuce", "grams": 80, "displayName": "Rikula" },
+        { "food": "Cucumber", "grams": 80, "displayName": "Krastavci" }
+      ],
+      "tags": ["high-protein", "iron-rich"],
+      "suitableFor": ["maintain"]
+    },
+    {
+      "id": "lunch_maintain_3",
+      "name": "Tjestenina s tunom i povrćem",
+      "description": "Mediteranski inspiriran obrok s omega-3 masnim kiselinama iz tune. Tjestenina pruža energiju, a svježe povrće vitamine i vlakna za probavu.",
+      "image": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop",
+      "preparationTip": "Tjesteninu kuhaj al dente. Tunu iscijedi i pomiješaj s tjesteninom. Povrće dodaj svježe.",
+      "components": [
+        { "food": "Tuna", "grams": 150, "displayName": "Tuna u salamuri" },
+        { "food": "Pasta cooked", "grams": 200, "displayName": "Tjestenina" },
+        { "food": "Tomato", "grams": 80, "displayName": "Cherry rajčice" },
+        { "food": "Cucumber", "grams": 80, "displayName": "Krastavci" },
+        { "food": "Corn", "grams": 60, "displayName": "Kukuruz" }
+      ],
+      "tags": ["omega-3", "mediterranean"],
+      "suitableFor": ["maintain"]
+    },
+    {
+      "id": "lunch_gain_1",
+      "name": "Bogata tjestenina s tunom i vrhnjem",
+      "description": "Kalorijski gust obrok za masu! Tjestenina s tunom, vrhnjem za kuhanje, maslinama i jajima pruža savršenu kombinaciju proteina, ugljikohidrata i masti za rast mišića.",
+      "image": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop",
+      "preparationTip": "Kuhaj tjesteninu, dodaj tunu i vrhnje. Jaja kuhaj 8-10 min za tvrdo kuhana. Sve pomiješaj, dodaj masline i povrće.",
+      "components": [
+        { "food": "Pasta cooked", "grams": 250, "displayName": "Tjestenina" },
+        { "food": "Tuna", "grams": 150, "displayName": "Tuna" },
+        { "food": "Sour cream", "grams": 50, "displayName": "Vrhnje za kuhanje" },
+        { "food": "Egg", "grams": 100, "displayName": "Kuhana jaja (2 kom)" },
+        { "food": "Cucumber", "grams": 80, "displayName": "Krastavci" },
+        { "food": "Corn", "grams": 80, "displayName": "Kukuruz" }
+      ],
+      "tags": ["high-calorie", "mass-gain", "omega-3"],
+      "suitableFor": ["gain"]
+    },
+    {
+      "id": "lunch_gain_2",
+      "name": "Krumpir iz pećnice s junetinom",
+      "description": "Moćan obrok za izgradnju mišića. Junetina pruža kreatin i željezo, a pečeni krumpir složene ugljikohidrate. Salata dodaje vlakna bez značajnog povećanja kalorija.",
+      "image": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop",
+      "preparationTip": "Krumpir izreži na veće komade, poprskaj uljem i peci 30-35 min. Junetinu pripremi na roštilju ili air fryeru.",
+      "components": [
+        { "food": "Beef", "grams": 200, "displayName": "Juneći odrezak" },
+        { "food": "Potatoes", "grams": 350, "displayName": "Krumpir iz pećnice" },
+        { "food": "Lettuce", "grams": 80, "displayName": "Zelena salata" },
+        { "food": "Tomato", "grams": 80, "displayName": "Rajčice" }
+      ],
+      "tags": ["high-calorie", "high-protein", "iron-rich"],
+      "suitableFor": ["gain"]
+    },
+    {
+      "id": "lunch_gain_3",
+      "name": "Losos s krumpirom i avokadom",
+      "description": "Premium obrok bogat omega-3 masnim kiselinama i zdravim mastima. Losos i avokado pružaju kalorije iz kvalitetnih izvora, dok krumpir daje potrebne ugljikohidrate za rast.",
+      "image": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=300&fit=crop",
+      "preparationTip": "Lososa peci u pećnici ili air fryeru 15-18 min. Krumpir može biti kuhani ili pečeni. Avokado posluži svjež.",
+      "components": [
+        { "food": "Salmon", "grams": 180, "displayName": "Atlantski losos" },
+        { "food": "Potatoes", "grams": 250, "displayName": "Krumpir" },
+        { "food": "Avocado", "grams": 80, "displayName": "Avokado" },
+        { "food": "Lettuce", "grams": 60, "displayName": "Baby špinat" }
+      ],
+      "tags": ["omega-3", "healthy-fats", "premium"],
+      "suitableFor": ["gain"]
+    },
+    {
+      "id": "lunch_gain_4",
+      "name": "Piletina s tjesteninom i povrćem",
+      "description": "Klasičan bodybuilding obrok za masu. Pileća prsa osiguravaju mršave proteine, a tjestenina kalorije iz ugljikohidrata potrebne za anabolizam. Povrće dodaje vitamine.",
+      "image": "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=400&h=300&fit=crop",
+      "preparationTip": "Piletinu izreži na kockice i pripremi na tavi. Tjesteninu kuhaj al dente i pomiješaj s piletinom i povrćem.",
+      "components": [
+        { "food": "Chicken breast", "grams": 200, "displayName": "Pileća prsa" },
+        { "food": "Pasta cooked", "grams": 250, "displayName": "Tjestenina" },
+        { "food": "Tomato", "grams": 80, "displayName": "Rajčice" },
+        { "food": "Lettuce", "grams": 60, "displayName": "Rikula" }
+      ],
+      "tags": ["high-calorie", "high-protein", "classic"],
+      "suitableFor": ["gain", "maintain"]
     }
   ],
   "dinner": [
     {
-      "id": "dinner_1",
-      "name": "Tuna salata s krastavcima",
-      "description": "Lagana proteinska večera",
+      "id": "dinner_lose_1",
+      "name": "Tuna s rižinim kreklerima i kuhanim povrćem",
+      "description": "Lagana večera idealna za deficit. Tuna pruža proteine i omega-3, rižini krekersi lagane ugljikohidrate, a kuhano povrće volumen za sitost bez kalorija. Grčki jogurt opcionalno za dodatne proteine.",
+      "image": "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=400&h=300&fit=crop",
+      "preparationTip": "Tunu iscijedi iz konzerve. Povrće kuhaj na pari ili u vodi. Posluži sve na velikom tanjuru za vizualni efekt sitosti.",
       "components": [
-        { "food": "Tuna", "grams": 150, "displayName": "Tuna (konzerva)" },
-        { "food": "Cucumber", "grams": 120, "displayName": "Krastavci" },
-        { "food": "Lettuce", "grams": 80, "displayName": "Zelena salata" },
-        { "food": "Rice crackers", "grams": 30, "displayName": "Rižini krekeri" }
+        { "food": "Tuna", "grams": 150, "displayName": "Tuna u salamuri" },
+        { "food": "Rice crackers", "grams": 40, "displayName": "Rižini krekersi" },
+        { "food": "Broccoli", "grams": 100, "displayName": "Kuhana brokula" },
+        { "food": "Carrot", "grams": 80, "displayName": "Kuhana mrkva" }
       ],
-      "tags": ["light", "high-protein"],
-      "suitableFor": ["lose", "maintain"]
+      "tags": ["light", "high-protein", "low-calorie"],
+      "suitableFor": ["lose"]
     },
     {
-      "id": "dinner_2",
-      "name": "Grčki jogurt s wheyem i voćem",
-      "description": "Slatka proteinska večera",
+      "id": "dinner_lose_2",
+      "name": "Grčki jogurt s proteinima i voćem",
+      "description": "Niskokalorična večera bogata kazeinom za noćnu regeneraciju. Probiotici iz jogurta podržavaju probavu, a borovnice pružaju antioksidanse. Idealno za kasnu večeru.",
+      "image": "https://images.unsplash.com/photo-1505253758473-96b7015fcd40?w=400&h=300&fit=crop",
+      "preparationTip": "Koristi grčki jogurt 0% mm. Whey pomiješaj dok ne postane kremast. Voće dodaj svježe na vrh.",
       "components": [
-        { "food": "Greek yogurt", "grams": 200, "displayName": "Grčki jogurt" },
-        { "food": "Whey", "grams": 25, "displayName": "Whey protein" },
+        { "food": "Greek yogurt", "grams": 200, "displayName": "Grčki jogurt 0%" },
+        { "food": "Whey", "grams": 25, "displayName": "Proteinski isolat" },
         { "food": "Blueberries", "grams": 80, "displayName": "Borovnice" },
-        { "food": "Banana", "grams": 80, "displayName": "Banana" }
+        { "food": "Banana", "grams": 60, "displayName": "Pola banane" }
       ],
-      "tags": ["sweet", "high-protein"],
-      "suitableFor": ["lose", "maintain", "gain"]
+      "tags": ["light", "high-protein", "probiotic"],
+      "suitableFor": ["lose"]
     },
     {
-      "id": "dinner_3",
-      "name": "Losos s povrćem i avokadom",
-      "description": "Bogata omega-3 večera",
+      "id": "dinner_lose_3",
+      "name": "Piletina iz air fryera sa salatom",
+      "description": "Čista, proteinska večera bez nepotrebnih ugljikohidrata. Piletina iz air fryera je sočna bez dodanog ulja, a obilna salata daje volumen. Idealno za večer u deficitu.",
+      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop",
+      "preparationTip": "Piletinu začini i peci u air fryeru. Salatu pripremi sa sokom limuna umjesto ulja za dressing.",
       "components": [
-        { "food": "Salmon", "grams": 150, "displayName": "Losos" },
+        { "food": "Chicken breast", "grams": 180, "displayName": "Pileća prsa (air fryer)" },
+        { "food": "Lettuce", "grams": 150, "displayName": "Miješana salata" },
+        { "food": "Cucumber", "grams": 100, "displayName": "Krastavci" },
+        { "food": "Tomato", "grams": 100, "displayName": "Rajčice" }
+      ],
+      "tags": ["high-protein", "low-carb", "light"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "dinner_maintain_1",
+      "name": "Junetina s kuhanim krumpirom i salatom",
+      "description": "Uravnotežena večera s kvalitetnim proteinima iz junetine i umjerenim ugljikohidratima. Kuhani krumpir je lako probavljiv, a salata dodaje svježinu i vitamine.",
+      "image": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=300&fit=crop",
+      "preparationTip": "Junetinu pripremi na tavi sa sprej uljem ili u pećnici. Krumpir kuhaj u slanoj vodi.",
+      "components": [
+        { "food": "Beef", "grams": 150, "displayName": "Juneći but" },
+        { "food": "Potatoes", "grams": 200, "displayName": "Kuhani krumpir" },
+        { "food": "Lettuce", "grams": 80, "displayName": "Zelena salata" },
+        { "food": "Tomato", "grams": 60, "displayName": "Rajčice" }
+      ],
+      "tags": ["balanced", "high-protein"],
+      "suitableFor": ["maintain"]
+    },
+    {
+      "id": "dinner_maintain_2",
+      "name": "Losos s povrćem i rižom",
+      "description": "Mediteranska večera bogata omega-3 masnim kiselinama. Losos podržava zdravlje srca i mozga, riža daje energiju, a povrće vitamine i vlakna.",
+      "image": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop",
+      "preparationTip": "Lososa peci u pećnici ili air fryeru 15 min. Povrće kuhaj na pari ili roštilja za zadržavanje nutrijenata.",
+      "components": [
+        { "food": "Salmon", "grams": 150, "displayName": "Losos filet" },
+        { "food": "Buckwheat", "grams": 150, "displayName": "Kuhana riža" },
+        { "food": "Broccoli", "grams": 80, "displayName": "Brokula" },
+        { "food": "Cucumber", "grams": 60, "displayName": "Krastavci" }
+      ],
+      "tags": ["omega-3", "balanced", "healthy"],
+      "suitableFor": ["maintain"]
+    },
+    {
+      "id": "dinner_gain_1",
+      "name": "Losos s tostom i salatom",
+      "description": "Kalorijski bogata večera s omega-3 mastima za hormonalnu podršku i rast mišića. Tost dodaje ugljikohidrate, a avokado zdrave masti za anabolizam tijekom sna.",
+      "image": "https://images.unsplash.com/photo-1580476262798-bddd9f4b7369?w=400&h=300&fit=crop",
+      "preparationTip": "Lososa peci u pećnici. Tost prepeci i posluži s avokadom i salatom.",
+      "components": [
+        { "food": "Salmon", "grams": 180, "displayName": "Atlantski losos" },
+        { "food": "Toast", "grams": 80, "displayName": "Integralni tost (2 kriške)" },
         { "food": "Avocado", "grams": 60, "displayName": "Avokado" },
-        { "food": "Cucumber", "grams": 100, "displayName": "Krastavci" },
-        { "food": "Lettuce", "grams": 60, "displayName": "Zelena salata" }
+        { "food": "Lettuce", "grams": 80, "displayName": "Miješana salata" }
       ],
-      "tags": ["omega-3", "healthy-fats"],
-      "suitableFor": ["lose", "maintain", "gain"]
+      "tags": ["omega-3", "high-calorie", "healthy-fats"],
+      "suitableFor": ["gain"]
     },
     {
-      "id": "dinner_4",
-      "name": "Zrnati sir s rižinim krekerima i voćem",
-      "description": "Lagana večera bogata proteinima",
+      "id": "dinner_gain_2",
+      "name": "Ostatak tjestenine s tunom",
+      "description": "Praktična večera od ostataka ručka - tjestenina s tunom i povrćem. Kalorijski gusta opcija za nadopunu dnevnog unosa prije spavanja.",
+      "image": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop",
+      "preparationTip": "Podgrijaj tjesteninu na tavi s malo vode da ne bude suha. Dodaj svježe povrće za teksturu.",
       "components": [
-        { "food": "Cottage cheese", "grams": 200, "displayName": "Zrnati sir" },
-        { "food": "Rice crackers", "grams": 30, "displayName": "Rižini krekeri" },
-        { "food": "Blueberries", "grams": 60, "displayName": "Borovnice" },
-        { "food": "Banana", "grams": 60, "displayName": "Banana" }
+        { "food": "Pasta cooked", "grams": 200, "displayName": "Tjestenina" },
+        { "food": "Tuna", "grams": 120, "displayName": "Tuna" },
+        { "food": "Tomato", "grams": 60, "displayName": "Rajčice" },
+        { "food": "Corn", "grams": 60, "displayName": "Kukuruz" }
       ],
-      "tags": ["light", "high-protein"],
-      "suitableFor": ["lose", "maintain"]
+      "tags": ["practical", "high-calorie"],
+      "suitableFor": ["gain"]
     },
     {
-      "id": "dinner_5",
-      "name": "Jaja s avokadom i salatom",
-      "description": "Jednostavna večera sa zdravim mastima",
+      "id": "dinner_gain_3",
+      "name": "Junetina s krumpirom i salatom",
+      "description": "Moćna večera za maksimalnu regeneraciju. Junetina pruža kreatin i cink za testosterone, krumpir glikogen za mišiće, a salata vitamine za oporavak.",
+      "image": "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&h=300&fit=crop",
+      "preparationTip": "Junetinu pripremi na roštilju ili u pećnici. Krumpir može biti pečeni ili pire s malo mlijeka.",
       "components": [
-        { "food": "Egg", "grams": 120, "displayName": "Jaja (2 kom)" },
-        { "food": "Avocado", "grams": 80, "displayName": "Avokado" },
+        { "food": "Beef", "grams": 180, "displayName": "Juneći odrezak" },
+        { "food": "Potatoes", "grams": 300, "displayName": "Krumpir" },
         { "food": "Lettuce", "grams": 80, "displayName": "Zelena salata" },
-        { "food": "Tomato", "grams": 60, "displayName": "Rajčica" }
+        { "food": "Tomato", "grams": 60, "displayName": "Rajčice" }
       ],
-      "tags": ["healthy-fats", "balanced"],
-      "suitableFor": ["lose", "maintain"]
-    },
-    {
-      "id": "dinner_6",
-      "name": "Tuna s rižinim krekerima i salatom",
-      "description": "Brza proteinska večera",
-      "components": [
-        { "food": "Tuna", "grams": 150, "displayName": "Tuna (konzerva)" },
-        { "food": "Rice crackers", "grams": 40, "displayName": "Rižini krekeri" },
-        { "food": "Lettuce", "grams": 80, "displayName": "Zelena salata" },
-        { "food": "Cucumber", "grams": 80, "displayName": "Krastavci" }
-      ],
-      "tags": ["quick", "high-protein"],
-      "suitableFor": ["lose", "maintain"]
-    },
-    {
-      "id": "dinner_7",
-      "name": "Skyr protein bowl",
-      "description": "Kremasta proteinska večera",
-      "components": [
-        { "food": "Skyr", "grams": 200, "displayName": "Skyr" },
-        { "food": "Whey", "grams": 20, "displayName": "Whey protein" },
-        { "food": "Blueberries", "grams": 80, "displayName": "Borovnice" },
-        { "food": "Banana", "grams": 60, "displayName": "Banana" }
-      ],
-      "tags": ["sweet", "high-protein", "light"],
-      "suitableFor": ["lose", "maintain"]
-    },
-    {
-      "id": "dinner_8",
-      "name": "Losos s krastavcima i kikiriki maslacem",
-      "description": "Proteinska večera sa zdravim mastima",
-      "components": [
-        { "food": "Salmon", "grams": 140, "displayName": "Losos" },
-        { "food": "Cucumber", "grams": 100, "displayName": "Krastavci" },
-        { "food": "Peanut butter", "grams": 15, "displayName": "Kikiriki maslac" },
-        { "food": "Rice crackers", "grams": 25, "displayName": "Rižini krekeri" }
-      ],
-      "tags": ["omega-3", "healthy-fats"],
-      "suitableFor": ["maintain", "gain"]
-    },
-    {
-      "id": "dinner_9",
-      "name": "Zrnati sir s kikiriki maslacem i bananom",
-      "description": "Slatko-slana kombinacija",
-      "components": [
-        { "food": "Cottage cheese", "grams": 180, "displayName": "Zrnati sir" },
-        { "food": "Peanut butter", "grams": 20, "displayName": "Kikiriki maslac" },
-        { "food": "Banana", "grams": 80, "displayName": "Banana" }
-      ],
-      "tags": ["balanced", "satisfying"],
-      "suitableFor": ["maintain", "gain"]
-    },
-    {
-      "id": "dinner_10",
-      "name": "Grčki jogurt s avokadom i borovnicama",
-      "description": "Kremasta večera sa zdravim mastima",
-      "components": [
-        { "food": "Greek yogurt", "grams": 200, "displayName": "Grčki jogurt" },
-        { "food": "Avocado", "grams": 50, "displayName": "Avokado" },
-        { "food": "Blueberries", "grams": 80, "displayName": "Borovnice" },
-        { "food": "Whey", "grams": 15, "displayName": "Whey protein" }
-      ],
-      "tags": ["healthy-fats", "high-protein"],
-      "suitableFor": ["lose", "maintain"]
+      "tags": ["high-calorie", "high-protein", "iron-rich"],
+      "suitableFor": ["gain"]
     }
   ],
   "snack": [
     {
-      "id": "snack_1",
-      "name": "Whey shake s bananom i borovnicama",
-      "description": "Klasični proteinski shake",
+      "id": "snack_lose_1",
+      "name": "Whey shake na vodi",
+      "description": "Najčišći proteinski obrok - samo whey i voda. Minimalne kalorije, maksimum proteina za očuvanje mišića u deficitu. Brza apsorpcija, idealno između obroka.",
+      "image": "https://images.unsplash.com/photo-1594498653385-d5172c532c00?w=400&h=300&fit=crop",
+      "preparationTip": "Promiješaj whey s hladnom vodom u shaker boci. Za bolji okus dodaj led.",
       "components": [
-        { "food": "Whey", "grams": 30, "displayName": "Whey protein" },
-        { "food": "Milk", "grams": 250, "displayName": "Mlijeko 1.5%" },
-        { "food": "Banana", "grams": 80, "displayName": "Banana" },
-        { "food": "Blueberries", "grams": 50, "displayName": "Borovnice" }
+        { "food": "Whey", "grams": 30, "displayName": "Proteinski isolat" }
       ],
-      "tags": ["high-protein", "quick"],
-      "suitableFor": ["lose", "maintain", "gain"]
+      "tags": ["pure-protein", "zero-fat", "quick"],
+      "suitableFor": ["lose"]
     },
     {
-      "id": "snack_2",
+      "id": "snack_lose_2",
+      "name": "Pileća salama s krekerima i posnim sirom",
+      "description": "Slana, proteinska užina bez puno kalorija. Pileća salama i posni sir pružaju proteine, a krekersi zadovoljavaju želju za hrskavim. Jogurt dodaje probiotike.",
+      "image": "https://images.unsplash.com/photo-1628191139360-4083564d03fd?w=400&h=300&fit=crop",
+      "preparationTip": "Biraj pileću salamu s niskim udjelom masti. Posni sir može biti cottage cheese ili bilo koji do 10% mm.",
+      "components": [
+        { "food": "Turkey breast", "grams": 60, "displayName": "Pileća salama" },
+        { "food": "Rice crackers", "grams": 30, "displayName": "Rižini krekersi" },
+        { "food": "Cottage cheese", "grams": 80, "displayName": "Posni sir" },
+        { "food": "Greek yogurt", "grams": 80, "displayName": "Posni jogurt" }
+      ],
+      "tags": ["savory", "high-protein", "satisfying"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "snack_lose_3",
       "name": "Skyr s bananom",
-      "description": "Jednostavna proteinska užina",
+      "description": "Jednostavna ali zasitna užina. Skyr ima najviše proteina od svih jogurta (11g/100g) s minimalnom masnoćom. Banana dodaje kalij i prirodnu energiju.",
+      "image": "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=300&fit=crop",
+      "preparationTip": "Koristi čisti skyr bez dodanih šećera. Bananu nasjeckaj i umiješaj.",
       "components": [
-        { "food": "Skyr", "grams": 150, "displayName": "Skyr" },
-        { "food": "Banana", "grams": 100, "displayName": "Banana" }
+        { "food": "Skyr", "grams": 150, "displayName": "Islandski skyr" },
+        { "food": "Banana", "grams": 80, "displayName": "Banana" }
       ],
-      "tags": ["simple", "high-protein"],
-      "suitableFor": ["lose", "maintain", "gain"]
-    },
-    {
-      "id": "snack_3",
-      "name": "Grčki jogurt s wheyem i voćem",
-      "description": "Kremasta proteinska užina",
-      "components": [
-        { "food": "Greek yogurt", "grams": 150, "displayName": "Grčki jogurt" },
-        { "food": "Whey", "grams": 20, "displayName": "Whey protein" },
-        { "food": "Blueberries", "grams": 60, "displayName": "Borovnice" }
-      ],
-      "tags": ["high-protein", "sweet"],
+      "tags": ["simple", "high-protein", "quick"],
       "suitableFor": ["lose", "maintain"]
     },
     {
-      "id": "snack_4",
-      "name": "Banana s bademima",
-      "description": "Voćna užina sa zdravim mastima",
-      "components": [
-        { "food": "Banana", "grams": 150, "displayName": "Banana" },
-        { "food": "Almonds", "grams": 20, "displayName": "Bademi" }
-      ],
-      "tags": ["fruit", "simple"],
-      "suitableFor": ["lose", "maintain", "gain"]
-    },
-    {
-      "id": "snack_5",
-      "name": "Rižini krekeri s kikiriki maslacem",
-      "description": "Hrskava užina sa zdravim mastima",
-      "components": [
-        { "food": "Rice crackers", "grams": 30, "displayName": "Rižini krekeri" },
-        { "food": "Peanut butter", "grams": 25, "displayName": "Kikiriki maslac" },
-        { "food": "Banana", "grams": 60, "displayName": "Banana" }
-      ],
-      "tags": ["crunchy", "satisfying"],
-      "suitableFor": ["maintain", "gain"]
-    },
-    {
-      "id": "snack_6",
-      "name": "Whey protein shake",
-      "description": "Čisti proteinski shake",
-      "components": [
-        { "food": "Whey", "grams": 30, "displayName": "Whey protein" },
-        { "food": "Milk", "grams": 300, "displayName": "Mlijeko 1.5%" }
-      ],
-      "tags": ["high-protein", "simple"],
-      "suitableFor": ["lose", "maintain", "gain"]
-    },
-    {
-      "id": "snack_7",
-      "name": "Skyr s borovnicama",
-      "description": "Antioksidansna užina",
-      "components": [
-        { "food": "Skyr", "grams": 150, "displayName": "Skyr" },
-        { "food": "Blueberries", "grams": 80, "displayName": "Borovnice" }
-      ],
-      "tags": ["antioxidant", "light"],
-      "suitableFor": ["lose", "maintain"]
-    },
-    {
-      "id": "snack_8",
-      "name": "Grčki jogurt s bananom i bademima",
-      "description": "Zasitna užina",
+      "id": "snack_maintain_1",
+      "name": "Grčki jogurt s voćem i bademima",
+      "description": "Uravnotežena užina s proteinima, ugljikohidratima i zdravim mastima. Grčki jogurt pruža kazein, voće vitamine, a bademi energiju i vitamin E.",
+      "image": "https://images.unsplash.com/photo-1505253758473-96b7015fcd40?w=400&h=300&fit=crop",
+      "preparationTip": "Koristi grčki jogurt 2% za bolji okus. Bademe možeš prepržiti za hrskavost.",
       "components": [
         { "food": "Greek yogurt", "grams": 150, "displayName": "Grčki jogurt" },
         { "food": "Banana", "grams": 80, "displayName": "Banana" },
+        { "food": "Blueberries", "grams": 50, "displayName": "Borovnice" },
         { "food": "Almonds", "grams": 15, "displayName": "Bademi" }
       ],
-      "tags": ["satisfying", "balanced"],
-      "suitableFor": ["lose", "maintain", "gain"]
+      "tags": ["balanced", "satisfying"],
+      "suitableFor": ["maintain"]
     },
     {
-      "id": "snack_9",
-      "name": "Rižini krekeri sa zrnatim sirom",
-      "description": "Hrskava proteinska užina",
+      "id": "snack_maintain_2",
+      "name": "Proteinski shake",
+      "description": "Klasičan proteinski shake s mlijekom za uravnotežen unos nutrijenata. Banana dodaje ugljikohidrate i kremastost. Idealan između obroka.",
+      "image": "https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=400&h=300&fit=crop",
+      "preparationTip": "Miksaj u blenderu za glatku teksturu. Može i samo promućkati u shaker boci.",
       "components": [
-        { "food": "Rice crackers", "grams": 30, "displayName": "Rižini krekeri" },
-        { "food": "Cottage cheese", "grams": 100, "displayName": "Zrnati sir" }
+        { "food": "Whey", "grams": 30, "displayName": "Proteinski isolat" },
+        { "food": "Milk", "grams": 250, "displayName": "Mlijeko 1.5%" },
+        { "food": "Banana", "grams": 80, "displayName": "Banana" }
       ],
-      "tags": ["crunchy", "high-protein"],
-      "suitableFor": ["lose", "maintain", "gain"]
+      "tags": ["balanced", "classic"],
+      "suitableFor": ["maintain", "lose"]
     },
     {
-      "id": "snack_10",
-      "name": "Protein smoothie s voćem",
-      "description": "Gusti voćni shake",
+      "id": "snack_gain_1",
+      "name": "Mass gainer shake",
+      "description": "Kalorijski bogat shake za unos dodatnih kalorija. Mlijeko, whey, banana, kikiriki maslac i zobene stvaraju kremasti shake s preko 600 kcal. Idealan kada je teško jesti dovoljno.",
+      "image": "https://images.unsplash.com/photo-1638176066666-ffb2f013c7dd?w=400&h=300&fit=crop",
+      "preparationTip": "Sve miksaj u blenderu 30-60 sekundi. Zobene se potpuno razgrade i neće se osjećati. Pij polako.",
       "components": [
-        { "food": "Whey", "grams": 25, "displayName": "Whey protein" },
-        { "food": "Milk", "grams": 200, "displayName": "Mlijeko 1.5%" },
+        { "food": "Milk", "grams": 350, "displayName": "Punomasno mlijeko" },
+        { "food": "Whey", "grams": 40, "displayName": "Proteinski isolat" },
+        { "food": "Banana", "grams": 120, "displayName": "Banana" },
+        { "food": "Peanut butter", "grams": 30, "displayName": "Kikiriki maslac" },
+        { "food": "Oats", "grams": 50, "displayName": "Zobene pahuljice" }
+      ],
+      "tags": ["high-calorie", "liquid-calories", "mass-gain"],
+      "suitableFor": ["gain"]
+    },
+    {
+      "id": "snack_gain_2",
+      "name": "Skyr s proteinima, voćem i bademima",
+      "description": "Kremasta, slatka užina bogata proteinima i kalorijama. Skyr i whey osiguravaju aminokiseline, voće ugljikohidrate, a bademi zdrave masti i dodatne kalorije.",
+      "image": "https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=400&h=300&fit=crop",
+      "preparationTip": "Umiješaj whey u skyr dok ne postane kremast. Voće i bademe posloži na vrh.",
+      "components": [
+        { "food": "Skyr", "grams": 200, "displayName": "Islandski skyr" },
+        { "food": "Whey", "grams": 25, "displayName": "Proteinski isolat" },
         { "food": "Banana", "grams": 100, "displayName": "Banana" },
-        { "food": "Blueberries", "grams": 60, "displayName": "Borovnice" }
+        { "food": "Blueberries", "grams": 60, "displayName": "Borovnice" },
+        { "food": "Almonds", "grams": 20, "displayName": "Bademi" }
       ],
-      "tags": ["smoothie", "high-protein"],
-      "suitableFor": ["lose", "maintain", "gain"]
+      "tags": ["high-protein", "high-calorie", "satisfying"],
+      "suitableFor": ["gain"]
+    },
+    {
+      "id": "snack_gain_3",
+      "name": "Kikiriki maslac s tostom i bananom",
+      "description": "Brza, kalorijski gusta užina. Kikiriki maslac pruža 25g proteina na 100g plus zdrave masti. Tost i banana dodaju ugljikohidrate za energiju.",
+      "image": "https://images.unsplash.com/photo-1558745087-0cc0a3339c87?w=400&h=300&fit=crop",
+      "preparationTip": "Tost prepeci i namazi kikiriki maslacem dok je topao. Bananu nasjeckaj na vrh ili jedi uz.",
+      "components": [
+        { "food": "Toast", "grams": 80, "displayName": "Tost (2 kriške)" },
+        { "food": "Peanut butter", "grams": 40, "displayName": "Kikiriki maslac" },
+        { "food": "Banana", "grams": 100, "displayName": "Banana" }
+      ],
+      "tags": ["quick", "high-calorie", "satisfying"],
+      "suitableFor": ["gain"]
+    },
+    {
+      "id": "snack_gain_4",
+      "name": "Grčki jogurt shake s voćem",
+      "description": "Kremasti shake alternativa klasičnom protein shakeu. Grčki jogurt dodaje probiotike i teksturu, a voće vitamine i ugljikohidrate. Idealan za popodnevnu užinu.",
+      "image": "https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=400&h=300&fit=crop",
+      "preparationTip": "Miksaj sve u blenderu. Dodaj led za hladniju verziju. Može se piti ili jesti žlicom kao bowl.",
+      "components": [
+        { "food": "Greek yogurt", "grams": 200, "displayName": "Grčki jogurt" },
+        { "food": "Whey", "grams": 25, "displayName": "Proteinski isolat" },
+        { "food": "Banana", "grams": 120, "displayName": "Banana" },
+        { "food": "Milk", "grams": 100, "displayName": "Mlijeko" }
+      ],
+      "tags": ["creamy", "high-protein", "satisfying"],
+      "suitableFor": ["gain", "maintain"]
     }
   ]
 }

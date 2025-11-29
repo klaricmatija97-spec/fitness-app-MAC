@@ -16,6 +16,8 @@ interface MealComponent {
 interface GeneratedMeal {
   name: string;
   description: string;
+  image?: string;
+  preparationTip?: string;
   components: MealComponent[];
   totals: {
     calories: number;
@@ -54,6 +56,7 @@ interface WeeklyMealPlan {
     fat: number;
     goal: string;
   };
+  goalNote?: string;
   days: DailyPlan[];
   weeklyTotals: {
     avgCalories: number;
@@ -63,52 +66,59 @@ interface WeeklyMealPlan {
   };
 }
 
-// Upute za pripremu
+// Upute za pripremu - ažurirano za nova profesionalna imena
 const preparationInstructions: Record<string, string> = {
-  "Jaja s bjelanjkom i zobenom kašom": "Skuhaj zobene u mlijeku 5 min. Isprži jaja i bjelanjke na tavi s malo ulja. Posluži zajedno s narezanom bananom.",
-  "Zobena kaša s wheyem i bananom": "Skuhaj zobene u mlijeku, ohladi i umiješaj whey protein. Dodaj narezanu bananu i bademe na vrh.",
-  "Omlet s povrćem i purećom salamom": "Umuti jaja, dodaj narezane gljive i luk. Isprži na tavi, dodaj pureću salamu. Posluži s tostom.",
-  "Skyr s wheyem i smrznutim voćem": "Umiješaj whey u skyr dok ne postane kremasto. Dodaj smrznuto voće i bananu na vrh.",
-  "Toast s purećom salamom i grčkim jogurtom": "Toastiraj kruh, posloži pureću salamu. Posluži s grčkim jogurtom i bananom sa strane.",
-  "Zrnati sir s voćem i bademima": "Posloži zrnati sir u zdjelu, dodaj narezanu bananu, borovnice i bademe na vrh.",
-  "Rižini krekeri s kikiriki maslacem i bananom": "Namazi kikiriki maslac na rižine krekere. Posluži s narezanom bananom i grčkim jogurtom.",
-  "Grčki jogurt bowl sa zobenim i voćem": "Stavi grčki jogurt u zdjelu, dodaj zobene, narezanu bananu, borovnice i indijske oraščiće.",
-  "Proteinski doručak za masu": "Isprži jaja, toastiraj kruh i namazi kikiriki maslacem. Dodaj pureću salamu. Popij s mlijekom.",
-  "Whey shake sa zobenim i bananom": "Blendaj whey, mlijeko, zobene i bananu dok ne postane glatko.",
-  "Jaja na oko s tostom i skyrom": "Isprži jaja na oko, toastiraj kruh. Posluži sa skyrom i bananom.",
-  "Zobena kaša s indijskim oraščićima": "Skuhaj zobene u mlijeku, umiješaj whey. Dodaj narezanu bananu i indijske oraščiće na vrh.",
-  "Piletina s tjesteninom i salatom": "Skuhaj tjesteninu al dente. Isprži pileća prsa na tavi. Posluži s zelenom salatom i rajčicom.",
-  "Piletina s pire krumpirom i krastavcima": "Skuhaj krumpir i izgnječi u pire. Isprži piletinu. Posluži s narezanim krastavcima i salatom.",
-  "Puretina s kuhanim krumpirom i salatom": "Skuhaj krumpir. Isprži pureća prsa. Posluži s zelenom salatom i rajčicom.",
-  "Losos s kuhanim krumpirom i povrćem": "Ispeci losos u pećnici 15 min na 200°C. Skuhaj krumpir. Posluži s krastavcima i salatom.",
-  "Tuna s tjesteninom i kukuruzom": "Skuhaj tjesteninu. Ociedi tunu iz konzerve. Pomiješaj s kukuruzom i krastavcima.",
-  "Pečeno pile s krumpirom i salatom": "Ispeci pile u pećnici 40 min na 180°C. Skuhaj krumpir. Posluži sa salatom i rajčicom.",
-  "Piletina s hajdinskom kašom i salatom": "Skuhaj heljdu 15 min. Isprži piletinu. Posluži s zelenom salatom i rajčicom.",
-  "Tjestenina s piletinom i vrhnjem": "Skuhaj tjesteninu. Isprži piletinu, dodaj vrhnje i kratko prokuhaj. Posluži sa salatom.",
-  "Losos s tjesteninom i povrćem": "Ispeci losos, skuhaj tjesteninu. Pomiješaj i posluži s rajčicom i salatom.",
-  "Puretina s hajdinskom kašom i krastavcima": "Skuhaj heljdu. Isprži puretinu. Posluži s narezanim krastavcima i rajčicom.",
-  "Piletina s pire krumpirom i rajčicom": "Skuhaj i izgnječi krumpir. Isprži piletinu. Posluži s narezanom rajčicom i salatom.",
-  "Tuna salata s kukuruzom i krastavcima": "Ociedi tunu, pomiješaj s kukuruzom, krastavcima, salatom i rajčicom.",
-  "Tuna salata s krastavcima": "Ociedi tunu, pomiješaj s narezanim krastavcima i salatom. Posluži s rižinim krekerima.",
-  "Grčki jogurt s wheyem i voćem": "Umiješaj whey u grčki jogurt. Dodaj borovnice i narezanu bananu na vrh.",
-  "Losos s povrćem i avokadom": "Ispeci losos. Nasjeckaj avokado, krastavce i salatu. Posluži zajedno.",
-  "Zrnati sir s rižinim krekerima i voćem": "Posloži zrnati sir u zdjelu, dodaj borovnice i bananu. Posluži s rižinim krekerima.",
-  "Jaja s avokadom i salatom": "Isprži jaja. Nasjeckaj avokado. Posluži sa zelenom salatom i rajčicom.",
-  "Tuna s rižinim krekerima i salatom": "Ociedi tunu, posluži sa salatom, krastavcima i rižinim krekerima.",
-  "Skyr protein bowl": "Umiješaj whey u skyr. Dodaj borovnice i narezanu bananu na vrh.",
-  "Losos s krastavcima i kikiriki maslacem": "Ispeci losos. Posluži s narezanim krastavcima i rižinim krekerima s kikiriki maslacem.",
-  "Zrnati sir s kikiriki maslacem i bananom": "Stavi zrnati sir u zdjelu, dodaj žlicu kikiriki maslaca i narezanu bananu.",
-  "Grčki jogurt s avokadom i borovnicama": "Umiješaj whey u jogurt. Dodaj nasjeckani avokado i borovnice.",
-  "Whey shake s bananom i borovnicama": "Blendaj whey, mlijeko, bananu i borovnice dok ne postane glatko.",
-  "Skyr s bananom": "Stavi skyr u zdjelu i dodaj narezanu bananu.",
-  "Grčki jogurt s wheyem i voćem": "Umiješaj whey u grčki jogurt. Dodaj borovnice na vrh.",
-  "Banana s bademima": "Nasjeckaj bananu i posluži s bademima.",
-  "Rižini krekeri s kikiriki maslacem": "Namazi kikiriki maslac na rižine krekere. Posluži s narezanom bananom.",
-  "Whey protein shake": "Blendaj whey s mlijekom dok ne postane glatko.",
-  "Skyr s borovnicama": "Stavi skyr u zdjelu i dodaj borovnice.",
-  "Grčki jogurt s bananom i bademima": "Stavi jogurt u zdjelu, dodaj narezanu bananu i bademe.",
-  "Rižini krekeri sa zrnatim sirom": "Posloži zrnati sir na rižine krekere i posluži.",
-  "Protein smoothie s voćem": "Blendaj whey, mlijeko, bananu i borovnice.",
+  // DORUČAK
+  "Proteinska pločica s toplom zobovakom": "Skuhaj zobene pahuljice u mlijeku na laganoj vatri 5-7 minuta uz miješanje. Isprži jaja i bjelanjke na tavi s malo maslinovog ulja. Nasjeckaj svježu bananu. Posluži zobene u zdjeli, jaja sa strane i ukrasi bananom.",
+  "Kremasta zobovaka s proteinima i tropskim voćem": "Skuhaj zobene u mlijeku dok ne postanu kremaste. Ostavi da se malo ohlade, zatim umiješaj proteinski prah. Nasjeckaj bananu, dodaj pržene bademe na vrh i odmah posluži.",
+  "Mediteranski omlet s gljivama i puretinom": "Nasjeckaj šampinjone i crveni luk. Propržiti na tavi 3-4 minute. Umuti jaja, prelij preko povrća i peci dok omlet ne postane čvrst. Dodaj narezanu pureću šunku. Posluži uz tople kriške integralnog kruha.",
+  "Islandski skyr parfait sa šumskim voćem": "U visoku čašu ili zdjelu stavi skyr, umiješaj proteinski prah dok ne postane kremasto. Dodaj sloj svježih borovnica, zatim narezanu bananu. Možeš ponoviti slojeve za efektan izgled.",
+  "Toskanski tost s puretinom i grčkim jogurtom": "Toastiraj kriške integralnog kruha do zlatne boje. Posloži dimljenu puretinu preko tosta. Posluži grčki jogurt u zdjelici sa strane uz svježu bananu.",
+  "Rustikalni zrnati sir s voćem i bademima": "Rasporedi zrnati sir u plitku zdjelu. Nasjeckaj bananu i rasporedi preko sira. Dodaj šumske borovnice i pržene bademe. Lagano promiješaj ili posluži u slojevima.",
+  "Energetski tost s kikiriki maslacem i voćem": "Namazi svaku rižinu galetu tankim slojem kikiriki maslaca. Nasjeckaj bananu na kolutiće i posloži preko. Posluži grčki jogurt u zdjelici sa strane.",
+  "Proteinski bowl Acai style": "Stavi grčki jogurt u duboku zdjelu. Pospi zobenim pahuljicama. Nasjeckaj bananu i rasporedi s jedne strane, svježe borovnice s druge. Ukrasi indijskim oraščićima na vrhu.",
+  "Power breakfast za aktivne": "Isprži jaja na željeni način. Toastiraj integralni kruh i namazi kikiriki maslacem. Posloži dimljenu puretinu na tanjur. Popij čašu svježeg mlijeka uz obrok.",
+  "Proteinski smoothie sa zobovakom": "U blender stavi mlijeko, zobene pahuljice, proteinski prah i bananu. Miksaj 60 sekundi na visokoj brzini dok ne postane potpuno glatko i kremasto.",
+  "Klasični proteinski doručak sa skyrom": "Isprži jaja na oko u malo maslaca. Toastiraj integralni kruh. Posluži skyr u zdjelici s narezanom bananom sa strane.",
+  "Orijentalna zobovaka s indijskim oraščićima": "Skuhaj zobene u mlijeku 5-7 minuta. Umiješaj proteinski prah dok je još toplo. Nasjeckaj bananu, pospi indijskim oraščićima i odmah posluži.",
+  
+  // RUČAK
+  "Pileća prsa na žaru s pašta primavera": "Začini pileća prsa solju i paprom. Peči na roštilju ili tavi 6-7 minuta sa svake strane. Skuhaj tjesteninu al dente. Nasjeckaj salatu i cherry rajčice. Posluži piletinu preko tjestenine sa salatom.",
+  "Piletina s domaćim pireom i svježim krastavcima": "Skuhaj krumpir do mekoće, ociedi i izgnječi s malo mlijeka i maslaca. Isprži pileća prsa. Nasjeckaj krastavce i rikulu. Posluži piletinu s pireom i salatom.",
+  "Pureća prsa s mladim krumpirom i sezonskom salatom": "Skuhaj mlade krumpiriće u slanoj vodi 15-20 min. Isprži pureća prsa na tavi. Pripremi salatu od zelene salate i rajčica. Posluži sve zajedno.",
+  "Atlantski losos s mladim krumpirom i svježim povrćem": "Začini losos filet solju i limunom. Peci u pećnici na 200°C 12-15 minuta. Skuhaj mlade krumpiriće. Nasjeckaj krastavce i baby špinat. Posluži toplo.",
+  "Tuna nicoise s pašta fusilli": "Skuhaj fusilli tjesteninu al dente. Ociedi tunu iz konzerve. Pomiješaj tjesteninu s tunom, slatkim kukuruzom i narezanim krastavcima. Začini po želji.",
+  "Roštilj piletina s pečenim krumpirom i sezonskom salatom": "Nasjeckaj krumpir na kockice, poprskaj uljem i peci u pećnici na 200°C 25-30 min. Isprži piletinu na roštilju ili tavi. Pripremi salatu. Posluži toplo.",
+  "Piletina s heljdinom kašom i mediteranskom salatom": "Skuhaj heljdu u slanoj vodi 15 minuta. Isprži pileća prsa. Nasjeckaj rikulu i rajčice za salatu. Posluži piletinu preko heljde sa salatom.",
+  "Pašta Alfredo s piletinom": "Skuhaj tagliatelle. Isprži narezanu piletinu, dodaj vrhnje za kuhanje i kratko prokuhaj. Pomiješaj s tjesteninom. Posluži s baby špinatom.",
+  "Losos pašta primavera": "Ispeci losos filet. Skuhaj penne tjesteninu. Prepolovi cherry rajčice. Rasporedi tjesteninu, losos i rajčice na tanjur, dodaj rikulu.",
+  "Pureća prsa s heljdom i svježim povrćem": "Skuhaj heljdu. Isprži pureća prsa na tavi. Nasjeckaj krastavce i cherry rajčice. Posluži puretinu preko heljde sa svježim povrćem.",
+  "Piletina à la maison s domaćim pireom": "Skuhaj krumpir i izgnječi u kremasti pire. Isprži pileća prsa. Nasjeckaj svježe rajčice i baby špinat. Posluži domaćim stilom.",
+  "Tuna salata mediteran": "Ociedi tunu i stavi u veliku zdjelu. Dodaj kukuruz, narezane krastavce, zelenu salatu i cherry rajčice. Lagano pomiješaj i začini.",
+  
+  // VEČERA
+  "Tuna tartare sa svježim krastavcima": "Ociedi tunu i lagano je razdvoji vilicom. Nasjeckaj krastavce na tanke kolutiće. Pripremi miješanu salatu. Posluži tunu na salati s rižinim galetama sa strane.",
+  "Grčki proteinski parfait sa šumskim voćem": "Umiješaj proteinski prah u grčki jogurt dok ne postane kremasto. Dodaj svježe borovnice i narezanu bananu. Posluži u lijepoj zdjeli.",
+  "Pečeni losos s avokadom i zelenom salatom": "Začini losos i peci u pećnici 12-15 min na 200°C. Nasjeckaj Hass avokado i krastavce. Pripremi baby špinat. Posluži losos na krevetu od salate.",
+  "Rustikalni zrnati sir sa šumskim voćem": "Rasporedi zrnati sir u zdjelu. Dodaj svježe borovnice i narezanu bananu. Posluži rižine galete sa strane za hrskavost.",
+  "Avokado toast s jajima na oko": "Isprži jaja na oko. Nasjeckaj avokado i blago zgnječi. Pripremi rikulu i cherry rajčice. Posluži jaja na avokadu sa salatom.",
+  "Tuna crostini s mediteranskom salatom": "Ociedi tunu. Pripremi miješanu salatu s krastavcima. Posluži tunu na rižinim galetama sa salatom uz.",
+  "Islandski skyr proteinski bowl": "Umiješaj proteinski prah u skyr. Dodaj svježe borovnice i narezanu bananu na vrh. Posluži odmah.",
+  "Losos tataki s azijskim umakom": "Brzo ispeci losos na visokoj temperaturi 1-2 min sa svake strane. Nasjeckaj krastavce. Razrijedi kikiriki maslac s malo vode za umak. Posluži s galetama.",
+  "Zrnati sir à la mode s kikiriki maslacem": "Stavi zrnati sir u zdjelu. Dodaj žlicu kikiriki maslaca i lagano promiješaj. Nasjeckaj bananu i dodaj na vrh.",
+  "Grčki jogurt bowl s avokadom i borovnicama": "Umiješaj proteinski prah u grčki jogurt. Nasjeckaj avokado i dodaj. Ukrasi svježim borovnicama.",
+  
+  // UŽINE
+  "Proteinski smoothie Tropical Bliss": "Stavi sve sastojke u blender: mlijeko, proteinski prah, bananu i borovnice. Miksaj 60 sekundi dok ne postane potpuno glatko.",
+  "Islandski skyr s tropskim voćem": "Stavi skyr u zdjelu. Nasjeckaj bananu i posloži na vrh. Posluži odmah.",
+  "Grčki proteinski parfait": "Umiješaj proteinski prah u grčki jogurt. Dodaj svježe borovnice na vrh. Posluži u staklenoj čaši za efektan izgled.",
+  "Energy boost s bademima": "Nasjeckaj bananu na kolutiće. Posluži s prženim bademima sa strane. Jednostavno i hranjivo.",
+  "Rižine galette s kikiriki maslacem": "Namazi kikiriki maslac na rižine galete. Nasjeckaj bananu i posloži preko. Posluži odmah.",
+  "Pure protein shake": "Stavi proteinski prah i mlijeko u shaker ili blender. Protreši dobro ili miksaj 30 sekundi.",
+  "Islandski skyr sa šumskim voćem": "Stavi skyr u zdjelu. Dodaj svježe borovnice na vrh. Lagano promiješaj ili posluži u slojevima.",
+  "Grčki bowl s bananom i bademima": "Stavi grčki jogurt u zdjelu. Nasjeckaj bananu i rasporedi. Pospi prženim bademima.",
+  "Rižine galette sa zrnatim sirom": "Rasporedi zrnati sir preko rižinih galeta. Posluži kao brzu, proteinsku užinu.",
+  "Proteinski smoothie Berry Blast": "Stavi mlijeko, proteinski prah, bananu i borovnice u blender. Miksaj dok ne postane glatko i kremasto.",
 };
 
 function getPreparationInstructions(mealName: string): string {
@@ -183,22 +193,42 @@ export default function MealsPage() {
     }
   }, [clientId]);
 
-  return (
+    return (
     <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation Bar */}
+      <div className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
+        <div className="mx-auto max-w-4xl px-4 py-3 flex items-center justify-between">
+          <a 
+            href="/app" 
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="text-sm font-medium">Natrag</span>
+          </a>
+          <div className="flex items-center gap-3">
+            <a href="/app" className="text-xs text-gray-500 hover:text-gray-700">Početna</a>
+            <span className="text-gray-300">|</span>
+            <a href="/app/profile" className="text-xs text-gray-500 hover:text-gray-700">Profil</a>
+          </div>
+        </div>
+      </div>
+
       <div className="mx-auto max-w-4xl px-4 py-8">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Tjedni Plan Prehrane</h1>
             <p className="text-sm text-gray-500 mt-1">Personalizirani plan sa 5 obroka dnevno</p>
-          </div>
-          <button
+      </div>
+            <button
             onClick={generateWeeklyPlan}
             disabled={loading}
             className="px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-colors"
-          >
+            >
             {loading ? "Generiram..." : "Novi plan"}
-          </button>
+            </button>
         </div>
 
         {/* Error */}
@@ -220,8 +250,21 @@ export default function MealsPage() {
         {weeklyPlan && (
           <>
             {/* Ciljevi */}
-            <div className="mb-6 p-4 bg-white border border-gray-200 rounded-lg">
-              <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Dnevni ciljevi</p>
+            <div className="mb-4 p-4 bg-white border border-gray-200 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-gray-400 uppercase tracking-wide">Dnevni ciljevi</p>
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  weeklyPlan.userTargets.goal === 'lose' 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : weeklyPlan.userTargets.goal === 'gain' 
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-700'
+                }`}>
+                  {weeklyPlan.userTargets.goal === 'lose' ? '🎯 Skidanje kila' : 
+                   weeklyPlan.userTargets.goal === 'gain' ? '💪 Dobivanje mišića' : 
+                   '⚖️ Održavanje'}
+                </span>
+              </div>
               <div className="flex gap-6 text-sm">
                 <div><span className="font-semibold text-gray-900">{weeklyPlan.userTargets.calories}</span> <span className="text-gray-500">kcal</span></div>
                 <div><span className="font-semibold text-gray-900">{weeklyPlan.userTargets.protein}g</span> <span className="text-gray-500">proteina</span></div>
@@ -229,6 +272,15 @@ export default function MealsPage() {
                 <div><span className="font-semibold text-gray-900">{weeklyPlan.userTargets.fat}g</span> <span className="text-gray-500">masti</span></div>
               </div>
             </div>
+
+            {/* Napomena za cilj */}
+            {weeklyPlan.goalNote && (
+              <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                  {weeklyPlan.goalNote}
+                </div>
+              </div>
+            )}
 
             {/* Dani */}
             <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
@@ -259,17 +311,17 @@ export default function MealsPage() {
                 >
                   {/* Dan header */}
                   <div className="flex justify-between items-center py-3 mb-4">
-                    <div>
+            <div>
                       <h2 className="text-lg font-semibold text-gray-900">{weeklyPlan.days[selectedDay].dayName}</h2>
                       <p className="text-xs text-gray-400">{weeklyPlan.days[selectedDay].date}</p>
-                    </div>
+            </div>
                     <div className="text-right">
                       <p className="text-lg font-semibold text-gray-900">{weeklyPlan.days[selectedDay].dailyTotals.calories} kcal</p>
                       <p className="text-xs text-gray-400">
                         P: {weeklyPlan.days[selectedDay].dailyTotals.protein}g · C: {weeklyPlan.days[selectedDay].dailyTotals.carbs}g · F: {weeklyPlan.days[selectedDay].dailyTotals.fat}g
-                      </p>
-                    </div>
-                  </div>
+            </p>
+          </div>
+      </div>
 
                   {/* Grid obroka */}
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -316,7 +368,7 @@ export default function MealsPage() {
                 <div><span className="font-semibold text-gray-900">{weeklyPlan.weeklyTotals.avgProtein}g</span> <span className="text-gray-500">P</span></div>
                 <div><span className="font-semibold text-gray-900">{weeklyPlan.weeklyTotals.avgCarbs}g</span> <span className="text-gray-500">C</span></div>
                 <div><span className="font-semibold text-gray-900">{weeklyPlan.weeklyTotals.avgFat}g</span> <span className="text-gray-500">F</span></div>
-              </div>
+          </div>
             </div>
           </>
         )}
@@ -356,45 +408,55 @@ export default function MealsPage() {
                     <p className="text-xs text-gray-400 uppercase tracking-wide">{selectedMeal.title}</p>
                     <h3 className="text-xl font-semibold text-gray-900 mt-1">{selectedMeal.meal.name}</h3>
                   </div>
-                  <button
+        <button
                     onClick={() => setSelectedMeal(null)}
                     className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                  >
+        >
                     <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                  </button>
+        </button>
                 </div>
               </div>
 
               {/* Modal Body - Scrollable */}
               <div className="flex-1 overflow-y-auto p-5 space-y-5">
-                {/* Placeholder za sliku */}
-                <div className="w-full h-48 bg-gray-100 rounded-xl flex items-center justify-center">
-                  <svg className="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
+                {/* Slika jela */}
+                <div className="w-full h-48 bg-gray-100 rounded-xl overflow-hidden">
+                  {selectedMeal.meal.image ? (
+                    <img 
+                      src={selectedMeal.meal.image} 
+                      alt={selectedMeal.meal.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <svg className="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  )}
+      </div>
 
-                {/* Makroi */}
+      {/* Makroi */}
                 <div className="grid grid-cols-4 gap-3">
                   <div className="text-center p-3 bg-gray-50 rounded-xl">
                     <p className="text-xl font-bold text-gray-900">{selectedMeal.meal.totals.calories}</p>
                     <p className="text-xs text-gray-500">kcal</p>
-                  </div>
+        </div>
                   <div className="text-center p-3 bg-gray-50 rounded-xl">
                     <p className="text-xl font-bold text-gray-900">{selectedMeal.meal.totals.protein}g</p>
                     <p className="text-xs text-gray-500">Proteini</p>
-                  </div>
+        </div>
                   <div className="text-center p-3 bg-gray-50 rounded-xl">
                     <p className="text-xl font-bold text-gray-900">{selectedMeal.meal.totals.carbs}g</p>
                     <p className="text-xs text-gray-500">UH</p>
-                  </div>
+        </div>
                   <div className="text-center p-3 bg-gray-50 rounded-xl">
                     <p className="text-xl font-bold text-gray-900">{selectedMeal.meal.totals.fat}g</p>
                     <p className="text-xs text-gray-500">Masti</p>
-                  </div>
-                </div>
+        </div>
+      </div>
 
                 {/* Sastojci */}
                 <div>
@@ -412,20 +474,30 @@ export default function MealsPage() {
                         <span className="text-gray-900 font-semibold tabular-nums">{formatAmount(comp.name, comp.grams)}</span>
                       </motion.div>
                     ))}
-                  </div>
-                </div>
+              </div>
+            </div>
+
+                {/* Opis jela */}
+                {selectedMeal.meal.description && (
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">O jelu</p>
+                    <p className="text-gray-600 leading-relaxed text-sm">
+                      {selectedMeal.meal.description}
+                    </p>
+        </div>
+      )}
 
                 {/* Priprema */}
                 <div>
                   <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">Priprema</p>
-                  <p className="text-gray-600 leading-relaxed">
-                    {getPreparationInstructions(selectedMeal.meal.name)}
+                  <p className="text-gray-600 leading-relaxed text-sm">
+                    {selectedMeal.meal.preparationTip || getPreparationInstructions(selectedMeal.meal.name)}
                   </p>
                 </div>
-              </div>
+        </div>
             </motion.div>
           </>
-        )}
+      )}
       </AnimatePresence>
     </div>
   );
@@ -445,11 +517,22 @@ function MealTile({ title, meal, onClick, delay }: { title: string; meal: Genera
       onClick={onClick}
       className="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-lg hover:border-gray-300 transition-shadow"
     >
-      {/* Placeholder za sliku */}
-      <div className="w-full h-24 bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
-        <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
+      {/* Slika jela */}
+      <div className="w-full h-24 bg-gray-100 rounded-lg mb-3 overflow-hidden">
+        {meal.image ? (
+          <img 
+            src={meal.image} 
+            alt={meal.name}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+        )}
       </div>
       
       <p className="text-xs text-gray-400 uppercase tracking-wide">{title}</p>

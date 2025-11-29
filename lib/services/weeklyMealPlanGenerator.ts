@@ -30,6 +30,8 @@ interface CompositeMeal {
   id: string;
   name: string;
   description: string;
+  image?: string;
+  preparationTip?: string;
   components: MealComponent[];
   tags: string[];
   suitableFor: string[];
@@ -55,6 +57,8 @@ interface UserCalculations {
 interface GeneratedMeal {
   name: string;
   description: string;
+  image?: string;
+  preparationTip?: string;
   components: {
     name: string;
     grams: number;
@@ -89,6 +93,16 @@ interface DailyPlan {
   };
 }
 
+interface GoalNotes {
+  lose: string;
+  maintain: string;
+  gain: string;
+}
+
+interface MealComponentsDataWithNotes extends MealComponentsData {
+  goalNotes?: GoalNotes;
+}
+
 interface WeeklyMealPlan {
   userId: string;
   generatedAt: string;
@@ -100,6 +114,7 @@ interface WeeklyMealPlan {
     fat: number;
     goal: string;
   };
+  goalNote?: string;
   days: DailyPlan[];
   weeklyTotals: {
     avgCalories: number;
@@ -121,6 +136,7 @@ const FOOD_MACROS: Record<string, { calories: number; protein: number; carbs: nu
   "Turkey breast": { calories: 135, protein: 30, carbs: 0, fat: 1 },
   "Salmon": { calories: 208, protein: 20, carbs: 0, fat: 13 },
   "Tuna": { calories: 132, protein: 29, carbs: 0, fat: 1 },
+  "Beef": { calories: 250, protein: 26, carbs: 0, fat: 17 },
   
   // Mliječni proizvodi
   "Greek yogurt": { calories: 97, protein: 9, carbs: 3.6, fat: 5 },
@@ -343,6 +359,8 @@ function generateMeal(
   return {
     name: selectedMeal.name,
     description: selectedMeal.description,
+    image: selectedMeal.image,
+    preparationTip: selectedMeal.preparationTip,
     components: scaledComponents,
     totals: scaledTotals,
   };
@@ -369,7 +387,10 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
   console.log(`🎯 Cilj: ${calculations.goalType}`);
 
   // 2. Učitaj podatke o obrocima
-  const mealData = mealComponentsData as MealComponentsData;
+  const mealData = mealComponentsData as MealComponentsDataWithNotes;
+  
+  // Dohvati napomenu za cilj
+  const goalNote = mealData.goalNotes?.[calculations.goalType as keyof GoalNotes] || "";
 
   // 3. Odredi distribuciju kalorija po obrocima (5 obroka)
   const calorieDistribution = {
@@ -510,6 +531,7 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
       fat: calculations.targetFat,
       goal: calculations.goalType,
     },
+    goalNote,
     days,
     weeklyTotals,
   };

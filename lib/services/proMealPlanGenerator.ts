@@ -1332,8 +1332,8 @@ function buildCompositeMealForSlot(
     console.warn(`⚠️ Nema obroka za cilj "${userGoal}" za ${slotKey}, koristim sve obroke`);
     definitions = MEAL_COMPONENTS[slotKey] || [];
     if (definitions.length === 0) {
-      console.error(`❌ Nema definicija za slot ${slotKey} u meal_components.json`);
-      return null;
+    console.error(`❌ Nema definicija za slot ${slotKey} u meal_components.json`);
+    return null;
     }
   }
 
@@ -1999,15 +1999,15 @@ export async function saveProMealPlanToSupabase(
 
     // Spremi u bazu - bez deviation_percent jer kolona ne postoji u svim bazama
     const insertData: Record<string, any> = {
-      client_id: clientId,
-      week_start_date: weekStartDate,
-      meals: weekPlan,
-      total_calories: Math.round(plan.total.calories * 7),
-      total_protein: Math.round(plan.total.protein * 7),
-      total_carbs: Math.round(plan.total.carbs * 7),
-      total_fats: Math.round(plan.total.fat * 7),
-      plan_type: "pro",
-      plan_version: "2.1", // Ažurirana verzija sa poboljšanim scoring-om
+        client_id: clientId,
+        week_start_date: weekStartDate,
+        meals: weekPlan,
+        total_calories: Math.round(plan.total.calories * 7),
+        total_protein: Math.round(plan.total.protein * 7),
+        total_carbs: Math.round(plan.total.carbs * 7),
+        total_fats: Math.round(plan.total.fat * 7),
+        plan_type: "pro",
+        plan_version: "2.1", // Ažurirana verzija sa poboljšanim scoring-om
     };
 
     const { data, error } = await supabase
@@ -2197,7 +2197,7 @@ export async function generateWeeklyProMealPlan(
 
     // Odredi cilj korisnika za filtriranje obroka
     const userGoal: GoalType = calculations.goal_type || "maintain";
-    
+
     console.log(`📊 Generiranje plana sa ${mealsPerDay} obroka dnevno`);
     console.log(`📊 Target: ${targetCalories} kcal, P: ${targetProtein}g, C: ${targetCarbs}g, F: ${targetFat}g`);
     console.log(`🎯 Cilj korisnika: ${userGoal}`);
@@ -2693,15 +2693,15 @@ export async function saveWeeklyProMealPlanToSupabase(
   try {
     // Spremi u bazu - bez deviation_percent i plan_json jer kolone možda ne postoje
     const insertData: Record<string, any> = {
-      client_id: clientId,
-      week_start_date: plan.weekStartDate,
-      meals: plan.days.map((day) => day.meals), // Legacy format za kompatibilnost
-      total_calories: Math.round(plan.weeklyAverage.calories * 7),
-      total_protein: Math.round(plan.weeklyAverage.protein * 7),
-      total_carbs: Math.round(plan.weeklyAverage.carbs * 7),
-      total_fats: Math.round(plan.weeklyAverage.fat * 7),
-      plan_type: "pro_weekly",
-      plan_version: "2.1",
+        client_id: clientId,
+        week_start_date: plan.weekStartDate,
+        meals: plan.days.map((day) => day.meals), // Legacy format za kompatibilnost
+        total_calories: Math.round(plan.weeklyAverage.calories * 7),
+        total_protein: Math.round(plan.weeklyAverage.protein * 7),
+        total_carbs: Math.round(plan.weeklyAverage.carbs * 7),
+        total_fats: Math.round(plan.weeklyAverage.fat * 7),
+        plan_type: "pro_weekly",
+        plan_version: "2.1",
     };
 
     const { data, error } = await supabase

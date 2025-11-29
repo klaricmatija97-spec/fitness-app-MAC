@@ -1226,8 +1226,8 @@ function AppDashboardContent() {
                             filter: "brightness(0.6) contrast(1.1)",
                           }}
                         />
-                        {/* CORPEX Overlay - #000000 sa 35-40% opacity */}
-                        <div className="absolute inset-0 bg-[rgba(0,0,0,0.375)] z-[2]" />
+                            {/* CORPEX Overlay - #000000 sa 35-40% opacity */}
+                          <div className="absolute inset-0 bg-[rgba(0,0,0,0.375)] z-[2]" />
 
                         {/* Naziv aplikacije - PUNI KONTRАST */}
                         <div className="absolute inset-0 flex items-center justify-center z-[10] px-6">
