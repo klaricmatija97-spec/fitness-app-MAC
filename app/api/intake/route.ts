@@ -40,7 +40,20 @@ export async function POST(request: Request) {
           equipment: payload.equipment ?? null,
           experience: payload.experience ?? null,
           meal_frequency: payload.mealFrequency ?? null,
-          allergies: payload.allergies ?? null,
+          allergies: (() => {
+            // Kombiniraj sva tri polja u format koji generator razumije
+            const parts: string[] = [];
+            if (payload.allergies?.trim()) {
+              parts.push(`alergije: ${payload.allergies.trim()}`);
+            }
+            if (payload.avoidIngredients?.trim()) {
+              parts.push(`ne želim: ${payload.avoidIngredients.trim()}`);
+            }
+            if (payload.foodPreferences?.trim()) {
+              parts.push(`preferiram: ${payload.foodPreferences.trim()}`);
+            }
+            return parts.length > 0 ? parts.join(". ") : null;
+          })(),
           diet_type: payload.dietType ?? null,
           other_diet_type: payload.otherDietType ?? null,
           sleep_hours: payload.sleepHours ?? null,

@@ -9,6 +9,14 @@ const backgroundImages = [
   "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1920&q=80",
 ];
 
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center">Učitavanje...</div>}>
+      <LoginPageContent />
+    </Suspense>
+  );
+}
+
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();

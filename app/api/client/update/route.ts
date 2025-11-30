@@ -29,6 +29,7 @@ const updateClientSchema = z.object({
   otherGoals: z.string().optional(),
   dietCleanliness: z.number().optional(),
   notes: z.string().optional(),
+  allergies: z.string().optional().nullable(),
 });
 
 export async function POST(request: Request) {
@@ -80,20 +81,57 @@ export async function POST(request: Request) {
       other_goals: data.otherGoals ?? existingClient?.other_goals,
       diet_cleanliness: data.dietCleanliness ?? existingClient?.diet_cleanliness,
       notes: data.notes ?? existingClient?.notes,
+      allergies: data.allergies !== undefined ? data.allergies : existingClient?.allergies,
     };
 
-    // Provjeri da name postoji (obavezno polje)
-    if (!clientUpdate.name) {
+    // Ako klijent ne postoji, ne možemo ažurirati
+    if (!existingClient) {
       return NextResponse.json(
-        { ok: false, message: "Client name is required but missing." },
+        { ok: false, message: "Client not found. Please create client first." },
+        { status: 404 }
+      );
+    }
+
+    // Provjeri da name postoji (obavezno polje) - ali samo ako se ažurira name
+    if (data.name !== undefined && !data.name) {
+      return NextResponse.json(
+        { ok: false, message: "Client name cannot be empty." },
         { status: 400 }
       );
     }
 
-    // Ažuriraj ili kreiraj klijenta koristeći upsert
+    // Ako se samo ažurira allergies, ne trebamo sva polja
+    const updateData: any = {
+      id: data.clientId,
+    };
+    
+    // Dodaj samo polja koja se ažuriraju
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.honorific !== undefined) updateData.honorific = data.honorific;
+    if (data.weight !== undefined) {
+      updateData.weight_value = weight_value;
+      updateData.weight_unit = weight_unit;
+    }
+    if (data.height !== undefined) {
+      updateData.height_value = height_value;
+      updateData.height_unit = height_unit;
+    }
+    if (data.ageRange !== undefined) updateData.age_range = data.ageRange;
+    if (data.activities !== undefined) updateData.activities = data.activities;
+    if (data.otherActivities !== undefined) updateData.other_activities = data.otherActivities;
+    if (data.goals !== undefined) updateData.goals = data.goals;
+    if (data.otherGoals !== undefined) updateData.other_goals = data.otherGoals;
+    if (data.dietCleanliness !== undefined) updateData.diet_cleanliness = data.dietCleanliness;
+    if (data.notes !== undefined) updateData.notes = data.notes;
+    if (data.allergies !== undefined) updateData.allergies = data.allergies;
+
+    // Ažuriraj klijenta koristeći update (ne upsert)
     const { error: clientUpdateError } = await supabase
       .from("clients")
-      .upsert(clientUpdate);
+      .update(updateData)
+      .eq("id", data.clientId);
 
     if (clientUpdateError) {
       console.error("[client/update] Supabase Error:", clientUpdateError);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 
@@ -12,6 +12,14 @@ const backgroundImages = [
 ];
 
 export default function PaymentPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center">Učitavanje...</div>}>
+      <PaymentPageContent />
+    </Suspense>
+  );
+}
+
+function PaymentPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const clientId = searchParams.get("clientId");

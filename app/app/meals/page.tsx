@@ -211,7 +211,7 @@ export default function MealsPage() {
             <a href="/app" className="text-xs text-gray-500 hover:text-gray-700">Početna</a>
             <span className="text-gray-300">|</span>
             <a href="/app/profile" className="text-xs text-gray-500 hover:text-gray-700">Profil</a>
-          </div>
+      </div>
         </div>
       </div>
 
@@ -221,7 +221,7 @@ export default function MealsPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Tjedni Plan Prehrane</h1>
             <p className="text-sm text-gray-500 mt-1">Personalizirani plan sa 5 obroka dnevno</p>
-      </div>
+            </div>
             <button
             onClick={generateWeeklyPlan}
             disabled={loading}
@@ -266,12 +266,84 @@ export default function MealsPage() {
                 </span>
               </div>
               <div className="flex gap-6 text-sm">
-                <div><span className="font-semibold text-gray-900">{weeklyPlan.userTargets.calories}</span> <span className="text-gray-500">kcal</span></div>
-                <div><span className="font-semibold text-gray-900">{weeklyPlan.userTargets.protein}g</span> <span className="text-gray-500">proteina</span></div>
-                <div><span className="font-semibold text-gray-900">{weeklyPlan.userTargets.carbs}g</span> <span className="text-gray-500">UH</span></div>
-                <div><span className="font-semibold text-gray-900">{weeklyPlan.userTargets.fat}g</span> <span className="text-gray-500">masti</span></div>
-              </div>
-            </div>
+                <div>
+                  <span className="font-semibold text-gray-900">{weeklyPlan.userTargets.calories}</span> <span className="text-gray-500">kcal</span>
+                  {(weeklyPlan.days[selectedDay]?.dailyTotals as any)?.deviation && (
+                    <div className="text-xs mt-0.5">
+                      <span className="text-gray-500">Ostvareno: </span>
+                      <span className={`font-medium ${
+                        Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories) <= 5
+                          ? 'text-green-600'
+                          : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories) <= 10
+                          ? 'text-yellow-600'
+                          : 'text-red-600'
+                      }`}>
+                        {weeklyPlan.days[selectedDay].dailyTotals.calories} kcal
+                        ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories > 0 ? '+' : ''}
+                        {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories.toFixed(1)}%)
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">{weeklyPlan.userTargets.protein}g</span> <span className="text-gray-500">proteina</span>
+                  {(weeklyPlan.days[selectedDay]?.dailyTotals as any)?.deviation && (
+                    <div className="text-xs mt-0.5">
+                      <span className="text-gray-500">Ostvareno: </span>
+                      <span className={`font-medium ${
+                        Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein) <= 5
+                          ? 'text-green-600'
+                          : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein) <= 10
+                          ? 'text-yellow-600'
+                          : 'text-red-600'
+                      }`}>
+                        {weeklyPlan.days[selectedDay].dailyTotals.protein}g
+                        ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein > 0 ? '+' : ''}
+                        {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein.toFixed(1)}%)
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">{weeklyPlan.userTargets.carbs}g</span> <span className="text-gray-500">UH</span>
+                  {(weeklyPlan.days[selectedDay]?.dailyTotals as any)?.deviation && (
+                    <div className="text-xs mt-0.5">
+                      <span className="text-gray-500">Ostvareno: </span>
+                      <span className={`font-medium ${
+                        Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs) <= 5
+                          ? 'text-green-600'
+                          : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs) <= 10
+                          ? 'text-yellow-600'
+                          : 'text-red-600'
+                      }`}>
+                        {weeklyPlan.days[selectedDay].dailyTotals.carbs}g
+                        ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs > 0 ? '+' : ''}
+                        {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs.toFixed(1)}%)
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900">{weeklyPlan.userTargets.fat}g</span> <span className="text-gray-500">masti</span>
+                  {(weeklyPlan.days[selectedDay]?.dailyTotals as any)?.deviation && (
+                    <div className="text-xs mt-0.5">
+                      <span className="text-gray-500">Ostvareno: </span>
+                      <span className={`font-medium ${
+                        Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat) <= 5
+                          ? 'text-green-600'
+                          : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat) <= 10
+                          ? 'text-yellow-600'
+                          : 'text-red-600'
+                      }`}>
+                        {weeklyPlan.days[selectedDay].dailyTotals.fat}g
+                        ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat > 0 ? '+' : ''}
+                        {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat.toFixed(1)}%)
+                      </span>
+                    </div>
+                  )}
+                </div>
+          </div>
+      </div>
 
             {/* Napomena za cilj */}
             {weeklyPlan.goalNote && (
@@ -281,6 +353,13 @@ export default function MealsPage() {
                 </div>
               </div>
             )}
+
+            {/* Napomena o odstupanju */}
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="text-sm text-yellow-800 whitespace-pre-line leading-relaxed">
+                ℹ️ Napomena: Stvarni dnevni unos može odstupati do ±15% od zadanih ciljeva zbog realističnih ograničenja porcija i dostupnih kombinacija namirnica. Generator optimizira plan da bude što bliže ciljevima uz održavanje raznolikosti i realističnih obroka.
+        </div>
+      </div>
 
             {/* Dani */}
             <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
@@ -316,10 +395,70 @@ export default function MealsPage() {
                       <p className="text-xs text-gray-400">{weeklyPlan.days[selectedDay].date}</p>
             </div>
                     <div className="text-right">
-                      <p className="text-lg font-semibold text-gray-900">{weeklyPlan.days[selectedDay].dailyTotals.calories} kcal</p>
-                      <p className="text-xs text-gray-400">
-                        P: {weeklyPlan.days[selectedDay].dailyTotals.protein}g · C: {weeklyPlan.days[selectedDay].dailyTotals.carbs}g · F: {weeklyPlan.days[selectedDay].dailyTotals.fat}g
-            </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-lg font-semibold text-gray-900">{weeklyPlan.days[selectedDay].dailyTotals.calories} kcal</p>
+                        {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                            Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories) <= 5
+                              ? 'bg-green-100 text-green-700'
+                              : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories) <= 10
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}>
+                            {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories > 0 ? '+' : ''}
+                            {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories.toFixed(1)}%
+                          </span>
+                        )}
+            </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-gray-400">
+                          P: {weeklyPlan.days[selectedDay].dailyTotals.protein}g
+                          {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation && (
+                            <span className={`ml-1 ${
+                              Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein) <= 5
+                                ? 'text-green-600'
+                                : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein) <= 10
+                                ? 'text-yellow-600'
+                                : 'text-red-600'
+                            }`}>
+                              ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein > 0 ? '+' : ''}
+                              {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein.toFixed(1)}%)
+                            </span>
+                          )}
+                        </p>
+                        <span className="text-gray-300">·</span>
+                        <p className="text-xs text-gray-400">
+                          C: {weeklyPlan.days[selectedDay].dailyTotals.carbs}g
+                          {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation && (
+                            <span className={`ml-1 ${
+                              Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs) <= 5
+                                ? 'text-green-600'
+                                : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs) <= 10
+                                ? 'text-yellow-600'
+                                : 'text-red-600'
+                            }`}>
+                              ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs > 0 ? '+' : ''}
+                              {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs.toFixed(1)}%)
+                            </span>
+                          )}
+                        </p>
+                        <span className="text-gray-300">·</span>
+                        <p className="text-xs text-gray-400">
+                          F: {weeklyPlan.days[selectedDay].dailyTotals.fat}g
+                          {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation && (
+                            <span className={`ml-1 ${
+                              Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat) <= 5
+                                ? 'text-green-600'
+                                : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat) <= 10
+                                ? 'text-yellow-600'
+                                : 'text-red-600'
+                            }`}>
+                              ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat > 0 ? '+' : ''}
+                              {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat.toFixed(1)}%)
+                            </span>
+                          )}
+                        </p>
+            </div>
           </div>
       </div>
 

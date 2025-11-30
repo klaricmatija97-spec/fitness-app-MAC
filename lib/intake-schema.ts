@@ -98,6 +98,8 @@ export const intakeSchema = z.object({
   experience: experienceLevelEnum.optional(),
   mealFrequency: mealFrequencyEnum.optional(),
   allergies: z.string().optional(),
+  avoidIngredients: z.string().optional(),
+  foodPreferences: z.string().optional(),
   dietType: dietTypeEnum.optional(),
   otherDietType: z.string().optional(),
   sleepHours: z.number().min(4).max(10).optional(),

@@ -116,7 +116,7 @@ const foodAliases: Record<string, string[]> = {
   "Mushroom": ["Mushroom", "Mushrooms", "Mushrooms, raw", "Mushroom, raw", "Champignon"],
   "Blueberries": ["Blueberries", "Blueberries, raw", "Blueberry, raw"],
   "Cherries": ["Cherries", "Cherries, sour, raw", "Cherries, sweet, raw", "Cherry, raw"],
-  "Apple": ["Apple", "Apples, raw", "Apple, raw"],
+  "Apple": ["Apple", "Apples, raw", "Apple, raw", "Apple, fresh"],
   "Ham": ["Ham", "Ham, cured", "Ham, cooked", "Ham, sliced"],
   "Broccoli": ["Broccoli", "Broccoli, raw", "Broccoli, cooked"],
   "Carrot": ["Carrot", "Carrots, raw", "Carrot, raw"],
@@ -130,7 +130,6 @@ const foodAliases: Record<string, string[]> = {
   "Buckwheat": ["Buckwheat", "Buckwheat groats", "Kasha", "Buckwheat, cooked"],
   "Corn": ["Corn", "Corn, sweet", "Sweet corn", "Corn, canned"],
   "Sour cream": ["Sour cream", "Cream, sour", "Vrhnje", "Cream"],
-  "Apple": ["Apple", "Apples, raw", "Apple, raw", "Apple, fresh"],
 };
 
 // Hrvatski nazivi za prikaz u aplikaciji

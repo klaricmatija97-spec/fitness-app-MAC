@@ -72,22 +72,19 @@ export function calculateMacros(targetCalories: number, goalType: GoalType, weig
   let carbs: number;
   let fats: number;
 
-  // Proteini: 1.9 do 2.2 grama po kg tjelesne mase (ovisno o cilju)
+  // Proteini: lose = 2.0 g/kg, maintain/gain = 2.05 g/kg
   switch (goalType) {
     case "lose":
-      protein = Math.round(weight * 2.2); // 2.2g po kg za očuvanje mišića tijekom gubitka
+      protein = Math.round(weight * 2.0);
       break;
     case "gain":
-      protein = Math.round(weight * 2.0); // 2.0g po kg za rast mišića
-      break;
     case "maintain":
     default:
-      protein = Math.round(weight * 1.9); // 1.9g po kg za održavanje
+      protein = Math.round(weight * 2.05);
       break;
   }
 
-  // Masti: 0.8 do 1 gram po kg tjelesne mase
-  // Koristimo 0.9g/kg kao srednju vrijednost u rasponu 0.8-1.0g/kg
+  // Masti: 0.8-1.0 g/kg (koristimo 0.9g/kg kao srednju vrijednost)
   fats = Math.round(weight * 0.9);
 
   // Ostatak kalorija ide u ugljikohidrate
@@ -96,7 +93,7 @@ export function calculateMacros(targetCalories: number, goalType: GoalType, weig
   const remainingCalories = targetCalories - proteinCalories - fatsCalories;
   carbs = Math.round(remainingCalories / 4);
 
-  // Osiguraj da carbs nije negativan (ako targetCalories nije dovoljno visok)
+  // Osiguraj da carbs nije negativan
   if (carbs < 0) {
     carbs = 0;
   }

@@ -356,6 +356,38 @@
       ],
       "tags": ["high-calorie", "high-protein", "classic"],
       "suitableFor": ["gain", "maintain"]
+    },
+    {
+      "id": "lunch_gain_5",
+      "name": "Tortilje s piletinom",
+      "description": "Zdrava alternativa klasičnom wrapu. Wholegrain tortilja s piletinom, povrćem i laganim jogurt umakom. Kalorijski gusta opcija za masu s odličnim omjerom makroa.",
+      "image": "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=300&fit=crop",
+      "preparationTip": "Piletinu pripremi na tavi i nasjeckaj. Tortilju zagrijaj, dodaj piletinu, povrće i jogurt umak. Zavij i posluži.",
+      "components": [
+        { "food": "Chicken breast", "grams": 180, "displayName": "Pileća prsa" },
+        { "food": "Tortilla", "grams": 80, "displayName": "Wholegrain tortilja" },
+        { "food": "Lettuce", "grams": 60, "displayName": "Salata" },
+        { "food": "Tomato", "grams": 80, "displayName": "Rajčice" },
+        { "food": "Greek yogurt", "grams": 50, "displayName": "Jogurt umak" }
+      ],
+      "tags": ["high-calorie", "high-protein", "practical"],
+      "suitableFor": ["gain", "maintain"]
+    },
+    {
+      "id": "lunch_maintain_4",
+      "name": "Tortilje s tunom",
+      "description": "Lagana i brza opcija s omega-3 masnim kiselinama. Tuna u salamuri, svježe povrće i lagani umak u wholegrain tortilji. Idealno za ručak na putu.",
+      "image": "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=300&fit=crop",
+      "preparationTip": "Tunu iscijedi i pomiješaj s jogurt umakom. Dodaj povrće u tortilju i zavij.",
+      "components": [
+        { "food": "Tuna", "grams": 150, "displayName": "Tuna u salamuri" },
+        { "food": "Tortilla", "grams": 70, "displayName": "Wholegrain tortilja" },
+        { "food": "Lettuce", "grams": 60, "displayName": "Salata" },
+        { "food": "Cucumber", "grams": 60, "displayName": "Krastavci" },
+        { "food": "Greek yogurt", "grams": 40, "displayName": "Jogurt umak" }
+      ],
+      "tags": ["omega-3", "practical", "light"],
+      "suitableFor": ["maintain", "lose"]
     }
   ],
   "dinner": [
@@ -372,7 +404,7 @@
         { "food": "Carrot", "grams": 80, "displayName": "Kuhana mrkva" }
       ],
       "tags": ["light", "high-protein", "low-calorie"],
-      "suitableFor": ["lose"]
+      "suitableFor": ["lose", "maintain"]
     },
     {
       "id": "dinner_lose_2",
@@ -387,7 +419,7 @@
         { "food": "Banana", "grams": 60, "displayName": "Pola banane" }
       ],
       "tags": ["light", "high-protein", "probiotic"],
-      "suitableFor": ["lose"]
+      "suitableFor": ["lose", "maintain"]
     },
     {
       "id": "dinner_lose_3",
@@ -402,7 +434,7 @@
         { "food": "Tomato", "grams": 100, "displayName": "Rajčice" }
       ],
       "tags": ["high-protein", "low-carb", "light"],
-      "suitableFor": ["lose"]
+      "suitableFor": ["lose", "maintain"]
     },
     {
       "id": "dinner_maintain_1",
@@ -447,22 +479,7 @@
         { "food": "Lettuce", "grams": 80, "displayName": "Miješana salata" }
       ],
       "tags": ["omega-3", "high-calorie", "healthy-fats"],
-      "suitableFor": ["gain"]
-    },
-    {
-      "id": "dinner_gain_2",
-      "name": "Ostatak tjestenine s tunom",
-      "description": "Praktična večera od ostataka ručka - tjestenina s tunom i povrćem. Kalorijski gusta opcija za nadopunu dnevnog unosa prije spavanja.",
-      "image": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop",
-      "preparationTip": "Podgrijaj tjesteninu na tavi s malo vode da ne bude suha. Dodaj svježe povrće za teksturu.",
-      "components": [
-        { "food": "Pasta cooked", "grams": 200, "displayName": "Tjestenina" },
-        { "food": "Tuna", "grams": 120, "displayName": "Tuna" },
-        { "food": "Tomato", "grams": 60, "displayName": "Rajčice" },
-        { "food": "Corn", "grams": 60, "displayName": "Kukuruz" }
-      ],
-      "tags": ["practical", "high-calorie"],
-      "suitableFor": ["gain"]
+      "suitableFor": ["gain", "maintain"]
     },
     {
       "id": "dinner_gain_3",
@@ -477,7 +494,24 @@
         { "food": "Tomato", "grams": 60, "displayName": "Rajčice" }
       ],
       "tags": ["high-calorie", "high-protein", "iron-rich"],
-      "suitableFor": ["gain"]
+      "suitableFor": ["gain", "maintain"]
+    },
+    {
+      "id": "dinner_gain_4",
+      "name": "Pizza alternativa",
+      "description": "Zdrava verzija pizze za bodybuildere. Tijesto od skyra, jaja i brašna, gore rajčice, pileća salama, ribana mozzarella i masline. Kalorijski gusta opcija koja zadovoljava želju za pizzom.",
+      "image": "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&h=300&fit=crop",
+      "preparationTip": "Pomiješaj skyr, jaja i brašno za tijesto. Peci 10-12 min, dodaj preljev i peci još 8-10 min.",
+      "components": [
+        { "food": "Skyr", "grams": 200, "displayName": "Skyr" },
+        { "food": "Egg", "grams": 100, "displayName": "Jaja (2 kom)" },
+        { "food": "Toast", "grams": 40, "displayName": "Brašno (ekvivalent)" },
+        { "food": "Tomato", "grams": 100, "displayName": "Rajčice" },
+        { "food": "Turkey breast", "grams": 80, "displayName": "Pileća salama" },
+        { "food": "Cottage cheese", "grams": 60, "displayName": "Ribana mozzarella" }
+      ],
+      "tags": ["high-calorie", "high-protein", "satisfying"],
+      "suitableFor": ["gain", "maintain"]
     }
   ],
   "snack": [
@@ -609,6 +643,38 @@
         { "food": "Milk", "grams": 100, "displayName": "Mlijeko" }
       ],
       "tags": ["creamy", "high-protein", "satisfying"],
+      "suitableFor": ["gain", "maintain"]
+    },
+    {
+      "id": "snack_gain_5",
+      "name": "Zdravi proteinski muffini",
+      "description": "Praktična užina koja se može pripremiti unaprijed. Zobeno brašno, whey, banana ili skyr, jaja i malo kokosovog ulja stvaraju kremaste muffine bogate proteinima. Idealan za brzu užinu.",
+      "image": "https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=400&h=300&fit=crop",
+      "preparationTip": "Pomiješaj sve sastojke, peci u kalupima za muffine 20-25 min na 180°C. Može se zamrznuti i podgrijati po potrebi.",
+      "components": [
+        { "food": "Oats", "grams": 60, "displayName": "Zobeno brašno" },
+        { "food": "Whey", "grams": 30, "displayName": "Proteinski isolat" },
+        { "food": "Banana", "grams": 100, "displayName": "Banana" },
+        { "food": "Egg", "grams": 100, "displayName": "Jaja (2 kom)" },
+        { "food": "Skyr", "grams": 80, "displayName": "Skyr" }
+      ],
+      "tags": ["high-protein", "practical", "meal-prep"],
+      "suitableFor": ["gain", "maintain"]
+    },
+    {
+      "id": "snack_gain_6",
+      "name": "Banana bread u sportskoj verziji",
+      "description": "Zdrava verzija klasičnog banana breada. Zobeno ili integralno brašno, zrele banane, malo ulja i po želji whey. Kalorijski gusta opcija koja zadovoljava želju za slatkim.",
+      "image": "https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=400&h=300&fit=crop",
+      "preparationTip": "Zgnječi zrele banane, pomiješaj s brašnom, jajima i wheyem. Peci 40-45 min na 175°C. Može se zamrznuti u kriške.",
+      "components": [
+        { "food": "Oats", "grams": 80, "displayName": "Zobeno brašno" },
+        { "food": "Banana", "grams": 150, "displayName": "Zrele banane (2 kom)" },
+        { "food": "Egg", "grams": 100, "displayName": "Jaja (2 kom)" },
+        { "food": "Whey", "grams": 25, "displayName": "Proteinski isolat (opcionalno)" },
+        { "food": "Almonds", "grams": 20, "displayName": "Bademi (za teksturu)" }
+      ],
+      "tags": ["high-calorie", "satisfying", "meal-prep"],
       "suitableFor": ["gain", "maintain"]
     }
   ]

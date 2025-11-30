@@ -18,6 +18,11 @@ import LoginSlideContent from "./components/LoginSlideContent";
 import EducationalOnboarding from "./components/EducationalOnboarding";
 import EducationalSlide from "./components/EducationalSlide";
 import EducationalWizard from "./components/EducationalWizard";
+
+// ============================================
+// DEBUG TEST FLAG (samo za development)
+// ============================================
+const ENABLE_MEAL_PLAN_DEBUG_TESTS = false; // set to false to disable
 import {
   activityOptions,
   ageOptions,
@@ -50,6 +55,7 @@ import {
 } from "@/lib/intake-options";
 import { commonQuestions } from "@/lib/common-questions";
 import type { IntakePayload } from "@/lib/intake-schema";
+import { runTestScenarios } from "@/lib/services/debugTestScenarios";
 
 const slideOrder: SlideId[] = [
   "login",
@@ -100,6 +106,8 @@ type IntakeFormState = {
   experience: ExperienceLevel | "";
   mealFrequency: MealFrequency | "";
   allergies: string;
+  avoidIngredients: string;
+  foodPreferences: string;
   dietType: DietType | "";
   otherDietType: string;
   sleepHours: string;
@@ -129,6 +137,8 @@ const initialIntakeForm: IntakeFormState = {
   experience: "",
   mealFrequency: "",
   allergies: "",
+  avoidIngredients: "",
+  foodPreferences: "",
   dietType: "",
   otherDietType: "",
   sleepHours: "",
@@ -193,6 +203,8 @@ function AppDashboardContent() {
   const [isSubmittingIntake, setIsSubmittingIntake] = useState(false);
   const [intakeSubmitted, setIntakeSubmitted] = useState(false);
   const [finalDataSubmitted, setFinalDataSubmitted] = useState(false);
+  const [isSavingPreferences, setIsSavingPreferences] = useState(false);
+  const [preferencesSaved, setPreferencesSaved] = useState(false);
   const [isSubmittingFinalData, setIsSubmittingFinalData] = useState(false);
   const [finalMacros, setFinalMacros] = useState<{
     calories: number;
@@ -258,6 +270,8 @@ function AppDashboardContent() {
       experience: intakeForm.experience || undefined,
       mealFrequency: intakeForm.mealFrequency || undefined,
       allergies: intakeForm.allergies.trim() || undefined,
+      avoidIngredients: intakeForm.avoidIngredients.trim() || undefined,
+      foodPreferences: intakeForm.foodPreferences.trim() || undefined,
       dietType: intakeForm.dietType || undefined,
       otherDietType: intakeForm.otherDietType.trim() || undefined,
       sleepHours: intakeForm.sleepHours ? parseFloat(intakeForm.sleepHours) : undefined,
@@ -371,7 +385,20 @@ function AppDashboardContent() {
               },
               goals: payload.goals,
               activities: payload.activities,
-              allergies: payload.allergies ? [payload.allergies] : [],
+              allergies: (() => {
+                // Kombiniraj sva tri polja u format koji generator razumije
+                const parts: string[] = [];
+                if (payload.allergies?.trim()) {
+                  parts.push(`alergije: ${payload.allergies.trim()}`);
+                }
+                if (payload.avoidIngredients?.trim()) {
+                  parts.push(`ne želim: ${payload.avoidIngredients.trim()}`);
+                }
+                if (payload.foodPreferences?.trim()) {
+                  parts.push(`preferiram: ${payload.foodPreferences.trim()}`);
+                }
+                return parts.length > 0 ? [parts.join(". ")] : [];
+              })(),
               dietaryRestrictions: payload.dietType ? [payload.dietType] : [],
               injuries: payload.injuries ? [payload.injuries] : [],
               mealPreferences: {
@@ -496,6 +523,63 @@ function AppDashboardContent() {
     }
   };
 
+  // Funkcija za spremanje alergija i preferencija
+  const savePreferences = async () => {
+    if (isSavingPreferences) return;
+    setIsSavingPreferences(true);
+    setPreferencesSaved(false);
+
+    const clientId = localStorage.getItem("clientId");
+    if (!clientId) {
+      alert("Niste prijavljeni. Molimo se prijavite prvo.");
+      setIsSavingPreferences(false);
+      return;
+    }
+
+    try {
+      // Kombiniraj sva tri polja u format koji generator razumije
+      const parts: string[] = [];
+      if (intakeForm.allergies?.trim()) {
+        parts.push(`alergije: ${intakeForm.allergies.trim()}`);
+      }
+      if (intakeForm.avoidIngredients?.trim()) {
+        parts.push(`ne želim: ${intakeForm.avoidIngredients.trim()}`);
+      }
+      if (intakeForm.foodPreferences?.trim()) {
+        parts.push(`preferiram: ${intakeForm.foodPreferences.trim()}`);
+      }
+      const combinedAllergies = parts.length > 0 ? parts.join(". ") : null;
+
+      const response = await fetch("/api/client/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientId,
+          allergies: combinedAllergies,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.ok) {
+        setPreferencesSaved(true);
+        console.log("✅ Alergije i preferencije spremljene!");
+        setTimeout(() => {
+          setPreferencesSaved(false);
+        }, 3000);
+      } else {
+        const errorMessage = data.message || "Nepoznata greška";
+        console.error("❌ Greška pri spremanju preferencija:", errorMessage);
+        alert(`Greška pri spremanju preferencija: ${errorMessage}`);
+      }
+    } catch (error) {
+      console.error("❌ Error saving preferences:", error);
+      const errorMessage = error instanceof Error ? error.message : "Nepoznata greška";
+      alert(`Greška pri spremanju preferencija: ${errorMessage}`);
+    } finally {
+      setIsSavingPreferences(false);
+    }
+  };
+
   // Funkcija za spremanje finalnih podataka (kalkulacije + intake) u clients tablicu
   const submitFinalData = async () => {
     if (isSubmittingFinalData) return;
@@ -552,8 +636,9 @@ function AppDashboardContent() {
       }
     }
 
-    // Odredi goalType iz goals
-    const goalType = determineGoalType(intakeForm.goals);
+    // Odredi goalType iz kalkulatora (targetInputs ili macrosInputs)
+    // Prioritet: macrosInputs.goalType > targetInputs.goalType > determineGoalType(intakeForm.goals)
+    const goalType = macrosInputs.goalType || targetInputs.goalType || determineGoalType(intakeForm.goals);
     const activityLevel = determineActivityLevel(intakeForm.activities);
 
     // Kreiraj payload objekt za API
@@ -571,7 +656,7 @@ function AppDashboardContent() {
       // Kalkulacije
       bmr: bmrResult,
       tdee: tdeeResult,
-      target_calories: targetResult,
+      target_calories: targetResult || macrosInputs.targetCalories,
       goal_type: goalType,
       activity_level: activityLevel,
       protein_grams: macrosResult.protein,
@@ -692,7 +777,18 @@ function AppDashboardContent() {
       }
       hasLoadedRef.current = true;
     }
-    
+  }, []);
+
+  // Debug testovi za meal plan generator (samo u development modu)
+  useEffect(() => {
+    if (ENABLE_MEAL_PLAN_DEBUG_TESTS) {
+      console.log("Running internal meal plan debug scenarios...");
+      // runTestScenarios će automatski učitati jela iz meal_components.json
+      runTestScenarios();
+    }
+  }, []);
+
+  useEffect(() => {
     const clientId = localStorage.getItem("clientId");
     if (clientId) {
       fetch(`/api/client/${clientId}`)
@@ -900,6 +996,9 @@ function AppDashboardContent() {
     finalDataSubmitted,
     isSubmittingFinalData,
     submitFinalData,
+    isSavingPreferences,
+    preferencesSaved,
+    savePreferences,
     generatingWeeklyPlan,
     setGeneratingWeeklyPlan,
     weeklyMealPlan,
@@ -2129,6 +2228,9 @@ type BuildSlidesProps = {
   finalDataSubmitted: boolean;
   isSubmittingFinalData: boolean;
   submitFinalData: () => Promise<void>;
+  isSavingPreferences: boolean;
+  preferencesSaved: boolean;
+  savePreferences: () => Promise<void>;
   generatingWeeklyPlan: boolean;
   setGeneratingWeeklyPlan: (generating: boolean) => void;
   weeklyMealPlan: any;
@@ -2224,6 +2326,9 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
     finalDataSubmitted,
     isSubmittingFinalData,
     submitFinalData,
+    isSavingPreferences,
+    preferencesSaved,
+    savePreferences,
     generatingWeeklyPlan,
     setGeneratingWeeklyPlan,
     weeklyMealPlan,
@@ -2570,19 +2675,102 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
     },
     {
       id: "allergies",
-      title: "Imaš li alergije, intolerancije ili namirnice koje želiš izbjegavati?",
-      description: "Opiši sve alergije, intolerancije ili namirnice koje ne možeš ili ne želiš jesti.",
+      title: "Alergije, preferencije i namirnice",
+      description: "Opiši sve što je važno za tvoj plan prehrane - alergije, što ne želiš jesti i što preferiraš.",
       render: (
-        <div className="space-y-4">
+        <div className="space-y-5">
+          {/* Alergije */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-[#1A1A1A]">
+              🚨 Alergije i intolerancije <span className="text-red-500">*</span>
+            </label>
           <textarea
-            placeholder="Npr. laktoza, gluten, orašasti plodovi, riba..."
-            className="w-full rounded-[20px] border border-[#E8E8E8] bg-white px-4 py-3 text-sm text-[#1A1A1A] placeholder:text-gray-400 focus:border-[#1A1A1A] focus:outline-none min-h-[120px]"
+              placeholder="Npr. laktoza, gluten, orašasti plodovi, riba, jaja..."
+              className="w-full rounded-[20px] border border-[#E8E8E8] bg-white px-4 py-3 text-sm text-[#1A1A1A] placeholder:text-gray-400 focus:border-[#1A1A1A] focus:outline-none min-h-[100px]"
             value={intakeForm.allergies}
             onChange={(event) => updateIntakeForm("allergies", event.target.value)}
           />
-          <p className="text-xs text-gray-600">
-            Ako nemaš alergije ili intolerancije, možeš ostaviti prazno.
-          </p>
+            <p className="text-xs text-gray-500">
+              Namirnice na koje si alergičan/na ili imaš intoleranciju. Ovo je OBAVEZNO izbjegavati.
+            </p>
+          </div>
+
+          {/* Ne želim jesti */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-[#1A1A1A]">
+              🚫 Ne želim jesti
+            </label>
+            <textarea
+              placeholder="Npr. piletina, tuna, tjestenina, mlijeko..."
+              className="w-full rounded-[20px] border border-[#E8E8E8] bg-white px-4 py-3 text-sm text-[#1A1A1A] placeholder:text-gray-400 focus:border-[#1A1A1A] focus:outline-none min-h-[100px]"
+              value={intakeForm.avoidIngredients}
+              onChange={(event) => updateIntakeForm("avoidIngredients", event.target.value)}
+            />
+            <p className="text-xs text-gray-500">
+              Namirnice koje ne voliš ili ne želiš u svom planu. Generator će ih izbjegavati.
+            </p>
+          </div>
+
+          {/* Preferiram */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-[#1A1A1A]">
+              ✅ Preferiram
+            </label>
+            <textarea
+              placeholder="Npr. junetina, losos, riža, zobene, avokado..."
+              className="w-full rounded-[20px] border border-[#E8E8E8] bg-white px-4 py-3 text-sm text-[#1A1A1A] placeholder:text-gray-400 focus:border-[#1A1A1A] focus:outline-none min-h-[100px]"
+              value={intakeForm.foodPreferences}
+              onChange={(event) => updateIntakeForm("foodPreferences", event.target.value)}
+            />
+            <p className="text-xs text-gray-500">
+              Namirnice koje voliš i želiš više u svom planu. Generator će ih prioritizirati.
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-blue-50 p-3 border border-blue-200">
+            <p className="text-xs text-blue-800">
+              💡 <strong>Savjet:</strong> Možeš unijeti više namirnica odvojenih zarezom. Generator će automatski prepoznati i primijeniti tvoje preferencije.
+            </p>
+          </div>
+
+          {/* Gumb za spremanje */}
+          <div className="pt-2">
+            <button
+              onClick={savePreferences}
+              disabled={isSavingPreferences}
+              className={`w-full rounded-[20px] px-6 py-3 text-sm font-semibold transition-all duration-300 shadow-lg ${
+                preferencesSaved
+                  ? "bg-green-500 text-white"
+                  : isSavingPreferences
+                  ? "bg-gray-400 text-white cursor-not-allowed"
+                  : "bg-[#1A1A1A] text-white hover:bg-gray-800 active:scale-95"
+              }`}
+            >
+              {isSavingPreferences ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Spremanje...
+                </span>
+              ) : preferencesSaved ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Spremljeno!
+                </span>
+              ) : (
+                "💾 Pošalji"
+              )}
+            </button>
+            {preferencesSaved && (
+              <p className="text-xs text-green-600 text-center mt-2">
+                Tvoje preferencije su uspješno spremljene!
+              </p>
+            )}
+          </div>
         </div>
       ),
     },
@@ -2902,7 +3090,7 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                         setBMRConfirmed(true);
                         setTDEEInputs({ ...tdeeInputs, bmr: bmrResult });
                         // Sinkroniziraj težinu na macros kalkulator
-                        setMacrosInputs(prev => ({ ...prev, weight: bmrInputs.weight }));
+                        setMacrosInputs({ ...macrosInputs, weight: bmrInputs.weight || macrosInputs.weight });
                       }}
                       className={`w-full rounded-[16px] px-6 py-3 font-semibold transition hover:-translate-y-0.5 hover:shadow-lg ${
                         bmrConfirmed
@@ -3210,11 +3398,11 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                       onClick={() => {
                         setTargetConfirmed(true);
                         // Sinkroniziraj targetCalories i goalType na macros kalkulator
-                        setMacrosInputs(prev => ({ 
-                          ...prev, 
-                          targetCalories: targetResult,
+                        setMacrosInputs({ 
+                          ...macrosInputs, 
+                          targetCalories: targetResult || macrosInputs.targetCalories,
                           goalType: targetInputs.goalType 
-                        }));
+                        });
                       }}
                       className={`w-full rounded-[16px] px-6 py-3 font-semibold transition hover:-translate-y-0.5 hover:shadow-lg ${
                         targetConfirmed

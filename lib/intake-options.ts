@@ -90,11 +90,9 @@ export const experienceLevelOptions = [
 ] as const;
 
 export const mealFrequencyOptions = [
-  { value: "2", label: "2 obroka" },
   { value: "3", label: "3 obroka" },
-  { value: "4", label: "4 obroka" },
   { value: "5", label: "5 obroka" },
-  { value: "5+", label: "5+ obroka" },
+  { value: "6", label: "6 obroka" },
 ] as const;
 
 export const dietTypeOptions = [
