@@ -1501,6 +1501,7 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
       breakfastSlot.add(breakfast.name.toLowerCase());
       weeklyUsedMealNamesBySlot.set("breakfast", breakfastSlot);
       weeklyUsedMealIds.add(breakfast.id || breakfast.name.toLowerCase()); // Dodaj u weekly tracking
+      weeklyUsedMealIds.add(breakfast.id || breakfast.name.toLowerCase()); // Dodaj u weekly tracking
 
       const lunchSlot = weeklyUsedMealNamesBySlot.get("lunch") || new Set<string>();
       const lunch = generateMeal(

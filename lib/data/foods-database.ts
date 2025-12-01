@@ -282,6 +282,16 @@ export const NAMIRNICE: Namirnica[] = [
     caloriesPer100g: calcKcal(1, 12, 0), // 52 kcal
     category: 'fruit',
   },
+  {
+    id: 'frozen_cherries',
+    name: 'Zamrznjene višnje',
+    nameEn: 'Frozen cherries',
+    proteinPer100g: 1.4,
+    carbsPer100g: 12,
+    fatsPer100g: 0.3,
+    caloriesPer100g: calcKcal(1.4, 12, 0.3), // 55 kcal
+    category: 'fruit',
+  },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // POVRĆE
@@ -737,6 +747,9 @@ export const FOOD_ALIASES: Record<string, string> = {
   'Apple': 'apple',
   'Blueberries': 'blueberries',
   'Cherries': 'cherries',
+  'Frozen cherries': 'frozen_cherries',
+  'Cherries frozen': 'frozen_cherries',
+  'FrozenCherries': 'frozen_cherries',
   'Raspberries': 'raspberries',
   'Strawberries': 'strawberries',
   'Mango': 'mango',

@@ -178,6 +178,37 @@ export default function MealsPage() {
         throw new Error(data.message || "Greška pri generiranju plana");
       }
 
+      // DEBUG: Log plan data to verify it matches generator output
+      console.log("📊 WEEKLY PLAN DATA FROM GENERATOR:", data.plan);
+      
+      // Log Thursday (index 3) as example day
+      if (data.plan?.days?.[3]) {
+        const thursday = data.plan.days[3];
+        console.log("\n🔍 THURSDAY (Dan 4) VERIFICATION:");
+        console.log("Daily totals from generator:", thursday.dailyTotals);
+        
+        // Sum meal totals manually
+        let manualSum = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+        const mealTypes = ['breakfast', 'snack1', 'lunch', 'snack2', 'dinner', 'snack3'] as const;
+        mealTypes.forEach(mealType => {
+          const meal = thursday.meals[mealType];
+          if (meal && meal.totals) {
+            console.log(`  ${mealType}: ${meal.name} - ${meal.totals.calories} kcal, P: ${meal.totals.protein}g, C: ${meal.totals.carbs}g, F: ${meal.totals.fat}g`);
+            manualSum.calories += meal.totals.calories;
+            manualSum.protein += meal.totals.protein;
+            manualSum.carbs += meal.totals.carbs;
+            manualSum.fat += meal.totals.fat;
+          }
+        });
+        
+        // Calculate calories from macros
+        const calculatedCalories = Math.round(manualSum.protein * 4 + manualSum.carbs * 4 + manualSum.fat * 9);
+        console.log("\n📈 MANUAL SUM (from meal.totals):", manualSum);
+        console.log("📈 CALCULATED CALORIES (P×4 + C×4 + F×9):", calculatedCalories);
+        console.log("📈 GENERATOR dailyTotals.calories:", thursday.dailyTotals.calories);
+        console.log("✅ Match:", calculatedCalories === thursday.dailyTotals.calories ? "YES" : "NO");
+      }
+
       setWeeklyPlan(data.plan);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Greška pri generiranju plana";
