@@ -133,81 +133,190 @@ const MEAL_CALORIE_LIMITS: Record<string, { min: number; max: number }> = {
 // PORTION LIMITS
 // ============================================
 
-const PORTION_LIMITS: Record<string, { min: number; max: number }> = {
-  // PAMETNA OGRANIČENJA ZA GAIN MODE
-  // Manje proteina, više UH!
-  
-  // Proteini - SMANJENO za gain mode (da ne bude previše proteina)
-  "chicken_breast": { min: 50, max: 200 },
-  "turkey_breast": { min: 50, max: 200 },
-  "beef_lean": { min: 50, max: 200 },
-  "beef": { min: 50, max: 200 },
-  "salmon": { min: 50, max: 180 },
-  "tuna_canned": { min: 50, max: 150 },
-  "tuna": { min: 50, max: 150 },
-  "egg_whole": { min: 30, max: 200 },
-  "egg": { min: 30, max: 200 },
-  "egg_white": { min: 20, max: 200 },
-  "whey": { min: 15, max: 40 },
-  "skyr": { min: 50, max: 200 },
-  
-  // Ugljikohidrati - POVEĆANO za gain mode
-  "oats": { min: 40, max: 150 },
-  "rice_cooked": { min: 100, max: 400 },
-  "rice": { min: 100, max: 400 },
-  "pasta_cooked": { min: 100, max: 400 },
-  "pasta": { min: 100, max: 400 },
-  "potatoes": { min: 100, max: 500 },
-  "sweet_potato": { min: 100, max: 400 },
-  "bread": { min: 40, max: 200 },
-  "toast": { min: 40, max: 150 },
-  "banana": { min: 80, max: 200 },
-  "granola": { min: 40, max: 120 },
-  
-  // Masti - SMANJENO (masti imaju 9kcal/g, lako previše kalorija)
-  "avocado": { min: 30, max: 150 },
-  "peanut_butter": { min: 10, max: 50 },
-  "peanut butter": { min: 10, max: 50 },
-  "olive_oil": { min: 5, max: 25 },
-  "almonds": { min: 10, max: 40 },
-  "butter": { min: 5, max: 25 },
-  
-  // Mliječni
-  "greek_yogurt": { min: 80, max: 250 },
-  "cottage_cheese": { min: 50, max: 200 },
-  "milk": { min: 100, max: 400 },
-  
+// ============================================
+// PORTION LIMITS PO CILJU (LOSE / MAINTAIN / GAIN)
+// ============================================
+
+// LOSE MODE: Više proteina, manje UH i masti
+const PORTION_LIMITS_LOSE: Record<string, { min: number; max: number }> = {
+  // Proteini - POVEĆANO (prioritet očuvanje mišića)
+  "chicken_breast": { min: 100, max: 250 },  // Više proteina za zasićenje
+  "turkey_breast": { min: 100, max: 250 },
+  "beef_lean": { min: 80, max: 200 },
+  "beef": { min: 80, max: 200 },
+  "salmon": { min: 80, max: 200 },
+  "tuna_canned": { min: 80, max: 180 },
+  "tuna": { min: 80, max: 180 },
+  "egg_whole": { min: 50, max: 200 },
+  "egg": { min: 50, max: 200 },
+  "egg_white": { min: 50, max: 250 },
+  "whey": { min: 25, max: 50 },
+  "skyr": { min: 100, max: 250 },
+  // UH - SMANJENO
+  "oats": { min: 30, max: 80 },
+  "rice_cooked": { min: 80, max: 200 },
+  "rice": { min: 80, max: 200 },
+  "pasta_cooked": { min: 80, max: 200 },
+  "pasta": { min: 80, max: 200 },
+  "potatoes": { min: 100, max: 250 },
+  "sweet_potato": { min: 80, max: 200 },
+  "bread": { min: 30, max: 80 },
+  "toast": { min: 30, max: 80 },
+  "banana": { min: 60, max: 120 },
+  "granola": { min: 30, max: 60 },
+  // Masti - MINIMALNO
+  "avocado": { min: 30, max: 80 },
+  "peanut_butter": { min: 10, max: 25 },
+  "peanut butter": { min: 10, max: 25 },
+  "olive_oil": { min: 5, max: 15 },
+  "almonds": { min: 10, max: 25 },
+  "butter": { min: 5, max: 15 },
+  "butter light": { min: 5, max: 15 },
+  "sour_cream": { min: 15, max: 50 },
+  "sour cream": { min: 15, max: 50 },
+  // Mliječni - visoko proteinski
+  "greek_yogurt": { min: 100, max: 300 },
+  "cottage_cheese": { min: 80, max: 250 },
+  "milk": { min: 100, max: 300 },
   // Voće
-  "apple": { min: 80, max: 200 },
-  "blueberries": { min: 30, max: 150 },
-  
+  "apple": { min: 80, max: 150 },
+  "blueberries": { min: 50, max: 100 },
   // Default
-  "default": { min: 30, max: 300 },
+  "default": { min: 30, max: 200 },
 };
 
-function getPortionLimits(foodKey: string): { min: number; max: number } {
+// MAINTAIN MODE: Uravnoteženo
+const PORTION_LIMITS_MAINTAIN: Record<string, { min: number; max: number }> = {
+  // Proteini - umjereno
+  "chicken_breast": { min: 80, max: 200 },
+  "turkey_breast": { min: 80, max: 200 },
+  "beef_lean": { min: 80, max: 180 },
+  "beef": { min: 80, max: 180 },
+  "salmon": { min: 80, max: 180 },
+  "tuna_canned": { min: 60, max: 150 },
+  "tuna": { min: 60, max: 150 },
+  "egg_whole": { min: 50, max: 180 },
+  "egg": { min: 50, max: 180 },
+  "egg_white": { min: 30, max: 200 },
+  "whey": { min: 20, max: 40 },
+  "skyr": { min: 80, max: 200 },
+  // UH - umjereno
+  "oats": { min: 40, max: 120 },
+  "rice_cooked": { min: 100, max: 300 },
+  "rice": { min: 100, max: 300 },
+  "pasta_cooked": { min: 100, max: 300 },
+  "pasta": { min: 100, max: 300 },
+  "potatoes": { min: 100, max: 350 },
+  "sweet_potato": { min: 100, max: 300 },
+  "bread": { min: 40, max: 120 },
+  "toast": { min: 40, max: 120 },
+  "banana": { min: 80, max: 150 },
+  "granola": { min: 40, max: 100 },
+  // Masti - umjereno
+  "avocado": { min: 40, max: 120 },
+  "peanut_butter": { min: 15, max: 40 },
+  "peanut butter": { min: 15, max: 40 },
+  "olive_oil": { min: 5, max: 25 },
+  "almonds": { min: 15, max: 40 },
+  "butter": { min: 5, max: 25 },
+  "butter light": { min: 5, max: 25 },
+  "sour_cream": { min: 20, max: 80 },
+  "sour cream": { min: 20, max: 80 },
+  // Mliječni
+  "greek_yogurt": { min: 100, max: 250 },
+  "cottage_cheese": { min: 80, max: 200 },
+  "milk": { min: 100, max: 350 },
+  // Voće
+  "apple": { min: 80, max: 180 },
+  "blueberries": { min: 50, max: 120 },
+  // Default
+  "default": { min: 30, max: 250 },
+};
+
+// GAIN MODE: Više UH, manje proteina
+const PORTION_LIMITS_GAIN: Record<string, { min: number; max: number }> = {
+  // Proteini - SMANJENO (da ne bude previše proteina)
+  "chicken_breast": { min: 50, max: 150 },
+  "turkey_breast": { min: 50, max: 150 },
+  "beef_lean": { min: 50, max: 150 },
+  "beef": { min: 50, max: 150 },
+  "salmon": { min: 50, max: 150 },
+  "tuna_canned": { min: 50, max: 120 },
+  "tuna": { min: 50, max: 120 },
+  "egg_whole": { min: 30, max: 150 },
+  "egg": { min: 30, max: 150 },
+  "egg_white": { min: 20, max: 150 },
+  "whey": { min: 15, max: 35 },
+  "skyr": { min: 50, max: 150 },
+  // UH - POVEĆANO (prioritet energija)
+  "oats": { min: 60, max: 150 },
+  "rice_cooked": { min: 150, max: 400 },
+  "rice": { min: 150, max: 400 },
+  "pasta_cooked": { min: 150, max: 400 },
+  "pasta": { min: 150, max: 400 },
+  "potatoes": { min: 150, max: 500 },
+  "sweet_potato": { min: 150, max: 400 },
+  "bread": { min: 60, max: 200 },
+  "toast": { min: 60, max: 150 },
+  "banana": { min: 100, max: 200 },
+  "granola": { min: 60, max: 120 },
+  // Masti - umjereno (za dodatne kalorije)
+  "avocado": { min: 40, max: 120 },
+  "peanut_butter": { min: 15, max: 50 },
+  "peanut butter": { min: 15, max: 50 },
+  "olive_oil": { min: 10, max: 30 },
+  "almonds": { min: 15, max: 40 },
+  "butter": { min: 10, max: 30 },
+  "butter light": { min: 10, max: 30 },
+  "sour_cream": { min: 30, max: 100 },
+  "sour cream": { min: 30, max: 100 },
+  // Mliječni
+  "greek_yogurt": { min: 80, max: 200 },
+  "cottage_cheese": { min: 50, max: 150 },
+  "milk": { min: 150, max: 450 },
+  // Voće
+  "apple": { min: 100, max: 200 },
+  "blueberries": { min: 50, max: 150 },
+  // Default
+  "default": { min: 40, max: 350 },
+};
+
+// Aktivna PORTION_LIMITS - defaultna vrijednost (mijenja se u generateWeeklyMealPlan)
+let ACTIVE_GOAL_TYPE: "lose" | "maintain" | "gain" = "maintain";
+
+function getPortionLimitsForGoal(goalType: "lose" | "maintain" | "gain"): Record<string, { min: number; max: number }> {
+  switch (goalType) {
+    case "lose": return PORTION_LIMITS_LOSE;
+    case "gain": return PORTION_LIMITS_GAIN;
+    default: return PORTION_LIMITS_MAINTAIN;
+  }
+}
+
+function getPortionLimits(foodKey: string, goalType?: "lose" | "maintain" | "gain"): { min: number; max: number } {
+  const limits = getPortionLimitsForGoal(goalType || ACTIVE_GOAL_TYPE);
   const namirnica = findNamirnica(foodKey);
+  
   if (!namirnica) {
-    return PORTION_LIMITS["default"];
+    return limits["default"];
   }
   
   // Pokušaj pronaći po id
-  const byId = PORTION_LIMITS[namirnica.id];
+  const byId = limits[namirnica.id];
   if (byId) return byId;
   
   // Pokušaj pronaći po imenu
-  const byName = PORTION_LIMITS[namirnica.name.toLowerCase()];
+  const byName = limits[namirnica.name.toLowerCase()];
   if (byName) return byName;
   
   // Pokušaj pronaći po engleskom imenu
-  const byNameEn = PORTION_LIMITS[namirnica.nameEn.toLowerCase()];
+  const byNameEn = limits[namirnica.nameEn.toLowerCase()];
   if (byNameEn) return byNameEn;
   
-  return PORTION_LIMITS["default"];
+  return limits["default"];
 }
 
-function clampToPortionLimits(foodKey: string, grams: number): number {
-  const limits = getPortionLimits(foodKey);
+function clampToPortionLimits(foodKey: string, grams: number, goalType?: "lose" | "maintain" | "gain"): number {
+  const limits = getPortionLimits(foodKey, goalType);
   // STROGA OGRANIČENJA - poštuj limite!
   const clamped = Math.max(limits.min, Math.min(limits.max, Math.round(grams / 5) * 5));
   return clamped;
@@ -782,9 +891,9 @@ function scaleAllMealsToTarget(
 
     // INTELIGENTNO SKALIRANJE PO KATEGORIJAMA
     // Umjesto jednog faktora, računamo zasebne faktore za protein, carb i fat namirnice
-    const proteinScale = Math.max(0.5, Math.min(1.5, proteinFactor));
-    const carbsScale = Math.max(0.7, Math.min(2.0, carbsFactor)); // Veći raspon za UH
-    const fatScale = Math.max(0.5, Math.min(1.3, fatFactor));
+    const proteinScale = Math.max(0.4, Math.min(1.2, proteinFactor)); // Agresivnije smanjenje proteina
+    const carbsScale = Math.max(0.8, Math.min(1.8, carbsFactor)); // Povećanje UH
+    const fatScale = Math.max(0.4, Math.min(1.2, fatFactor)); // Agresivnije smanjenje masti
 
     // Skaliraj sve obroke
     const scaledMeals: Record<string, GeneratedMeal> = {};
@@ -1084,6 +1193,10 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
   const calculations = await getUserCalculations(userId);
   console.log(`✅ Kalkulacije iz DB: ${calculations.targetCalories} kcal, P: ${calculations.targetProtein}g, C: ${calculations.targetCarbs}g, F: ${calculations.targetFat}g`);
   console.log(`🎯 Cilj: ${calculations.goalType}`);
+  
+  // Postavi aktivni cilj za portion limits
+  ACTIVE_GOAL_TYPE = calculations.goalType;
+  console.log(`📏 Aktivirani PORTION_LIMITS za: ${ACTIVE_GOAL_TYPE} mode`);
 
   // 2. Dohvati korisničke preferencije
   let preferences: UserPreferences = { avoidIngredients: [], preferredIngredients: [], desiredMealsPerDay: 5 };

@@ -37,22 +37,22 @@ export const NAMIRNICE: Namirnica[] = [
     id: 'chicken_breast',
     name: 'Pileća prsa',
     nameEn: 'Chicken breast',
-    // USDA: Chicken, breast, boneless, skinless, raw
-    proteinPer100g: 22.5,
+    // USDA FDC 331960: Chicken, breast, skinless, boneless, cooked
+    proteinPer100g: 32.1,
     carbsPer100g: 0,
-    fatsPer100g: 1.9,
-    caloriesPer100g: calcKcal(22.5, 0, 1.9), // 107 kcal
+    fatsPer100g: 3.2,
+    caloriesPer100g: 166, // USDA exact
     category: 'protein',
   },
   {
     id: 'turkey_breast',
     name: 'Pureća prsa',
     nameEn: 'Turkey breast',
-    // USDA: Turkey, breast, raw (estimated from ground turkey 93% lean)
-    proteinPer100g: 24.6,
+    // USDA FDC 330869: Turkey, ground, 93% lean, cooked
+    proteinPer100g: 27.1,
     carbsPer100g: 0,
-    fatsPer100g: 1.0,
-    caloriesPer100g: calcKcal(24.6, 0, 1.0), // 107 kcal
+    fatsPer100g: 11.6,
+    caloriesPer100g: 220, // USDA exact
     category: 'protein',
   },
   {
@@ -81,11 +81,11 @@ export const NAMIRNICE: Namirnica[] = [
     id: 'tuna_canned',
     name: 'Tuna (konzerva u vodi)',
     nameEn: 'Tuna',
-    // USDA: Fish, tuna, light, canned in water, drained solids
+    // USDA FDC 334194: Fish, tuna, light, canned in water, drained solids
     proteinPer100g: 19.0,
     carbsPer100g: 0.1,
     fatsPer100g: 0.9,
-    caloriesPer100g: calcKcal(19.0, 0.1, 0.9), // 85 kcal
+    caloriesPer100g: 90, // USDA exact
     category: 'protein',
   },
   {
@@ -130,11 +130,11 @@ export const NAMIRNICE: Namirnica[] = [
     id: 'greek_yogurt',
     name: 'Grčki jogurt 0%',
     nameEn: 'Greek yogurt',
-    // USDA: Yogurt, Greek, plain, nonfat
+    // USDA FDC 330137: Yogurt, Greek, plain, nonfat
     proteinPer100g: 10.3,
     carbsPer100g: 3.6,
     fatsPer100g: 0.4,
-    caloriesPer100g: calcKcal(10.3, 3.6, 0.4), // 59 kcal
+    caloriesPer100g: 61, // USDA exact
     category: 'dairy',
   },
   {
@@ -152,22 +152,22 @@ export const NAMIRNICE: Namirnica[] = [
     id: 'cottage_cheese',
     name: 'Svježi sir (cottage)',
     nameEn: 'Cottage cheese',
-    // USDA: Cheese, cottage, lowfat, 2% milkfat
+    // USDA FDC 328841: Cheese, cottage, lowfat, 2% milkfat
     proteinPer100g: 11.0,
     carbsPer100g: 4.3,
     fatsPer100g: 2.3,
-    caloriesPer100g: calcKcal(11.0, 4.3, 2.3), // 82 kcal
+    caloriesPer100g: 84, // USDA exact
     category: 'dairy',
   },
   {
     id: 'milk_low_fat',
     name: 'Mlijeko 1.5%',
     nameEn: 'Milk',
-    // USDA: Milk, lowfat, fluid, 1% milkfat
+    // USDA FDC 322228: Milk, lowfat, fluid, 1% milkfat
     proteinPer100g: 3.4,
     carbsPer100g: 5.2,
-    fatsPer100g: 0.9,
-    caloriesPer100g: calcKcal(3.4, 5.2, 0.9), // 42 kcal
+    fatsPer100g: 1.0,
+    caloriesPer100g: 43, // USDA exact
     category: 'dairy',
   },
   {
@@ -190,11 +190,11 @@ export const NAMIRNICE: Namirnica[] = [
     id: 'oats',
     name: 'Zobene pahuljice (suhe)',
     nameEn: 'Oats',
-    // USDA: Oats, whole grain, rolled, old fashioned
+    // USDA FDC 2346396: Oats, whole grain, rolled, old fashioned
     proteinPer100g: 13.5,
     carbsPer100g: 68.7,
     fatsPer100g: 5.9,
-    caloriesPer100g: calcKcal(13.5, 68.7, 5.9), // 382 kcal
+    caloriesPer100g: 382, // P×4 + C×4 + F×9
     category: 'carb',
   },
   {
@@ -234,22 +234,22 @@ export const NAMIRNICE: Namirnica[] = [
     id: 'potato_boiled',
     name: 'Krumpir (kuhani)',
     nameEn: 'Potatoes',
-    // USDA: Sweet potatoes, orange flesh, without skin, raw
-    proteinPer100g: 1.6,
-    carbsPer100g: 17.3,
+    // USDA FDC 2346401: Potatoes, russet, without skin, raw
+    proteinPer100g: 2.3,
+    carbsPer100g: 17.8,
     fatsPer100g: 0.4,
-    caloriesPer100g: calcKcal(1.6, 17.3, 0.4), // 79 kcal
+    caloriesPer100g: 82, // Calculated: P×4 + C×4 + F×9
     category: 'carb',
   },
   {
     id: 'rice_cooked',
     name: 'Riža (kuhana)',
     nameEn: 'Rice',
-    // USDA: Rice, white, long grain, raw / 3 (cooked)
-    proteinPer100g: 2.3,
-    carbsPer100g: 27.0,
+    // USDA FDC 2512381 (raw) / ~3 for cooked: Rice, white, long grain
+    proteinPer100g: 2.4,
+    carbsPer100g: 28.0,
     fatsPer100g: 0.3,
-    caloriesPer100g: calcKcal(2.3, 27.0, 0.3), // 120 kcal
+    caloriesPer100g: 130, // USDA cooked value
     category: 'carb',
   },
   {
@@ -332,11 +332,11 @@ export const NAMIRNICE: Namirnica[] = [
     id: 'tomato',
     name: 'Rajčica',
     nameEn: 'Tomato',
-    // USDA: Tomatoes, grape, raw
+    // USDA FDC 321360: Tomatoes, grape, raw
     proteinPer100g: 0.8,
     carbsPer100g: 5.5,
     fatsPer100g: 0.6,
-    caloriesPer100g: calcKcal(0.8, 5.5, 0.6), // 31 kcal
+    caloriesPer100g: 27, // USDA exact
     category: 'vegetable',
   },
   {
@@ -354,11 +354,11 @@ export const NAMIRNICE: Namirnica[] = [
     id: 'broccoli',
     name: 'Brokula',
     nameEn: 'Broccoli',
-    // USDA: Broccoli, raw
+    // USDA FDC 321900: Broccoli, raw
     proteinPer100g: 2.6,
     carbsPer100g: 6.3,
     fatsPer100g: 0.3,
-    caloriesPer100g: calcKcal(2.6, 6.3, 0.3), // 38 kcal
+    caloriesPer100g: 32, // USDA exact
     category: 'vegetable',
   },
   {
@@ -703,22 +703,22 @@ export const NAMIRNICE: Namirnica[] = [
     id: 'peanut_butter',
     name: 'Maslac od kikirikija',
     nameEn: 'Peanut butter',
-    // USDA: Peanut butter, smooth style, with salt
+    // USDA FDC 324860: Peanut butter, smooth style, with salt
     proteinPer100g: 22.5,
     carbsPer100g: 22.3,
     fatsPer100g: 51.1,
-    caloriesPer100g: calcKcal(22.5, 22.3, 51.1), // 639 kcal
+    caloriesPer100g: 597, // USDA exact
     category: 'fat',
   },
   {
     id: 'almonds',
     name: 'Bademi',
     nameEn: 'Almonds',
-    // USDA: Nuts, almonds, dry roasted, with salt added
+    // USDA FDC 323294: Nuts, almonds, dry roasted, with salt added
     proteinPer100g: 20.4,
     carbsPer100g: 16.2,
     fatsPer100g: 57.8,
-    caloriesPer100g: calcKcal(20.4, 16.2, 57.8), // 666 kcal
+    caloriesPer100g: 620, // USDA exact
     category: 'fat',
   },
   {
@@ -822,10 +822,11 @@ export const NAMIRNICE: Namirnica[] = [
     id: 'sweet_potato',
     name: 'Batat (slatki krumpir)',
     nameEn: 'Sweet potato',
+    // USDA FDC 2346404: Sweet potatoes, orange flesh, without skin, raw
     proteinPer100g: 1.6,
-    carbsPer100g: 20.0,
-    fatsPer100g: 0.1,
-    caloriesPer100g: calcKcal(1.6, 20.0, 0.1), // 87 kcal
+    carbsPer100g: 17.3,
+    fatsPer100g: 0.4,
+    caloriesPer100g: 79, // Calculated: P×4 + C×4 + F×9
     category: 'carb',
   },
   {
