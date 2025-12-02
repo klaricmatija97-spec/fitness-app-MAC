@@ -160,6 +160,17 @@ export const NAMIRNICE: Namirnica[] = [
     category: 'dairy',
   },
   {
+    id: 'cream_cheese_light',
+    name: 'Sirni namaz light',
+    nameEn: 'Cream cheese light',
+    // USDA FDC 173417: Cream cheese, fat free
+    proteinPer100g: 10.0,
+    carbsPer100g: 8.0,
+    fatsPer100g: 5.0,
+    caloriesPer100g: calcKcal(10.0, 8.0, 5.0), // 117 kcal
+    category: 'dairy',
+  },
+  {
     id: 'milk_low_fat',
     name: 'Mlijeko 1.5%',
     nameEn: 'Milk',
@@ -898,6 +909,8 @@ export const FOOD_ALIASES: Record<string, string> = {
   'Greek yogurt': 'greek_yogurt',
   'Skyr': 'skyr',
   'Cottage cheese': 'cottage_cheese',
+  'Cream cheese light': 'cream_cheese_light',
+  'Cream cheese': 'cream_cheese_light',
   'Milk': 'milk_low_fat',
   'Sour cream': 'sour_cream',
   

@@ -1036,6 +1036,7 @@ currentMeals = scaledMeals;
 
 // Ako nismo pogodili unutar MAX_ITER, vrati zadnju verziju
 const finalTotals = getTotals(currentMeals);
+
 console.warn(
 `⚠️ SCALE: nije postignut cilj unutar ${MAX_ITER} iteracija → ` +
 `${finalTotals.calories} kcal, P:${finalTotals.protein}g, C:${finalTotals.carbs}g, F:${finalTotals.fat}g`

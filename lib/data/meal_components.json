@@ -379,6 +379,213 @@
       "suitableFor": ["lose"]
     },
     {
+      "id": "lunch_lose_5",
+      "name": "Pureća prsa s kuhanim krumpirom i salatom",
+      "description": "Ultra-protein obrok s posnom puretinom. Pureća prsa imaju još manje masti od pilećih, a bogata su selenom i B vitaminima. Idealno za maksimalni protein uz minimalne kalorije.",
+      "image": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=300&fit=crop",
+      "preparationTip": "Pureća prsa peci u air fryeru 20-22 min na 190°C. Krumpir kuhaj u slanoj vodi. Salatu začini limunovim sokom.",
+      "components": [
+        { "food": "Turkey breast", "grams": 200, "displayName": "Pureća prsa (air fryer)" },
+        { "food": "Potatoes", "grams": 250, "displayName": "Kuhani krumpir" },
+        { "food": "Lettuce", "grams": 100, "displayName": "Zelena salata" },
+        { "food": "Tomato", "grams": 80, "displayName": "Rajčice" }
+      ],
+      "tags": ["ultra-high-protein", "low-fat", "high-volume"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "lunch_lose_6",
+      "name": "Losos iz air fryera s batatom i brokulom",
+      "description": "Omega-3 bogat obrok s proteinima iz lososa. Batat ima niži glikemijski indeks od krumpira i bogat je vitaminom A. Brokula dodaje vlakna i antioksidanse.",
+      "image": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=300&fit=crop",
+      "preparationTip": "Lososa peci u air fryeru 12-15 min. Batat kuhaj ili peci. Brokulu kuhaj na pari 5-6 min.",
+      "components": [
+        { "food": "Salmon", "grams": 180, "displayName": "Atlantski losos (air fryer)" },
+        { "food": "Sweet potato", "grams": 200, "displayName": "Kuhani batat" },
+        { "food": "Broccoli", "grams": 120, "displayName": "Brokula na pari" }
+      ],
+      "tags": ["omega-3", "high-protein", "nutrient-dense"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "lunch_lose_7",
+      "name": "Juneća prsa s rižom i povrćem",
+      "description": "Bogat izvor željeza i cinka iz posne junetine. Juneća prsa su među najposnijim dijelovima, a riža i povrće osiguravaju kompletan obrok za definiciju.",
+      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop",
+      "preparationTip": "Juneća prsa peci na tavi sa sprej uljem ili u air fryeru. Rižu kuhaj bez masnoće.",
+      "components": [
+        { "food": "Beef", "grams": 180, "displayName": "Juneća prsa (posna)" },
+        { "food": "Buckwheat", "grams": 150, "displayName": "Kuhana riža" },
+        { "food": "Lettuce", "grams": 80, "displayName": "Miješana salata" },
+        { "food": "Cucumber", "grams": 80, "displayName": "Krastavci" }
+      ],
+      "tags": ["iron-rich", "high-protein", "zinc"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "lunch_lose_8",
+      "name": "Piletina s cottage sirom i kuhanim povrćem",
+      "description": "Dvostruki protein iz piletine i posnog cottage sira. Ovaj obrok pruža preko 60g proteina uz minimalne masti - savršeno za održavanje mišića u deficitu.",
+      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
+      "preparationTip": "Piletinu pripremi u air fryeru. Cottage sir posluži sa strane. Povrće kuhaj na pari.",
+      "components": [
+        { "food": "Chicken breast", "grams": 180, "displayName": "Pileća prsa (air fryer)" },
+        { "food": "Cottage cheese", "grams": 150, "displayName": "Posni cottage sir" },
+        { "food": "Broccoli", "grams": 100, "displayName": "Kuhana brokula" },
+        { "food": "Carrot", "grams": 80, "displayName": "Kuhana mrkva" }
+      ],
+      "tags": ["ultra-high-protein", "low-fat", "muscle-sparing"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "lunch_lose_9",
+      "name": "Tuna steak s krumpirom i špinatom",
+      "description": "Premium proteinski obrok sa svježom tunom. Tuna steak ima još više proteina od konzervirane i pruža omega-3 masne kiseline. Špinat dodaje željezo i folate.",
+      "image": "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop",
+      "preparationTip": "Tuna steak peci na tavi 2-3 min sa svake strane (medium rare). Špinat kratko blanširaj.",
+      "components": [
+        { "food": "Tuna", "grams": 180, "displayName": "Tuna steak" },
+        { "food": "Potatoes", "grams": 200, "displayName": "Kuhani krumpir" },
+        { "food": "Spinach", "grams": 100, "displayName": "Blanširani špinat" }
+      ],
+      "tags": ["omega-3", "high-protein", "premium"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "lunch_lose_10",
+      "name": "Pureća salama s rižom i salatom",
+      "description": "Praktičan obrok s pilicom salamom - brzo i jednostavno. Pileća/pureća salama ima manje masti od klasične, a s rižom i salatom daje kompletan obrok.",
+      "image": "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&h=300&fit=crop",
+      "preparationTip": "Salamu nasjeckaj i lagano zagrij na tavi. Rižu kuhaj standardno. Salatu posluži svježu.",
+      "components": [
+        { "food": "Turkey breast", "grams": 150, "displayName": "Pureća salama" },
+        { "food": "Buckwheat", "grams": 180, "displayName": "Kuhana riža" },
+        { "food": "Lettuce", "grams": 100, "displayName": "Zelena salata" },
+        { "food": "Tomato", "grams": 80, "displayName": "Cherry rajčice" }
+      ],
+      "tags": ["quick", "high-protein", "practical"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "lunch_lose_11",
+      "name": "Pileća prsa s pire krumpirom",
+      "description": "Klasičan comfort food za deficit! Sočna pileća prsa iz air fryera s kremastim pire krumpirom bez maslaca. Visok protein, umjereni UH.",
+      "image": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=300&fit=crop",
+      "preparationTip": "Pileća prsa peci u air fryeru 18-20 min. Krumpir skuhaj i izgnječi s malo mlijeka (bez maslaca). Posluži s povrćem.",
+      "components": [
+        { "food": "Chicken breast", "grams": 200, "displayName": "Pileća prsa (air fryer)" },
+        { "food": "Potatoes", "grams": 180, "displayName": "Pire krumpir" },
+        { "food": "Milk", "grams": 30, "displayName": "Mlijeko za pire" },
+        { "food": "Broccoli", "grams": 120, "displayName": "Kuhana brokula" }
+      ],
+      "tags": ["comfort-food", "high-protein", "classic"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "lunch_lose_12",
+      "name": "Junetina s kuhanim krumpirom i mrkvom",
+      "description": "Tradicionalni ručak s posnom junetinom. Kuhani krumpir i mrkva daju volumen i vitamine bez puno kalorija. Bogat željezom i cinkom.",
+      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop",
+      "preparationTip": "Junetinu peci u air fryeru ili na tavi. Krumpir i mrkvu kuhaj zajedno u slanoj vodi.",
+      "components": [
+        { "food": "Beef", "grams": 180, "displayName": "Juneći but (air fryer)" },
+        { "food": "Potatoes", "grams": 150, "displayName": "Kuhani krumpir" },
+        { "food": "Carrot", "grams": 100, "displayName": "Kuhana mrkva" },
+        { "food": "Lettuce", "grams": 100, "displayName": "Zelena salata" }
+      ],
+      "tags": ["traditional", "high-protein", "iron-rich"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "lunch_lose_13",
+      "name": "Tuna sa zapečenim grahom",
+      "description": "Mediteranski obrok bogat proteinima i vlaknima. Tuna pruža omega-3, a grah složene ugljikohidrate i biljne proteine. Sito i hranjivo!",
+      "image": "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop",
+      "preparationTip": "Grah (konzervirani) zapeci s malo rajčice i začina 15 min na 180°C. Tunu iscijedi i posluži preko graha.",
+      "components": [
+        { "food": "Tuna", "grams": 150, "displayName": "Tuna u salamuri" },
+        { "food": "Kidney beans", "grams": 100, "displayName": "Zapečeni grah" },
+        { "food": "Tomato", "grams": 100, "displayName": "Rajčica za umak" },
+        { "food": "Lettuce", "grams": 100, "displayName": "Zelena salata" }
+      ],
+      "tags": ["mediterranean", "high-protein", "fiber-rich"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "lunch_lose_14",
+      "name": "Piletina s grah salatom",
+      "description": "Hladni proteinski obrok idealan za meal prep. Piletina s grahom, kukuruzom i povrćem - kompletan obrok u jednoj zdjeli.",
+      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
+      "preparationTip": "Piletinu ispeci i ohadi, izreži na kockice. Pomiješaj s grahom, kukuruzom i povrćem. Začini limunom.",
+      "components": [
+        { "food": "Chicken breast", "grams": 180, "displayName": "Pileća prsa (hladna)" },
+        { "food": "Kidney beans", "grams": 80, "displayName": "Crveni grah" },
+        { "food": "Corn", "grams": 50, "displayName": "Kukuruz" },
+        { "food": "Cucumber", "grams": 100, "displayName": "Krastavci" },
+        { "food": "Tomato", "grams": 80, "displayName": "Cherry rajčice" }
+      ],
+      "tags": ["meal-prep", "high-protein", "cold-meal"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "lunch_lose_15",
+      "name": "Juneći gulaš s krumpirom (light verzija)",
+      "description": "Light verzija klasičnog gulaša! Posna junetina s krumpirom i paprikom, bez dodanog ulja. Bogato željezom i vitaminom C.",
+      "image": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop",
+      "preparationTip": "Junetinu nasjeckaj i pirjaj s paprikom i rajčicom bez ulja. Dodaj krumpir i kuhaj dok ne omekša.",
+      "components": [
+        { "food": "Beef", "grams": 180, "displayName": "Juneći but (gulaš)" },
+        { "food": "Potatoes", "grams": 150, "displayName": "Krumpir u gulašu" },
+        { "food": "Bell pepper", "grams": 100, "displayName": "Crvena paprika" },
+        { "food": "Tomato", "grams": 100, "displayName": "Rajčica za umak" }
+      ],
+      "tags": ["traditional", "high-protein", "comfort-food"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "lunch_lose_16",
+      "name": "Pureća prsa s pire krumpirom i graškom",
+      "description": "Ultra-posna puretina s kremastim pireom i graškom. Više proteina od piletine, manje masti. Idealno za definiciju.",
+      "image": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=300&fit=crop",
+      "preparationTip": "Pureća prsa peci u air fryeru 22 min. Pire napravi s malo mlijeka. Grašak kuhaj 5 min.",
+      "components": [
+        { "food": "Turkey breast", "grams": 200, "displayName": "Pureća prsa (air fryer)" },
+        { "food": "Potatoes", "grams": 150, "displayName": "Pire krumpir" },
+        { "food": "Peas", "grams": 80, "displayName": "Kuhani grašak" }
+      ],
+      "tags": ["ultra-lean", "high-protein", "comfort-food"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "lunch_lose_17",
+      "name": "Losos s grahom i špinatom",
+      "description": "Omega-3 bogat obrok s biljnim proteinima iz graha. Losos i grah zajedno pružaju preko 50g proteina. Špinat dodaje željezo.",
+      "image": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=300&fit=crop",
+      "preparationTip": "Lososa peci u air fryeru 12-14 min. Grah zagrij s malo češnjaka. Špinat blanširaj.",
+      "components": [
+        { "food": "Salmon", "grams": 180, "displayName": "Atlantski losos" },
+        { "food": "Kidney beans", "grams": 80, "displayName": "Crveni grah" },
+        { "food": "Spinach", "grams": 120, "displayName": "Blanširani špinat" }
+      ],
+      "tags": ["omega-3", "high-protein", "nutrient-dense"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "lunch_lose_18",
+      "name": "Piletina na žaru s mladim krumpirom",
+      "description": "Roštilj stil piletina s mladim krumpirom! Jednostavno, ukusno i bogato proteinima. Salata dodaje svježinu.",
+      "image": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400&h=300&fit=crop",
+      "preparationTip": "Piletinu začini i peci na roštilju ili tavi 6-7 min sa svake strane. Mladi krumpir kuhaj u kori.",
+      "components": [
+        { "food": "Chicken breast", "grams": 200, "displayName": "Pileća prsa (na žaru)" },
+        { "food": "Potatoes", "grams": 180, "displayName": "Mladi krumpir" },
+        { "food": "Lettuce", "grams": 120, "displayName": "Miješana salata" },
+        { "food": "Tomato", "grams": 100, "displayName": "Rajčice" }
+      ],
+      "tags": ["grill", "high-protein", "summer"],
+      "suitableFor": ["lose"]
+    },
+    {
       "id": "lunch_maintain_1",
       "name": "Pileća prsa s krumpirom iz pećnice",
       "description": "Uravnotežen obrok s umjerenim kalorijama. Krumpir iz pećnice daje bolji okus od kuhanog, a piletina osigurava kvalitetne proteine. Salata dodaje vlakna i vitamine.",
@@ -598,23 +805,6 @@
       "suitableFor": ["gain"]
     },
     {
-      "id": "lunch_gain_9",
-      "name": "Tjestenina s piletinom i kruhom",
-      "description": "Kombinacija UH izvora! Tjestenina s piletinom plus kruh. Fokus na ugljikohidrate.",
-      "image": "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=400&h=300&fit=crop",
-      "preparationTip": "Kuhaj tjesteninu. Piletinu izreži na manje komade. Posluži s kruhom.",
-      "components": [
-        { "food": "Pasta cooked", "grams": 250, "displayName": "Tjestenina" },
-        { "food": "Chicken breast", "grams": 80, "displayName": "Pileća prsa" },
-        { "food": "Tomato sauce", "grams": 100, "displayName": "Umak od rajčice" },
-        { "food": "Toast", "grams": 80, "displayName": "Kruh (2 kriške)" },
-        { "food": "Broccoli", "grams": 80, "displayName": "Brokula" },
-        { "food": "Orange juice", "grams": 150, "displayName": "Sok" }
-      ],
-      "tags": ["high-carb", "balanced", "mass-gain"],
-      "suitableFor": ["gain"]
-    },
-    {
       "id": "lunch_gain_10",
       "name": "Vegetarijanska tjestenina arabiata",
       "description": "100% vegetarijanski obrok! Ogromna porcija tjestenine s ljutim umakom od rajčice. Čisti UH.",
@@ -677,22 +867,6 @@
         { "food": "Toast", "grams": 60, "displayName": "Kruh uz obrok" }
       ],
       "tags": ["high-carb", "vegetarian", "comfort-food"],
-      "suitableFor": ["gain"]
-    },
-    {
-      "id": "lunch_gain_14",
-      "name": "Tjestenina s kruhom i salatom",
-      "description": "Kombinacija UH izvora! Tjestenina + kruh + kukuruz. Različiti izvori ugljikohidrata u jednom obroku.",
-      "image": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop",
-      "preparationTip": "Kuhaj tjesteninu s umakom. Posluži s kruhom i kukuruznom salatom.",
-      "components": [
-        { "food": "Pasta cooked", "grams": 250, "displayName": "Tjestenina" },
-        { "food": "Tomato sauce", "grams": 100, "displayName": "Umak od rajčice" },
-        { "food": "Toast", "grams": 80, "displayName": "Kruh (2 kriške)" },
-        { "food": "Corn", "grams": 100, "displayName": "Kukuruz" },
-        { "food": "Olive oil", "grams": 15, "displayName": "Maslinovo ulje" }
-      ],
-      "tags": ["high-carb", "varied", "vegetarian"],
       "suitableFor": ["gain"]
     },
     {
@@ -792,6 +966,184 @@
       ],
       "tags": ["high-protein", "low-carb", "light"],
       "suitableFor": ["lose", "maintain"]
+    },
+    {
+      "id": "dinner_lose_4",
+      "name": "Pureća prsa s kuhanim povrćem",
+      "description": "Ultra-lagana proteinska večera s posnom puretinom. Bez ugljikohidrata navečer za bolju definiciju. Povrće daje volumen bez kalorija.",
+      "image": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=300&fit=crop",
+      "preparationTip": "Puretinu peci u air fryeru 20 min. Povrće kuhaj na pari. Začini limunom i začinskim biljem.",
+      "components": [
+        { "food": "Turkey breast", "grams": 200, "displayName": "Pureća prsa (air fryer)" },
+        { "food": "Broccoli", "grams": 150, "displayName": "Kuhana brokula" },
+        { "food": "Carrot", "grams": 100, "displayName": "Kuhana mrkva" },
+        { "food": "Spinach", "grams": 80, "displayName": "Blanširani špinat" }
+      ],
+      "tags": ["ultra-high-protein", "low-carb", "light"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "dinner_lose_5",
+      "name": "Losos s kuhanim krumpirom i salatom",
+      "description": "Omega-3 bogata večera za oporavak mišića. Losos podržava metabolizam i hormonalnu funkciju tijekom deficita. Kuhani krumpir je lak za probavu navečer.",
+      "image": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=300&fit=crop",
+      "preparationTip": "Lososa peci u air fryeru 12-14 min. Krumpir kuhaj do mekoće. Salatu posluži svježu.",
+      "components": [
+        { "food": "Salmon", "grams": 180, "displayName": "Atlantski losos" },
+        { "food": "Potatoes", "grams": 150, "displayName": "Kuhani krumpir" },
+        { "food": "Lettuce", "grams": 100, "displayName": "Zelena salata" },
+        { "food": "Cucumber", "grams": 80, "displayName": "Krastavci" }
+      ],
+      "tags": ["omega-3", "high-protein", "balanced"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "dinner_lose_6",
+      "name": "Juneći odrezak s brokulom i rajčicama",
+      "description": "Bogat izvor željeza i B12 vitamina za noćnu regeneraciju. Juneći odrezak pruža kreatin i kvalitetne proteine, a brokula i rajčice vitamine bez značajnih kalorija.",
+      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop",
+      "preparationTip": "Juneći odrezak peci na tavi sa sprej uljem 3-4 min sa svake strane. Brokulu kuhaj na pari.",
+      "components": [
+        { "food": "Beef", "grams": 180, "displayName": "Juneći odrezak (but)" },
+        { "food": "Broccoli", "grams": 150, "displayName": "Brokula na pari" },
+        { "food": "Tomato", "grams": 100, "displayName": "Svježe rajčice" }
+      ],
+      "tags": ["iron-rich", "high-protein", "low-carb"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "dinner_lose_7",
+      "name": "Piletina s cottage sirom i špinatom",
+      "description": "Dvostruki protein za noćnu sintezu mišića. Kazein iz cottage sira pruža sporu apsorpciju proteina tijekom sna, a piletina kompletne aminokiseline.",
+      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
+      "preparationTip": "Piletinu pripremi u air fryeru. Cottage sir posluži hladan. Špinat blanširaj 1-2 min.",
+      "components": [
+        { "food": "Chicken breast", "grams": 150, "displayName": "Pileća prsa" },
+        { "food": "Cottage cheese", "grams": 150, "displayName": "Posni cottage sir" },
+        { "food": "Spinach", "grams": 100, "displayName": "Blanširani špinat" }
+      ],
+      "tags": ["casein", "high-protein", "night-recovery"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "dinner_lose_8",
+      "name": "Tuna salata s kuhanim jajima",
+      "description": "Lagana proteinska večera bez ugljikohidrata. Tuna i jaja zajedno pružaju preko 50g proteina. Salata daje volumen i vlakna za sitost.",
+      "image": "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop",
+      "preparationTip": "Jaja kuhaj 10 min za tvrdo kuhana. Tunu iscijedi. Sve pomiješaj sa salatom.",
+      "components": [
+        { "food": "Tuna", "grams": 150, "displayName": "Tuna u salamuri" },
+        { "food": "Egg", "grams": 100, "displayName": "Kuhana jaja (2 kom)" },
+        { "food": "Lettuce", "grams": 150, "displayName": "Miješana salata" },
+        { "food": "Cucumber", "grams": 100, "displayName": "Krastavci" }
+      ],
+      "tags": ["high-protein", "low-carb", "omega-3"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "dinner_lose_9",
+      "name": "Pureća salama s grčkim jogurtom i povrćem",
+      "description": "Brza proteinska večera kada nemaš vremena za kuhanje. Pureća salama s jogurtom i svježim povrćem - praktično i ukusno za deficit.",
+      "image": "https://images.unsplash.com/photo-1505253758473-96b7015fcd40?w=400&h=300&fit=crop",
+      "preparationTip": "Salamu nasjeckaj i posluži s jogurtom kao dip. Povrće izreži na štapiće.",
+      "components": [
+        { "food": "Turkey breast", "grams": 120, "displayName": "Pureća salama" },
+        { "food": "Greek yogurt", "grams": 150, "displayName": "Grčki jogurt 0%" },
+        { "food": "Cucumber", "grams": 100, "displayName": "Krastavci" },
+        { "food": "Carrot", "grams": 80, "displayName": "Sirova mrkva" }
+      ],
+      "tags": ["quick", "high-protein", "no-cook"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "dinner_lose_10",
+      "name": "Piletina s pire krumpirom i graškom",
+      "description": "Comfort food večera za deficit. Sočna piletina s kremastim pireom i slatkim graškom. Visok protein, umjerene kalorije.",
+      "image": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=300&fit=crop",
+      "preparationTip": "Piletinu peci u air fryeru. Pire napravi s malo mlijeka bez maslaca. Grašak kuhaj 5 min.",
+      "components": [
+        { "food": "Chicken breast", "grams": 180, "displayName": "Pileća prsa" },
+        { "food": "Potatoes", "grams": 140, "displayName": "Pire krumpir" },
+        { "food": "Peas", "grams": 70, "displayName": "Kuhani grašak" },
+        { "food": "Broccoli", "grams": 100, "displayName": "Brokula" }
+      ],
+      "tags": ["comfort-food", "high-protein", "classic"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "dinner_lose_11",
+      "name": "Junetina s kuhanim povrćem",
+      "description": "Tradicionalna večera s posnom junetinom i kuhanim povrćem. Bogata željezom i vitaminima. Bez ugljikohidrata za večer.",
+      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop",
+      "preparationTip": "Junetinu peci na tavi ili u air fryeru. Povrće kuhaj na pari da zadrži hranjive tvari.",
+      "components": [
+        { "food": "Beef", "grams": 180, "displayName": "Juneći odrezak" },
+        { "food": "Broccoli", "grams": 150, "displayName": "Kuhana brokula" },
+        { "food": "Carrot", "grams": 100, "displayName": "Kuhana mrkva" },
+        { "food": "Spinach", "grams": 80, "displayName": "Blanširani špinat" }
+      ],
+      "tags": ["traditional", "high-protein", "low-carb"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "dinner_lose_12",
+      "name": "Tuna s grahom i rajčicama",
+      "description": "Mediteranska večera s tunom i grahom. Omega-3 masne kiseline i biljni proteini za noćnu regeneraciju.",
+      "image": "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop",
+      "preparationTip": "Tunu iscijedi. Grah zagrij s rajčicama i češnjakom. Pomiješaj sve zajedno.",
+      "components": [
+        { "food": "Tuna", "grams": 150, "displayName": "Tuna u salamuri" },
+        { "food": "Kidney beans", "grams": 80, "displayName": "Crveni grah" },
+        { "food": "Tomato", "grams": 120, "displayName": "Cherry rajčice" },
+        { "food": "Lettuce", "grams": 100, "displayName": "Zelena salata" }
+      ],
+      "tags": ["mediterranean", "omega-3", "high-protein"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "dinner_lose_13",
+      "name": "Pureća prsa s mladim krumpirom",
+      "description": "Ultra-posna puretina s mladim krumpirom. Više proteina od piletine, manje masti. Salata dodaje volumen.",
+      "image": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400&h=300&fit=crop",
+      "preparationTip": "Pureća prsa peci u air fryeru 20-22 min. Mladi krumpir kuhaj u kori sa solju.",
+      "components": [
+        { "food": "Turkey breast", "grams": 200, "displayName": "Pureća prsa" },
+        { "food": "Potatoes", "grams": 140, "displayName": "Mladi krumpir" },
+        { "food": "Lettuce", "grams": 120, "displayName": "Miješana salata" },
+        { "food": "Cucumber", "grams": 80, "displayName": "Krastavci" }
+      ],
+      "tags": ["ultra-lean", "high-protein", "simple"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "dinner_lose_14",
+      "name": "Losos s kuhanim krumpirom i brokulom",
+      "description": "Omega-3 bogata večera s lososom. Kuhani krumpir je lak za probavu navečer, brokula dodaje vlakna i vitamine.",
+      "image": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=300&fit=crop",
+      "preparationTip": "Lososa peci u air fryeru 12-14 min. Krumpir i brokulu kuhaj odvojeno.",
+      "components": [
+        { "food": "Salmon", "grams": 180, "displayName": "Atlantski losos" },
+        { "food": "Potatoes", "grams": 150, "displayName": "Kuhani krumpir" },
+        { "food": "Broccoli", "grams": 120, "displayName": "Kuhana brokula" }
+      ],
+      "tags": ["omega-3", "high-protein", "balanced"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "dinner_lose_15",
+      "name": "Piletina s grah salatom",
+      "description": "Hladna proteinska večera - idealna za vruće dane. Piletina s grahom i povrćem u jednoj zdjeli.",
+      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
+      "preparationTip": "Piletinu ispeci i ohladi. Pomiješaj s grahom, kukuruzom i povrćem. Začini limunom.",
+      "components": [
+        { "food": "Chicken breast", "grams": 180, "displayName": "Pileća prsa (hladna)" },
+        { "food": "Kidney beans", "grams": 70, "displayName": "Crveni grah" },
+        { "food": "Corn", "grams": 40, "displayName": "Kukuruz" },
+        { "food": "Cucumber", "grams": 100, "displayName": "Krastavci" },
+        { "food": "Lettuce", "grams": 80, "displayName": "Zelena salata" }
+      ],
+      "tags": ["cold-meal", "high-protein", "summer"],
+      "suitableFor": ["lose"]
     },
     {
       "id": "dinner_maintain_1",
@@ -993,23 +1345,6 @@
       "suitableFor": ["gain"]
     },
     {
-      "id": "dinner_gain_12",
-      "name": "Vegetarijanska tjestenina s vrhnjem",
-      "description": "Kremasta tjestenina bez mesa! S umakom od vrhnja, povrćem i kruhom.",
-      "image": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop",
-      "preparationTip": "Kuhaj tjesteninu. Pripremi umak od vrhnja sa šampinjonima i graškom.",
-      "components": [
-        { "food": "Pasta cooked", "grams": 280, "displayName": "Tjestenina" },
-        { "food": "Sour cream", "grams": 80, "displayName": "Vrhnje za kuhanje" },
-        { "food": "Mushroom", "grams": 100, "displayName": "Šampinjoni" },
-        { "food": "Peas", "grams": 80, "displayName": "Grašak" },
-        { "food": "Parmesan", "grams": 20, "displayName": "Parmezan" },
-        { "food": "Toast", "grams": 60, "displayName": "Kruh uz obrok" }
-      ],
-      "tags": ["high-carb", "vegetarian", "creamy"],
-      "suitableFor": ["gain"]
-    },
-    {
       "id": "dinner_gain_13",
       "name": "Riža s povrćem na azijski način",
       "description": "Vegetarijanski prženi riža! S povrćem, sojinim umakom i proljetnim rolama.",
@@ -1042,23 +1377,6 @@
         { "food": "Peas", "grams": 60, "displayName": "Grašak" }
       ],
       "tags": ["high-carb", "vegetarian", "loaded"],
-      "suitableFor": ["gain"]
-    },
-    {
-      "id": "dinner_gain_15",
-      "name": "Mješovita večera s tjesteninom",
-      "description": "Raznolik obrok! Tjestenina, kruh, voće i jogurt. Više izvora UH u jednom obroku.",
-      "image": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop",
-      "preparationTip": "Kuhaj tjesteninu s umakom. Posluži s kruhom i voćem za desert.",
-      "components": [
-        { "food": "Pasta cooked", "grams": 200, "displayName": "Tjestenina" },
-        { "food": "Tomato sauce", "grams": 80, "displayName": "Umak od rajčice" },
-        { "food": "White bread", "grams": 80, "displayName": "Kruh (2 kriške)" },
-        { "food": "Banana", "grams": 100, "displayName": "Banana" },
-        { "food": "Greek yogurt", "grams": 100, "displayName": "Jogurt" },
-        { "food": "Honey", "grams": 15, "displayName": "Med" }
-      ],
-      "tags": ["high-carb", "varied", "complete"],
       "suitableFor": ["gain"]
     },
     {
@@ -1136,6 +1454,73 @@
       ],
       "tags": ["simple", "high-protein", "quick"],
       "suitableFor": ["lose", "maintain"]
+    },
+    {
+      "id": "snack_lose_4",
+      "name": "Cottage sir s rajčicama",
+      "description": "Proteinska bomba s minimalnim kalorijama. Cottage sir pruža kazein za dugotrajnu sitost, a rajčice dodaju svježinu i likopen.",
+      "image": "https://images.unsplash.com/photo-1464454709131-ffd692591ee5?w=400&h=300&fit=crop",
+      "preparationTip": "Koristi posni cottage sir. Rajčice nasjeckaj i pomiješaj sa sirom. Začini paprom.",
+      "components": [
+        { "food": "Cottage cheese", "grams": 180, "displayName": "Posni cottage sir" },
+        { "food": "Tomato", "grams": 100, "displayName": "Cherry rajčice" }
+      ],
+      "tags": ["high-protein", "low-calorie", "savory"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "snack_lose_5",
+      "name": "Pureća prsa s krastavcima i krekerima",
+      "description": "Ukusna proteinska užina! Pureća prsa pružaju čisti protein, krastavci osvježavaju, krekeri daju hrskavost, a sirni namaz kremastost.",
+      "image": "https://images.unsplash.com/photo-1628191139360-4083564d03fd?w=400&h=300&fit=crop",
+      "preparationTip": "Namazi krekere sirnim namazom, posloži pureća prsa i krastavce na vrh. Može se jesti kao mini sendviči.",
+      "components": [
+        { "food": "Turkey breast", "grams": 80, "displayName": "Narezana pureća prsa" },
+        { "food": "Cucumber", "grams": 100, "displayName": "Svježi krastavci" },
+        { "food": "Rice crackers", "grams": 30, "displayName": "Rižini krekeri" },
+        { "food": "Cream cheese light", "grams": 30, "displayName": "Sirni namaz light" }
+      ],
+      "tags": ["high-protein", "balanced", "tasty"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "snack_lose_6",
+      "name": "Tuna s rižinim krekerima",
+      "description": "Omega-3 bogata užina s hrskavim krekerima. Tuna u salamuri pruža proteine bez masti, a krekersi minimalne ugljikohidrate za teksturu.",
+      "image": "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=400&h=300&fit=crop",
+      "preparationTip": "Tunu dobro iscijedi. Posluži na rižinim krekerima kao mini sendviče.",
+      "components": [
+        { "food": "Tuna", "grams": 100, "displayName": "Tuna u salamuri" },
+        { "food": "Rice crackers", "grams": 30, "displayName": "Rižini krekersi" }
+      ],
+      "tags": ["omega-3", "high-protein", "quick"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "snack_lose_7",
+      "name": "Kuhana jaja s krastavcima",
+      "description": "Klasična proteinska užina - jednostavna i učinkovita. Kuhana jaja pružaju kompletne proteine i kolin, a krastavci dodaju volumen.",
+      "image": "https://images.unsplash.com/photo-1510693206972-df098062cb71?w=400&h=300&fit=crop",
+      "preparationTip": "Jaja kuhaj 10 min za tvrdo kuhana. Posluži s krastavcima i malo soli.",
+      "components": [
+        { "food": "Egg", "grams": 100, "displayName": "Kuhana jaja (2 kom)" },
+        { "food": "Cucumber", "grams": 100, "displayName": "Svježi krastavci" }
+      ],
+      "tags": ["classic", "high-protein", "simple"],
+      "suitableFor": ["lose"]
+    },
+    {
+      "id": "snack_lose_8",
+      "name": "Whey s grčkim jogurtom",
+      "description": "Dvostruki protein shake - whey za brzu apsorpciju, jogurt za kazein. Kremasta tekstura s minimalnim kalorijama i maksimumom proteina.",
+      "image": "https://images.unsplash.com/photo-1594498653385-d5172c532c00?w=400&h=300&fit=crop",
+      "preparationTip": "Whey umiješaj u grčki jogurt dok ne postane kremasto. Može biti i smoothie s ledom.",
+      "components": [
+        { "food": "Whey", "grams": 25, "displayName": "Proteinski isolat" },
+        { "food": "Greek yogurt", "grams": 150, "displayName": "Grčki jogurt 0%" }
+      ],
+      "tags": ["ultra-high-protein", "low-calorie", "creamy"],
+      "suitableFor": ["lose"]
     },
     {
       "id": "snack_maintain_1",

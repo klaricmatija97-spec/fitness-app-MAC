@@ -152,6 +152,7 @@ export default function MealsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState(0);
   const [selectedMeal, setSelectedMeal] = useState<{ title: string; meal: GeneratedMeal } | null>(null);
+  const [planKey, setPlanKey] = useState(0); // Za animaciju novog plana
 
   useEffect(() => {
     const id = localStorage.getItem("clientId");
@@ -212,6 +213,8 @@ export default function MealsPage() {
       }
 
       setWeeklyPlan(data.plan);
+      setPlanKey(prev => prev + 1); // Trigger animacije za novi plan
+      setSelectedDay(0); // Reset na prvi dan
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Greška pri generiranju plana";
       setError(errorMessage);
@@ -288,10 +291,27 @@ export default function MealsPage() {
         )}
 
         {/* Plan */}
+        <AnimatePresence mode="wait">
         {weeklyPlan && (
-          <>
+          <motion.div
+            key={planKey}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+            transition={{ 
+              type: "spring",
+              stiffness: 300,
+              damping: 30,
+              mass: 0.8
+            }}
+          >
             {/* Ciljevi */}
-            <div className="mb-4 p-4 bg-slate-800/50 border border-slate-700 rounded-xl">
+            <motion.div 
+              className="mb-4 p-4 bg-slate-800/50 border border-slate-700 rounded-xl"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs text-slate-500 uppercase tracking-wide">Dnevni ciljevi</p>
                 <span className={`text-xs px-2 py-1 rounded-full ${
@@ -384,7 +404,7 @@ export default function MealsPage() {
                   )}
                 </div>
           </div>
-      </div>
+      </motion.div>
 
             {/* Napomena za cilj */}
             {weeklyPlan.goalNote && (
@@ -405,17 +425,23 @@ export default function MealsPage() {
             {/* Dani */}
             <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
               {weeklyPlan.days.map((day, index) => (
-                <button
+                <motion.button
                   key={day.date}
                   onClick={() => setSelectedDay(index)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  animate={selectedDay === index ? { 
+                    scale: [1, 1.05, 1],
+                    transition: { duration: 0.3 }
+                  } : {}}
                   className={`px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-all ${
                     selectedDay === index
-                      ? "bg-violet-600 text-white shadow-lg shadow-violet-500/20"
+                      ? "bg-violet-600 text-white shadow-lg shadow-violet-500/30"
                       : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white border border-slate-700"
                   }`}
                 >
                   {day.dayName}
-                </button>
+                </motion.button>
               ))}
             </div>
 
@@ -424,16 +450,39 @@ export default function MealsPage() {
               {weeklyPlan.days[selectedDay] && (
                 <motion.div
                   key={selectedDay}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ 
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 30
+                  }}
                 >
                   {/* Dan header */}
-                  <div className="flex justify-between items-center py-3 mb-4">
+                  <motion.div 
+                    className="flex justify-between items-center py-3 mb-4"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  >
             <div>
-                      <h2 className="text-lg font-semibold text-white">{weeklyPlan.days[selectedDay].dayName}</h2>
-                      <p className="text-xs text-slate-500">{weeklyPlan.days[selectedDay].date}</p>
+                      <motion.h2 
+                        className="text-lg font-semibold text-white"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                      >
+                        {weeklyPlan.days[selectedDay].dayName}
+                      </motion.h2>
+                      <motion.p 
+                        className="text-xs text-slate-500"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.15 }}
+                      >
+                        {weeklyPlan.days[selectedDay].date}
+                      </motion.p>
             </div>
                     <div className="text-right">
                       <div className="flex items-center gap-2">
@@ -501,49 +550,63 @@ export default function MealsPage() {
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
 
                   {/* Grid obroka */}
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <motion.div 
+                    className="grid grid-cols-2 md:grid-cols-3 gap-3"
+                    initial="hidden"
+                    animate="visible"
+                    variants={{
+                      hidden: { opacity: 0 },
+                      visible: {
+                        opacity: 1,
+                        transition: {
+                          staggerChildren: 0.08,
+                          delayChildren: 0.1
+                        }
+                      }
+                    }}
+                  >
                     <MealTile 
                       title="Doručak" 
                       meal={weeklyPlan.days[selectedDay].meals.breakfast}
                       onClick={() => setSelectedMeal({ title: "Doručak", meal: weeklyPlan.days[selectedDay].meals.breakfast })}
-                      delay={0}
+                      index={0}
                     />
                     <MealTile 
                       title="Međuobrok" 
                       meal={weeklyPlan.days[selectedDay].meals.snack1}
                       onClick={() => setSelectedMeal({ title: "Međuobrok 1", meal: weeklyPlan.days[selectedDay].meals.snack1 })}
-                      delay={0.03}
+                      index={1}
                     />
                     <MealTile 
                       title="Ručak" 
                       meal={weeklyPlan.days[selectedDay].meals.lunch}
                       onClick={() => setSelectedMeal({ title: "Ručak", meal: weeklyPlan.days[selectedDay].meals.lunch })}
-                      delay={0.06}
+                      index={2}
                     />
                     <MealTile 
                       title="Međuobrok 2" 
                       meal={weeklyPlan.days[selectedDay].meals.snack2}
                       onClick={() => setSelectedMeal({ title: "Međuobrok 2", meal: weeklyPlan.days[selectedDay].meals.snack2 })}
-                      delay={0.09}
+                      index={3}
                     />
                     {weeklyPlan.days[selectedDay].meals.snack3 && (
                       <MealTile 
                         title="Međuobrok 3" 
                         meal={weeklyPlan.days[selectedDay].meals.snack3}
                         onClick={() => setSelectedMeal({ title: "Međuobrok 3", meal: weeklyPlan.days[selectedDay].meals.snack3! })}
-                        delay={0.11}
+                        index={4}
                       />
                     )}
                     <MealTile 
                       title="Večera" 
                       meal={weeklyPlan.days[selectedDay].meals.dinner}
                       onClick={() => setSelectedMeal({ title: "Večera", meal: weeklyPlan.days[selectedDay].meals.dinner })}
-                      delay={0.13}
+                      index={5}
                     />
-                  </div>
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -573,8 +636,9 @@ export default function MealsPage() {
                 </div>
               </div>
             )}
-          </>
+          </motion.div>
         )}
+        </AnimatePresence>
       </div>
 
       {/* Modal s Mac-style animacijom */}
@@ -706,22 +770,49 @@ export default function MealsPage() {
   );
 }
 
-// Meal Tile - mala kartica za grid
-function MealTile({ title, meal, onClick, delay }: { title: string; meal: GeneratedMeal; onClick: () => void; delay: number }) {
+// Meal Tile - mala kartica za grid s premium animacijom
+const mealCardVariants = {
+  hidden: { 
+    opacity: 0, 
+    y: 30,
+    scale: 0.9,
+    rotateX: -15
+  },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    scale: 1,
+    rotateX: 0,
+    transition: {
+      type: "spring",
+      stiffness: 260,
+      damping: 20
+    }
+  }
+};
+
+function MealTile({ title, meal, onClick, index }: { title: string; meal: GeneratedMeal; onClick: () => void; index: number }) {
   if (!meal || !meal.components || meal.components.length === 0) return null;
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.2, delay }}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      variants={mealCardVariants}
+      whileHover={{ 
+        scale: 1.03, 
+        y: -5,
+        transition: { type: "spring", stiffness: 400, damping: 17 }
+      }}
+      whileTap={{ scale: 0.97 }}
       onClick={onClick}
-      className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 cursor-pointer hover:bg-slate-800 hover:border-slate-600 hover:shadow-xl hover:shadow-violet-500/5 transition-all"
+      className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 cursor-pointer hover:bg-slate-800 hover:border-violet-500/50 hover:shadow-xl hover:shadow-violet-500/10 transition-colors"
+      style={{ perspective: 1000 }}
     >
       {/* Slika jela */}
-      <div className="w-full h-24 bg-slate-900 rounded-lg mb-3 overflow-hidden">
+      <motion.div 
+        className="w-full h-24 bg-slate-900 rounded-lg mb-3 overflow-hidden"
+        whileHover={{ scale: 1.02 }}
+        transition={{ type: "spring", stiffness: 300 }}
+      >
         {meal.image ? (
           <img 
             src={meal.image} 
@@ -730,17 +821,21 @@ function MealTile({ title, meal, onClick, delay }: { title: string; meal: Genera
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <svg className="w-8 h-8 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
+            <svg className="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
         )}
-      </div>
+      </motion.div>
       
-      <p className="text-xs text-violet-500 uppercase tracking-wide font-medium">{title}</p>
+      <p className="text-xs text-violet-400 uppercase tracking-wide font-medium">{title}</p>
       <p className="font-medium text-white text-sm mt-0.5 line-clamp-2">{meal.name}</p>
-      <p className="text-xs text-slate-400 mt-1">{meal.totals.calories} kcal</p>
+      <div className="flex items-center gap-2 mt-2">
+        <span className="text-xs text-slate-400">{meal.totals.calories} kcal</span>
+        <span className="text-slate-600">•</span>
+        <span className="text-xs text-violet-400/70">{meal.totals.protein}g P</span>
+      </div>
     </motion.div>
   );
 }
