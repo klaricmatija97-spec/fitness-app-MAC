@@ -25,7 +25,12 @@ interface ExerciseParams {
   tips?: string[];
   commonMistakes?: string[];
   alternatives?: AlternativeExercise[];
-  imageUrl?: string;
+  // Iz wrkout baze
+  wrkoutInstructions?: string[];
+  primaryMuscles?: string[];
+  secondaryMuscles?: string[];
+  level?: string;
+  force?: string;
 }
 
 interface CardioSession {
@@ -696,11 +701,37 @@ export default function WorkoutPage() {
                   </div>
                 )}
 
-                {/* Opis */}
-                {selectedExercise.description && (
+                {/* Opis - naš ili iz wrkout baze */}
+                {(selectedExercise.description || selectedExercise.wrkoutInstructions) && (
                   <div>
                     <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Kako izvesti</p>
-                    <p className="text-slate-300 text-sm leading-relaxed">{selectedExercise.description}</p>
+                    {selectedExercise.description ? (
+                      <p className="text-slate-300 text-sm leading-relaxed">{selectedExercise.description}</p>
+                    ) : selectedExercise.wrkoutInstructions ? (
+                      <ol className="space-y-2 list-decimal list-inside">
+                        {selectedExercise.wrkoutInstructions.map((step, idx) => (
+                          <li key={idx} className="text-sm text-slate-300 leading-relaxed">
+                            {step}
+                          </li>
+                        ))}
+                      </ol>
+                    ) : null}
+                  </div>
+                )}
+
+                {/* Mišići - iz wrkout baze */}
+                {(selectedExercise.primaryMuscles || selectedExercise.secondaryMuscles) && (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedExercise.primaryMuscles?.map((muscle, idx) => (
+                      <span key={idx} className="px-2 py-1 bg-violet-600/20 text-violet-400 text-xs rounded-lg">
+                        {muscle}
+                      </span>
+                    ))}
+                    {selectedExercise.secondaryMuscles?.map((muscle, idx) => (
+                      <span key={idx} className="px-2 py-1 bg-slate-700/50 text-slate-400 text-xs rounded-lg">
+                        {muscle}
+                      </span>
+                    ))}
                   </div>
                 )}
 

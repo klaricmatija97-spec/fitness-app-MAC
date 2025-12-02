@@ -8,7 +8,12 @@
  * - Ciljeva treninga
  * - Dostupnog vremena i frekvencije
  * - Preferencija za cardio i pliometriju
+ * 
+ * Koristi wrkout exercise database (MIT License) za upute izvođenja
+ * Izvor: https://github.com/wrkout/exercises.json
  */
+
+import { enrichExercise } from './exerciseEnricher';
 
 // ============================================
 // TYPES & INTERFACES
@@ -69,7 +74,12 @@ export interface ExerciseParams {
   tips?: string[];
   commonMistakes?: string[];
   alternatives?: AlternativeExercise[];
-  imageUrl?: string;
+  // Iz wrkout baze (MIT License)
+  wrkoutInstructions?: string[];
+  primaryMuscles?: string[];
+  secondaryMuscles?: string[];
+  level?: string;
+  force?: string;
 }
 
 export interface CardioSession {
@@ -1202,11 +1212,14 @@ function generateExerciseParams(
   params = adjustForAge(params, userInputs.age);
   params = adjustForWeight(params, userInputs.weight, exercise.isPrimary);
 
-  // Dohvati opis vježbe iz baze opisa
+  // Dohvati opis vježbe iz naše baze opisa
   const exerciseInfo = EXERCISE_DESCRIPTIONS[exercise.name];
   
   // Dohvati alternativne vježbe
   const alternatives = ALTERNATIVE_EXERCISES[exercise.name] || [];
+  
+  // Obogati s podacima iz wrkout baze (MIT License)
+  const enriched = enrichExercise(exercise);
 
   return {
     name: exercise.name,
@@ -1216,13 +1229,18 @@ function generateExerciseParams(
     restSeconds: params.restSeconds,
     rpe: params.rpe,
     loadPercent: params.loadPercent,
-    equipment: exercise.equipment,
+    equipment: exercise.equipment || enriched.equipment,
     description: exerciseInfo?.description,
-    musclesWorked: exerciseInfo?.musclesWorked,
+    musclesWorked: exerciseInfo?.musclesWorked || enriched.primaryMuscles?.join(', '),
     tips: exerciseInfo?.tips,
     commonMistakes: exerciseInfo?.commonMistakes,
     alternatives: alternatives.length > 0 ? alternatives : undefined,
-    imageUrl: exerciseInfo?.imageUrl,
+    // Iz wrkout baze
+    wrkoutInstructions: enriched.instructions,
+    primaryMuscles: enriched.primaryMuscles,
+    secondaryMuscles: enriched.secondaryMuscles,
+    level: enriched.level,
+    force: enriched.force,
   };
 }
 
