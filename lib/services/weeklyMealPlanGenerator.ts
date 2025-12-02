@@ -12,7 +12,6 @@
 import { createServiceClient } from "../supabase";
 import mealComponentsData from "../data/meal_components.json";
 import { findNamirnica, calculateMacrosForGrams, type Namirnica } from "../data/foods-database";
-import { chooseBestMeal, type Meal } from "./scoring";
 
 const supabase = createServiceClient();
 
@@ -74,12 +73,6 @@ interface GeneratedMeal {
     carbs: number;
     fat: number;
   };
-  // Originalne komponente iz baze (za kasnije skaliranje)
-  _originalComponents?: Array<{
-    food: string;
-    grams: number;
-    displayName: string;
-  }>;
 }
 
 interface DailyPlan {
@@ -141,104 +134,55 @@ const MEAL_CALORIE_LIMITS: Record<string, { min: number; max: number }> = {
 // ============================================
 
 const PORTION_LIMITS: Record<string, { min: number; max: number }> = {
-  // ISPRAVNI LIMITI - maksimalna porcija bilo koje namirnice
-  // Proteini: max 250g, Carbs: max 180g, Fat: max 40g
-  // Minimalna porcija: 20g za sve kategorije
+  // PAMETNA OGRANIČENJA ZA GAIN MODE
+  // Manje proteina, više UH!
   
-  // Proteini - max 250g
-  "chicken_breast": { min: 20, max: 250 },
-  "Chicken breast": { min: 20, max: 250 },
-  "turkey_breast": { min: 20, max: 250 },
-  "Turkey breast": { min: 20, max: 250 },
-  "beef_lean": { min: 20, max: 250 },
-  "Beef": { min: 20, max: 250 },
-  "salmon": { min: 20, max: 250 },
-  "Salmon": { min: 20, max: 250 },
-  "tuna_canned": { min: 20, max: 250 },
-  "tuna": { min: 20, max: 250 },
-  "Tuna": { min: 20, max: 250 },
-  "hake": { min: 20, max: 250 },
-  "Hake": { min: 20, max: 250 },
-  "egg_whole": { min: 20, max: 250 },
-  "Egg": { min: 20, max: 250 },
-  "egg_white": { min: 20, max: 250 },
-  "Egg white": { min: 20, max: 250 },
+  // Proteini - SMANJENO za gain mode (da ne bude previše proteina)
+  "chicken_breast": { min: 50, max: 200 },
+  "turkey_breast": { min: 50, max: 200 },
+  "beef_lean": { min: 50, max: 200 },
+  "beef": { min: 50, max: 200 },
+  "salmon": { min: 50, max: 180 },
+  "tuna_canned": { min: 50, max: 150 },
+  "tuna": { min: 50, max: 150 },
+  "egg_whole": { min: 30, max: 200 },
+  "egg": { min: 30, max: 200 },
+  "egg_white": { min: 20, max: 200 },
+  "whey": { min: 15, max: 40 },
+  "skyr": { min: 50, max: 200 },
   
-  // Ugljikohidrati - max 180g
-  "oats": { min: 20, max: 180 },
-  "Oats": { min: 20, max: 180 },
-  "rice_cooked": { min: 20, max: 180 },
-  "rice": { min: 20, max: 180 },
-  "Rice": { min: 20, max: 180 },
-  "pasta_cooked": { min: 20, max: 180 },
-  "Pasta cooked": { min: 20, max: 180 },
-  "Pasta": { min: 20, max: 180 },
-  "potato_boiled": { min: 20, max: 180 },
-  "potatoes": { min: 20, max: 180 },
-  "Potatoes": { min: 20, max: 180 },
-  "buckwheat_cooked": { min: 20, max: 180 },
-  "Buckwheat": { min: 20, max: 180 },
-  "couscous_cooked": { min: 20, max: 180 },
-  "Couscous": { min: 20, max: 180 },
-  "toast": { min: 20, max: 180 },
-  "Toast": { min: 20, max: 180 },
-  "rice_crackers": { min: 20, max: 180 },
-  "Rice crackers": { min: 20, max: 180 },
+  // Ugljikohidrati - POVEĆANO za gain mode
+  "oats": { min: 40, max: 150 },
+  "rice_cooked": { min: 100, max: 400 },
+  "rice": { min: 100, max: 400 },
+  "pasta_cooked": { min: 100, max: 400 },
+  "pasta": { min: 100, max: 400 },
+  "potatoes": { min: 100, max: 500 },
+  "sweet_potato": { min: 100, max: 400 },
+  "bread": { min: 40, max: 200 },
+  "toast": { min: 40, max: 150 },
+  "banana": { min: 80, max: 200 },
+  "granola": { min: 40, max: 120 },
   
-  // Masti - max 40g
-  "avocado": { min: 20, max: 40 },
-  "Avocado": { min: 20, max: 40 },
-  "peanut_butter": { min: 5, max: 40 },
-  "Peanut butter": { min: 5, max: 40 },
-  "olive_oil": { min: 3, max: 40 },
-  "Olive oil": { min: 3, max: 40 },
-  "olives": { min: 20, max: 40 },
-  "Olives": { min: 20, max: 40 },
+  // Masti - SMANJENO (masti imaju 9kcal/g, lako previše kalorija)
+  "avocado": { min: 30, max: 150 },
+  "peanut_butter": { min: 10, max: 50 },
+  "peanut butter": { min: 10, max: 50 },
+  "olive_oil": { min: 5, max: 25 },
+  "almonds": { min: 10, max: 40 },
+  "butter": { min: 5, max: 25 },
   
-  // Mliječni - ovisno o dominantnom makronutrijentu
-  "greek_yogurt": { min: 20, max: 250 }, // visok protein
-  "Greek yogurt": { min: 20, max: 250 },
-  "cottage_cheese": { min: 20, max: 250 }, // visok protein
-  "Cottage cheese": { min: 20, max: 250 },
-  "milk_low_fat": { min: 20, max: 180 }, // carbs
-  "milk": { min: 20, max: 180 },
-  "Milk": { min: 20, max: 180 },
-  "skyr": { min: 20, max: 250 }, // visok protein
-  "Skyr": { min: 20, max: 250 },
-  "sour_cream": { min: 20, max: 40 }, // fat
-  "Sour cream": { min: 20, max: 40 },
+  // Mliječni
+  "greek_yogurt": { min: 80, max: 250 },
+  "cottage_cheese": { min: 50, max: 200 },
+  "milk": { min: 100, max: 400 },
   
-  // Voće - carbs (max 180g)
-  "banana": { min: 20, max: 180 },
-  "Banana": { min: 20, max: 180 },
-  "apple": { min: 20, max: 180 },
-  "Apple": { min: 20, max: 180 },
-  "blueberries": { min: 20, max: 180 },
-  "Blueberries": { min: 20, max: 180 },
-  "frozen_cherries": { min: 20, max: 180 },
-  "FrozenCherries": { min: 20, max: 180 },
+  // Voće
+  "apple": { min: 80, max: 200 },
+  "blueberries": { min: 30, max: 150 },
   
-  // Povrće - niska kalorijska gustoća (max 200g)
-  "broccoli": { min: 20, max: 200 },
-  "Broccoli": { min: 20, max: 200 },
-  "carrot": { min: 20, max: 200 },
-  "Carrot": { min: 20, max: 200 },
-  "cucumber": { min: 20, max: 200 },
-  "Cucumber": { min: 20, max: 200 },
-  "lettuce": { min: 20, max: 200 },
-  "Lettuce": { min: 20, max: 200 },
-  "tomato": { min: 20, max: 200 },
-  "Tomato": { min: 20, max: 200 },
-  "corn": { min: 20, max: 180 },
-  "Corn": { min: 20, max: 180 },
-  
-  // Whey protein - max 50g (obično 25-30g po obroku)
-  "whey_protein": { min: 10, max: 50 },
-  "Whey": { min: 10, max: 50 },
-  "Whey protein": { min: 10, max: 50 },
-  
-  // Default - konzervativno
-  "default": { min: 20, max: 200 },
+  // Default
+  "default": { min: 30, max: 300 },
 };
 
 function getPortionLimits(foodKey: string): { min: number; max: number } {
@@ -251,43 +195,21 @@ function getPortionLimits(foodKey: string): { min: number; max: number } {
   const byId = PORTION_LIMITS[namirnica.id];
   if (byId) return byId;
   
-  // Pokušaj pronaći po imenu (hrvatski)
-  const byName = PORTION_LIMITS[namirnica.name];
+  // Pokušaj pronaći po imenu
+  const byName = PORTION_LIMITS[namirnica.name.toLowerCase()];
   if (byName) return byName;
   
   // Pokušaj pronaći po engleskom imenu
-  const byNameEn = PORTION_LIMITS[namirnica.nameEn];
+  const byNameEn = PORTION_LIMITS[namirnica.nameEn.toLowerCase()];
   if (byNameEn) return byNameEn;
-  
-  // Ako nije pronađeno, koristi kategoriju za određivanje limita
-  // Proteini: max 250g, Carbs: max 180g, Fat: max 40g, Vegetable: max 200g, Fruit: max 180g
-  if (namirnica.category === 'protein') {
-    return { min: 20, max: 250 };
-  } else if (namirnica.category === 'carb') {
-    return { min: 20, max: 180 };
-  } else if (namirnica.category === 'fat') {
-    return { min: 20, max: 40 };
-  } else if (namirnica.category === 'vegetable') {
-    return { min: 20, max: 200 };
-  } else if (namirnica.category === 'fruit') {
-    return { min: 20, max: 180 };
-  } else if (namirnica.category === 'dairy') {
-    // Mliječni - provjeri dominantni makro
-    if (namirnica.proteinPer100g > 8) {
-      return { min: 20, max: 250 }; // visok protein
-    } else {
-      return { min: 20, max: 180 }; // carbs
-    }
-  }
   
   return PORTION_LIMITS["default"];
 }
 
 function clampToPortionLimits(foodKey: string, grams: number): number {
   const limits = getPortionLimits(foodKey);
-  // PRO RAZINA - dozvoli veće odstupanja ako je potrebno za postizanje targeta
-  // Minimum je obavezan (realistične porcije), ali maksimum je fleksibilan
-  const clamped = Math.max(limits.min, Math.min(limits.max * 1.5, Math.round(grams / 5) * 5));
+  // STROGA OGRANIČENJA - poštuj limite!
+  const clamped = Math.max(limits.min, Math.min(limits.max, Math.round(grams / 5) * 5));
   return clamped;
 }
 
@@ -338,13 +260,11 @@ async function getUserCalculations(userId: string): Promise<UserCalculations> {
 
   console.log(`📊 ČITAM IZ KALKULATORA: ${targetCalories} kcal, P: ${targetProtein}g, C: ${targetCarbs}g, F: ${targetFat}g`);
 
-  // KORISTI TOČNE VRIJEDNOSTI IZ KALKULATORA - minimalno zaokruživanje
-  // Zaokruži samo na 1 decimalu za makroe, kalorije na cijeli broj
   return {
-    targetCalories: Math.round(targetCalories), // Kalorije su cijeli brojevi
-    targetProtein: Math.round(targetProtein * 10) / 10, // 1 decimala
-    targetCarbs: Math.round(targetCarbs * 10) / 10, // 1 decimala
-    targetFat: Math.round(targetFat * 10) / 10, // 1 decimala
+    targetCalories: Math.round(targetCalories),
+    targetProtein: Math.round(targetProtein * 10) / 10,
+    targetCarbs: Math.round(targetCarbs * 10) / 10,
+    targetFat: Math.round(targetFat * 10) / 10,
     goalType: (data.goal_type as "lose" | "maintain" | "gain") || "maintain",
     bmr: Math.round(bmr),
     tdee: Math.round(tdee),
@@ -532,82 +452,7 @@ function isWithinMealCalorieLimits(meal: GeneratedMeal, mealType: string): boole
 }
 
 /**
- * Provjeri da li jelo zadovoljava pravila za određeni mod (CUT/MAINTAIN/GAIN)
- */
-function isMealSuitableForMode(meal: CompositeMeal, goalType: "lose" | "maintain" | "gain"): boolean {
-  // Provjeri suitableFor tag
-  if (meal.suitableFor && meal.suitableFor.length > 0) {
-    const modeMap: Record<string, string> = {
-      "lose": "lose",
-      "maintain": "maintain",
-      "gain": "gain"
-    };
-    const targetMode = modeMap[goalType];
-    if (!meal.suitableFor.includes(targetMode)) {
-      return false;
-    }
-  }
-  
-  // Dodatna provjera prema komponentama
-  const mealFoods = meal.components.map(c => c.food.toLowerCase()).join(" ");
-  const mealFoodsLower = mealFoods.toLowerCase();
-  
-  if (goalType === "lose") {
-    // CUT: bez batata, peanut butter max 10g samo u snacku, whey + skyr samo u kombinaciji
-    if (mealFoodsLower.includes("batat") || mealFoodsLower.includes("sweet potato")) {
-      return false;
-    }
-    
-    // Provjeri peanut butter - max 10g samo u snacku
-    const pbComponent = meal.components.find(c => c.food.toLowerCase().includes("peanut") || c.food.toLowerCase().includes("pb"));
-    if (pbComponent && pbComponent.grams > 10) {
-      return false;
-    }
-    // PB mora biti u kombinaciji (ne samostalno)
-    if (pbComponent && meal.components.length === 1) {
-      return false;
-    }
-  }
-  
-  if (goalType === "maintain") {
-    // MAINTAIN: PB 10-20g, kombinacije dozvoljene
-    const pbComponent = meal.components.find(c => c.food.toLowerCase().includes("peanut") || c.food.toLowerCase().includes("pb"));
-    if (pbComponent && (pbComponent.grams < 10 || pbComponent.grams > 20)) {
-      return false;
-    }
-  }
-  
-  if (goalType === "gain") {
-    // GAIN: PB do 25g u snacku, clean bulk jela
-    const pbComponent = meal.components.find(c => c.food.toLowerCase().includes("peanut") || c.food.toLowerCase().includes("pb"));
-    if (pbComponent && pbComponent.grams > 25) {
-      return false;
-    }
-  }
-  
-  return true;
-}
-
-/**
- * Konvertiraj CompositeMeal u Meal format za scoring
- */
-function convertToMeal(compositeMeal: CompositeMeal): Meal {
-  const baseComponents = calculateMealMacros(compositeMeal.components, 1);
-  const totals = calculateMealTotals(baseComponents);
-  return {
-    kcal: totals.calories,
-    protein: totals.protein,
-    carbs: totals.carbs,
-    fat: totals.fat,
-    id: compositeMeal.id,
-    name: compositeMeal.name,
-    // Spremi originalni CompositeMeal za kasnije
-    _compositeMeal: compositeMeal,
-  };
-}
-
-/**
- * Odaberi najbolje jelo prema targetu - koristi scoring funkciju
+ * Odaberi nasumični obrok - koristi SVA jela, ali poštuje preferencije i meal variety
  */
 function selectRandomMeal(
   meals: CompositeMeal[],
@@ -615,13 +460,7 @@ function selectRandomMeal(
   usedMealNamesToday: Set<string>,
   usedMealNamesThisWeek: Set<string>,
   preferences: UserPreferences,
-  previousMainProteins: string[] | undefined,
-  goalType: "lose" | "maintain" | "gain" | undefined,
-  targetCalories: number,
-  targetProtein: number,
-  targetCarbs: number,
-  targetFat: number,
-  runningMacros?: { protein: number; carbs: number; fat: number; calories: number }
+  previousMainProteins?: string[] // Glavni proteini prethodnog dana za isti slot
 ): CompositeMeal | null {
   // PRO RAZINA - koristi SVA jela, samo filtriraj alergije
   let availableMeals = meals;
@@ -629,11 +468,6 @@ function selectRandomMeal(
   // JEDINA HARD CONSTRAINT: alergije i "ne želim"
   if (preferences.avoidIngredients.length > 0) {
     availableMeals = availableMeals.filter(meal => !hasAvoidedIngredient(meal, preferences.avoidIngredients));
-  }
-  
-  // FILTRIRANJE PO MODU: Provjeri da li jelo zadovoljava pravila za mod
-  if (goalType) {
-    availableMeals = availableMeals.filter(meal => isMealSuitableForMode(meal, goalType));
   }
 
   // Ako nema jela nakon filtriranja alergija, vrati null
@@ -666,37 +500,18 @@ function selectRandomMeal(
     preferredMeals = availableMeals;
   }
 
-  // Preferiraj obroke s preferiranim namirnicama
+  // Preferiraj obroke s preferiranim namirnicama (weighted selection - 70% šansa)
   if (preferences.preferredIngredients.length > 0) {
     const mealsWithPrefs = preferredMeals.filter(meal => hasPreferredIngredient(meal, preferences.preferredIngredients));
-    if (mealsWithPrefs.length > 0) {
-      preferredMeals = mealsWithPrefs;
+    if (mealsWithPrefs.length > 0 && Math.random() < 0.7) {
+      const randomIndex = Math.floor(Math.random() * mealsWithPrefs.length);
+      return mealsWithPrefs[randomIndex];
     }
   }
 
-  // KORISTI SCORING ZA ODABIR NAJBOLJEG JELA PREMA TARGETU
-  // Konvertiraj CompositeMeal u Meal format
-  const mealCandidates: Meal[] = preferredMeals.map(convertToMeal);
-  
-  // Odaberi najbolje jelo prema targetu koristeći scoring funkciju
-  const bestMeal = chooseBestMeal(
-    mealCandidates,
-    targetCalories,
-    targetProtein,
-    targetFat,
-    targetCarbs,
-    goalType || "maintain",
-    runningMacros
-  );
-
-  if (!bestMeal) {
-    // Ako nema najboljeg jela, vrati nasumično
-    const randomIndex = Math.floor(Math.random() * preferredMeals.length);
-    return preferredMeals[randomIndex];
-  }
-
-  // Vrati originalni CompositeMeal
-  return (bestMeal as any)._compositeMeal || preferredMeals.find(m => m.id === bestMeal.id) || preferredMeals[0];
+  // Nasumično odaberi iz dostupnih jela
+  const randomIndex = Math.floor(Math.random() * preferredMeals.length);
+  return preferredMeals[randomIndex];
 }
 
 /**
@@ -714,8 +529,7 @@ function generateMealWithTracking(
   usedMealNamesThisWeekBySlot: Set<string>,
   preferences: UserPreferences,
   previousMainProteins: Map<string, string[]>,
-  todayMainProteins: Map<string, string[]>,
-  goalType?: "lose" | "maintain" | "gain" // Mod za filtriranje jela
+  todayMainProteins: Map<string, string[]>
 ): GeneratedMeal | null {
   const slotKey = mealType === "snack" ? "snack" : mealType; // snack1, snack2, snack3 -> "snack"
   const prevProteins = previousMainProteins.get(slotKey) || [];
@@ -731,8 +545,7 @@ function generateMealWithTracking(
     usedMealNamesToday,
     usedMealNamesThisWeekBySlot,
     preferences,
-    prevProteins,
-    goalType
+    prevProteins
   );
   
   if (meal) {
@@ -763,23 +576,10 @@ function generateMeal(
   usedMealNamesToday: Set<string>,
   usedMealNamesThisWeekBySlot: Set<string>,
   preferences: UserPreferences,
-  previousMainProteins?: string[], // Glavni proteini prethodnog dana za meal variety
-  goalType?: "lose" | "maintain" | "gain" // Mod za filtriranje jela
+  previousMainProteins?: string[] // Glavni proteini prethodnog dana za meal variety
 ): GeneratedMeal | null {
   const meals = mealData[mealType] as CompositeMeal[];
-  const selectedMeal = selectRandomMeal(
-    meals, 
-    usedMealIds, 
-    usedMealNamesToday, 
-    usedMealNamesThisWeekBySlot, 
-    preferences, 
-    previousMainProteins, 
-    goalType,
-    targetCalories,
-    targetProtein,
-    targetCarbs,
-    targetFat
-  );
+  const selectedMeal = selectRandomMeal(meals, usedMealIds, usedMealNamesToday, usedMealNamesThisWeekBySlot, preferences, previousMainProteins);
 
   if (!selectedMeal) return null;
 
@@ -788,135 +588,68 @@ function generateMeal(
   usedMealNamesToday.add(selectedMeal.name.toLowerCase());
   usedMealNamesThisWeekBySlot.add(selectedMeal.name.toLowerCase());
 
-  // Izračunaj trenutne makroe (bazne vrijednosti) - KORISTI ORIGINALNE GRAMAŽE IZ BAZE
-  // selectedMeal.components već ima originalne gramaže iz meal_components.json
+  // Izračunaj trenutne makroe (bazne vrijednosti)
   const baseComponents = calculateMealMacros(selectedMeal.components, 1);
   const baseTotals = calculateMealTotals(baseComponents);
 
   if (baseTotals.calories === 0) return null;
 
-  // ISPRAVNA SCALING LOGIKA - skaliraj prema targetu za OVAJ OBROK, ne totalu
-  // Prioritet: protein > carbs > fat
-  // Porcija se skalira prema TRENUTNOM obroku, ne prema totalu dana
-  // KORISTI ORIGINALNE GRAMAŽE IZ BAZE - selectedMeal.components već ima originalne vrijednosti
+  // NOVA SCALING LOGIKA - prioritet makronutrijentima
+  // Primarni faktor: protein, sekundarni: carbs, treći: fat
+  // Sve mora biti unutar ±10% od dnevnih makro ciljeva
   
-  // Izračunaj faktore skaliranja za svaki makro (target za ovaj obrok)
+  // Izračunaj faktore skaliranja za svaki makro
   const proteinFactor = baseTotals.protein > 0 ? targetProtein / baseTotals.protein : 1;
   const carbsFactor = baseTotals.carbs > 0 ? targetCarbs / baseTotals.carbs : 1;
   const fatFactor = baseTotals.fat > 0 ? targetFat / baseTotals.fat : 1;
   
-  // Kombiniraj faktore s prioritetom: protein (primarni), carbs (sekundarni), fat (treći)
-  // Koristi ponderirani prosjek: protein 50%, carbs 30%, fat 20%
-  // NEMOJ koristiti sqrt modifikaciju - samo ponderirani prosjek
+  // Izračunaj odstupanja za sqrt formulu
+  const proteinDiff = baseTotals.protein > 0 ? Math.abs(targetProtein - baseTotals.protein) / targetProtein : 0;
+  const carbDiff = baseTotals.carbs > 0 ? Math.abs(targetCarbs - baseTotals.carbs) / targetCarbs : 0;
+  const fatDiff = baseTotals.fat > 0 ? Math.abs(targetFat - baseTotals.fat) / targetFat : 0;
+  
+  // Koristi sqrt formula za kombinirani faktor
+  // scale = sqrt((proteinDiff² * 0.5) + (carbDiff² * 0.3) + (fatDiff² * 0.2))
+  const combinedDiff = Math.sqrt(
+    (proteinDiff * proteinDiff * 0.5) +
+    (carbDiff * carbDiff * 0.3) +
+    (fatDiff * fatDiff * 0.2)
+  );
+  
+  // Kombiniraj faktore s prioritetom na protein
+  // Primarni: protein (50%), sekundarni: carbs (30%), treći: fat (20%)
   let scaleFactor = proteinFactor * 0.5 + carbsFactor * 0.3 + fatFactor * 0.2;
   
-  // U gain modu porcija može biti 10-20% veća od maintain moda, ne više
-  if (goalType === "gain") {
-    scaleFactor *= 1.15; // +15% u gain modu (10-20% veća)
-  }
-  
-  // Ograniči skaliranje za realistične porcije
-  // minScale = 0.7, maxScale = 1.1 (smanjeno jer će scaleAllMealsToTarget dodatno skalirati)
-  // Gain može biti do 1.15x (10-20% veća od maintain)
+  // Ograniči skaliranje (0.7x - 1.8x) za realistične porcije
+  // Sprječava nerealne porcije (npr. 400g whey-a ili 300g PB)
   const minScale = 0.7;
-  const maxScale = goalType === "gain" ? 1.15 : 1.1;
+  const maxScale = 1.8;
   scaleFactor = Math.max(minScale, Math.min(maxScale, scaleFactor));
 
   // Primijeni skaliranje
   let scaledComponents = calculateMealMacros(selectedMeal.components, scaleFactor);
-  
-  // PRIMJENI LIMITE ZA PORCIJE - provjeri svaku komponentu
-  // Koristi originalne komponente za dobivanje food ID-a
-  scaledComponents = scaledComponents.map((component, index) => {
-    const originalComponent = selectedMeal.components[index];
-    const foodId = originalComponent.food;
-    const limits = getPortionLimits(foodId);
-    const originalGrams = component.grams;
-    // Ograniči na min/max
-    const limitedGrams = Math.max(limits.min, Math.min(limits.max, originalGrams));
-    
-    // Ako je ograničeno, preračunaj makroe
-    if (limitedGrams !== originalGrams) {
-      const namirnica = findNamirnica(foodId);
-      if (namirnica) {
-        return {
-          ...component,
-          grams: limitedGrams,
-          protein: (namirnica.proteinPer100g * limitedGrams) / 100,
-          carbs: (namirnica.carbsPer100g * limitedGrams) / 100,
-          fat: (namirnica.fatsPer100g * limitedGrams) / 100,
-          calories: (namirnica.caloriesPer100g * limitedGrams) / 100,
-        };
-      }
-    }
-    return component;
-  });
-  
   let scaledTotals = calculateMealTotals(scaledComponents);
 
-  // Provjeri kalorijske granice obroka (samo ako su previše ekstremne)
+  // PRO RAZINA - kalorijske granice su samo smjernice, ne stroga ograničenja
+  // Prioritet je postizanje točnog dnevnog targeta!
+  // Provjeri granice samo ako su previše ekstremne
   const limits = MEAL_CALORIE_LIMITS[mealType];
   if (limits) {
     // Ako je previše malo (ispod minimuma), povećaj
     if (scaledTotals.calories < limits.min) {
       const adjustFactor = limits.min / scaledTotals.calories;
       scaledComponents = calculateMealMacros(selectedMeal.components, scaleFactor * adjustFactor);
-      // Ponovno primijeni limite
-      scaledComponents = scaledComponents.map(component => {
-        const foodId = component.name; // Koristi name umjesto food
-        const compLimits = getPortionLimits(foodId);
-        const limitedGrams = Math.max(compLimits.min, Math.min(compLimits.max, component.grams));
-        if (limitedGrams !== component.grams) {
-          const namirnica = findNamirnica(foodId);
-          if (namirnica) {
-            return {
-              ...component,
-              grams: limitedGrams,
-              protein: (namirnica.proteinPer100g * limitedGrams) / 100,
-              carbs: (namirnica.carbsPer100g * limitedGrams) / 100,
-              fat: (namirnica.fatsPer100g * limitedGrams) / 100,
-              calories: (namirnica.caloriesPer100g * limitedGrams) / 100,
-            };
-          }
-        }
-        return component;
-      });
       scaledTotals = calculateMealTotals(scaledComponents);
     }
-    // Ako je previše veliko (više od maksimuma), smanji
-    else if (scaledTotals.calories > limits.max) {
-      const adjustFactor = limits.max / scaledTotals.calories;
+    // Ako je previše veliko (više od 2x maksimuma), smanji
+    // Ali dozvoli do 1.5x maksimuma za fleksibilnost
+    else if (scaledTotals.calories > limits.max * 2) {
+      const adjustFactor = (limits.max * 1.5) / scaledTotals.calories;
       scaledComponents = calculateMealMacros(selectedMeal.components, scaleFactor * adjustFactor);
-      // Ponovno primijeni limite
-      scaledComponents = scaledComponents.map(component => {
-        const foodId = component.name; // Koristi name umjesto food
-        const compLimits = getPortionLimits(foodId);
-        const limitedGrams = Math.max(compLimits.min, Math.min(compLimits.max, component.grams));
-        if (limitedGrams !== component.grams) {
-          const namirnica = findNamirnica(foodId);
-          if (namirnica) {
-            return {
-              ...component,
-              grams: limitedGrams,
-              protein: (namirnica.proteinPer100g * limitedGrams) / 100,
-              carbs: (namirnica.carbsPer100g * limitedGrams) / 100,
-              fat: (namirnica.fatsPer100g * limitedGrams) / 100,
-              calories: (namirnica.caloriesPer100g * limitedGrams) / 100,
-            };
-          }
-        }
-        return component;
-      });
       scaledTotals = calculateMealTotals(scaledComponents);
     }
+    // Ako je između max i 2x max, dozvoli (fleksibilnost za postizanje targeta)
   }
-
-  // Spremi originalne komponente za kasnije skaliranje u scaleAllMealsToTarget
-  const originalComponents = selectedMeal.components.map(comp => ({
-    food: comp.food,
-    grams: comp.grams,
-    displayName: comp.displayName,
-  }));
 
   return {
     id: selectedMeal.id,
@@ -926,8 +659,6 @@ function generateMeal(
     preparationTip: selectedMeal.preparationTip,
     components: scaledComponents,
     totals: scaledTotals,
-    // Spremi originalne komponente za kasnije skaliranje
-    _originalComponents: originalComponents,
   };
 }
 
@@ -956,9 +687,9 @@ function scaleAllMealsToTarget(
   targetFat: number,
   goalType: "lose" | "maintain" | "gain"
 ): Record<string, GeneratedMeal> {
-  const MAX_ITERATIONS = 200; // Povećano za bolju preciznost
-  const CALORIE_TOLERANCE = targetCalories * 0.15; // ±15% od targeta (realistično)
-  const MACRO_TOLERANCE = 0.10; // ±10% (realistično, ali još uvijek precizno)
+  const MAX_ITERATIONS = 50; // Povećano za bolju preciznost
+  const CALORIE_TOLERANCE = 10; // ±10 kcal (strože!)
+  const MACRO_TOLERANCE = 0.01; // ±1% (strože!)
   
   let currentMeals = { ...meals };
 
@@ -1016,97 +747,76 @@ function scaleAllMealsToTarget(
       console.log(`      Fat: ${currentTotals.fat}g (target: ${targetFat}g, odstupanje: ${(fatDev * 100).toFixed(1)}%) ${fatDev <= MACRO_TOLERANCE ? '✅' : '❌'}`);
     }
 
-    // ISPRAVNA SCALING LOGIKA - skaliraj svaki makro zasebno za točno postizanje targeta
-    // Prioritet: protein > carbs > fat
-    // Koristi individualne faktore za svaki makro umjesto kombiniranog faktora
-    
+    // NOVA SCALING LOGIKA - prioritet ovisi o cilju
     const proteinFactor = targetProtein / currentTotals.protein;
     const carbsFactor = targetCarbs / currentTotals.carbs;
     const fatFactor = targetFat / currentTotals.fat;
-    const calorieFactor = targetCalories / currentTotals.calories;
     
-    // Za lose: kalorije ≤ target (nikad više!)
-    // Za gain: kalorije ≥ target (nikad manje!)
-    let finalCalorieFactor = calorieFactor;
-    if (goalType === "lose" && currentTotals.calories > targetCalories) {
-      finalCalorieFactor = Math.min(calorieFactor, 1.0); // Smanji ako je previše
-    }
-    if (goalType === "gain" && currentTotals.calories < targetCalories) {
-      finalCalorieFactor = Math.max(calorieFactor, 1.0); // Povećaj ako je premalo
-    }
+    // Izračunaj odstupanja za sqrt formulu
+    const proteinDiff = Math.abs(currentTotals.protein - targetProtein) / targetProtein;
+    const carbDiff = Math.abs(currentTotals.carbs - targetCarbs) / targetCarbs;
+    const fatDiff = Math.abs(currentTotals.fat - targetFat) / targetFat;
     
-    // KORISTI INDIVIDUALNE FAKTORE ZA SVAKI MAKRO - prioritet na najveće odstupanje
-    // Pronađi makro s najvećim odstupanjem i koristi njegov faktor kao primarni
-    const proteinDevValue = Math.abs(currentTotals.protein - targetProtein) / targetProtein;
-    const carbsDevValue = Math.abs(currentTotals.carbs - targetCarbs) / targetCarbs;
-    const fatDevValue = Math.abs(currentTotals.fat - targetFat) / targetFat;
-    const calorieDevValue = Math.abs(currentTotals.calories - targetCalories) / targetCalories;
-    
-    // Odredi koji makro ima najveće odstupanje
-    const maxDevValue = Math.max(proteinDevValue, carbsDevValue, fatDevValue, calorieDevValue);
-    
-    let scaleFactor: number;
-    if (maxDevValue === proteinDevValue) {
-      // Protein ima najveće odstupanje - koristi protein faktor
-      scaleFactor = proteinFactor;
-    } else if (maxDevValue === carbsDevValue) {
-      // Carbs ima najveće odstupanje - koristi carbs faktor
-      scaleFactor = carbsFactor;
-    } else if (maxDevValue === fatDevValue) {
-      // Fat ima najveće odstupanje - koristi fat faktor
-      scaleFactor = fatFactor;
+    // Kombiniraj faktore OVISNO O CILJU
+    let combinedFactor: number;
+    if (goalType === "gain") {
+      // GAIN: prioritet UGLJIKOHIDRATI > protein > fat
+      combinedFactor = carbsFactor * 0.55 + proteinFactor * 0.30 + fatFactor * 0.15;
+    } else if (goalType === "lose") {
+      // LOSE: prioritet PROTEIN > carbs > fat  
+      combinedFactor = proteinFactor * 0.50 + carbsFactor * 0.30 + fatFactor * 0.20;
     } else {
-      // Kalorije imaju najveće odstupanje - koristi calorie faktor
-      scaleFactor = finalCalorieFactor;
-    }
-    
-    // Ako je odstupanje veliko, dozvoli veće skaliranje
-    if (maxDevValue > 0.15) {
-      // Veliko odstupanje - dozvoli 0.5x - 2.0x skaliranje
-      scaleFactor = Math.max(0.5, Math.min(2.0, scaleFactor));
-    } else if (maxDevValue > 0.10) {
-      // Srednje odstupanje - dozvoli 0.6x - 1.7x skaliranje
-      scaleFactor = Math.max(0.6, Math.min(1.7, scaleFactor));
-    } else {
-      // Malo odstupanje - dozvoli 0.7x - 1.5x skaliranje
-      scaleFactor = Math.max(0.7, Math.min(1.5, scaleFactor));
-    }
-    
-    // Ako je odstupanje vrlo malo, koristi prosjek faktora za finu prilagodbu
-    if (maxDevValue <= 0.05) {
-      const avgFactor = (proteinFactor + carbsFactor + fatFactor + finalCalorieFactor) / 4;
-      scaleFactor = Math.max(0.9, Math.min(1.1, avgFactor)); // Ograniči na malu prilagodbu
+      // MAINTAIN: uravnoteženo
+      combinedFactor = proteinFactor * 0.35 + carbsFactor * 0.35 + fatFactor * 0.30;
     }
 
-    // Skaliraj sve obroke - KORISTI ORIGINALNE KOMPONENTE IZ BAZE
-    // Ako meal ima _originalComponents, koristi ih; inače koristi trenutne komponente
+    // Za lose: kalorije ≤ target (nikad više!)
+    if (goalType === "lose" && currentTotals.calories > targetCalories) {
+      combinedFactor = Math.min(combinedFactor, targetCalories / currentTotals.calories);
+    }
+
+    // Za gain: kalorije ≥ target (nikad manje!)
+    if (goalType === "gain" && currentTotals.calories < targetCalories) {
+      combinedFactor = Math.max(combinedFactor, targetCalories / currentTotals.calories);
+    }
+
+    // INTELIGENTNO SKALIRANJE PO KATEGORIJAMA
+    // Umjesto jednog faktora, računamo zasebne faktore za protein, carb i fat namirnice
+    const proteinScale = Math.max(0.5, Math.min(1.5, proteinFactor));
+    const carbsScale = Math.max(0.7, Math.min(2.0, carbsFactor)); // Veći raspon za UH
+    const fatScale = Math.max(0.5, Math.min(1.3, fatFactor));
+
+    // Skaliraj sve obroke
     const scaledMeals: Record<string, GeneratedMeal> = {};
 
     for (const [mealType, meal] of Object.entries(currentMeals)) {
-      // Koristi originalne komponente ako postoje, inače koristi trenutne
-      const baseComponents = (meal as any)._originalComponents || meal.components;
-      
-      const scaledComponents = baseComponents.map((comp: any) => {
-        // Ako je originalna komponenta (ima food i grams), koristi je
-        const foodId = comp.food || comp.name;
-        const baseGrams = comp.grams || 0;
-        const namirnica = findNamirnica(foodId);
+      const scaledComponents = meal.components.map(comp => {
+        const namirnica = findNamirnica(comp.name);
         if (!namirnica) return comp;
 
-        // Izračunaj nove gramaže - NE ograničavaj odmah, dozvoli veće skaliranje
-        let newGrams = baseGrams * scaleFactor;
+        // Odredi kategoriju namirnice i primijeni odgovarajući faktor
+        let scaleFactor = 1.0;
+        const category = namirnica.category;
         
-        // Primijeni limite samo ako je potrebno (ne ograničavaj previše)
-        const limits = getPortionLimits(foodId);
-        // Dozvoli do 1.5x maksimuma ako je potrebno za postizanje targeta
-        const maxAllowed = limits.max * 1.5;
-        const minAllowed = limits.min;
-        newGrams = Math.max(minAllowed, Math.min(maxAllowed, newGrams));
-        
+        if (category === 'protein') {
+          // Protein namirnice - skaliraj prema protein faktoru
+          scaleFactor = proteinScale;
+        } else if (category === 'carb') {
+          // UH namirnice - skaliraj prema carbs faktoru
+          scaleFactor = carbsScale;
+        } else if (category === 'fat') {
+          // Masne namirnice - skaliraj prema fat faktoru
+          scaleFactor = fatScale;
+        } else {
+          // Ostalo (povrće, voće, mliječni) - koristi kombinirani faktor
+          scaleFactor = Math.max(0.7, Math.min(1.5, combinedFactor));
+        }
+
+        const newGrams = clampToPortionLimits(comp.name, comp.grams * scaleFactor);
         const macros = calculateMacrosForGrams(namirnica, newGrams);
 
         return {
-          name: foodId,
+          ...comp,
           grams: newGrams,
           calories: Math.round(macros.calories),
           protein: Math.round(macros.protein * 10) / 10,
@@ -1130,24 +840,22 @@ function scaleAllMealsToTarget(
           adjustFactor = (limits.max * 1.5) / scaledTotals.calories;
         }
 
-        const adjustedComponents = scaledComponents.map((comp: { name: string; grams: number; calories: number; protein: number; carbs: number; fat: number }) => {
-          const foodId = comp.name;
-          const namirnica = findNamirnica(foodId);
+        const adjustedComponents = scaledComponents.map(comp => {
+            const namirnica = findNamirnica(comp.name);
           if (!namirnica) return comp;
 
-          const limits = getPortionLimits(foodId);
-          const newGrams = Math.max(limits.min, Math.min(limits.max, comp.grams * adjustFactor));
-          const macros = calculateMacrosForGrams(namirnica, newGrams);
+          const newGrams = clampToPortionLimits(comp.name, comp.grams * adjustFactor);
+                  const macros = calculateMacrosForGrams(namirnica, newGrams);
 
-          return {
-            ...comp,
-            grams: newGrams,
-            calories: Math.round(macros.calories),
-            protein: Math.round(macros.protein * 10) / 10,
-            carbs: Math.round(macros.carbs * 10) / 10,
-            fat: Math.round(macros.fat * 10) / 10,
-          };
-        });
+              return {
+                ...comp,
+                grams: newGrams,
+                calories: Math.round(macros.calories),
+                protein: Math.round(macros.protein * 10) / 10,
+                carbs: Math.round(macros.carbs * 10) / 10,
+                fat: Math.round(macros.fat * 10) / 10,
+              };
+          });
           
           const adjustedTotals = calculateMealTotals(adjustedComponents);
         scaledMeals[mealType] = {
@@ -1189,39 +897,22 @@ function scaleAllMealsToTarget(
   const carbsDiff = Math.abs(checkCarbs - targetCarbs) / targetCarbs;
   const fatDiff = Math.abs(checkFat - targetFat) / targetFat;
   
-  // Ako smo unutar 15% ali ne točno, pokušaj još jednom fino prilagoditi
-  const calDiffPercent = calDiff / targetCalories;
-  if ((calDiffPercent <= 0.15) && 
-      proteinDiff <= 0.10 && carbsDiff <= 0.10 && fatDiff <= 0.10 &&
-      (calDiffPercent > 0.01 || proteinDiff > 0.01 || carbsDiff > 0.01 || fatDiff > 0.01)) {
+  // Ako smo unutar 5% ali ne točno, pokušaj još jednom fino prilagoditi
+  if ((calDiff <= 50 || calDiff / targetCalories <= 0.05) && 
+      proteinDiff <= 0.05 && carbsDiff <= 0.05 && fatDiff <= 0.05 &&
+      (calDiff > 5 || proteinDiff > 0.005 || carbsDiff > 0.005 || fatDiff > 0.005)) {
     
     // Izračunaj faktore za točno postizanje targeta
-    const calFactorFine = targetCalories / checkCalories;
-    const proteinFactorFine = targetProtein / checkProtein;
-    const carbsFactorFine = targetCarbs / checkCarbs;
-    const fatFactorFine = targetFat / checkFat;
+    const calFactor = targetCalories / checkCalories;
+    const proteinFactor = targetProtein / checkProtein;
+    const carbsFactor = targetCarbs / checkCarbs;
+    const fatFactor = targetFat / checkFat;
     
-    // Pronađi makro s najvećim odstupanjem i koristi njegov faktor
-    const proteinDevFine = Math.abs(checkProtein - targetProtein) / targetProtein;
-    const carbsDevFine = Math.abs(checkCarbs - targetCarbs) / targetCarbs;
-    const fatDevFine = Math.abs(checkFat - targetFat) / targetFat;
-    const calorieDevFine = calDiffPercent;
+    // Kombiniraj faktore (jednako važni)
+    const fineTuneFactor = (calFactor + proteinFactor + carbsFactor + fatFactor) / 4;
     
-    const maxDevFine = Math.max(proteinDevFine, carbsDevFine, fatDevFine, calorieDevFine);
-    let fineTuneFactor: number;
-    
-    if (maxDevFine === proteinDevFine) {
-      fineTuneFactor = proteinFactorFine;
-    } else if (maxDevFine === carbsDevFine) {
-      fineTuneFactor = carbsFactorFine;
-    } else if (maxDevFine === fatDevFine) {
-      fineTuneFactor = fatFactorFine;
-    } else {
-      fineTuneFactor = calFactorFine;
-    }
-    
-    // Ograniči na prilagodbu (0.85x - 1.15x) za finu prilagodbu
-    const fineScale = Math.max(0.85, Math.min(1.15, fineTuneFactor));
+    // Ograniči na malu prilagodbu (0.98x - 1.02x)
+    const fineScale = Math.max(0.98, Math.min(1.02, fineTuneFactor));
     
     // Primijeni fine-tuning
     const fineTunedMeals: Record<string, GeneratedMeal> = {};
@@ -1437,6 +1128,12 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
     console.log("ℹ️ Nema preferencija ili greška pri dohvaćanju:", error);
   }
 
+  // 2.5 GAIN MODE AUTOMATSKI KORISTI 6 OBROKA (ako nije eksplicitno postavljeno drugačije)
+  if (calculations.goalType === "gain" && preferences.desiredMealsPerDay === 5) {
+    preferences.desiredMealsPerDay = 6;
+    console.log(`🍽️ GAIN MODE: Automatski povećan broj obroka na 6 za lakše postizanje kalorija`);
+  }
+
   // 3. Učitaj podatke o obrocima
   const mealData = mealComponentsData as MealComponentsData;
 
@@ -1455,8 +1152,6 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
 
   // Tracking kroz cijeli tjedan za maksimalnu različitost (po slotu)
   const weeklyUsedMealNamesBySlot: Map<string, Set<string>> = new Map();
-  // Tracking ID-eva jela kroz cijeli tjedan - jelo se ne smije ponoviti unutar 7 dana
-  const weeklyUsedMealIds: Set<string> = new Set();
   // Tracking glavnih namirnica (proteina) kroz dane - ista namirnica se ne smije ponoviti dva dana zaredom
   const previousDayMainProteins: Map<string, string[]> = new Map(); // slot -> lista glavnih proteina prethodnog dana
 
@@ -1472,9 +1167,6 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
     const usedMealNamesToday = new Set<string>();
     // Tracking glavnih proteina za ovaj dan (za sprječavanje ponavljanja sljedeći dan)
     const todayMainProteins: Map<string, string[]> = new Map(); // slot -> lista glavnih proteina
-    
-    // Kombiniraj weeklyUsedMealIds s usedMealIdsToday za provjeru
-    const allUsedMealIds = new Set([...weeklyUsedMealIds, ...usedMealIdsToday]);
 
     // Generiraj obroke prema broju obroka
     const meals: Record<string, GeneratedMeal> = {};
@@ -1482,67 +1174,64 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
     if (preferences.desiredMealsPerDay === 3) {
       // 3 obroka: breakfast, lunch, dinner
       const breakfastSlot = weeklyUsedMealNamesBySlot.get("breakfast") || new Set<string>();
-      const breakfast = generateMeal(
+      const breakfast = generateMealWithTracking(
       "breakfast",
       mealData,
         calculations.targetCalories * mealDistribution.calories.breakfast,
         calculations.targetProtein * mealDistribution.protein.breakfast,
         calculations.targetCarbs * mealDistribution.carbs.breakfast,
         calculations.targetFat * mealDistribution.fat.breakfast,
-        allUsedMealIds, // Koristi kombinirani set za provjeru
+        usedMealIdsToday, 
         usedMealNamesToday, 
         breakfastSlot, 
         preferences,
-        undefined,
-        calculations.goalType
+        previousDayMainProteins,
+        todayMainProteins
       );
       if (!breakfast) throw new Error(`Nije moguće generirati doručak za dan ${i + 1}`);
       meals.breakfast = breakfast;
       breakfastSlot.add(breakfast.name.toLowerCase());
       weeklyUsedMealNamesBySlot.set("breakfast", breakfastSlot);
-      weeklyUsedMealIds.add(breakfast.id || breakfast.name.toLowerCase()); // Dodaj u weekly tracking
 
       const lunchSlot = weeklyUsedMealNamesBySlot.get("lunch") || new Set<string>();
-      const lunch = generateMeal(
+      const lunch = generateMealWithTracking(
         "lunch", 
       mealData,
         calculations.targetCalories * mealDistribution.calories.lunch,
         calculations.targetProtein * mealDistribution.protein.lunch,
         calculations.targetCarbs * mealDistribution.carbs.lunch,
         calculations.targetFat * mealDistribution.fat.lunch,
-        allUsedMealIds, // Koristi kombinirani set za provjeru
+        usedMealIdsToday, 
         usedMealNamesToday, 
         lunchSlot, 
         preferences,
-        undefined,
-        calculations.goalType
+        previousDayMainProteins,
+        todayMainProteins
       );
       if (!lunch) throw new Error(`Nije moguće generirati ručak za dan ${i + 1}`);
       meals.lunch = lunch;
       lunchSlot.add(lunch.name.toLowerCase());
       weeklyUsedMealNamesBySlot.set("lunch", lunchSlot);
-      weeklyUsedMealIds.add(lunch.id || lunch.name.toLowerCase()); // Dodaj u weekly tracking
 
       const dinnerSlot = weeklyUsedMealNamesBySlot.get("dinner") || new Set<string>();
-      const dinner = generateMeal(
+      const dinner = generateMealWithTracking(
         "dinner", 
         mealData, 
         calculations.targetCalories * mealDistribution.calories.dinner,
         calculations.targetProtein * mealDistribution.protein.dinner,
         calculations.targetCarbs * mealDistribution.carbs.dinner,
         calculations.targetFat * mealDistribution.fat.dinner,
-        allUsedMealIds, // Koristi kombinirani set za provjeru
+        usedMealIdsToday, 
         usedMealNamesToday, 
         dinnerSlot, 
         preferences,
-        undefined,
-        calculations.goalType
+        previousDayMainProteins,
+        todayMainProteins
       );
       if (!dinner) throw new Error(`Nije moguće generirati večeru za dan ${i + 1}`);
       meals.dinner = dinner;
       dinnerSlot.add(dinner.name.toLowerCase());
       weeklyUsedMealNamesBySlot.set("dinner", dinnerSlot);
-      weeklyUsedMealIds.add(dinner.id || dinner.name.toLowerCase()); // Dodaj u weekly tracking
 
     } else if (preferences.desiredMealsPerDay === 5) {
       // 5 obroka: breakfast, snack1, lunch, snack2, dinner
@@ -1554,18 +1243,15 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
         calculations.targetProtein * mealDistribution.protein.breakfast,
         calculations.targetCarbs * mealDistribution.carbs.breakfast,
         calculations.targetFat * mealDistribution.fat.breakfast,
-        allUsedMealIds, // Koristi kombinirani set za provjeru
+        usedMealIdsToday, 
         usedMealNamesToday, 
         breakfastSlot, 
-        preferences,
-        undefined,
-        calculations.goalType
+        preferences
       );
       if (!breakfast) throw new Error(`Nije moguće generirati doručak za dan ${i + 1}`);
       meals.breakfast = breakfast;
       breakfastSlot.add(breakfast.name.toLowerCase());
       weeklyUsedMealNamesBySlot.set("breakfast", breakfastSlot);
-      weeklyUsedMealIds.add(breakfast.id || breakfast.name.toLowerCase()); // Dodaj u weekly tracking
 
       const snack1Slot = weeklyUsedMealNamesBySlot.get("snack1") || new Set<string>();
       const snack1 = generateMeal(
@@ -1575,18 +1261,15 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
         calculations.targetProtein * mealDistribution.protein.snack1,
         calculations.targetCarbs * mealDistribution.carbs.snack1,
         calculations.targetFat * mealDistribution.fat.snack1,
-        allUsedMealIds, // Koristi kombinirani set za provjeru
+        usedMealIdsToday, 
         usedMealNamesToday, 
         snack1Slot, 
-        preferences,
-        undefined,
-        calculations.goalType
+        preferences
       );
       if (!snack1) throw new Error(`Nije moguće generirati međuobrok 1 za dan ${i + 1}`);
       meals.snack1 = snack1;
       snack1Slot.add(snack1.name.toLowerCase());
       weeklyUsedMealNamesBySlot.set("snack1", snack1Slot);
-      weeklyUsedMealIds.add(snack1.id || snack1.name.toLowerCase()); // Dodaj u weekly tracking
 
       const lunchSlot = weeklyUsedMealNamesBySlot.get("lunch") || new Set<string>();
       const lunch = generateMeal(
@@ -1596,12 +1279,10 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
         calculations.targetProtein * mealDistribution.protein.lunch,
         calculations.targetCarbs * mealDistribution.carbs.lunch,
         calculations.targetFat * mealDistribution.fat.lunch,
-        allUsedMealIds, // Koristi kombinirani set za provjeru
+        usedMealIdsToday, 
         usedMealNamesToday, 
         lunchSlot, 
-        preferences,
-        undefined,
-        calculations.goalType
+        preferences
       );
       if (!lunch) throw new Error(`Nije moguće generirati ručak za dan ${i + 1}`);
       meals.lunch = lunch;
@@ -1616,18 +1297,15 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
         calculations.targetProtein * mealDistribution.protein.snack2,
         calculations.targetCarbs * mealDistribution.carbs.snack2,
         calculations.targetFat * mealDistribution.fat.snack2,
-        allUsedMealIds, // Koristi kombinirani set za provjeru
+        usedMealIdsToday, 
         usedMealNamesToday, 
         snack2Slot, 
-        preferences,
-        undefined,
-        calculations.goalType
+        preferences
       );
       if (!snack2) throw new Error(`Nije moguće generirati međuobrok 2 za dan ${i + 1}`);
       meals.snack2 = snack2;
       snack2Slot.add(snack2.name.toLowerCase());
       weeklyUsedMealNamesBySlot.set("snack2", snack2Slot);
-      weeklyUsedMealIds.add(snack2.id || snack2.name.toLowerCase()); // Dodaj u weekly tracking
 
       const dinnerSlot = weeklyUsedMealNamesBySlot.get("dinner") || new Set<string>();
       const dinner = generateMeal(
@@ -1637,18 +1315,15 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
         calculations.targetProtein * mealDistribution.protein.dinner,
         calculations.targetCarbs * mealDistribution.carbs.dinner,
         calculations.targetFat * mealDistribution.fat.dinner,
-        allUsedMealIds, // Koristi kombinirani set za provjeru
+        usedMealIdsToday, 
         usedMealNamesToday, 
         dinnerSlot, 
-        preferences,
-        undefined,
-        calculations.goalType
+        preferences
       );
       if (!dinner) throw new Error(`Nije moguće generirati večeru za dan ${i + 1}`);
       meals.dinner = dinner;
       dinnerSlot.add(dinner.name.toLowerCase());
       weeklyUsedMealNamesBySlot.set("dinner", dinnerSlot);
-      weeklyUsedMealIds.add(dinner.id || dinner.name.toLowerCase()); // Dodaj u weekly tracking
 
     } else {
       // 6 obroka: breakfast, snack1, lunch, snack2, snack3, dinner
@@ -1660,18 +1335,15 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
         calculations.targetProtein * mealDistribution.protein.breakfast,
         calculations.targetCarbs * mealDistribution.carbs.breakfast,
         calculations.targetFat * mealDistribution.fat.breakfast,
-        allUsedMealIds, // Koristi kombinirani set za provjeru
+        usedMealIdsToday, 
         usedMealNamesToday, 
         breakfastSlot, 
-        preferences,
-        undefined,
-        calculations.goalType
+        preferences
       );
       if (!breakfast) throw new Error(`Nije moguće generirati doručak za dan ${i + 1}`);
       meals.breakfast = breakfast;
       breakfastSlot.add(breakfast.name.toLowerCase());
       weeklyUsedMealNamesBySlot.set("breakfast", breakfastSlot);
-      weeklyUsedMealIds.add(breakfast.id || breakfast.name.toLowerCase()); // Dodaj u weekly tracking
 
       const snack1Slot = weeklyUsedMealNamesBySlot.get("snack1") || new Set<string>();
       const snack1 = generateMeal(
@@ -1681,18 +1353,15 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
         calculations.targetProtein * mealDistribution.protein.snack1,
         calculations.targetCarbs * mealDistribution.carbs.snack1,
         calculations.targetFat * mealDistribution.fat.snack1,
-        allUsedMealIds, // Koristi kombinirani set za provjeru
+        usedMealIdsToday, 
         usedMealNamesToday, 
         snack1Slot, 
-        preferences,
-        undefined,
-        calculations.goalType
+        preferences
       );
       if (!snack1) throw new Error(`Nije moguće generirati međuobrok 1 za dan ${i + 1}`);
       meals.snack1 = snack1;
       snack1Slot.add(snack1.name.toLowerCase());
       weeklyUsedMealNamesBySlot.set("snack1", snack1Slot);
-      weeklyUsedMealIds.add(snack1.id || snack1.name.toLowerCase()); // Dodaj u weekly tracking
 
       const lunchSlot = weeklyUsedMealNamesBySlot.get("lunch") || new Set<string>();
       const lunch = generateMeal(
@@ -1702,12 +1371,10 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
         calculations.targetProtein * mealDistribution.protein.lunch,
         calculations.targetCarbs * mealDistribution.carbs.lunch,
         calculations.targetFat * mealDistribution.fat.lunch,
-        allUsedMealIds, // Koristi kombinirani set za provjeru
+        usedMealIdsToday, 
         usedMealNamesToday, 
         lunchSlot, 
-        preferences,
-        undefined,
-        calculations.goalType
+        preferences
       );
       if (!lunch) throw new Error(`Nije moguće generirati ručak za dan ${i + 1}`);
       meals.lunch = lunch;
@@ -1722,18 +1389,15 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
         calculations.targetProtein * mealDistribution.protein.snack2,
         calculations.targetCarbs * mealDistribution.carbs.snack2,
         calculations.targetFat * mealDistribution.fat.snack2,
-        allUsedMealIds, // Koristi kombinirani set za provjeru
+        usedMealIdsToday, 
         usedMealNamesToday, 
         snack2Slot, 
-        preferences,
-        undefined,
-        calculations.goalType
+        preferences
       );
       if (!snack2) throw new Error(`Nije moguće generirati međuobrok 2 za dan ${i + 1}`);
       meals.snack2 = snack2;
       snack2Slot.add(snack2.name.toLowerCase());
       weeklyUsedMealNamesBySlot.set("snack2", snack2Slot);
-      weeklyUsedMealIds.add(snack2.id || snack2.name.toLowerCase()); // Dodaj u weekly tracking
 
       const snack3Slot = weeklyUsedMealNamesBySlot.get("snack3") || new Set<string>();
       const snack3 = generateMeal(
@@ -1743,18 +1407,15 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
         calculations.targetProtein * mealDistribution.protein.snack3,
         calculations.targetCarbs * mealDistribution.carbs.snack3,
         calculations.targetFat * mealDistribution.fat.snack3,
-        allUsedMealIds, // Koristi kombinirani set za provjeru
+        usedMealIdsToday, 
         usedMealNamesToday, 
         snack3Slot, 
-        preferences,
-        undefined,
-        calculations.goalType
+        preferences
       );
       if (!snack3) throw new Error(`Nije moguće generirati međuobrok 3 za dan ${i + 1}`);
       meals.snack3 = snack3;
       snack3Slot.add(snack3.name.toLowerCase());
       weeklyUsedMealNamesBySlot.set("snack3", snack3Slot);
-      weeklyUsedMealIds.add(snack3.id || snack3.name.toLowerCase()); // Dodaj u weekly tracking
 
       const dinnerSlot = weeklyUsedMealNamesBySlot.get("dinner") || new Set<string>();
       const dinner = generateMeal(
@@ -1764,18 +1425,15 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
         calculations.targetProtein * mealDistribution.protein.dinner,
         calculations.targetCarbs * mealDistribution.carbs.dinner,
         calculations.targetFat * mealDistribution.fat.dinner,
-        allUsedMealIds, // Koristi kombinirani set za provjeru
+        usedMealIdsToday, 
         usedMealNamesToday, 
         dinnerSlot, 
-        preferences,
-        undefined,
-        calculations.goalType
+        preferences
       );
       if (!dinner) throw new Error(`Nije moguće generirati večeru za dan ${i + 1}`);
       meals.dinner = dinner;
       dinnerSlot.add(dinner.name.toLowerCase());
       weeklyUsedMealNamesBySlot.set("dinner", dinnerSlot);
-      weeklyUsedMealIds.add(dinner.id || dinner.name.toLowerCase()); // Dodaj u weekly tracking
     }
 
     // ITERATIVNO skaliraj sve obroke dok makroi nisu unutar ±5%
@@ -1813,23 +1471,16 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
       fat: dailyFat,
     };
 
-    // Provjeri odstupanja - KORISTI TOČNE VRIJEDNOSTI IZ KALKULATORA
+    // Provjeri odstupanja
     const calDev = Math.abs(dailyTotals.calories - calculations.targetCalories) / calculations.targetCalories;
     const proteinDev = Math.abs(dailyTotals.protein - calculations.targetProtein) / calculations.targetProtein;
     const carbsDev = Math.abs(dailyTotals.carbs - calculations.targetCarbs) / calculations.targetCarbs;
     const fatDev = Math.abs(dailyTotals.fat - calculations.targetFat) / calculations.targetFat;
-    const maxDev = Math.max(calDev, proteinDev, carbsDev, fatDev);
-
-    // Izračunaj apsolutne razlike za detaljniju provjeru
-    const calDiff = Math.abs(dailyTotals.calories - calculations.targetCalories);
-    const proteinDiff = Math.abs(dailyTotals.protein - calculations.targetProtein);
-    const carbsDiff = Math.abs(dailyTotals.carbs - calculations.targetCarbs);
-    const fatDiff = Math.abs(dailyTotals.fat - calculations.targetFat);
+        const maxDev = Math.max(calDev, proteinDev, carbsDev, fatDev);
 
     console.log(`   📊 Dnevni total: ${dailyTotals.calories} kcal, P: ${dailyTotals.protein}g, C: ${dailyTotals.carbs}g, F: ${dailyTotals.fat}g`);
     console.log(`   🎯 Target: ${calculations.targetCalories} kcal, P: ${calculations.targetProtein}g, C: ${calculations.targetCarbs}g, F: ${calculations.targetFat}g`);
     console.log(`   📈 Odstupanje: ${(maxDev * 100).toFixed(1)}%`);
-    console.log(`   📉 Apsolutne razlike: ${calDiff.toFixed(0)} kcal, P: ${proteinDiff.toFixed(1)}g, C: ${carbsDiff.toFixed(1)}g, F: ${fatDiff.toFixed(1)}g`);
 
     // Provjeri da li su kalorije unutar granica za goalType
     if (calculations.goalType === "lose" && dailyTotals.calories > calculations.targetCalories) {

@@ -8,7 +8,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { generateWeeklyMealPlan, saveWeeklyPlanToSupabase } from "@/lib/services/weeklyMealPlanGeneratorV2";
+import { generateWeeklyMealPlan, saveWeeklyPlanToSupabase } from "@/lib/services/weeklyMealPlanGenerator";
 
 export async function POST(request: Request) {
   try {

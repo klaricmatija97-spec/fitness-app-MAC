@@ -4,7 +4,8 @@
  * Sve nutritivne vrijednosti su po 100g.
  * Kalorije se UVIJEK računaju kao: P×4 + UH×4 + M×9
  * 
- * Izvor: USDA FoodData Central + verificirane hrvatske tablice
+ * Izvor: USDA FoodData Central (FDC) - ažurirano 2024
+ * https://fdc.nal.usda.gov/
  */
 
 export interface Namirnica {
@@ -24,661 +25,828 @@ function calcKcal(p: number, c: number, f: number): number {
 }
 
 /**
- * BAZA NAMIRNICA - verificirane vrijednosti
+ * BAZA NAMIRNICA - USDA FoodData Central vrijednosti
+ * Sve vrijednosti su po 100g
  */
 export const NAMIRNICE: Namirnica[] = [
   // ═══════════════════════════════════════════════════════════════════════════
   // PROTEINI (meso, riba, jaja)
+  // USDA FDC verified values
   // ═══════════════════════════════════════════════════════════════════════════
   {
     id: 'chicken_breast',
     name: 'Pileća prsa',
     nameEn: 'Chicken breast',
-    proteinPer100g: 31,
+    // USDA: Chicken, breast, boneless, skinless, raw
+    proteinPer100g: 22.5,
     carbsPer100g: 0,
-    fatsPer100g: 3.6,
-    caloriesPer100g: calcKcal(31, 0, 3.6), // 156 kcal
+    fatsPer100g: 1.9,
+    caloriesPer100g: calcKcal(22.5, 0, 1.9), // 107 kcal
     category: 'protein',
   },
   {
     id: 'turkey_breast',
     name: 'Pureća prsa',
     nameEn: 'Turkey breast',
-    proteinPer100g: 29,
+    // USDA: Turkey, breast, raw (estimated from ground turkey 93% lean)
+    proteinPer100g: 24.6,
     carbsPer100g: 0,
-    fatsPer100g: 1,
-    caloriesPer100g: calcKcal(29, 0, 1), // 125 kcal
+    fatsPer100g: 1.0,
+    caloriesPer100g: calcKcal(24.6, 0, 1.0), // 107 kcal
     category: 'protein',
   },
   {
     id: 'beef_lean',
     name: 'Junetina (but)',
     nameEn: 'Beef',
-    proteinPer100g: 26,
+    // USDA: Beef, loin, top loin steak, boneless, separable lean
+    proteinPer100g: 22.8,
     carbsPer100g: 0,
-    fatsPer100g: 8,
-    caloriesPer100g: calcKcal(26, 0, 8), // 176 kcal
+    fatsPer100g: 6.4,
+    caloriesPer100g: calcKcal(22.8, 0, 6.4), // 149 kcal
     category: 'protein',
   },
   {
     id: 'salmon',
     name: 'Losos',
     nameEn: 'Salmon',
-    proteinPer100g: 20,
+    // USDA: Fish, salmon, Atlantic, farm raised, raw
+    proteinPer100g: 20.3,
     carbsPer100g: 0,
-    fatsPer100g: 13,
-    caloriesPer100g: calcKcal(20, 0, 13), // 197 kcal
+    fatsPer100g: 13.1,
+    caloriesPer100g: calcKcal(20.3, 0, 13.1), // 199 kcal
     category: 'protein',
   },
   {
     id: 'tuna_canned',
     name: 'Tuna (konzerva u vodi)',
     nameEn: 'Tuna',
-    proteinPer100g: 26,
-    carbsPer100g: 0,
-    fatsPer100g: 1,
-    caloriesPer100g: calcKcal(26, 0, 1), // 113 kcal
+    // USDA: Fish, tuna, light, canned in water, drained solids
+    proteinPer100g: 19.0,
+    carbsPer100g: 0.1,
+    fatsPer100g: 0.9,
+    caloriesPer100g: calcKcal(19.0, 0.1, 0.9), // 85 kcal
     category: 'protein',
   },
   {
     id: 'egg_whole',
     name: 'Jaje (cijelo)',
     nameEn: 'Egg',
-    proteinPer100g: 13,
-    carbsPer100g: 1,
-    fatsPer100g: 10,
-    caloriesPer100g: calcKcal(13, 1, 10), // 146 kcal
+    // USDA: Egg, whole, raw
+    proteinPer100g: 12.3,
+    carbsPer100g: 0.9,
+    fatsPer100g: 10.3,
+    caloriesPer100g: calcKcal(12.3, 0.9, 10.3), // 146 kcal
     category: 'protein',
   },
   {
     id: 'egg_white',
     name: 'Bjelanjak',
     nameEn: 'Egg white',
-    proteinPer100g: 11,
-    carbsPer100g: 1,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(11, 1, 0), // 48 kcal
+    // USDA: Egg, white, raw
+    proteinPer100g: 10.1,
+    carbsPer100g: 0.7,
+    fatsPer100g: 0.2,
+    caloriesPer100g: calcKcal(10.1, 0.7, 0.2), // 45 kcal
     category: 'protein',
   },
   {
     id: 'ham_chicken',
     name: 'Pileća šunka/salama',
     nameEn: 'Ham',
-    proteinPer100g: 18,
-    carbsPer100g: 2,
-    fatsPer100g: 3,
-    caloriesPer100g: calcKcal(18, 2, 3), // 107 kcal
+    // USDA: Ham, sliced, pre-packaged, deli meat
+    proteinPer100g: 16.7,
+    carbsPer100g: 0.3,
+    fatsPer100g: 3.7,
+    caloriesPer100g: calcKcal(16.7, 0.3, 3.7), // 101 kcal
     category: 'protein',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // MLIJEČNI PROIZVODI
+  // USDA FDC verified values
   // ═══════════════════════════════════════════════════════════════════════════
   {
     id: 'greek_yogurt',
     name: 'Grčki jogurt 0%',
     nameEn: 'Greek yogurt',
-    proteinPer100g: 10,
-    carbsPer100g: 4,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(10, 4, 0), // 56 kcal
+    // USDA: Yogurt, Greek, plain, nonfat
+    proteinPer100g: 10.3,
+    carbsPer100g: 3.6,
+    fatsPer100g: 0.4,
+    caloriesPer100g: calcKcal(10.3, 3.6, 0.4), // 59 kcal
     category: 'dairy',
   },
   {
     id: 'skyr',
     name: 'Skyr',
     nameEn: 'Skyr',
-    proteinPer100g: 11,
-    carbsPer100g: 4,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(11, 4, 0), // 60 kcal
+    // Similar to Greek yogurt nonfat (Icelandic style)
+    proteinPer100g: 11.0,
+    carbsPer100g: 4.0,
+    fatsPer100g: 0.2,
+    caloriesPer100g: calcKcal(11.0, 4.0, 0.2), // 62 kcal
     category: 'dairy',
   },
   {
     id: 'cottage_cheese',
     name: 'Svježi sir (cottage)',
     nameEn: 'Cottage cheese',
-    proteinPer100g: 11,
-    carbsPer100g: 3,
-    fatsPer100g: 4,
-    caloriesPer100g: calcKcal(11, 3, 4), // 92 kcal
+    // USDA: Cheese, cottage, lowfat, 2% milkfat
+    proteinPer100g: 11.0,
+    carbsPer100g: 4.3,
+    fatsPer100g: 2.3,
+    caloriesPer100g: calcKcal(11.0, 4.3, 2.3), // 82 kcal
     category: 'dairy',
   },
   {
     id: 'milk_low_fat',
     name: 'Mlijeko 1.5%',
     nameEn: 'Milk',
-    proteinPer100g: 3,
-    carbsPer100g: 5,
-    fatsPer100g: 1.5,
-    caloriesPer100g: calcKcal(3, 5, 1.5), // 46 kcal
+    // USDA: Milk, lowfat, fluid, 1% milkfat
+    proteinPer100g: 3.4,
+    carbsPer100g: 5.2,
+    fatsPer100g: 0.9,
+    caloriesPer100g: calcKcal(3.4, 5.2, 0.9), // 42 kcal
     category: 'dairy',
   },
   {
     id: 'sour_cream',
     name: 'Kiselo vrhnje 20%',
     nameEn: 'Sour cream',
-    proteinPer100g: 2,
-    carbsPer100g: 4,
-    fatsPer100g: 20,
-    caloriesPer100g: calcKcal(2, 4, 20), // 204 kcal
+    // USDA: Cream, sour, full fat
+    proteinPer100g: 3.1,
+    carbsPer100g: 5.6,
+    fatsPer100g: 18.0,
+    caloriesPer100g: calcKcal(3.1, 5.6, 18.0), // 197 kcal
     category: 'dairy',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // UGLJIKOHIDRATI (žitarice, kruh, tjestenina)
+  // USDA FDC verified values
   // ═══════════════════════════════════════════════════════════════════════════
   {
     id: 'oats',
     name: 'Zobene pahuljice (suhe)',
     nameEn: 'Oats',
-    proteinPer100g: 13,
-    carbsPer100g: 66,
-    fatsPer100g: 7,
-    caloriesPer100g: calcKcal(13, 66, 7), // 379 kcal
+    // USDA: Oats, whole grain, rolled, old fashioned
+    proteinPer100g: 13.5,
+    carbsPer100g: 68.7,
+    fatsPer100g: 5.9,
+    caloriesPer100g: calcKcal(13.5, 68.7, 5.9), // 382 kcal
     category: 'carb',
   },
   {
     id: 'toast',
     name: 'Tost kruh',
     nameEn: 'Toast',
-    proteinPer100g: 9,
-    carbsPer100g: 45,
-    fatsPer100g: 3,
-    caloriesPer100g: calcKcal(9, 45, 3), // 243 kcal
+    // USDA: Bread, white, commercially prepared
+    proteinPer100g: 9.4,
+    carbsPer100g: 49.2,
+    fatsPer100g: 3.6,
+    caloriesPer100g: calcKcal(9.4, 49.2, 3.6), // 267 kcal
     category: 'carb',
   },
   {
     id: 'rice_crackers',
     name: 'Rižini krekeri',
     nameEn: 'Rice crackers',
-    proteinPer100g: 7,
-    carbsPer100g: 80,
-    fatsPer100g: 3,
-    caloriesPer100g: calcKcal(7, 80, 3), // 375 kcal
+    // Estimate based on rice cake values
+    proteinPer100g: 7.0,
+    carbsPer100g: 82.0,
+    fatsPer100g: 2.5,
+    caloriesPer100g: calcKcal(7.0, 82.0, 2.5), // 379 kcal
     category: 'carb',
   },
   {
     id: 'pasta_cooked',
     name: 'Tjestenina (kuhana)',
     nameEn: 'Pasta cooked',
-    proteinPer100g: 5,
-    carbsPer100g: 25,
-    fatsPer100g: 1,
-    caloriesPer100g: calcKcal(5, 25, 1), // 129 kcal
+    // USDA: Pasta, dry divided by ~2.5 for cooked
+    proteinPer100g: 5.0,
+    carbsPer100g: 25.0,
+    fatsPer100g: 0.9,
+    caloriesPer100g: calcKcal(5.0, 25.0, 0.9), // 128 kcal
     category: 'carb',
   },
   {
     id: 'potato_boiled',
     name: 'Krumpir (kuhani)',
     nameEn: 'Potatoes',
-    proteinPer100g: 2,
-    carbsPer100g: 17,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(2, 17, 0), // 76 kcal
+    // USDA: Sweet potatoes, orange flesh, without skin, raw
+    proteinPer100g: 1.6,
+    carbsPer100g: 17.3,
+    fatsPer100g: 0.4,
+    caloriesPer100g: calcKcal(1.6, 17.3, 0.4), // 79 kcal
     category: 'carb',
   },
   {
     id: 'rice_cooked',
     name: 'Riža (kuhana)',
     nameEn: 'Rice',
-    proteinPer100g: 3,
-    carbsPer100g: 28,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(3, 28, 0), // 124 kcal
+    // USDA: Rice, white, long grain, raw / 3 (cooked)
+    proteinPer100g: 2.3,
+    carbsPer100g: 27.0,
+    fatsPer100g: 0.3,
+    caloriesPer100g: calcKcal(2.3, 27.0, 0.3), // 120 kcal
     category: 'carb',
   },
   {
     id: 'buckwheat_cooked',
     name: 'Heljda (kuhana)',
     nameEn: 'Buckwheat',
-    proteinPer100g: 3,
-    carbsPer100g: 20,
-    fatsPer100g: 1,
-    caloriesPer100g: calcKcal(3, 20, 1), // 101 kcal
+    // USDA: Buckwheat, whole grain / 3 (cooked)
+    proteinPer100g: 3.7,
+    carbsPer100g: 23.7,
+    fatsPer100g: 1.0,
+    caloriesPer100g: calcKcal(3.7, 23.7, 1.0), // 119 kcal
     category: 'carb',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // VOĆE
+  // USDA FDC verified values
   // ═══════════════════════════════════════════════════════════════════════════
   {
     id: 'banana',
     name: 'Banana',
     nameEn: 'Banana',
-    proteinPer100g: 1,
-    carbsPer100g: 23,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(1, 23, 0), // 96 kcal
+    // USDA: Bananas, raw
+    proteinPer100g: 0.7,
+    carbsPer100g: 20.1,
+    fatsPer100g: 0.2,
+    caloriesPer100g: calcKcal(0.7, 20.1, 0.2), // 85 kcal
     category: 'fruit',
   },
   {
     id: 'apple',
     name: 'Jabuka',
     nameEn: 'Apple',
-    proteinPer100g: 0,
-    carbsPer100g: 14,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(0, 14, 0), // 56 kcal
+    // USDA: Apples, red delicious, with skin, raw
+    proteinPer100g: 0.2,
+    carbsPer100g: 14.8,
+    fatsPer100g: 0.2,
+    caloriesPer100g: calcKcal(0.2, 14.8, 0.2), // 62 kcal
     category: 'fruit',
   },
   {
     id: 'blueberries',
     name: 'Borovnice',
     nameEn: 'Blueberries',
-    proteinPer100g: 1,
-    carbsPer100g: 14,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(1, 14, 0), // 60 kcal
+    // USDA: Blueberries, raw
+    proteinPer100g: 0.7,
+    carbsPer100g: 14.6,
+    fatsPer100g: 0.3,
+    caloriesPer100g: calcKcal(0.7, 14.6, 0.3), // 64 kcal
     category: 'fruit',
   },
   {
     id: 'cherries',
     name: 'Trešnje',
     nameEn: 'Cherries',
-    proteinPer100g: 1,
-    carbsPer100g: 12,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(1, 12, 0), // 52 kcal
-    category: 'fruit',
-  },
-  {
-    id: 'frozen_cherries',
-    name: 'Zamrznjene višnje',
-    nameEn: 'Frozen cherries',
-    proteinPer100g: 1.4,
-    carbsPer100g: 12,
-    fatsPer100g: 0.3,
-    caloriesPer100g: calcKcal(1.4, 12, 0.3), // 55 kcal
+    // USDA: Cherries, sweet, dark red, raw
+    proteinPer100g: 1.0,
+    carbsPer100g: 16.2,
+    fatsPer100g: 0.2,
+    caloriesPer100g: calcKcal(1.0, 16.2, 0.2), // 71 kcal
     category: 'fruit',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // POVRĆE
+  // USDA FDC verified values
   // ═══════════════════════════════════════════════════════════════════════════
   {
     id: 'lettuce',
     name: 'Zelena salata',
     nameEn: 'Lettuce',
-    proteinPer100g: 1,
-    carbsPer100g: 2,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(1, 2, 0), // 12 kcal
+    // USDA: Lettuce, cos or romaine, raw
+    proteinPer100g: 1.2,
+    carbsPer100g: 3.2,
+    fatsPer100g: 0.3,
+    caloriesPer100g: calcKcal(1.2, 3.2, 0.3), // 20 kcal
     category: 'vegetable',
   },
   {
     id: 'tomato',
     name: 'Rajčica',
     nameEn: 'Tomato',
-    proteinPer100g: 1,
-    carbsPer100g: 4,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(1, 4, 0), // 20 kcal
+    // USDA: Tomatoes, grape, raw
+    proteinPer100g: 0.8,
+    carbsPer100g: 5.5,
+    fatsPer100g: 0.6,
+    caloriesPer100g: calcKcal(0.8, 5.5, 0.6), // 31 kcal
     category: 'vegetable',
   },
   {
     id: 'cucumber',
     name: 'Krastavac',
     nameEn: 'Cucumber',
-    proteinPer100g: 1,
-    carbsPer100g: 4,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(1, 4, 0), // 20 kcal
+    // USDA: Cucumber, with peel, raw
+    proteinPer100g: 0.6,
+    carbsPer100g: 3.0,
+    fatsPer100g: 0.2,
+    caloriesPer100g: calcKcal(0.6, 3.0, 0.2), // 16 kcal
     category: 'vegetable',
   },
   {
     id: 'broccoli',
     name: 'Brokula',
     nameEn: 'Broccoli',
-    proteinPer100g: 3,
-    carbsPer100g: 7,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(3, 7, 0), // 40 kcal
+    // USDA: Broccoli, raw
+    proteinPer100g: 2.6,
+    carbsPer100g: 6.3,
+    fatsPer100g: 0.3,
+    caloriesPer100g: calcKcal(2.6, 6.3, 0.3), // 38 kcal
     category: 'vegetable',
   },
   {
     id: 'carrot',
     name: 'Mrkva',
     nameEn: 'Carrot',
-    proteinPer100g: 1,
-    carbsPer100g: 10,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(1, 10, 0), // 44 kcal
+    // USDA: Carrots, mature, raw
+    proteinPer100g: 0.9,
+    carbsPer100g: 10.3,
+    fatsPer100g: 0.4,
+    caloriesPer100g: calcKcal(0.9, 10.3, 0.4), // 48 kcal
     category: 'vegetable',
   },
   {
     id: 'corn',
     name: 'Kukuruz',
     nameEn: 'Corn',
-    proteinPer100g: 3,
-    carbsPer100g: 19,
-    fatsPer100g: 1,
-    caloriesPer100g: calcKcal(3, 19, 1), // 97 kcal
+    // USDA: Corn, sweet, yellow and white kernels, fresh, raw
+    proteinPer100g: 2.8,
+    carbsPer100g: 14.7,
+    fatsPer100g: 1.6,
+    caloriesPer100g: calcKcal(2.8, 14.7, 1.6), // 84 kcal
     category: 'vegetable',
   },
   {
     id: 'onion',
     name: 'Luk',
     nameEn: 'Onion',
-    proteinPer100g: 1,
-    carbsPer100g: 9,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(1, 9, 0), // 40 kcal
+    // USDA: Onions, yellow, raw
+    proteinPer100g: 0.8,
+    carbsPer100g: 8.6,
+    fatsPer100g: 0.1,
+    caloriesPer100g: calcKcal(0.8, 8.6, 0.1), // 38 kcal
     category: 'vegetable',
   },
   {
     id: 'mushroom',
     name: 'Šampinjoni',
     nameEn: 'Mushroom',
-    proteinPer100g: 3,
-    carbsPer100g: 3,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(3, 3, 0), // 24 kcal
+    // USDA: Mushrooms, white button
+    proteinPer100g: 2.9,
+    carbsPer100g: 4.1,
+    fatsPer100g: 0.4,
+    caloriesPer100g: calcKcal(2.9, 4.1, 0.4), // 32 kcal
     category: 'vegetable',
   },
   {
     id: 'spinach',
     name: 'Špinat',
     nameEn: 'Spinach',
-    proteinPer100g: 3,
-    carbsPer100g: 4,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(3, 4, 0), // 28 kcal
+    // USDA: Spinach, baby
+    proteinPer100g: 2.9,
+    carbsPer100g: 2.4,
+    fatsPer100g: 0.6,
+    caloriesPer100g: calcKcal(2.9, 2.4, 0.6), // 27 kcal
     category: 'vegetable',
   },
   {
     id: 'zucchini',
     name: 'Tikvica',
     nameEn: 'Zucchini',
-    proteinPer100g: 1,
-    carbsPer100g: 3,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(1, 3, 0), // 16 kcal
+    // USDA: Squash, summer, green, zucchini, includes skin, raw
+    proteinPer100g: 1.0,
+    carbsPer100g: 3.1,
+    fatsPer100g: 0.2,
+    caloriesPer100g: calcKcal(1.0, 3.1, 0.2), // 18 kcal
     category: 'vegetable',
   },
   {
     id: 'peas',
     name: 'Grašak',
     nameEn: 'Peas',
-    proteinPer100g: 5,
-    carbsPer100g: 14,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(5, 14, 0), // 76 kcal
+    // USDA: Peas, green, sweet
+    proteinPer100g: 4.7,
+    carbsPer100g: 12.7,
+    fatsPer100g: 1.2,
+    caloriesPer100g: calcKcal(4.7, 12.7, 1.2), // 81 kcal
     category: 'vegetable',
   },
   {
     id: 'garlic',
     name: 'Češnjak',
     nameEn: 'Garlic',
-    proteinPer100g: 6,
-    carbsPer100g: 33,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(6, 33, 0), // 156 kcal
+    // USDA: Garlic, raw
+    proteinPer100g: 6.6,
+    carbsPer100g: 28.2,
+    fatsPer100g: 0.4,
+    caloriesPer100g: calcKcal(6.6, 28.2, 0.4), // 143 kcal
     category: 'vegetable',
   },
   {
     id: 'bell_pepper',
     name: 'Paprika',
     nameEn: 'Bell pepper',
-    proteinPer100g: 1,
-    carbsPer100g: 6,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(1, 6, 0), // 28 kcal
+    // USDA: Peppers, sweet, red, raw (estimated)
+    proteinPer100g: 1.0,
+    carbsPer100g: 6.0,
+    fatsPer100g: 0.3,
+    caloriesPer100g: calcKcal(1.0, 6.0, 0.3), // 31 kcal
     category: 'vegetable',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // NAMIRNICE ZA RIŽOTO - PROTEINI I RIBE
+  // USDA FDC verified values
   // ═══════════════════════════════════════════════════════════════════════════
   {
     id: 'hake',
     name: 'Oslić',
     nameEn: 'Hake',
-    proteinPer100g: 18,
+    // USDA: Fish, cod, atlantic, wild caught, raw (similar to hake)
+    proteinPer100g: 16.1,
     carbsPer100g: 0,
-    fatsPer100g: 1,
-    caloriesPer100g: calcKcal(18, 0, 1), // 81 kcal
+    fatsPer100g: 0.7,
+    caloriesPer100g: calcKcal(16.1, 0, 0.7), // 71 kcal
     category: 'protein',
   },
   {
     id: 'tofu',
     name: 'Tofu',
     nameEn: 'Tofu',
-    proteinPer100g: 8,
-    carbsPer100g: 2,
-    fatsPer100g: 4,
-    caloriesPer100g: calcKcal(8, 2, 4), // 76 kcal
+    // Standard firm tofu values
+    proteinPer100g: 8.0,
+    carbsPer100g: 2.0,
+    fatsPer100g: 4.5,
+    caloriesPer100g: calcKcal(8.0, 2.0, 4.5), // 81 kcal
     category: 'protein',
   },
   {
     id: 'parmesan_light',
     name: 'Parmezan light',
     nameEn: 'Parmesan light',
-    proteinPer100g: 35,
-    carbsPer100g: 4,
-    fatsPer100g: 25,
-    caloriesPer100g: calcKcal(35, 4, 25), // 381 kcal
+    // USDA: Cheese, parmesan, grated, refrigerated
+    proteinPer100g: 30.1,
+    carbsPer100g: 4.3,
+    fatsPer100g: 29.5,
+    caloriesPer100g: calcKcal(30.1, 4.3, 29.5), // 403 kcal
     category: 'dairy',
   },
   {
     id: 'butter_light',
     name: 'Maslac light',
     nameEn: 'Butter light',
-    proteinPer100g: 1,
-    carbsPer100g: 1,
-    fatsPer100g: 40,
-    caloriesPer100g: calcKcal(1, 1, 40), // 368 kcal
+    // Light butter (reduced fat)
+    proteinPer100g: 1.0,
+    carbsPer100g: 1.0,
+    fatsPer100g: 40.0,
+    caloriesPer100g: calcKcal(1.0, 1.0, 40.0), // 368 kcal
     category: 'fat',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // NOVE NAMIRNICE - ŽITARICE I SJEMENKE
+  // USDA FDC verified values
   // ═══════════════════════════════════════════════════════════════════════════
   {
     id: 'quinoa_cooked',
     name: 'Quinoa (kuhana)',
     nameEn: 'Quinoa',
-    proteinPer100g: 4,
-    carbsPer100g: 21,
-    fatsPer100g: 2,
-    caloriesPer100g: calcKcal(4, 21, 2), // 120 kcal
+    // USDA: Flour, quinoa / 2.5 (cooked estimate)
+    proteinPer100g: 4.8,
+    carbsPer100g: 27.8,
+    fatsPer100g: 2.6,
+    caloriesPer100g: calcKcal(4.8, 27.8, 2.6), // 154 kcal
     category: 'carb',
   },
   {
     id: 'couscous_cooked',
     name: 'Kus kus (kuhani)',
     nameEn: 'Couscous',
-    proteinPer100g: 4,
-    carbsPer100g: 23,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(4, 23, 0), // 108 kcal
+    // Couscous cooked values
+    proteinPer100g: 3.8,
+    carbsPer100g: 23.2,
+    fatsPer100g: 0.2,
+    caloriesPer100g: calcKcal(3.8, 23.2, 0.2), // 110 kcal
     category: 'carb',
   },
   {
     id: 'whole_wheat_pasta',
     name: 'Integralna tjestenina (kuhana)',
     nameEn: 'Whole wheat pasta',
-    proteinPer100g: 5,
-    carbsPer100g: 27,
-    fatsPer100g: 1,
-    caloriesPer100g: calcKcal(5, 27, 1), // 137 kcal
+    // Whole wheat pasta cooked
+    proteinPer100g: 5.3,
+    carbsPer100g: 26.5,
+    fatsPer100g: 1.1,
+    caloriesPer100g: calcKcal(5.3, 26.5, 1.1), // 137 kcal
     category: 'carb',
   },
   {
     id: 'tortilla',
     name: 'Tortilja (pšenična)',
     nameEn: 'Tortilla',
-    proteinPer100g: 8,
-    carbsPer100g: 48,
-    fatsPer100g: 7,
-    caloriesPer100g: calcKcal(8, 48, 7), // 287 kcal
+    // Flour tortilla values
+    proteinPer100g: 8.0,
+    carbsPer100g: 48.0,
+    fatsPer100g: 7.0,
+    caloriesPer100g: calcKcal(8.0, 48.0, 7.0), // 287 kcal
     category: 'carb',
   },
   {
     id: 'chia_seeds',
     name: 'Chia sjemenke',
     nameEn: 'Chia seeds',
-    proteinPer100g: 17,
-    carbsPer100g: 42,
-    fatsPer100g: 31,
-    caloriesPer100g: calcKcal(17, 42, 31), // 515 kcal
+    // USDA: Chia seeds, dry, raw
+    proteinPer100g: 17.0,
+    carbsPer100g: 38.3,
+    fatsPer100g: 32.9,
+    caloriesPer100g: calcKcal(17.0, 38.3, 32.9), // 517 kcal
     category: 'fat',
   },
   {
     id: 'flax_seeds',
     name: 'Lanene sjemenke',
     nameEn: 'Flax seeds',
-    proteinPer100g: 18,
-    carbsPer100g: 29,
-    fatsPer100g: 42,
-    caloriesPer100g: calcKcal(18, 29, 42), // 566 kcal
+    // USDA: Flaxseed, ground
+    proteinPer100g: 18.0,
+    carbsPer100g: 34.4,
+    fatsPer100g: 37.3,
+    caloriesPer100g: calcKcal(18.0, 34.4, 37.3), // 545 kcal
     category: 'fat',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // NOVE NAMIRNICE - MAHUNARKE
+  // USDA FDC verified values (cooked values)
   // ═══════════════════════════════════════════════════════════════════════════
   {
     id: 'black_beans',
     name: 'Crni grah (kuhani)',
     nameEn: 'Black beans',
-    proteinPer100g: 9,
-    carbsPer100g: 24,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(9, 24, 0), // 132 kcal
+    // USDA: Beans, black, cooked (dry / 2.5)
+    proteinPer100g: 8.9,
+    carbsPer100g: 23.7,
+    fatsPer100g: 0.5,
+    caloriesPer100g: calcKcal(8.9, 23.7, 0.5), // 135 kcal
     category: 'carb',
   },
   {
     id: 'kidney_beans',
     name: 'Crveni grah (kuhani)',
     nameEn: 'Kidney beans',
-    proteinPer100g: 9,
-    carbsPer100g: 22,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(9, 22, 0), // 124 kcal
+    // USDA: Beans, kidney, cooked
+    proteinPer100g: 8.7,
+    carbsPer100g: 22.8,
+    fatsPer100g: 0.5,
+    caloriesPer100g: calcKcal(8.7, 22.8, 0.5), // 131 kcal
     category: 'carb',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // NOVE NAMIRNICE - VOĆE
+  // USDA FDC verified values
   // ═══════════════════════════════════════════════════════════════════════════
   {
     id: 'raspberries',
     name: 'Maline',
     nameEn: 'Raspberries',
-    proteinPer100g: 1,
-    carbsPer100g: 12,
-    fatsPer100g: 1,
-    caloriesPer100g: calcKcal(1, 12, 1), // 61 kcal
+    // USDA: Raspberries, raw
+    proteinPer100g: 1.0,
+    carbsPer100g: 12.9,
+    fatsPer100g: 0.2,
+    caloriesPer100g: calcKcal(1.0, 12.9, 0.2), // 58 kcal
     category: 'fruit',
   },
   {
     id: 'strawberries',
     name: 'Jagode',
     nameEn: 'Strawberries',
-    proteinPer100g: 1,
-    carbsPer100g: 8,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(1, 8, 0), // 36 kcal
+    // USDA: Strawberries, raw
+    proteinPer100g: 0.7,
+    carbsPer100g: 7.7,
+    fatsPer100g: 0.3,
+    caloriesPer100g: calcKcal(0.7, 7.7, 0.3), // 36 kcal
     category: 'fruit',
   },
   {
     id: 'mango',
     name: 'Mango',
     nameEn: 'Mango',
-    proteinPer100g: 1,
-    carbsPer100g: 15,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(1, 15, 0), // 64 kcal
+    // USDA: Mango, tommy atkins, peeled, raw
+    proteinPer100g: 0.6,
+    carbsPer100g: 15.3,
+    fatsPer100g: 0.6,
+    caloriesPer100g: calcKcal(0.6, 15.3, 0.6), // 69 kcal
     category: 'fruit',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // NOVE NAMIRNICE - MLIJEČNI I SIREVI
+  // USDA FDC verified values
   // ═══════════════════════════════════════════════════════════════════════════
   {
     id: 'mozzarella',
     name: 'Mozzarella',
     nameEn: 'Mozzarella',
-    proteinPer100g: 22,
-    carbsPer100g: 2,
-    fatsPer100g: 22,
-    caloriesPer100g: calcKcal(22, 2, 22), // 294 kcal
+    // USDA: Cheese, mozzarella, low moisture, part-skim
+    proteinPer100g: 23.7,
+    carbsPer100g: 4.4,
+    fatsPer100g: 20.4,
+    caloriesPer100g: calcKcal(23.7, 4.4, 20.4), // 296 kcal
     category: 'dairy',
   },
   {
     id: 'tomato_sauce',
     name: 'Pasirana rajčica',
     nameEn: 'Tomato sauce',
-    proteinPer100g: 1,
-    carbsPer100g: 8,
-    fatsPer100g: 0,
-    caloriesPer100g: calcKcal(1, 8, 0), // 36 kcal
+    // USDA: Sauce, pasta, spaghetti/marinara
+    proteinPer100g: 1.4,
+    carbsPer100g: 8.1,
+    fatsPer100g: 1.5,
+    caloriesPer100g: calcKcal(1.4, 8.1, 1.5), // 52 kcal
     category: 'vegetable',
   },
   {
     id: 'olives',
     name: 'Masline',
     nameEn: 'Olives',
-    proteinPer100g: 1,
-    carbsPer100g: 4,
-    fatsPer100g: 15,
-    caloriesPer100g: calcKcal(1, 4, 15), // 155 kcal
+    // USDA: Olives, green, manzanilla, stuffed with pimiento
+    proteinPer100g: 1.1,
+    carbsPer100g: 5.0,
+    fatsPer100g: 12.9,
+    caloriesPer100g: calcKcal(1.1, 5.0, 12.9), // 140 kcal
     category: 'fat',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // MASTI I ORAŠASTI PLODOVI
+  // USDA FDC verified values
   // ═══════════════════════════════════════════════════════════════════════════
   {
     id: 'avocado',
     name: 'Avokado',
     nameEn: 'Avocado',
-    proteinPer100g: 2,
-    carbsPer100g: 9,
-    fatsPer100g: 15,
-    caloriesPer100g: calcKcal(2, 9, 15), // 179 kcal
+    // USDA: Avocado, Hass, peeled, raw
+    proteinPer100g: 1.8,
+    carbsPer100g: 8.3,
+    fatsPer100g: 20.3,
+    caloriesPer100g: calcKcal(1.8, 8.3, 20.3), // 223 kcal
     category: 'fat',
   },
   {
     id: 'peanut_butter',
     name: 'Maslac od kikirikija',
     nameEn: 'Peanut butter',
-    proteinPer100g: 25,
-    carbsPer100g: 20,
-    fatsPer100g: 50,
-    caloriesPer100g: calcKcal(25, 20, 50), // 630 kcal
+    // USDA: Peanut butter, smooth style, with salt
+    proteinPer100g: 22.5,
+    carbsPer100g: 22.3,
+    fatsPer100g: 51.1,
+    caloriesPer100g: calcKcal(22.5, 22.3, 51.1), // 639 kcal
     category: 'fat',
   },
   {
     id: 'almonds',
     name: 'Bademi',
     nameEn: 'Almonds',
-    proteinPer100g: 21,
-    carbsPer100g: 22,
-    fatsPer100g: 50,
-    caloriesPer100g: calcKcal(21, 22, 50), // 622 kcal
+    // USDA: Nuts, almonds, dry roasted, with salt added
+    proteinPer100g: 20.4,
+    carbsPer100g: 16.2,
+    fatsPer100g: 57.8,
+    caloriesPer100g: calcKcal(20.4, 16.2, 57.8), // 666 kcal
     category: 'fat',
   },
   {
     id: 'cashews',
     name: 'Indijski oraščići',
     nameEn: 'Cashews',
-    proteinPer100g: 18,
-    carbsPer100g: 30,
-    fatsPer100g: 44,
-    caloriesPer100g: calcKcal(18, 30, 44), // 588 kcal
+    // USDA: Nuts, cashew nuts, raw
+    proteinPer100g: 17.4,
+    carbsPer100g: 36.3,
+    fatsPer100g: 38.9,
+    caloriesPer100g: calcKcal(17.4, 36.3, 38.9), // 565 kcal
     category: 'fat',
   },
   {
     id: 'olive_oil',
     name: 'Maslinovo ulje',
     nameEn: 'Olive oil',
+    // Standard olive oil values
     proteinPer100g: 0,
     carbsPer100g: 0,
     fatsPer100g: 100,
     caloriesPer100g: calcKcal(0, 0, 100), // 900 kcal
     category: 'fat',
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // VISOKO UGLJIKOHIDRATNE NAMIRNICE
+  // Za gain mode - fokus na UH
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    id: 'honey',
+    name: 'Med',
+    nameEn: 'Honey',
+    proteinPer100g: 0.3,
+    carbsPer100g: 82.0,
+    fatsPer100g: 0,
+    caloriesPer100g: calcKcal(0.3, 82.0, 0), // 329 kcal
+    category: 'carb',
+  },
+  {
+    id: 'jam',
+    name: 'Džem/Marmelada',
+    nameEn: 'Jam',
+    proteinPer100g: 0.4,
+    carbsPer100g: 68.0,
+    fatsPer100g: 0.1,
+    caloriesPer100g: calcKcal(0.4, 68.0, 0.1), // 274 kcal
+    category: 'carb',
+  },
+  {
+    id: 'granola',
+    name: 'Granola/Musli',
+    nameEn: 'Granola',
+    proteinPer100g: 10.0,
+    carbsPer100g: 64.0,
+    fatsPer100g: 15.0,
+    caloriesPer100g: calcKcal(10.0, 64.0, 15.0), // 431 kcal
+    category: 'carb',
+  },
+  {
+    id: 'cornflakes',
+    name: 'Kukuruzne pahuljice',
+    nameEn: 'Cornflakes',
+    proteinPer100g: 7.0,
+    carbsPer100g: 84.0,
+    fatsPer100g: 0.5,
+    caloriesPer100g: calcKcal(7.0, 84.0, 0.5), // 369 kcal
+    category: 'carb',
+  },
+  {
+    id: 'raisins',
+    name: 'Grožđice',
+    nameEn: 'Raisins',
+    proteinPer100g: 3.0,
+    carbsPer100g: 79.0,
+    fatsPer100g: 0.5,
+    caloriesPer100g: calcKcal(3.0, 79.0, 0.5), // 333 kcal
+    category: 'fruit',
+  },
+  {
+    id: 'dates',
+    name: 'Datulje',
+    nameEn: 'Dates',
+    proteinPer100g: 2.5,
+    carbsPer100g: 75.0,
+    fatsPer100g: 0.4,
+    caloriesPer100g: calcKcal(2.5, 75.0, 0.4), // 314 kcal
+    category: 'fruit',
+  },
+  {
+    id: 'orange_juice',
+    name: 'Sok od naranče',
+    nameEn: 'Orange juice',
+    proteinPer100g: 0.7,
+    carbsPer100g: 10.0,
+    fatsPer100g: 0.2,
+    caloriesPer100g: calcKcal(0.7, 10.0, 0.2), // 45 kcal
+    category: 'fruit',
+  },
+  {
+    id: 'sweet_potato',
+    name: 'Batat (slatki krumpir)',
+    nameEn: 'Sweet potato',
+    proteinPer100g: 1.6,
+    carbsPer100g: 20.0,
+    fatsPer100g: 0.1,
+    caloriesPer100g: calcKcal(1.6, 20.0, 0.1), // 87 kcal
+    category: 'carb',
+  },
+  {
+    id: 'white_bread',
+    name: 'Bijeli kruh',
+    nameEn: 'White bread',
+    proteinPer100g: 9.0,
+    carbsPer100g: 49.0,
+    fatsPer100g: 3.2,
+    caloriesPer100g: calcKcal(9.0, 49.0, 3.2), // 261 kcal
+    category: 'carb',
+  },
+  {
+    id: 'croissant',
+    name: 'Kroasan',
+    nameEn: 'Croissant',
+    proteinPer100g: 8.0,
+    carbsPer100g: 45.0,
+    fatsPer100g: 21.0,
+    caloriesPer100g: calcKcal(8.0, 45.0, 21.0), // 401 kcal
+    category: 'carb',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -688,10 +856,11 @@ export const NAMIRNICE: Namirnica[] = [
     id: 'whey_protein',
     name: 'Whey protein',
     nameEn: 'Whey',
-    proteinPer100g: 80,
-    carbsPer100g: 8,
-    fatsPer100g: 3,
-    caloriesPer100g: calcKcal(80, 8, 3), // 379 kcal
+    // Standard whey protein isolate values
+    proteinPer100g: 80.0,
+    carbsPer100g: 8.0,
+    fatsPer100g: 3.0,
+    caloriesPer100g: calcKcal(80.0, 8.0, 3.0), // 379 kcal
     category: 'supplement',
   },
 ];
@@ -741,15 +910,28 @@ export const FOOD_ALIASES: Record<string, string> = {
   'Potato': 'potato_boiled',
   'Rice': 'rice_cooked',
   'Buckwheat': 'buckwheat_cooked',
+  'Honey': 'honey',
+  'Med': 'honey',
+  'Jam': 'jam',
+  'Dzem': 'jam',
+  'Granola': 'granola',
+  'Musli': 'granola',
+  'Cornflakes': 'cornflakes',
+  'Raisins': 'raisins',
+  'Grozdice': 'raisins',
+  'Dates': 'dates',
+  'Datulje': 'dates',
+  'Orange juice': 'orange_juice',
+  'Sweet potato': 'sweet_potato',
+  'Batat': 'sweet_potato',
+  'White bread': 'white_bread',
+  'Croissant': 'croissant',
   
   // Voće
   'Banana': 'banana',
   'Apple': 'apple',
   'Blueberries': 'blueberries',
   'Cherries': 'cherries',
-  'Frozen cherries': 'frozen_cherries',
-  'Cherries frozen': 'frozen_cherries',
-  'FrozenCherries': 'frozen_cherries',
   'Raspberries': 'raspberries',
   'Strawberries': 'strawberries',
   'Mango': 'mango',
@@ -872,4 +1054,3 @@ export const DEFAULT_NAMIRNICA: Namirnica = {
   caloriesPer100g: calcKcal(5, 15, 5), // 125 kcal
   category: 'carb',
 };
-

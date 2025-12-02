@@ -53,24 +53,21 @@ export function scoreMeal(
 ): number {
   let score: number;
   
-  // STARO PONAŠANJE - prioritet: protein > carbs > fat
-  // Formula: protein * 0.9 + carbs * 0.4 + fat * 0.6 + kcal * weight
-  // Niži score = bolje jelo
+  // NOVA SCORING LOGIKA - prioritet proteinu za SVE modove
+  // score = proteinPenalty * 0.45 + carbPenalty * 0.35 + fatPenalty * 0.20 + caloriePenalty * 0.10
+  // Cilj: kalorije ±15%, makroi ±10%, prioritet proteinu
   
   const proteinPenalty = Math.abs(meal.protein - targetProtein);
   const carbPenalty = Math.abs(meal.carbs - targetCarbs);
   const fatPenalty = Math.abs(meal.fat - targetFat);
   const caloriePenalty = Math.abs(meal.kcal - targetKcal);
   
-  // Weight za kalorije ovisi o modu
-  const kcalWeight = goalType === "gain" ? 1.3 : 1.0;
-  
-  // Osnovni score s prioritetom: protein (primarni), zatim carbs, zatim fat
+  // Osnovni score s prioritetom na protein
   score =
-    proteinPenalty * 0.9 +
-    carbPenalty * 0.4 +
-    fatPenalty * 0.6 +
-    caloriePenalty * kcalWeight;
+    proteinPenalty * 0.45 +
+    carbPenalty * 0.35 +
+    fatPenalty * 0.20 +
+    caloriePenalty * 0.10;
   
   // GAIN MODE: Dodatni penalty za ekstremno visok fat (izbjegavamo previše masti)
   if (goalType === "gain") {
@@ -197,11 +194,15 @@ export function scoreMeal(
       score += newFatDiff * 1.2;
     }
   } else {
-    // Ako nema running macros, koristi standardne penalties
-    // Već su izračunati gore, samo dodaj standardne penalties
-    score += proteinPenalty * 1.0;
-    score += carbPenalty * 0.8;
-    score += fatPenalty * 0.8;
+    // Ako nema running macros, koristi novu scoring logiku - prioritet proteinu
+    const proteinPenalty = Math.abs(meal.protein - targetProtein);
+    const carbPenalty = Math.abs(meal.carbs - targetCarbs);
+    const fatPenalty = Math.abs(meal.fat - targetFat);
+    
+    // Dodaj penalties s prioritetom na protein
+    score += proteinPenalty * 0.45;
+    score += carbPenalty * 0.35;
+    score += fatPenalty * 0.20;
   }
 
   return score;

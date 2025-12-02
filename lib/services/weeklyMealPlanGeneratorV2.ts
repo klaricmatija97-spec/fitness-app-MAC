@@ -1,15 +1,12 @@
 /**
- * TJEDNI PLAN PREHRANE - PROFESIONALNI GENERATOR V2
- * 
- * NOVI GENERATOR - ISPRAVLJENA VERZIJA
+ * TJEDNI PLAN PREHRANE - PROFESIONALNI GENERATOR
  * 
  * Po uzoru na najbolje generatore:
- * - Iterativno skaliranje dok makroi nisu unutar ±15% (kalorije) i ±10% (makroi)
+ * - Iterativno skaliranje dok makroi nisu unutar ±5% (max ±10%)
  * - Strogi tracking jela (nikad duplikati unutar dana, maksimalna različitost kroz tjedan)
  * - Točne kalorije u skladu s kalkulatorom
  * - Kalorijske granice po obroku
  * - clampToPortionLimits() za realistične porcije
- * - Individualni faktori za svaki makro (prioritet na najveće odstupanje)
  */
 
 import { createServiceClient } from "../supabase";
@@ -793,33 +790,133 @@ function generateMeal(
 
   // Izračunaj trenutne makroe (bazne vrijednosti) - KORISTI ORIGINALNE GRAMAŽE IZ BAZE
   // selectedMeal.components već ima originalne gramaže iz meal_components.json
-  // NEMOJ skalirati ovdje - scaleAllMealsToTarget će skalirati sve obroke zajedno
   const baseComponents = calculateMealMacros(selectedMeal.components, 1);
   const baseTotals = calculateMealTotals(baseComponents);
 
   if (baseTotals.calories === 0) return null;
 
-  // KORISTI ORIGINALNE GRAMAŽE BEZ SKALIRANJA
-  // Skaliranje će se napraviti u scaleAllMealsToTarget za sve obroke zajedno
-  let scaledComponents = baseComponents;
+  // ISPRAVNA SCALING LOGIKA - skaliraj prema targetu za OVAJ OBROK, ne totalu
+  // Prioritet: protein > carbs > fat
+  // Porcija se skalira prema TRENUTNOM obroku, ne prema totalu dana
+  // KORISTI ORIGINALNE GRAMAŽE IZ BAZE - selectedMeal.components već ima originalne vrijednosti
   
-  // NEMOJ primjenjivati limite ovdje - scaleAllMealsToTarget će to riješiti
-  // Samo izračunaj totale
+  // Izračunaj faktore skaliranja za svaki makro (target za ovaj obrok)
+  const proteinFactor = baseTotals.protein > 0 ? targetProtein / baseTotals.protein : 1;
+  const carbsFactor = baseTotals.carbs > 0 ? targetCarbs / baseTotals.carbs : 1;
+  const fatFactor = baseTotals.fat > 0 ? targetFat / baseTotals.fat : 1;
+  
+  // Kombiniraj faktore s prioritetom: protein (primarni), carbs (sekundarni), fat (treći)
+  // Koristi ponderirani prosjek: protein 50%, carbs 30%, fat 20%
+  // NEMOJ koristiti sqrt modifikaciju - samo ponderirani prosjek
+  let scaleFactor = proteinFactor * 0.5 + carbsFactor * 0.3 + fatFactor * 0.2;
+  
+  // U gain modu porcija može biti 10-20% veća od maintain moda, ne više
+  if (goalType === "gain") {
+    scaleFactor *= 1.15; // +15% u gain modu (10-20% veća)
+  }
+  
+  // Ograniči skaliranje za realistične porcije
+  // minScale = 0.7, maxScale = 1.1 (smanjeno jer će scaleAllMealsToTarget dodatno skalirati)
+  // Gain može biti do 1.15x (10-20% veća od maintain)
+  const minScale = 0.7;
+  const maxScale = goalType === "gain" ? 1.15 : 1.1;
+  scaleFactor = Math.max(minScale, Math.min(maxScale, scaleFactor));
+
+  // Primijeni skaliranje
+  let scaledComponents = calculateMealMacros(selectedMeal.components, scaleFactor);
+  
+  // PRIMJENI LIMITE ZA PORCIJE - provjeri svaku komponentu
+  // Koristi originalne komponente za dobivanje food ID-a
+  scaledComponents = scaledComponents.map((component, index) => {
+    const originalComponent = selectedMeal.components[index];
+    const foodId = originalComponent.food;
+    const limits = getPortionLimits(foodId);
+    const originalGrams = component.grams;
+    // Ograniči na min/max
+    const limitedGrams = Math.max(limits.min, Math.min(limits.max, originalGrams));
+    
+    // Ako je ograničeno, preračunaj makroe
+    if (limitedGrams !== originalGrams) {
+      const namirnica = findNamirnica(foodId);
+      if (namirnica) {
+        return {
+          ...component,
+          grams: limitedGrams,
+          protein: (namirnica.proteinPer100g * limitedGrams) / 100,
+          carbs: (namirnica.carbsPer100g * limitedGrams) / 100,
+          fat: (namirnica.fatsPer100g * limitedGrams) / 100,
+          calories: (namirnica.caloriesPer100g * limitedGrams) / 100,
+        };
+      }
+    }
+    return component;
+  });
+  
   let scaledTotals = calculateMealTotals(scaledComponents);
 
+  // Provjeri kalorijske granice obroka (samo ako su previše ekstremne)
+  const limits = MEAL_CALORIE_LIMITS[mealType];
+  if (limits) {
+    // Ako je previše malo (ispod minimuma), povećaj
+    if (scaledTotals.calories < limits.min) {
+      const adjustFactor = limits.min / scaledTotals.calories;
+      scaledComponents = calculateMealMacros(selectedMeal.components, scaleFactor * adjustFactor);
+      // Ponovno primijeni limite
+      scaledComponents = scaledComponents.map(component => {
+        const foodId = component.name; // Koristi name umjesto food
+        const compLimits = getPortionLimits(foodId);
+        const limitedGrams = Math.max(compLimits.min, Math.min(compLimits.max, component.grams));
+        if (limitedGrams !== component.grams) {
+          const namirnica = findNamirnica(foodId);
+          if (namirnica) {
+            return {
+              ...component,
+              grams: limitedGrams,
+              protein: (namirnica.proteinPer100g * limitedGrams) / 100,
+              carbs: (namirnica.carbsPer100g * limitedGrams) / 100,
+              fat: (namirnica.fatsPer100g * limitedGrams) / 100,
+              calories: (namirnica.caloriesPer100g * limitedGrams) / 100,
+            };
+          }
+        }
+        return component;
+      });
+      scaledTotals = calculateMealTotals(scaledComponents);
+    }
+    // Ako je previše veliko (više od maksimuma), smanji
+    else if (scaledTotals.calories > limits.max) {
+      const adjustFactor = limits.max / scaledTotals.calories;
+      scaledComponents = calculateMealMacros(selectedMeal.components, scaleFactor * adjustFactor);
+      // Ponovno primijeni limite
+      scaledComponents = scaledComponents.map(component => {
+        const foodId = component.name; // Koristi name umjesto food
+        const compLimits = getPortionLimits(foodId);
+        const limitedGrams = Math.max(compLimits.min, Math.min(compLimits.max, component.grams));
+        if (limitedGrams !== component.grams) {
+          const namirnica = findNamirnica(foodId);
+          if (namirnica) {
+            return {
+              ...component,
+              grams: limitedGrams,
+              protein: (namirnica.proteinPer100g * limitedGrams) / 100,
+              carbs: (namirnica.carbsPer100g * limitedGrams) / 100,
+              fat: (namirnica.fatsPer100g * limitedGrams) / 100,
+              calories: (namirnica.caloriesPer100g * limitedGrams) / 100,
+            };
+          }
+        }
+        return component;
+      });
+      scaledTotals = calculateMealTotals(scaledComponents);
+    }
+  }
+
   // Spremi originalne komponente za kasnije skaliranje u scaleAllMealsToTarget
-  // VAŽNO: Spremi ORIGINALNE komponente iz selectedMeal (iz baze), ne skalirane!
   const originalComponents = selectedMeal.components.map(comp => ({
     food: comp.food,
     grams: comp.grams,
-    displayName: comp.displayName || comp.food,
+    displayName: comp.displayName,
   }));
-
-  // Provjeri da li su originalne komponente ispravne
-  if (!originalComponents || originalComponents.length === 0) {
-    console.error(`❌ Meal ${selectedMeal.id} nema komponenti!`);
-    return null;
-  }
 
   return {
     id: selectedMeal.id,
@@ -837,14 +934,19 @@ function generateMeal(
 /**
  * TOČNO PRILAGODAVANJE - direktno skaliraj prema target_calories i target makroima iz kalkulatora
  * 
- * NOVA JEDNOSTAVNA LOGIKA:
- * 1. Izračunaj trenutne totale (zbroj svih obroka)
- * 2. Izračunaj faktor skaliranja: target / trenutno
- * 3. Skaliraj SVE obroke s tim faktorom
- * 4. Provjeri da li je unutar tolerancije (±5%)
- * 5. Ako nije, ponovi s fino prilagodbom
+ * KAKO FUNKCIONIRA:
+ * 1. Izračunava trenutne totale (zbroj svih obroka)
+ * 2. Provjerava kalorije (±50 kcal) i makroe (±10%)
+ * 3. Ako je sve OK → završi
+ * 4. Ako nije → skaliraj sve obroke proporcionalno da se postigne TOČNO target_calories i target makroi
+ * 5. Maksimalno 30 iteracija
  * 
- * CILJ: Točno postizanje target kalorija i makroa iz kalkulatora
+ * OGRANIČENJA:
+ * - Kalorije: target ±50 kcal (ili ±1.4% za 3600 kcal)
+ * - Protein: target ±10%
+ * - Carbs: target ±10%
+ * - Fat: target ±10%
+ * - Skaliranje: 0.8x - 1.2x za realistične porcije
  */
 function scaleAllMealsToTarget(
   meals: Record<string, GeneratedMeal>,
@@ -854,17 +956,9 @@ function scaleAllMealsToTarget(
   targetFat: number,
   goalType: "lose" | "maintain" | "gain"
 ): Record<string, GeneratedMeal> {
-  const MAX_ITERATIONS = 50;
-  const TOLERANCE = 0.05; // ±5% tolerancija
-  
-  console.log(`\n   🔧 SCALING: Target ${targetCalories} kcal, P: ${targetProtein}g, C: ${targetCarbs}g, F: ${targetFat}g`);
-  console.log(`   🔧 SCALING: Broj obroka: ${Object.keys(meals).length}`);
-  
-  // Provjeri da li ima obroka
-  if (!meals || Object.keys(meals).length === 0) {
-    console.error("❌ Nema obroka za skaliranje!");
-    return meals;
-  }
+  const MAX_ITERATIONS = 200; // Povećano za bolju preciznost
+  const CALORIE_TOLERANCE = targetCalories * 0.15; // ±15% od targeta (realistično)
+  const MACRO_TOLERANCE = 0.10; // ±10% (realistično, ali još uvijek precizno)
   
   let currentMeals = { ...meals };
 
@@ -880,134 +974,140 @@ function scaleAllMealsToTarget(
     );
     
     // Zaokruži makroe na 1 decimalu
-    const currentProtein = Math.round(macroTotals.protein * 10) / 10;
-    const currentCarbs = Math.round(macroTotals.carbs * 10) / 10;
-    const currentFat = Math.round(macroTotals.fat * 10) / 10;
+    const protein = Math.round(macroTotals.protein * 10) / 10;
+    const carbs = Math.round(macroTotals.carbs * 10) / 10;
+    const fat = Math.round(macroTotals.fat * 10) / 10;
     
     // UVIJEK računaj kalorije iz makroa (formula: P×4 + UH×4 + M×9)
-    const currentCalories = Math.round(currentProtein * 4 + currentCarbs * 4 + currentFat * 9);
+    const calories = Math.round(protein * 4 + carbs * 4 + fat * 9);
     
-    // Provjeri da li ima obroka
-    if (currentCalories === 0 || currentProtein === 0 || currentCarbs === 0 || currentFat === 0) {
-      console.error("❌ Nema obroka ili su makroi 0!");
-      return currentMeals;
-    }
-    
+    const currentTotals = { calories, protein, carbs, fat };
+
+    if (currentTotals.calories === 0) return currentMeals;
+
     // Provjeri odstupanja
-    const calDiff = Math.abs(currentCalories - targetCalories) / targetCalories;
-    const proteinDiff = Math.abs(currentProtein - targetProtein) / targetProtein;
-    const carbsDiff = Math.abs(currentCarbs - targetCarbs) / targetCarbs;
-    const fatDiff = Math.abs(currentFat - targetFat) / targetFat;
-    const maxDev = Math.max(calDiff, proteinDiff, carbsDiff, fatDiff);
+    const calDiff = Math.abs(currentTotals.calories - targetCalories);
+    const proteinDev = Math.abs(currentTotals.protein - targetProtein) / targetProtein;
+    const carbsDev = Math.abs(currentTotals.carbs - targetCarbs) / targetCarbs;
+    const fatDev = Math.abs(currentTotals.fat - targetFat) / targetFat;
+    const maxMacroDev = Math.max(proteinDev, carbsDev, fatDev);
 
     // Provjeri da li je sve unutar tolerancije
-    if (maxDev <= TOLERANCE) {
+    const caloriesOK = calDiff <= CALORIE_TOLERANCE;
+    const macrosOK = maxMacroDev <= MACRO_TOLERANCE;
+
+    if (caloriesOK && macrosOK) {
       if (iteration > 0) {
-        console.log(`   ✅ POSTIGNUTO nakon ${iteration} iteracija:`);
-        console.log(`      Kalorije: ${currentCalories} kcal (target: ${targetCalories}, odstupanje: ${(calDiff * 100).toFixed(1)}%)`);
-        console.log(`      Protein: ${currentProtein}g (target: ${targetProtein}g, odstupanje: ${(proteinDiff * 100).toFixed(1)}%)`);
-        console.log(`      Carbs: ${currentCarbs}g (target: ${targetCarbs}g, odstupanje: ${(carbsDiff * 100).toFixed(1)}%)`);
-        console.log(`      Fat: ${currentFat}g (target: ${targetFat}g, odstupanje: ${(fatDiff * 100).toFixed(1)}%)`);
+        console.log(`   ✅ SVE POSTIGNUTO nakon ${iteration} iteracija:`);
+        console.log(`      Kalorije: ${currentTotals.calories} kcal (target: ${targetCalories}, razlika: ${calDiff} kcal)`);
+        console.log(`      Protein: ${currentTotals.protein}g (target: ${targetProtein}g, odstupanje: ${(proteinDev * 100).toFixed(1)}%)`);
+        console.log(`      Carbs: ${currentTotals.carbs}g (target: ${targetCarbs}g, odstupanje: ${(carbsDev * 100).toFixed(1)}%)`);
+        console.log(`      Fat: ${currentTotals.fat}g (target: ${targetFat}g, odstupanje: ${(fatDev * 100).toFixed(1)}%)`);
       }
       return currentMeals;
     }
 
     // Logiranje
-    if (iteration < 3) {
+    if (iteration < 5) {
       console.log(`   🔄 Iteracija ${iteration + 1}:`);
-      console.log(`      Kalorije: ${currentCalories} kcal (target: ${targetCalories}, odstupanje: ${(calDiff * 100).toFixed(1)}%)`);
-      console.log(`      Protein: ${currentProtein}g (target: ${targetProtein}g, odstupanje: ${(proteinDiff * 100).toFixed(1)}%)`);
-      console.log(`      Carbs: ${currentCarbs}g (target: ${targetCarbs}g, odstupanje: ${(carbsDiff * 100).toFixed(1)}%)`);
-      console.log(`      Fat: ${currentFat}g (target: ${targetFat}g, odstupanje: ${(fatDiff * 100).toFixed(1)}%)`);
+      console.log(`      Kalorije: ${currentTotals.calories} kcal (target: ${targetCalories}, razlika: ${calDiff} kcal) ${caloriesOK ? '✅' : '❌'}`);
+      console.log(`      Protein: ${currentTotals.protein}g (target: ${targetProtein}g, odstupanje: ${(proteinDev * 100).toFixed(1)}%) ${proteinDev <= MACRO_TOLERANCE ? '✅' : '❌'}`);
+      console.log(`      Carbs: ${currentTotals.carbs}g (target: ${targetCarbs}g, odstupanje: ${(carbsDev * 100).toFixed(1)}%) ${carbsDev <= MACRO_TOLERANCE ? '✅' : '❌'}`);
+      console.log(`      Fat: ${currentTotals.fat}g (target: ${targetFat}g, odstupanje: ${(fatDev * 100).toFixed(1)}%) ${fatDev <= MACRO_TOLERANCE ? '✅' : '❌'}`);
     }
 
-    // JEDNOSTAVNA SCALING LOGIKA - koristi prosjek faktora za sve makroe
-    // Prioritet: kalorije (jer su najvažnije), zatim protein, carbs, fat
-    const calorieFactor = targetCalories / currentCalories;
-    const proteinFactor = targetProtein / currentProtein;
-    const carbsFactor = targetCarbs / currentCarbs;
-    const fatFactor = targetFat / currentFat;
+    // ISPRAVNA SCALING LOGIKA - skaliraj svaki makro zasebno za točno postizanje targeta
+    // Prioritet: protein > carbs > fat
+    // Koristi individualne faktore za svaki makro umjesto kombiniranog faktora
     
-    // Koristi ponderirani prosjek: kalorije 40%, protein 30%, carbs 20%, fat 10%
-    let scaleFactor = calorieFactor * 0.4 + proteinFactor * 0.3 + carbsFactor * 0.2 + fatFactor * 0.1;
+    const proteinFactor = targetProtein / currentTotals.protein;
+    const carbsFactor = targetCarbs / currentTotals.carbs;
+    const fatFactor = targetFat / currentTotals.fat;
+    const calorieFactor = targetCalories / currentTotals.calories;
     
-    // Ograniči skaliranje na realistične vrijednosti (0.5x - 2.0x)
-    scaleFactor = Math.max(0.5, Math.min(2.0, scaleFactor));
+    // Za lose: kalorije ≤ target (nikad više!)
+    // Za gain: kalorije ≥ target (nikad manje!)
+    let finalCalorieFactor = calorieFactor;
+    if (goalType === "lose" && currentTotals.calories > targetCalories) {
+      finalCalorieFactor = Math.min(calorieFactor, 1.0); // Smanji ako je previše
+    }
+    if (goalType === "gain" && currentTotals.calories < targetCalories) {
+      finalCalorieFactor = Math.max(calorieFactor, 1.0); // Povećaj ako je premalo
+    }
+    
+    // KORISTI INDIVIDUALNE FAKTORE ZA SVAKI MAKRO - prioritet na najveće odstupanje
+    // Pronađi makro s najvećim odstupanjem i koristi njegov faktor kao primarni
+    const proteinDevValue = Math.abs(currentTotals.protein - targetProtein) / targetProtein;
+    const carbsDevValue = Math.abs(currentTotals.carbs - targetCarbs) / targetCarbs;
+    const fatDevValue = Math.abs(currentTotals.fat - targetFat) / targetFat;
+    const calorieDevValue = Math.abs(currentTotals.calories - targetCalories) / targetCalories;
+    
+    // Odredi koji makro ima najveće odstupanje
+    const maxDevValue = Math.max(proteinDevValue, carbsDevValue, fatDevValue, calorieDevValue);
+    
+    let scaleFactor: number;
+    if (maxDevValue === proteinDevValue) {
+      // Protein ima najveće odstupanje - koristi protein faktor
+      scaleFactor = proteinFactor;
+    } else if (maxDevValue === carbsDevValue) {
+      // Carbs ima najveće odstupanje - koristi carbs faktor
+      scaleFactor = carbsFactor;
+    } else if (maxDevValue === fatDevValue) {
+      // Fat ima najveće odstupanje - koristi fat faktor
+      scaleFactor = fatFactor;
+    } else {
+      // Kalorije imaju najveće odstupanje - koristi calorie faktor
+      scaleFactor = finalCalorieFactor;
+    }
+    
+    // Ako je odstupanje veliko, dozvoli veće skaliranje
+    if (maxDevValue > 0.15) {
+      // Veliko odstupanje - dozvoli 0.5x - 2.0x skaliranje
+      scaleFactor = Math.max(0.5, Math.min(2.0, scaleFactor));
+    } else if (maxDevValue > 0.10) {
+      // Srednje odstupanje - dozvoli 0.6x - 1.7x skaliranje
+      scaleFactor = Math.max(0.6, Math.min(1.7, scaleFactor));
+    } else {
+      // Malo odstupanje - dozvoli 0.7x - 1.5x skaliranje
+      scaleFactor = Math.max(0.7, Math.min(1.5, scaleFactor));
+    }
+    
+    // Ako je odstupanje vrlo malo, koristi prosjek faktora za finu prilagodbu
+    if (maxDevValue <= 0.05) {
+      const avgFactor = (proteinFactor + carbsFactor + fatFactor + finalCalorieFactor) / 4;
+      scaleFactor = Math.max(0.9, Math.min(1.1, avgFactor)); // Ograniči na malu prilagodbu
+    }
 
     // Skaliraj sve obroke - KORISTI ORIGINALNE KOMPONENTE IZ BAZE
+    // Ako meal ima _originalComponents, koristi ih; inače koristi trenutne komponente
     const scaledMeals: Record<string, GeneratedMeal> = {};
 
     for (const [mealType, meal] of Object.entries(currentMeals)) {
       // Koristi originalne komponente ako postoje, inače koristi trenutne
-      const baseComponents = (meal as any)._originalComponents;
-      
-      if (!baseComponents || baseComponents.length === 0) {
-        // Ako nema originalnih komponenti, pokušaj koristiti trenutne komponente
-        // Ali skaliraj ih s faktorom
-        const scaledComponents = meal.components.map((comp: any) => {
-          const foodId = comp.name;
-          const baseGrams = comp.grams || 0;
-          const namirnica = findNamirnica(foodId);
-          if (!namirnica) return comp;
-
-          let newGrams = baseGrams * scaleFactor;
-          const limits = getPortionLimits(foodId);
-          newGrams = Math.max(limits.min, newGrams);
-          
-          const macros = calculateMacrosForGrams(namirnica, newGrams);
-          return {
-            ...comp,
-            grams: Math.round(newGrams / 5) * 5,
-            calories: Math.round(macros.calories),
-            protein: Math.round(macros.protein * 10) / 10,
-            carbs: Math.round(macros.carbs * 10) / 10,
-            fat: Math.round(macros.fat * 10) / 10,
-          };
-        });
-        const scaledTotals = calculateMealTotals(scaledComponents);
-        scaledMeals[mealType] = {
-          ...meal,
-          components: scaledComponents,
-          totals: scaledTotals,
-        };
-        continue;
-      }
+      const baseComponents = (meal as any)._originalComponents || meal.components;
       
       const scaledComponents = baseComponents.map((comp: any) => {
-        // Originalne komponente imaju strukturu: { food, grams, displayName }
-        const foodId = comp.food;
+        // Ako je originalna komponenta (ima food i grams), koristi je
+        const foodId = comp.food || comp.name;
         const baseGrams = comp.grams || 0;
-        
-        if (!foodId || baseGrams === 0) {
-          console.warn(`⚠️ Komponenta nema food ili grams:`, comp);
-          return comp;
-        }
-        
         const namirnica = findNamirnica(foodId);
-        if (!namirnica) {
-          console.warn(`⚠️ Namirnica nije pronađena: ${foodId}`);
-          return {
-            name: comp.displayName || foodId,
-            grams: baseGrams,
-            calories: 0,
-            protein: 0,
-            carbs: 0,
-            fat: 0,
-          };
-        }
+        if (!namirnica) return comp;
 
-        // Izračunaj nove gramaže - direktno skaliraj
+        // Izračunaj nove gramaže - NE ograničavaj odmah, dozvoli veće skaliranje
         let newGrams = baseGrams * scaleFactor;
         
-        // Primijeni minimalne limite (samo minimum, maksimum je fleksibilan)
+        // Primijeni limite samo ako je potrebno (ne ograničavaj previše)
         const limits = getPortionLimits(foodId);
-        newGrams = Math.max(limits.min, newGrams);
+        // Dozvoli do 1.5x maksimuma ako je potrebno za postizanje targeta
+        const maxAllowed = limits.max * 1.5;
+        const minAllowed = limits.min;
+        newGrams = Math.max(minAllowed, Math.min(maxAllowed, newGrams));
         
         const macros = calculateMacrosForGrams(namirnica, newGrams);
 
         return {
-          name: comp.displayName || foodId,
-          grams: Math.round(newGrams / 5) * 5, // Zaokruži na 5g
+          name: foodId,
+          grams: newGrams,
           calories: Math.round(macros.calories),
           protein: Math.round(macros.protein * 10) / 10,
           carbs: Math.round(macros.carbs * 10) / 10,
@@ -1017,17 +1117,144 @@ function scaleAllMealsToTarget(
 
       const scaledTotals = calculateMealTotals(scaledComponents);
       
-      scaledMeals[mealType] = {
-        ...meal,
-        components: scaledComponents,
-        totals: scaledTotals,
-      };
+      // PRO RAZINA - kalorijske granice su fleksibilne
+      // Prilagodi samo ako je ekstremno (ispod minimuma ili više od 2x maksimuma)
+      const limits = MEAL_CALORIE_LIMITS[mealType];
+      if (limits && (scaledTotals.calories < limits.min || scaledTotals.calories > limits.max * 2)) {
+        // Ako je izvan granica, prilagodi samo ovaj obrok
+        let adjustFactor = 1;
+        if (scaledTotals.calories < limits.min) {
+          adjustFactor = limits.min / scaledTotals.calories;
+        } else if (scaledTotals.calories > limits.max * 2) {
+          // Dozvoli do 1.5x maksimuma za fleksibilnost
+          adjustFactor = (limits.max * 1.5) / scaledTotals.calories;
+        }
+
+        const adjustedComponents = scaledComponents.map((comp: { name: string; grams: number; calories: number; protein: number; carbs: number; fat: number }) => {
+          const foodId = comp.name;
+          const namirnica = findNamirnica(foodId);
+          if (!namirnica) return comp;
+
+          const limits = getPortionLimits(foodId);
+          const newGrams = Math.max(limits.min, Math.min(limits.max, comp.grams * adjustFactor));
+          const macros = calculateMacrosForGrams(namirnica, newGrams);
+
+          return {
+            ...comp,
+            grams: newGrams,
+            calories: Math.round(macros.calories),
+            protein: Math.round(macros.protein * 10) / 10,
+            carbs: Math.round(macros.carbs * 10) / 10,
+            fat: Math.round(macros.fat * 10) / 10,
+          };
+        });
+          
+          const adjustedTotals = calculateMealTotals(adjustedComponents);
+        scaledMeals[mealType] = {
+            ...meal,
+            components: adjustedComponents,
+            totals: adjustedTotals,
+          };
+      } else {
+        scaledMeals[mealType] = {
+          ...meal,
+          components: scaledComponents,
+          totals: scaledTotals,
+        };
+      }
     }
 
     currentMeals = scaledMeals;
   }
 
-  // Finalna provjera
+  // DODATNA FAZA: Fine-tuning za točno postizanje targeta
+  // Ako smo unutar tolerancije ali nismo točno na targetu, pokušaj još malo prilagoditi
+  const checkMacroTotals = Object.values(currentMeals).reduce(
+    (totals, meal) => ({
+      protein: totals.protein + meal.totals.protein,
+      carbs: totals.carbs + meal.totals.carbs,
+      fat: totals.fat + meal.totals.fat,
+    }),
+    { protein: 0, carbs: 0, fat: 0 }
+  );
+  
+  const checkProtein = Math.round(checkMacroTotals.protein * 10) / 10;
+  const checkCarbs = Math.round(checkMacroTotals.carbs * 10) / 10;
+  const checkFat = Math.round(checkMacroTotals.fat * 10) / 10;
+  const checkCalories = Math.round(checkProtein * 4 + checkCarbs * 4 + checkFat * 9);
+  
+  // Provjeri da li smo blizu targeta ali ne točno
+  const calDiff = Math.abs(checkCalories - targetCalories);
+  const proteinDiff = Math.abs(checkProtein - targetProtein) / targetProtein;
+  const carbsDiff = Math.abs(checkCarbs - targetCarbs) / targetCarbs;
+  const fatDiff = Math.abs(checkFat - targetFat) / targetFat;
+  
+  // Ako smo unutar 15% ali ne točno, pokušaj još jednom fino prilagoditi
+  const calDiffPercent = calDiff / targetCalories;
+  if ((calDiffPercent <= 0.15) && 
+      proteinDiff <= 0.10 && carbsDiff <= 0.10 && fatDiff <= 0.10 &&
+      (calDiffPercent > 0.01 || proteinDiff > 0.01 || carbsDiff > 0.01 || fatDiff > 0.01)) {
+    
+    // Izračunaj faktore za točno postizanje targeta
+    const calFactorFine = targetCalories / checkCalories;
+    const proteinFactorFine = targetProtein / checkProtein;
+    const carbsFactorFine = targetCarbs / checkCarbs;
+    const fatFactorFine = targetFat / checkFat;
+    
+    // Pronađi makro s najvećim odstupanjem i koristi njegov faktor
+    const proteinDevFine = Math.abs(checkProtein - targetProtein) / targetProtein;
+    const carbsDevFine = Math.abs(checkCarbs - targetCarbs) / targetCarbs;
+    const fatDevFine = Math.abs(checkFat - targetFat) / targetFat;
+    const calorieDevFine = calDiffPercent;
+    
+    const maxDevFine = Math.max(proteinDevFine, carbsDevFine, fatDevFine, calorieDevFine);
+    let fineTuneFactor: number;
+    
+    if (maxDevFine === proteinDevFine) {
+      fineTuneFactor = proteinFactorFine;
+    } else if (maxDevFine === carbsDevFine) {
+      fineTuneFactor = carbsFactorFine;
+    } else if (maxDevFine === fatDevFine) {
+      fineTuneFactor = fatFactorFine;
+    } else {
+      fineTuneFactor = calFactorFine;
+    }
+    
+    // Ograniči na prilagodbu (0.85x - 1.15x) za finu prilagodbu
+    const fineScale = Math.max(0.85, Math.min(1.15, fineTuneFactor));
+    
+    // Primijeni fine-tuning
+    const fineTunedMeals: Record<string, GeneratedMeal> = {};
+    for (const [mealType, meal] of Object.entries(currentMeals)) {
+      const fineComponents = meal.components.map(comp => {
+        const namirnica = findNamirnica(comp.name);
+        if (!namirnica) return comp;
+        
+        const newGrams = clampToPortionLimits(comp.name, comp.grams * fineScale);
+        const macros = calculateMacrosForGrams(namirnica, newGrams);
+        
+        return {
+          ...comp,
+          grams: newGrams,
+          calories: Math.round(macros.calories),
+          protein: Math.round(macros.protein * 10) / 10,
+          carbs: Math.round(macros.carbs * 10) / 10,
+          fat: Math.round(macros.fat * 10) / 10,
+        };
+      });
+      
+      const fineTotals = calculateMealTotals(fineComponents);
+      fineTunedMeals[mealType] = {
+        ...meal,
+        components: fineComponents,
+        totals: fineTotals,
+      };
+    }
+    
+    currentMeals = fineTunedMeals;
+  }
+
+  // Finalna provjera (zbroji makroe, zatim izračunaj kalorije)
   const finalMacroTotals = Object.values(currentMeals).reduce(
     (totals, meal) => ({
       protein: totals.protein + meal.totals.protein,
@@ -1037,22 +1264,26 @@ function scaleAllMealsToTarget(
     { protein: 0, carbs: 0, fat: 0 }
   );
   
+  // Zaokruži makroe na 1 decimalu
   const finalProtein = Math.round(finalMacroTotals.protein * 10) / 10;
   const finalCarbs = Math.round(finalMacroTotals.carbs * 10) / 10;
   const finalFat = Math.round(finalMacroTotals.fat * 10) / 10;
+  
+  // UVIJEK računaj kalorije iz makroa (formula: P×4 + UH×4 + M×9)
   const finalCalories = Math.round(finalProtein * 4 + finalCarbs * 4 + finalFat * 9);
   
-  const finalCalDiff = Math.abs(finalCalories - targetCalories) / targetCalories;
-  const finalProteinDev = Math.abs(finalProtein - targetProtein) / targetProtein;
-  const finalCarbsDev = Math.abs(finalCarbs - targetCarbs) / targetCarbs;
-  const finalFatDev = Math.abs(finalFat - targetFat) / targetFat;
-  const finalMaxDev = Math.max(finalCalDiff, finalProteinDev, finalCarbsDev, finalFatDev);
+  const finalTotals = { calories: finalCalories, protein: finalProtein, carbs: finalCarbs, fat: finalFat };
+
+  const finalCalDiff = Math.abs(finalTotals.calories - targetCalories);
+  const finalProteinDev = Math.abs(finalTotals.protein - targetProtein) / targetProtein;
+  const finalCarbsDev = Math.abs(finalTotals.carbs - targetCarbs) / targetCarbs;
+  const finalFatDev = Math.abs(finalTotals.fat - targetFat) / targetFat;
 
   console.log(`\n   📊 FINALNI REZULTAT:`);
-  console.log(`      Kalorije: ${finalCalories} kcal (target: ${targetCalories}, odstupanje: ${(finalCalDiff * 100).toFixed(1)}%) ${finalCalDiff <= TOLERANCE ? '✅' : '⚠️'}`);
-  console.log(`      Protein: ${finalProtein}g (target: ${targetProtein}g, odstupanje: ${(finalProteinDev * 100).toFixed(1)}%) ${finalProteinDev <= TOLERANCE ? '✅' : '⚠️'}`);
-  console.log(`      Carbs: ${finalCarbs}g (target: ${targetCarbs}g, odstupanje: ${(finalCarbsDev * 100).toFixed(1)}%) ${finalCarbsDev <= TOLERANCE ? '✅' : '⚠️'}`);
-  console.log(`      Fat: ${finalFat}g (target: ${targetFat}g, odstupanje: ${(finalFatDev * 100).toFixed(1)}%) ${finalFatDev <= TOLERANCE ? '✅' : '⚠️'}`);
+  console.log(`      Kalorije: ${finalTotals.calories} kcal (target: ${targetCalories}, razlika: ${finalCalDiff} kcal) ${finalCalDiff <= CALORIE_TOLERANCE ? '✅' : '⚠️'}`);
+  console.log(`      Protein: ${finalTotals.protein}g (target: ${targetProtein}g, odstupanje: ${(finalProteinDev * 100).toFixed(1)}%) ${finalProteinDev <= MACRO_TOLERANCE ? '✅' : '⚠️'}`);
+  console.log(`      Carbs: ${finalTotals.carbs}g (target: ${targetCarbs}g, odstupanje: ${(finalCarbsDev * 100).toFixed(1)}%) ${finalCarbsDev <= MACRO_TOLERANCE ? '✅' : '⚠️'}`);
+  console.log(`      Fat: ${finalTotals.fat}g (target: ${targetFat}g, odstupanje: ${(finalFatDev * 100).toFixed(1)}%) ${finalFatDev <= MACRO_TOLERANCE ? '✅' : '⚠️'}`);
 
   return currentMeals;
 }

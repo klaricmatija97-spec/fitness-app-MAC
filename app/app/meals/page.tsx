@@ -35,6 +35,7 @@ interface DailyPlan {
     snack1: GeneratedMeal;
     lunch: GeneratedMeal;
     snack2: GeneratedMeal;
+    snack3?: GeneratedMeal;
     dinner: GeneratedMeal;
   };
   dailyTotals: {
@@ -514,16 +515,24 @@ export default function MealsPage() {
                       delay={0.06}
                     />
                     <MealTile 
-                      title="Međuobrok" 
+                      title="Međuobrok 2" 
                       meal={weeklyPlan.days[selectedDay].meals.snack2}
                       onClick={() => setSelectedMeal({ title: "Međuobrok 2", meal: weeklyPlan.days[selectedDay].meals.snack2 })}
                       delay={0.09}
                     />
+                    {weeklyPlan.days[selectedDay].meals.snack3 && (
+                      <MealTile 
+                        title="Međuobrok 3" 
+                        meal={weeklyPlan.days[selectedDay].meals.snack3}
+                        onClick={() => setSelectedMeal({ title: "Međuobrok 3", meal: weeklyPlan.days[selectedDay].meals.snack3! })}
+                        delay={0.11}
+                      />
+                    )}
                     <MealTile 
                       title="Večera" 
                       meal={weeklyPlan.days[selectedDay].meals.dinner}
                       onClick={() => setSelectedMeal({ title: "Večera", meal: weeklyPlan.days[selectedDay].meals.dinner })}
-                      delay={0.12}
+                      delay={0.13}
                     />
                   </div>
                 </motion.div>

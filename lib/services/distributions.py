@@ -585,89 +585,132 @@ def generate_day_plan(
         dailyTotals=daily_totals,
     )
 
-
-# ============================================
-# PRILAGODAVANJE DNEVNOG PLANA
-# ============================================
-
 def tweak_day_plan(
-    day_plan: DailyPlan,
-    daily_targets: DailyTargets,
-    foods_db: Dict[str, Food],
-    max_iterations: int = 50
+day_plan: DailyPlan,
+daily_targets: DailyTargets,
+foods_db: Dict[str, Food],
+max_iterations: int = 40,
 ) -> DailyPlan:
-    """
-    Popravlja dnevni plan prema kalorijskom cilju.
-    Iterativno skalira obroke dok makroi nisu unutar tolerancije.
-    """
-    tolerance_cal = 10  # ±10 kcal
-    tolerance_macro = 0.01  # ±1%
-    
-    for iteration in range(max_iterations):
-        # Izračunaj trenutne totale
-        current_totals = day_plan.dailyTotals
-        
-        # Provjeri odstupanja
-        cal_diff = abs(current_totals["calories"] - daily_targets.calories)
-        protein_dev = abs(current_totals["protein"] - daily_targets.protein) / daily_targets.protein if daily_targets.protein > 0 else 0
-        carbs_dev = abs(current_totals["carbs"] - daily_targets.carbs) / daily_targets.carbs if daily_targets.carbs > 0 else 0
-        fat_dev = abs(current_totals["fat"] - daily_targets.fat) / daily_targets.fat if daily_targets.fat > 0 else 0
-        max_macro_dev = max(protein_dev, carbs_dev, fat_dev)
-        
-        # Provjeri da li je sve unutar tolerancije
-        if cal_diff <= tolerance_cal and max_macro_dev <= tolerance_macro:
-            if iteration > 0:
-                print(f"   ✅ Plan adjusted after {iteration} iterations")
-            break
-        
-        # Izračunaj faktore skaliranja
-        cal_factor = daily_targets.calories / current_totals["calories"] if current_totals["calories"] > 0 else 1.0
-        protein_factor = daily_targets.protein / current_totals["protein"] if current_totals["protein"] > 0 else 1.0
-        carbs_factor = daily_targets.carbs / current_totals["carbs"] if current_totals["carbs"] > 0 else 1.0
-        fat_factor = daily_targets.fat / current_totals["fat"] if current_totals["fat"] > 0 else 1.0
-        
-        # Kombiniraj faktore
-        combined_factor = 0.4 * cal_factor + 0.3 * protein_factor + 0.2 * carbs_factor + 0.1 * fat_factor
-        
-        # Ograniči skaliranje
-        combined_factor = max(0.85, min(1.15, combined_factor))
-        
-        # Skaliraj sve obroke
-        for meal_type, meal in day_plan.meals.items():
-            # Skaliraj komponente
-            for comp in meal.components:
-                comp["grams"] = round(comp["grams"] * combined_factor / 5) * 5
-                
-                # Ponovno izračunaj makroe
-                food_id = comp["food"]
-                grams = comp["grams"]
-                if food_id in foods_db:
-                    food = foods_db[food_id]
-                    ratio = grams / 100.0
-                    comp["protein"] = round(food.proteinPer100g * ratio, 1)
-                    comp["carbs"] = round(food.carbsPer100g * ratio, 1)
-                    comp["fat"] = round(food.fatsPer100g * ratio, 1)
-                    comp["calories"] = round(comp["protein"] * 4 + comp["carbs"] * 4 + comp["fat"] * 9)
-            
-            # Ponovno izračunaj totale obroka
-            meal_totals = {
-                "calories": sum(c["calories"] for c in meal.components),
-                "protein": sum(c["protein"] for c in meal.components),
-                "carbs": sum(c["carbs"] for c in meal.components),
-                "fat": sum(c["fat"] for c in meal.components),
-            }
-            meal.totals = meal_totals
-        
-        # Ponovno izračunaj dnevne totale
-        day_plan.dailyTotals = {
-            "calories": round(sum(m.totals["calories"] for m in day_plan.meals.values())),
-            "protein": round(sum(m.totals["protein"] for m in day_plan.meals.values()), 1),
-            "carbs": round(sum(m.totals["carbs"] for m in day_plan.meals.values()), 1),
-            "fat": round(sum(m.totals["fat"] for m in day_plan.meals.values()), 1),
-        }
-    
-    return day_plan
+"""
+Fino prilagodi dnevni plan prema cilju iz kalkulatora.
 
+Cilj:
+- kalorije unutar ±3% od targeta
+- makroi (P/C/F) unutar ±8% od targeta
+- bez velikih skokova (stabilan scale faktor)
+"""
+
+# Tolerancije u postocima, NE fiksnih 10 kcal
+CAL_TOL = 0.03 # ±3% kalorija
+MACRO_TOL = 0.08 # ±8% makroa
+
+for iteration in range(max_iterations):
+# 1) Uvijek izračunaj trenutne totale iz obroka (da nema nakupljene greške)
+current_totals = {
+"calories": 0.0,
+"protein": 0.0,
+"carbs": 0.0,
+"fat": 0.0,
+}
+for meal in day_plan.meals.values():
+current_totals["calories"] += meal.totals["calories"]
+current_totals["protein"] += meal.totals["protein"]
+current_totals["carbs"] += meal.totals["carbs"]
+current_totals["fat"] += meal.totals["fat"]
+
+# 2) Izračunaj odstupanja
+if daily_targets.calories <= 0:
+break
+
+cal_diff_pct = abs(current_totals["calories"] - daily_targets.calories) / daily_targets.calories
+protein_dev = (
+abs(current_totals["protein"] - daily_targets.protein) / daily_targets.protein
+if daily_targets.protein > 0 else 0
+)
+carbs_dev = (
+abs(current_totals["carbs"] - daily_targets.carbs) / daily_targets.carbs
+if daily_targets.carbs > 0 else 0
+)
+fat_dev = (
+abs(current_totals["fat"] - daily_targets.fat) / daily_targets.fat
+if daily_targets.fat > 0 else 0
+)
+max_macro_dev = max(protein_dev, carbs_dev, fat_dev)
+
+# 3) Ako smo dovoljno blizu – gotovo
+if cal_diff_pct <= CAL_TOL and max_macro_dev <= MACRO_TOL:
+if iteration > 0:
+print(f" ✅ Plan adjusted after {iteration} iterations")
+break
+
+# 4) Izračunaj scale faktor:
+# kalorije su baza, protein blago utječe (da ne pobjegne previsoko ili prenisko)
+cal_factor = (
+daily_targets.calories / current_totals["calories"]
+if current_totals["calories"] > 0 else 1.0
+)
+protein_factor = (
+daily_targets.protein / current_totals["protein"]
+if current_totals["protein"] > 0 else 1.0
+)
+
+# kombinirani faktor – fokus na kcal, ali 30% “korigira” protein
+scale_factor = 0.7 * cal_factor + 0.3 * protein_factor
+
+# 5) Ograniči scale faktor da nema ludih skokova
+# (svaka iteracija max ±10%)
+scale_factor = max(0.9, min(1.1, scale_factor))
+
+# 6) Skaliraj sve obroke i ponovno izračunaj makroe
+for meal in day_plan.meals.values():
+for comp in meal.components:
+# skaliraj gramažu
+comp["grams"] = round(comp["grams"] * scale_factor / 5) * 5
+
+# ponovno izračunaj makroe za komponentu
+food_id = comp["food"]
+grams = comp["grams"]
+if food_id in foods_db:
+food = foods_db[food_id]
+ratio = grams / 100.0
+comp["protein"] = round(food.proteinPer100g * ratio, 1)
+comp["carbs"] = round(food.carbsPer100g * ratio, 1)
+comp["fat"] = round(food.fatsPer100g * ratio, 1)
+comp["calories"] = round(
+comp["protein"] * 4 + comp["carbs"] * 4 + comp["fat"] * 9
+)
+
+# ažuriraj totals za obrok
+meal.totals = {
+"calories": sum(c["calories"] for c in meal.components),
+"protein": sum(c["protein"] for c in meal.components),
+"carbs": sum(c["carbs"] for c in meal.components),
+"fat": sum(c["fat"] for c in meal.components),
+}
+
+# nakon skaliranja će se u idućoj iteraciji ponovno izračunati current_totals
+
+# 7) Na kraju upiši finalne dnevne totale u day_plan
+final_totals = {
+"calories": 0.0,
+"protein": 0.0,
+"carbs": 0.0,
+"fat": 0.0,
+}
+for meal in day_plan.meals.values():
+final_totals["calories"] += meal.totals["calories"]
+final_totals["protein"] += meal.totals["protein"]
+final_totals["carbs"] += meal.totals["carbs"]
+final_totals["fat"] += meal.totals["fat"]
+
+day_plan.dailyTotals = {
+"calories": round(final_totals["calories"]),
+"protein": round(final_totals["protein"], 1),
+"carbs": round(final_totals["carbs"], 1),
+"fat": round(final_totals["fat"], 1),
+}
+
+return day_plan
 
 # ============================================
 # GENERIRANJE TJEDNOG PLANA
