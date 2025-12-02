@@ -137,6 +137,7 @@ function findWrkoutExercise(exerciseName: string): Exercise | undefined {
 
 /**
  * Obogati jednu vježbu s podacima iz wrkout baze
+ * Upute se automatski prevode na hrvatski
  */
 export function enrichExercise(exercise: {
   name: string;
@@ -150,9 +151,9 @@ export function enrichExercise(exercise: {
     return {
       ...exercise,
       equipment: exercise.equipment || wrkoutExercise.equipment || 'body only',
-      instructions: wrkoutExercise.instructions,
-      primaryMuscles: wrkoutExercise.primaryMuscles,
-      secondaryMuscles: wrkoutExercise.secondaryMuscles,
+      instructions: wrkoutExercise.instructions.map(translateToHrvatski),
+      primaryMuscles: wrkoutExercise.primaryMuscles.map(m => MUSCLE_TRANSLATIONS[m] || m),
+      secondaryMuscles: wrkoutExercise.secondaryMuscles.map(m => MUSCLE_TRANSLATIONS[m] || m),
       level: wrkoutExercise.level,
       force: wrkoutExercise.force || undefined,
       mechanic: wrkoutExercise.mechanic || undefined,
@@ -270,5 +271,95 @@ export function getEnrichmentStats(): {
     mappedExercises: mapped,
     unmappedExercises: unmapped,
   };
+}
+
+// ============================================
+// PRIJEVOD INSTRUKCIJA NA HRVATSKI
+// ============================================
+
+const INSTRUCTION_TRANSLATIONS: Record<string, string> = {
+  // Česti pojmovi
+  'starting position': 'početni položaj',
+  'repeat': 'ponovi',
+  'repetitions': 'ponavljanja',
+  'slowly': 'polako',
+  'controlled': 'kontrolirano',
+  'breathe in': 'udahni',
+  'breathe out': 'izdahni',
+  'exhale': 'izdahni',
+  'inhale': 'udahni',
+  'pause': 'pauziraj',
+  'squeeze': 'stisni',
+  'contract': 'kontrahiraj',
+  'extend': 'ispruži',
+  'lower': 'spusti',
+  'raise': 'podigni',
+  'lift': 'podigni',
+  'hold': 'drži',
+  'grip': 'hvat',
+  'arms': 'ruke',
+  'legs': 'noge',
+  'chest': 'prsa',
+  'back': 'leđa',
+  'shoulders': 'ramena',
+  'core': 'trup',
+  'hips': 'kukovi',
+  'knees': 'koljena',
+  'elbows': 'laktovi',
+  'wrists': 'zapešća',
+  'feet': 'stopala',
+  'hands': 'šake',
+  'barbell': 'šipka',
+  'dumbbell': 'bučica',
+  'dumbbells': 'bučice',
+  'cable': 'kabel',
+  'machine': 'sprava',
+  'bench': 'klupa',
+  'floor': 'pod',
+  'stand': 'stani',
+  'sit': 'sjedi',
+  'lie': 'lezi',
+  'lying': 'ležeći',
+  'standing': 'stojeći',
+  'seated': 'sjedeći',
+  'flat': 'ravno',
+  'incline': 'koso',
+  'decline': 'obrnuto koso',
+  'shoulder width': 'širina ramena',
+  'hip width': 'širina kukova',
+  'parallel': 'paralelno',
+  'perpendicular': 'okomito',
+  'neutral': 'neutralno',
+  'overhand': 'nadlaktični',
+  'underhand': 'podlaktični',
+  'tip': 'savjet',
+  'variation': 'varijacija',
+  'caution': 'oprez',
+};
+
+/**
+ * Jednostavan prijevod engleskog teksta na hrvatski
+ * (zamjenjuje poznate riječi/fraze)
+ */
+export function translateToHrvatski(text: string): string {
+  let translated = text;
+  
+  // Zamijeni poznate fraze (dulje prvo)
+  const sortedPhrases = Object.entries(INSTRUCTION_TRANSLATIONS)
+    .sort((a, b) => b[0].length - a[0].length);
+  
+  for (const [eng, hr] of sortedPhrases) {
+    const regex = new RegExp(`\\b${eng}\\b`, 'gi');
+    translated = translated.replace(regex, hr);
+  }
+  
+  return translated;
+}
+
+/**
+ * Prevedi niz instrukcija
+ */
+export function translateInstructions(instructions: string[]): string[] {
+  return instructions.map(translateToHrvatski);
 }
 

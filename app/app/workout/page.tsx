@@ -650,8 +650,8 @@ export default function WorkoutPage() {
               <div className="p-5 border-b border-slate-800">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-xl font-semibold text-white">{selectedExercise.nameHr}</h3>
-                    <p className="text-sm text-slate-400 mt-0.5">{selectedExercise.name}</p>
+                    <h3 className="text-xl font-semibold text-white">{selectedExercise.name}</h3>
+                    <p className="text-sm text-slate-400 mt-0.5">({selectedExercise.nameHr})</p>
                     <p className="text-xs text-violet-500 uppercase tracking-wide font-medium mt-2">{selectedExercise.equipment}</p>
                   </div>
                   <button
@@ -825,8 +825,8 @@ function ExerciseTile({ exercise, index, onClick }: { exercise: ExerciseParams; 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-white font-medium">{exercise.nameHr}</p>
-              <p className="text-xs text-slate-500">{exercise.name}</p>
+              <p className="text-white font-medium">{exercise.name}</p>
+              <p className="text-xs text-slate-400">({exercise.nameHr})</p>
             </div>
             <div className="text-right flex-shrink-0">
               <p className="text-sm text-violet-400 font-semibold">{exercise.sets} × {exercise.reps}</p>
