@@ -25,6 +25,7 @@ interface ExerciseParams {
   tips?: string[];
   commonMistakes?: string[];
   alternatives?: AlternativeExercise[];
+  imageUrl?: string;
 }
 
 interface CardioSession {
@@ -662,6 +663,17 @@ export default function WorkoutPage() {
 
               {/* Modal Body */}
               <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                {/* Slika vježbe */}
+                {selectedExercise.imageUrl && (
+                  <div className="w-full h-48 bg-slate-800 rounded-xl overflow-hidden">
+                    <img 
+                      src={selectedExercise.imageUrl} 
+                      alt={selectedExercise.nameHr}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+
                 {/* Parametri */}
                 <div className="grid grid-cols-4 gap-3">
                   <div className="text-center p-3 bg-slate-800 rounded-xl border border-slate-700">
@@ -785,24 +797,38 @@ function ExerciseTile({ exercise, index, onClick }: { exercise: ExerciseParams; 
       onClick={onClick}
       className="p-4 bg-slate-800/50 border border-slate-700 rounded-xl cursor-pointer hover:bg-slate-800 hover:border-violet-500/50 transition-colors"
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="w-8 h-8 flex items-center justify-center bg-violet-600/20 text-violet-400 rounded-lg text-sm font-bold">
+      <div className="flex items-center gap-4">
+        {/* Thumbnail slika */}
+        {exercise.imageUrl ? (
+          <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+            <img 
+              src={exercise.imageUrl} 
+              alt={exercise.nameHr}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ) : (
+          <span className="w-16 h-16 flex items-center justify-center bg-violet-600/20 text-violet-400 rounded-lg text-lg font-bold flex-shrink-0">
             {index + 1}
           </span>
-          <div>
-            <p className="text-white font-medium">{exercise.nameHr}</p>
-            <p className="text-xs text-slate-500">{exercise.equipment}</p>
+        )}
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-white font-medium truncate">{exercise.nameHr}</p>
+              <p className="text-xs text-slate-500">{exercise.equipment}</p>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <p className="text-sm text-white font-medium">{exercise.sets}×{exercise.reps}</p>
+              <p className="text-xs text-slate-500">odmor {exercise.restSeconds}s</p>
+            </div>
           </div>
-        </div>
-        <div className="text-right">
-          <p className="text-sm text-white font-medium">{exercise.sets}×{exercise.reps}</p>
-          <p className="text-xs text-slate-500">odmor {exercise.restSeconds}s</p>
+          {exercise.musclesWorked && (
+            <p className="text-xs text-slate-400 mt-1 line-clamp-1">💪 {exercise.musclesWorked}</p>
+          )}
         </div>
       </div>
-      {exercise.musclesWorked && (
-        <p className="text-xs text-slate-400 mt-2 line-clamp-1">💪 {exercise.musclesWorked}</p>
-      )}
     </motion.div>
   );
 }

@@ -69,6 +69,7 @@ export interface ExerciseParams {
   tips?: string[];
   commonMistakes?: string[];
   alternatives?: AlternativeExercise[];
+  imageUrl?: string;
 }
 
 export interface CardioSession {
@@ -135,12 +136,14 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   musclesWorked: string;
   tips: string[];
   commonMistakes: string[];
+  imageUrl?: string;
   videoUrl?: string;
 }> = {
   // === PRSA (CHEST) ===
   "Bench press": {
     description: "Lezi na ravnu klupu, stopala na podu. Uhvati šipku širinom ramena ili malo šire. Spusti šipku kontrolirano do sredine prsa, zatim potisni natrag do pune ekstenzije ruku.",
     musclesWorked: "Velika prsna mišića (pectoralis major), prednji deltoid, triceps",
+    imageUrl: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&h=300&fit=crop",
     tips: [
       "Drži lopatice stisnute i povučene prema dolje",
       "Laktovi pod kutom 45-75° od tijela",
@@ -155,6 +158,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Incline dumbbell press": {
     description: "Klupu postavi na nagib 30-45°. Bučice drži iznad ramena, dlanovi okrenuti naprijed. Spusti bučice do razine prsa, zatim potisni gore dok se ruke gotovo ne ispruže.",
     musclesWorked: "Gornji dio prsnog mišića, prednji deltoid, triceps",
+    imageUrl: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&h=300&fit=crop",
     tips: [
       "Nagib klupe 30-45° je optimalan",
       "Bučice spuštaj kontrolirano, ne bacaj",
@@ -169,6 +173,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Cable chest fly": {
     description: "Stani između dva kabela postavljenih u visini ramena. Uhvati ručke, napravi korak naprijed i blago savij laktove. Spoji ruke ispred prsa u luku, zatim kontrolirano vrati.",
     musclesWorked: "Prsni mišići (fokus na rastezanje i kontrakciju)",
+    imageUrl: "https://images.unsplash.com/photo-1598268030450-7a476f602bf6?w=400&h=300&fit=crop",
     tips: [
       "Drži laktove blago savijene cijelo vrijeme",
       "Fokusiraj se na stiskanje prsa u krajnjem položaju",
@@ -185,6 +190,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Overhead shoulder press": {
     description: "Stani ili sjedi s šipkom u visini ramena, hvat malo širi od ramena. Potisni šipku ravno iznad glave dok se ruke ne ispruže, zatim kontrolirano spusti.",
     musclesWorked: "Deltoidni mišići (sva tri snopa), triceps, gornji trapezius",
+    imageUrl: "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=400&h=300&fit=crop",
     tips: [
       "Drži core čvrsto angažiran",
       "Glavu blago povuci natrag dok šipka prolazi",
@@ -199,6 +205,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Shoulder press": {
     description: "Sjedi na klupi s naslonom ili stani. Bučice drži u visini ramena, dlanovi naprijed. Potisni bučice iznad glave, zatim kontrolirano spusti do početne pozicije.",
     musclesWorked: "Deltoidni mišići, triceps",
+    imageUrl: "https://images.unsplash.com/photo-1581009146145-b5ef050c149a?w=400&h=300&fit=crop",
     tips: [
       "Drži leđa ravno uz naslon",
       "Ne zaključavaj laktove potpuno na vrhu",
@@ -213,6 +220,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Lateral raises": {
     description: "Stani uspravno s bučicama uz tijelo. Podigni ruke u stranu do razine ramena, laktovi blago savijeni. Kontrolirano spusti.",
     musclesWorked: "Lateralni (srednji) deltoid",
+    imageUrl: "https://images.unsplash.com/photo-1597452485669-2c7bb5fef90d?w=400&h=300&fit=crop",
     tips: [
       "Vodi pokret laktovima, ne šakama",
       "Zaustavi se u ravnini ramena - ne idi više",
@@ -227,6 +235,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Face pull": {
     description: "Kabel postavi u visini lica. Uhvati uže hvat, povuci prema licu razdvajajući krajeve užeta. Laktovi idu visoko i široko. Zadrži sekundu, kontrolirano vrati.",
     musclesWorked: "Stražnji deltoid, srednji trapezius, romboidni mišići, rotator cuff",
+    imageUrl: "https://images.unsplash.com/photo-1598971639058-a467621c64d9?w=400&h=300&fit=crop",
     tips: [
       "Laktovi uvijek viši od šaka",
       "Povuci do razine lica ili malo iza",
@@ -243,6 +252,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Lat pulldown": {
     description: "Sjedi na lat spravu, koljena pod jastučićima. Uhvati šipku široko, povuci prema gornjem dijelu prsa spuštajući lopatice dolje i natrag. Kontrolirano vrati.",
     musclesWorked: "Latissimus dorsi, biceps, stražnji deltoid, romboidni mišići",
+    imageUrl: "https://images.unsplash.com/photo-1598971457999-ca4ef48a9a71?w=400&h=300&fit=crop",
     tips: [
       "Prsa izbaci prema naprijed",
       "Povlači laktove dolje i natrag, ne samo dolje",
@@ -257,6 +267,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Seated cable row": {
     description: "Sjedi na spravu, stopala na platformi, koljena blago savijena. Povuci ručku prema donjem dijelu prsa/trbuhu stiskajući lopatice. Kontrolirano vrati istežući leđa.",
     musclesWorked: "Latissimus dorsi, romboidni mišići, trapezius, biceps",
+    imageUrl: "https://images.unsplash.com/photo-1534368959876-26bf04f2c947?w=400&h=300&fit=crop",
     tips: [
       "Drži prsa ispod cijelo vrijeme",
       "Stisni lopatice na sekundu u krajnjem položaju",
@@ -271,6 +282,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "T-bar row": {
     description: "Stani iznad T-bar šipke, koljena savijena, trup nagnut naprijed 45°. Povuci šipku prema prsima/trbuhu stiskajući lopatice. Kontrolirano spusti.",
     musclesWorked: "Latissimus dorsi, romboidni mišići, trapezius, erector spinae, biceps",
+    imageUrl: "https://images.unsplash.com/photo-1603287681836-b174ce5074c2?w=400&h=300&fit=crop",
     tips: [
       "Drži leđa ravna tijekom cijelog pokreta",
       "Povlači laktovima, ne rukama",
@@ -287,6 +299,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Back squat": {
     description: "Šipku postavi na gornji dio trapezijusa. Stopala u širini ramena ili malo šire, prsti blago van. Spusti se savijanjem koljena i kukova dok bedra ne budu paralelna s podom ili niže. Potisni se natrag gore.",
     musclesWorked: "Kvadriceps, gluteus, hamstringsi, erector spinae, core",
+    imageUrl: "https://images.unsplash.com/photo-1566241142559-40e1dab266c6?w=400&h=300&fit=crop",
     tips: [
       "Koljena prate smjer prstiju",
       "Drži prsa ispod i pogled naprijed",
@@ -301,6 +314,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Leg press": {
     description: "Sjedi na nožnu prešu, stopala na platformi u širini ramena. Otpusti sigurnosne poluge i kontrolirano spusti platformu savijanjem koljena do 90°. Potisni platformu natrag ne zaključavajući koljena potpuno.",
     musclesWorked: "Kvadriceps, gluteus, hamstringsi",
+    imageUrl: "https://images.unsplash.com/photo-1597347316205-36f6c451902a?w=400&h=300&fit=crop",
     tips: [
       "Donji dio leđa uvijek pritisnut uz naslon",
       "Ne zaključavaj koljena na vrhu",
@@ -314,6 +328,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   },
   "Romanian deadlift": {
     description: "Stani sa šipkom u rukama, stopala u širini kukova. Gurajući kukove natrag i držeći leđa ravna, spusti šipku niz noge dok ne osjetiš istezanje hamstringsa. Aktiviraj gluteuse i hamstringse da se vratiš u početni položaj.",
+    imageUrl: "https://images.unsplash.com/photo-1599058917765-a780eda07a3e?w=400&h=300&fit=crop",
     musclesWorked: "Hamstringsi, gluteus, erector spinae",
     tips: [
       "Šipka klizi niz noge - drži je blizu tijela",
@@ -329,6 +344,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Leg extension": {
     description: "Sjedi na spravu, stopala iza jastučića, koljena u ravnini s osi rotacije sprave. Ispruži noge kontrakcijom kvadricepsa, zadrži sekundu, kontrolirano spusti.",
     musclesWorked: "Kvadriceps (sva 4 glave)",
+    imageUrl: "https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400&h=300&fit=crop",
     tips: [
       "Kontroliraj cijeli opseg pokreta",
       "Stisni kvadriceps na vrhu",
@@ -342,6 +358,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   },
   "Leg curl": {
     description: "Lezi ili sjedi na spravu (ovisno o tipu), jastučić iznad peta. Savij koljena povlačeći pete prema stražnjici. Zadrži sekundu, kontrolirano vrati.",
+    imageUrl: "https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?w=400&h=300&fit=crop",
     musclesWorked: "Hamstringsi, gastrocnemius",
     tips: [
       "Kukovi ostaju na jastuku (ležeći varijanta)",
@@ -357,6 +374,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Hip thrust": {
     description: "Nasloni gornji dio leđa na klupu, šipku postavi preko kukova (koristi jastučić). Stopala na podu, koljena savijena 90°. Podigni kukove stiskajući gluteuse dok tijelo ne bude ravno od ramena do koljena. Kontrolirano spusti.",
     musclesWorked: "Gluteus maximus, hamstringsi",
+    imageUrl: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&h=300&fit=crop",
     tips: [
       "Brada prema prsima - ne zabacuj glavu",
       "Stisni gluteuse maksimalno na vrhu",
@@ -369,6 +387,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
     ]
   },
   "Bulgarian split squat": {
+    imageUrl: "https://images.unsplash.com/photo-1597347316205-36f6c451902a?w=400&h=300&fit=crop",
     description: "Stražnju nogu postavi na klupu iza sebe, prednja noga ispred. Spusti se savijanjem prednjeg koljena dok stražnje koljeno gotovo ne dodirne pod. Potisni se natrag gore kroz prednju petu.",
     musclesWorked: "Kvadriceps, gluteus, hamstringsi (unilateralno)",
     tips: [
@@ -385,6 +404,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Goblet squat": {
     description: "Drži bučicu ili kettlebell ispred prsa, laktovi prema dolje. Stopala u širini ramena ili šire. Spusti se u čučanj držeći prsa ispod, vrati se u početni položaj.",
     musclesWorked: "Kvadriceps, gluteus, core",
+    imageUrl: "https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?w=400&h=300&fit=crop",
     tips: [
       "Laktovi idu između koljena u donjem položaju",
       "Drži trup uspravno",
@@ -399,6 +419,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Calf raises": {
     description: "Stani na rub stepenice ili platforme, pete u zraku. Podigni se na prste maksimalno kontrakcijom listova. Kontrolirano spusti pete ispod razine platforme za puno istezanje.",
     musclesWorked: "Gastrocnemius, soleus",
+    imageUrl: "https://images.unsplash.com/photo-1434682881908-b43d0467b798?w=400&h=300&fit=crop",
     tips: [
       "Potpun opseg pokreta - gore do kraja, dolje do kraja",
       "Pauziraj sekundu na vrhu",
@@ -413,6 +434,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Step-ups": {
     description: "Stani ispred klupe ili kutije. Stavi jednu nogu na klupu i potisni se gore koristeći tu nogu. Kontrolirano se spusti istom nogom. Napravi sve ponavljanja jednom nogom, zatim promijeni.",
     musclesWorked: "Kvadriceps, gluteus, hamstringsi (unilateralno)",
+    imageUrl: "https://images.unsplash.com/photo-1601422407692-ec4eeec1d9b3?w=400&h=300&fit=crop",
     tips: [
       "Potiskuj se kroz petu gornje noge",
       "Ne odguruj se donjom nogom",
@@ -429,6 +451,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Triceps pushdown": {
     description: "Stani ispred kabela s užetom ili ravnom šipkom. Laktove drži uz tijelo, podlaktice ispruži potiskujući šipku/uže prema dolje. Zadrži sekundu, kontrolirano vrati.",
     musclesWorked: "Triceps (sve tri glave)",
+    imageUrl: "https://images.unsplash.com/photo-1530822847156-5df684ec5ee1?w=400&h=300&fit=crop",
     tips: [
       "Laktovi miruju uz tijelo cijelo vrijeme",
       "Potpuno ispruži ruke na dnu",
@@ -443,6 +466,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Triceps rope pushdown": {
     description: "Koristi uže na kabelu. Laktove drži fiksno uz tijelo. Potisni uže prema dolje razdvajajući krajeve na dnu za maksimalnu kontrakciju. Kontrolirano vrati.",
     musclesWorked: "Triceps (sve tri glave, naglasak na lateralnu)",
+    imageUrl: "https://images.unsplash.com/photo-1530822847156-5df684ec5ee1?w=400&h=300&fit=crop",
     tips: [
       "Razdvoji krajeve užeta na dnu pokreta",
       "Laktovi uz tijelo - ne smiju se micati",
@@ -457,6 +481,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Barbell curls": {
     description: "Stani uspravno, šipku drži podlaktičnim hvatom u širini ramena. Savij laktove podižući šipku prema ramenima. Kontrolirano spusti ne ljuljajući se.",
     musclesWorked: "Biceps brachii, brachialis",
+    imageUrl: "https://images.unsplash.com/photo-1581009146145-b5ef050c149a?w=400&h=300&fit=crop",
     tips: [
       "Laktovi miruju uz tijelo",
       "Ne ljuljaj se tijelom",
@@ -471,6 +496,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Biceps curls": {
     description: "Stani ili sjedi s bučicama u rukama, dlanovi naprijed. Savij laktove podižući bučice prema ramenima. Kontrolirano spusti.",
     musclesWorked: "Biceps brachii, brachialis",
+    imageUrl: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&h=300&fit=crop",
     tips: [
       "Supiniraj (rotiraj) dlan tijekom podizanja za bolju kontrakciju",
       "Laktovi miruju",
@@ -485,6 +511,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Dumbbell curls": {
     description: "Stani ili sjedi s bučicama u rukama. Dlanovi mogu biti okrenuti naprijed cijelo vrijeme ili se rotirati tijekom pokreta. Savij laktove do kraja, kontrolirano spusti.",
     musclesWorked: "Biceps brachii, brachialis, brachioradialis",
+    imageUrl: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&h=300&fit=crop",
     tips: [
       "Kontroliraj težinu - ne bacaj je",
       "Zadrži napetost i u donjem položaju",
@@ -499,6 +526,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Hammer curls": {
     description: "Stani s bučicama uz tijelo, dlanovi okrenuti jedan prema drugom (neutralni hvat). Savij laktove podižući bučice, drži neutralni položaj dlanova. Kontrolirano spusti.",
     musclesWorked: "Brachialis, brachioradialis, biceps",
+    imageUrl: "https://images.unsplash.com/photo-1581009146145-b5ef050c149a?w=400&h=300&fit=crop",
     tips: [
       "Dlanovi ostaju okrenuti jedan prema drugom cijelo vrijeme",
       "Laktovi fiksno uz tijelo",
@@ -515,6 +543,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Plank": {
     description: "Zauzmi položaj za sklekove, ali se osloni na podlaktice. Tijelo ravno od glave do peta - kao daska. Drži položaj ne dopuštajući kukovima da padnu ili se dignu.",
     musclesWorked: "Rectus abdominis, transverzus abdominis, kosi trbušni, erector spinae",
+    imageUrl: "https://images.unsplash.com/photo-1566241142559-40e1dab266c6?w=400&h=300&fit=crop",
     tips: [
       "Aktiviraj gluteuse za stabilnost",
       "Ne drži dah - diši normalno",
@@ -529,6 +558,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Side plank": {
     description: "Lezi na bok, osloni se na podlakticu. Podigni kukove da tijelo bude ravno. Drži položaj, zatim promijeni stranu.",
     musclesWorked: "Kosi trbušni mišići, quadratus lumborum",
+    imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
     tips: [
       "Kukovi u ravnini s ramenima i stopalima",
       "Gornja ruka na kuku ili ispružena gore",
@@ -543,6 +573,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Hanging leg raises": {
     description: "Visi na šipki, ruke ispružene. Podigni noge (ravne ili savijene) do horizontale ili više. Kontrolirano spusti.",
     musclesWorked: "Donji trbušni mišići, hip fleksori",
+    imageUrl: "https://images.unsplash.com/photo-1598971457999-ca4ef48a9a71?w=400&h=300&fit=crop",
     tips: [
       "Počni sa savijenim koljenima, napreduj do ravnih nogu",
       "Kontroliraj ljuljanje",
@@ -557,6 +588,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Cable crunch": {
     description: "Klekni ispred kabela, uže drži iza glave. Savij trup prema dolje kontrakcijom trbušnih mišića. Kontrolirano vrati u početni položaj.",
     musclesWorked: "Rectus abdominis",
+    imageUrl: "https://images.unsplash.com/photo-1571019613914-85f342c6a11e?w=400&h=300&fit=crop",
     tips: [
       "Pokreće se samo trup - kukovi miruju",
       "Zaokruži leđa, dovedi rebra prema kukovima",
@@ -573,6 +605,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Cable glute kickbacks": {
     description: "Pričvrsti manžetu na gležanj, stani nasuprot kabela. Povuci nogu natrag držeći koljeno blago savijeno. Stisni gluteus na vrhu, kontrolirano vrati.",
     musclesWorked: "Gluteus maximus",
+    imageUrl: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&h=300&fit=crop",
     tips: [
       "Drži core angažiran za stabilnost",
       "Ne zabacuj leđa - pokret ide iz kuka",
@@ -587,6 +620,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Hip abductions": {
     description: "Na spravi: sjedi s nogama unutar jastučića, gurni koljena prema van. Alternativno na kabelu: stani bočno, povuci nogu u stranu. Kontrolirano vrati.",
     musclesWorked: "Gluteus medius, gluteus minimus",
+    imageUrl: "https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?w=400&h=300&fit=crop",
     tips: [
       "Kontroliraj pokret u oba smjera",
       "Drži trup miran",
@@ -601,6 +635,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Reverse lunges": {
     description: "Stani uspravno. Napravi korak nazad jednom nogom i spusti se dok stražnje koljeno gotovo ne dodirne pod. Potisni se natrag u početni položaj kroz prednju petu.",
     musclesWorked: "Kvadriceps, gluteus, hamstringsi",
+    imageUrl: "https://images.unsplash.com/photo-1597347316205-36f6c451902a?w=400&h=300&fit=crop",
     tips: [
       "Trup uspravno cijelo vrijeme",
       "Prednje koljeno iznad gležnja",
@@ -615,6 +650,7 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
   "Leg press (wide stance)": {
     description: "Kao obična nožna preša, ali stopala visoko i široko na platformi. Prsti blago van. Ova pozicija više aktivira gluteuse i hamstringse.",
     musclesWorked: "Gluteus, hamstringsi, aduktori, kvadriceps",
+    imageUrl: "https://images.unsplash.com/photo-1597347316205-36f6c451902a?w=400&h=300&fit=crop",
     tips: [
       "Stopala visoko na platformi",
       "Širi stav od ramena",
@@ -1139,6 +1175,7 @@ function generateExerciseParams(
     tips: exerciseInfo?.tips,
     commonMistakes: exerciseInfo?.commonMistakes,
     alternatives: alternatives.length > 0 ? alternatives : undefined,
+    imageUrl: exerciseInfo?.imageUrl,
   };
 }
 
