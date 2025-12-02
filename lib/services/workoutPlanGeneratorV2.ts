@@ -47,6 +47,13 @@ export interface UserInputs {
   wantsPlyometrics: boolean;
 }
 
+export interface AlternativeExercise {
+  name: string;
+  nameHr: string;
+  equipment: string;
+  reason: string; // Razlog za zamjenu
+}
+
 export interface ExerciseParams {
   name: string;
   nameHr: string;
@@ -61,6 +68,7 @@ export interface ExerciseParams {
   musclesWorked?: string;
   tips?: string[];
   commonMistakes?: string[];
+  alternatives?: AlternativeExercise[];
 }
 
 export interface CardioSession {
@@ -621,6 +629,162 @@ const EXERCISE_DESCRIPTIONS: Record<string, {
 };
 
 // ============================================
+// ALTERNATIVE EXERCISES DATABASE
+// ============================================
+
+const ALTERNATIVE_EXERCISES: Record<string, AlternativeExercise[]> = {
+  // === PRSA ===
+  "Bench press": [
+    { name: "Dumbbell press", nameHr: "Potisak s bučicama", equipment: "dumbbells", reason: "Nema šipke ili želiš veći opseg pokreta" },
+    { name: "Push-ups", nameHr: "Sklekovi", equipment: "bodyweight", reason: "Nema opreme ili za zagrijavanje" },
+  ],
+  "Incline dumbbell press": [
+    { name: "Incline barbell press", nameHr: "Kosi potisak sa šipkom", equipment: "barbell", reason: "Preferiraš šipku" },
+    { name: "Incline push-ups", nameHr: "Kosi sklekovi (noge gore)", equipment: "bodyweight", reason: "Nema opreme" },
+  ],
+  "Cable chest fly": [
+    { name: "Dumbbell fly", nameHr: "Križa s bučicama", equipment: "dumbbells", reason: "Nema kabela" },
+    { name: "Pec deck machine", nameHr: "Pec deck sprava", equipment: "machine", reason: "Lakša kontrola pokreta" },
+  ],
+
+  // === RAMENA ===
+  "Overhead shoulder press": [
+    { name: "Dumbbell shoulder press", nameHr: "Potisak s bučicama za ramena", equipment: "dumbbells", reason: "Veća sloboda pokreta" },
+    { name: "Machine shoulder press", nameHr: "Potisak na spravi", equipment: "machine", reason: "Sigurnije za početnike" },
+  ],
+  "Shoulder press": [
+    { name: "Arnold press", nameHr: "Arnold potisak", equipment: "dumbbells", reason: "Više aktivacije prednjeg deltoida" },
+    { name: "Pike push-ups", nameHr: "Pike sklekovi", equipment: "bodyweight", reason: "Nema opreme" },
+  ],
+  "Lateral raises": [
+    { name: "Cable lateral raises", nameHr: "Odručenja na kabelu", equipment: "cable", reason: "Konstantna napetost" },
+    { name: "Machine lateral raises", nameHr: "Odručenja na spravi", equipment: "machine", reason: "Lakša izolacija" },
+  ],
+  "Face pull": [
+    { name: "Reverse fly", nameHr: "Obrnuta križa", equipment: "dumbbells", reason: "Nema kabela" },
+    { name: "Band pull-apart", nameHr: "Razdvajanje gume", equipment: "resistance-bands", reason: "Za mobilnost i zagrijavanje" },
+  ],
+
+  // === LEĐA ===
+  "Lat pulldown": [
+    { name: "Pull-ups", nameHr: "Zgibovi", equipment: "bodyweight", reason: "Naprednije, veća aktivacija" },
+    { name: "Assisted pull-ups", nameHr: "Asist. zgibovi", equipment: "machine", reason: "Ako ne možeš zgibove" },
+  ],
+  "Seated cable row": [
+    { name: "Dumbbell row", nameHr: "Veslanje s bučicom", equipment: "dumbbells", reason: "Unilateralno, veći opseg" },
+    { name: "Machine row", nameHr: "Veslanje na spravi", equipment: "machine", reason: "Nema kabela" },
+  ],
+  "T-bar row": [
+    { name: "Barbell row", nameHr: "Veslanje sa šipkom", equipment: "barbell", reason: "Nema T-bar" },
+    { name: "Chest supported row", nameHr: "Veslanje s podrškom prsa", equipment: "dumbbells", reason: "Manje opterećenje leđa" },
+  ],
+
+  // === NOGE ===
+  "Back squat": [
+    { name: "Goblet squat", nameHr: "Goblet čučanj", equipment: "dumbbell", reason: "Za učenje tehnike ili lakše" },
+    { name: "Leg press", nameHr: "Nožna preša", equipment: "machine", reason: "Problemi s leđima" },
+  ],
+  "Leg press": [
+    { name: "Hack squat", nameHr: "Hack čučanj", equipment: "machine", reason: "Više aktivacije kvadricepsa" },
+    { name: "Bulgarian split squat", nameHr: "Bugarski split čučanj", equipment: "dumbbells", reason: "Unilateralno, više stabilizacije" },
+  ],
+  "Romanian deadlift": [
+    { name: "Stiff leg deadlift", nameHr: "Mrtvo dizanje ravnih nogu", equipment: "barbell", reason: "Slična vježba, veće istezanje" },
+    { name: "Good mornings", nameHr: "Good mornings", equipment: "barbell", reason: "Više fokusa na leđa" },
+  ],
+  "Leg extension": [
+    { name: "Sissy squat", nameHr: "Sissy čučanj", equipment: "bodyweight", reason: "Nema sprave" },
+    { name: "Leg press (feet low)", nameHr: "Nožna preša (stopala nisko)", equipment: "machine", reason: "Ako je zauzeta sprava" },
+  ],
+  "Leg curl": [
+    { name: "Nordic curl", nameHr: "Nordijski pregib", equipment: "bodyweight", reason: "Napredna alternativa bez sprave" },
+    { name: "Stability ball curl", nameHr: "Pregib na lopti", equipment: "stability-ball", reason: "Za dom ili putovanje" },
+  ],
+  "Hip thrust": [
+    { name: "Glute bridge", nameHr: "Most za gluteuse", equipment: "bodyweight/barbell", reason: "Lakše ili za zagrijavanje" },
+    { name: "Cable pull-through", nameHr: "Provlačenje kabela", equipment: "cable", reason: "Ako je zauzeta klupa" },
+  ],
+  "Bulgarian split squat": [
+    { name: "Reverse lunges", nameHr: "Iskoraci unatrag", equipment: "dumbbells", reason: "Lakše za balans" },
+    { name: "Step-ups", nameHr: "Step-up na klupu", equipment: "dumbbells", reason: "Manje zahtjevno za koljeno" },
+  ],
+  "Goblet squat": [
+    { name: "Bodyweight squat", nameHr: "Čučanj bez utega", equipment: "bodyweight", reason: "Za zagrijavanje" },
+    { name: "Sumo squat", nameHr: "Sumo čučanj", equipment: "dumbbell", reason: "Više aduktora i gluteusa" },
+  ],
+  "Calf raises": [
+    { name: "Single leg calf raise", nameHr: "Podizanje jednom nogom", equipment: "bodyweight", reason: "Unilateralno, teže" },
+    { name: "Donkey calf raise", nameHr: "Donkey podizanje", equipment: "machine", reason: "Veće istezanje" },
+  ],
+  "Step-ups": [
+    { name: "Lunges", nameHr: "Iskoraci", equipment: "dumbbells", reason: "Dinamičnija vježba" },
+    { name: "Box jumps", nameHr: "Skokovi na kutiju", equipment: "box", reason: "Za eksplozivnost" },
+  ],
+
+  // === RUKE ===
+  "Triceps pushdown": [
+    { name: "Overhead triceps extension", nameHr: "Triceps ekstenzija iznad glave", equipment: "cable/dumbbell", reason: "Više dugog dela tricepsa" },
+    { name: "Dips", nameHr: "Propadanja", equipment: "bodyweight", reason: "Compound alternativa" },
+  ],
+  "Triceps rope pushdown": [
+    { name: "Triceps pushdown (bar)", nameHr: "Triceps potisak (šipka)", equipment: "cable", reason: "Nema užeta" },
+    { name: "Close grip push-ups", nameHr: "Uski sklekovi", equipment: "bodyweight", reason: "Nema opreme" },
+  ],
+  "Barbell curls": [
+    { name: "Dumbbell curls", nameHr: "Pregib s bučicama", equipment: "dumbbells", reason: "Veća sloboda pokreta" },
+    { name: "Preacher curl", nameHr: "Pregib na klupi", equipment: "barbell/dumbbells", reason: "Bolja izolacija" },
+  ],
+  "Biceps curls": [
+    { name: "Hammer curls", nameHr: "Hammer pregib", equipment: "dumbbells", reason: "Više brachialisa" },
+    { name: "Concentration curl", nameHr: "Koncentracijski pregib", equipment: "dumbbell", reason: "Maksimalna izolacija" },
+  ],
+  "Dumbbell curls": [
+    { name: "Cable curls", nameHr: "Pregib na kabelu", equipment: "cable", reason: "Konstantna napetost" },
+    { name: "Chin-ups", nameHr: "Zgibovi podlaktičnim hvatom", equipment: "bodyweight", reason: "Compound alternativa" },
+  ],
+  "Hammer curls": [
+    { name: "Cross body hammer curl", nameHr: "Dijagonalni hammer", equipment: "dumbbells", reason: "Više brachioradialisa" },
+    { name: "Rope cable curl", nameHr: "Pregib s užetom", equipment: "cable", reason: "Konstantna napetost" },
+  ],
+
+  // === CORE ===
+  "Plank": [
+    { name: "Dead bug", nameHr: "Mrtva buba", equipment: "bodyweight", reason: "Lakše za početnike" },
+    { name: "Ab wheel rollout", nameHr: "Kotačić za trbušnjake", equipment: "ab-wheel", reason: "Naprednije" },
+  ],
+  "Side plank": [
+    { name: "Pallof press", nameHr: "Pallof potisak", equipment: "cable", reason: "Dinamičnija anti-rotacija" },
+    { name: "Suitcase carry", nameHr: "Nošenje kovčega", equipment: "dumbbell", reason: "Funkcionalno" },
+  ],
+  "Hanging leg raises": [
+    { name: "Lying leg raises", nameHr: "Podizanje nogu ležeći", equipment: "bodyweight", reason: "Lakše, nema šipke" },
+    { name: "Captain's chair", nameHr: "Kapetanova stolica", equipment: "machine", reason: "Stabilniji oslonac" },
+  ],
+  "Cable crunch": [
+    { name: "Weighted crunch", nameHr: "Crunch s utegom", equipment: "dumbbell", reason: "Nema kabela" },
+    { name: "Decline sit-up", nameHr: "Sit-up na koso", equipment: "bench", reason: "Za veći opseg pokreta" },
+  ],
+
+  // === GLUTEUS SPECIFIČNE ===
+  "Cable glute kickbacks": [
+    { name: "Donkey kicks", nameHr: "Magarci udarci", equipment: "bodyweight", reason: "Nema kabela" },
+    { name: "Glute kickback machine", nameHr: "Sprava za kickback", equipment: "machine", reason: "Lakša stabilizacija" },
+  ],
+  "Hip abductions": [
+    { name: "Banded clamshells", nameHr: "Školjke s gumicom", equipment: "resistance-bands", reason: "Za dom ili zagrijavanje" },
+    { name: "Fire hydrants", nameHr: "Vatrogasci", equipment: "bodyweight", reason: "Bez opreme" },
+  ],
+  "Reverse lunges": [
+    { name: "Walking lunges", nameHr: "Hodajući iskoraci", equipment: "dumbbells", reason: "Dinamičnije" },
+    { name: "Curtsy lunge", nameHr: "Naklon iskorak", equipment: "dumbbells", reason: "Više gluteus mediusa" },
+  ],
+  "Leg press (wide stance)": [
+    { name: "Sumo deadlift", nameHr: "Sumo mrtvo dizanje", equipment: "barbell", reason: "Slobodni utezi umjesto sprave" },
+    { name: "Wide stance goblet squat", nameHr: "Široki goblet čučanj", equipment: "dumbbell", reason: "Bez sprave" },
+  ],
+};
+
+// ============================================
 // EXERCISE DATABASES
 // ============================================
 
@@ -957,6 +1121,9 @@ function generateExerciseParams(
 
   // Dohvati opis vježbe iz baze opisa
   const exerciseInfo = EXERCISE_DESCRIPTIONS[exercise.name];
+  
+  // Dohvati alternativne vježbe
+  const alternatives = ALTERNATIVE_EXERCISES[exercise.name] || [];
 
   return {
     name: exercise.name,
@@ -971,6 +1138,7 @@ function generateExerciseParams(
     musclesWorked: exerciseInfo?.musclesWorked,
     tips: exerciseInfo?.tips,
     commonMistakes: exerciseInfo?.commonMistakes,
+    alternatives: alternatives.length > 0 ? alternatives : undefined,
   };
 }
 

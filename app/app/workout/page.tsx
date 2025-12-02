@@ -4,6 +4,13 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Tipovi
+interface AlternativeExercise {
+  name: string;
+  nameHr: string;
+  equipment: string;
+  reason: string;
+}
+
 interface ExerciseParams {
   name: string;
   nameHr: string;
@@ -17,6 +24,7 @@ interface ExerciseParams {
   musclesWorked?: string;
   tips?: string[];
   commonMistakes?: string[];
+  alternatives?: AlternativeExercise[];
 }
 
 interface CardioSession {
@@ -723,6 +731,29 @@ export default function WorkoutPage() {
                         </li>
                       ))}
                     </ul>
+                  </div>
+                )}
+
+                {/* Alternativne vježbe */}
+                {selectedExercise.alternatives && selectedExercise.alternatives.length > 0 && (
+                  <div>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">🔄 Alternativne vježbe</p>
+                    <div className="space-y-2">
+                      {selectedExercise.alternatives.map((alt, idx) => (
+                        <div 
+                          key={idx} 
+                          className="p-3 bg-gradient-to-r from-slate-800 to-slate-800/50 rounded-xl border border-slate-700 hover:border-violet-500/50 transition-colors"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="text-white font-medium">{alt.nameHr}</p>
+                              <p className="text-xs text-slate-500">{alt.equipment}</p>
+                            </div>
+                          </div>
+                          <p className="text-xs text-violet-400 mt-2">💡 {alt.reason}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
