@@ -65,6 +65,7 @@ interface WeeklyMealPlan {
     avgCarbs: number;
     avgFat: number;
   };
+  supplementNote?: string;
 }
 
 // Upute za pripremu - ažurirano za nova profesionalna imena
@@ -226,23 +227,31 @@ export default function MealsPage() {
   }, [clientId]);
 
     return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-950">
       {/* Top Navigation Bar */}
-      <div className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
+      <div className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800">
         <div className="mx-auto max-w-4xl px-4 py-3 flex items-center justify-between">
           <a 
             href="/app" 
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             <span className="text-sm font-medium">Natrag</span>
           </a>
+          
+          {/* CORPEX Logo */}
+          <div className="absolute left-1/2 -translate-x-1/2">
+            <span className="text-xl font-black tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-purple-500">
+              CORPEX
+            </span>
+          </div>
+          
           <div className="flex items-center gap-3">
-            <a href="/app" className="text-xs text-gray-500 hover:text-gray-700">Početna</a>
-            <span className="text-gray-300">|</span>
-            <a href="/app/profile" className="text-xs text-gray-500 hover:text-gray-700">Profil</a>
+            <a href="/app" className="text-xs text-slate-500 hover:text-slate-300">Početna</a>
+            <span className="text-slate-700">|</span>
+            <a href="/app/profile" className="text-xs text-slate-500 hover:text-slate-300">Profil</a>
       </div>
         </div>
       </div>
@@ -251,13 +260,13 @@ export default function MealsPage() {
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Tjedni Plan Prehrane</h1>
-            <p className="text-sm text-gray-500 mt-1">Personalizirani plan sa 5 obroka dnevno</p>
+            <h1 className="text-2xl font-bold text-white">Tjedni Plan Prehrane</h1>
+            <p className="text-sm text-slate-400 mt-1">Personalizirani plan sa 6 obroka dnevno</p>
             </div>
             <button
             onClick={generateWeeklyPlan}
             disabled={loading}
-            className="px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-colors"
+            className="px-5 py-2.5 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-500 disabled:opacity-50 transition-colors shadow-lg shadow-violet-500/20"
             >
             {loading ? "Generiram..." : "Novi plan"}
             </button>
@@ -265,16 +274,16 @@ export default function MealsPage() {
 
         {/* Error */}
         {error && (
-          <div className="mb-6 p-4 bg-gray-100 border border-gray-200 rounded-lg">
-            <p className="text-gray-700 text-sm">{error}</p>
+          <div className="mb-6 p-4 bg-red-900/30 border border-red-800 rounded-lg">
+            <p className="text-red-300 text-sm">{error}</p>
           </div>
         )}
 
         {/* Loading */}
         {loading && !weeklyPlan && (
           <div className="text-center py-16">
-            <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-gray-900"></div>
-            <p className="mt-3 text-gray-500 text-sm">Generiram tvoj plan prehrane...</p>
+            <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-slate-700 border-t-violet-500"></div>
+            <p className="mt-3 text-slate-400 text-sm">Generiram tvoj plan prehrane...</p>
           </div>
         )}
 
@@ -282,15 +291,15 @@ export default function MealsPage() {
         {weeklyPlan && (
           <>
             {/* Ciljevi */}
-            <div className="mb-4 p-4 bg-white border border-gray-200 rounded-lg">
+            <div className="mb-4 p-4 bg-slate-800/50 border border-slate-700 rounded-xl">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-gray-400 uppercase tracking-wide">Dnevni ciljevi</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wide">Dnevni ciljevi</p>
                 <span className={`text-xs px-2 py-1 rounded-full ${
                   weeklyPlan.userTargets.goal === 'lose' 
-                    ? 'bg-blue-100 text-blue-700' 
+                    ? 'bg-blue-900/50 text-blue-400 border border-blue-800' 
                     : weeklyPlan.userTargets.goal === 'gain' 
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-100 text-gray-700'
+                    ? 'bg-violet-900/50 text-violet-400 border border-violet-800'
+                    : 'bg-slate-700 text-slate-300'
                 }`}>
                   {weeklyPlan.userTargets.goal === 'lose' ? '🎯 Skidanje kila' : 
                    weeklyPlan.userTargets.goal === 'gain' ? '💪 Dobivanje mišića' : 
@@ -299,16 +308,16 @@ export default function MealsPage() {
               </div>
               <div className="flex gap-6 text-sm">
                 <div>
-                  <span className="font-semibold text-gray-900">{weeklyPlan.userTargets.calories}</span> <span className="text-gray-500">kcal</span>
+                  <span className="font-semibold text-white">{weeklyPlan.userTargets.calories}</span> <span className="text-slate-400">kcal</span>
                   {(weeklyPlan.days[selectedDay]?.dailyTotals as any)?.deviation && (
                     <div className="text-xs mt-0.5">
-                      <span className="text-gray-500">Ostvareno: </span>
+                      <span className="text-slate-500">Ostvareno: </span>
                       <span className={`font-medium ${
                         Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories) <= 5
-                          ? 'text-green-600'
+                          ? 'text-violet-400'
                           : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories) <= 10
-                          ? 'text-yellow-600'
-                          : 'text-red-600'
+                          ? 'text-amber-400'
+                          : 'text-red-400'
                       }`}>
                         {weeklyPlan.days[selectedDay].dailyTotals.calories} kcal
                         ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories > 0 ? '+' : ''}
@@ -318,16 +327,16 @@ export default function MealsPage() {
                   )}
                 </div>
                 <div>
-                  <span className="font-semibold text-gray-900">{weeklyPlan.userTargets.protein}g</span> <span className="text-gray-500">proteina</span>
+                  <span className="font-semibold text-white">{weeklyPlan.userTargets.protein}g</span> <span className="text-slate-400">proteina</span>
                   {(weeklyPlan.days[selectedDay]?.dailyTotals as any)?.deviation && (
                     <div className="text-xs mt-0.5">
-                      <span className="text-gray-500">Ostvareno: </span>
+                      <span className="text-slate-500">Ostvareno: </span>
                       <span className={`font-medium ${
                         Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein) <= 5
-                          ? 'text-green-600'
+                          ? 'text-violet-400'
                           : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein) <= 10
-                          ? 'text-yellow-600'
-                          : 'text-red-600'
+                          ? 'text-amber-400'
+                          : 'text-red-400'
                       }`}>
                         {weeklyPlan.days[selectedDay].dailyTotals.protein}g
                         ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein > 0 ? '+' : ''}
@@ -337,16 +346,16 @@ export default function MealsPage() {
                   )}
                 </div>
                 <div>
-                  <span className="font-semibold text-gray-900">{weeklyPlan.userTargets.carbs}g</span> <span className="text-gray-500">UH</span>
+                  <span className="font-semibold text-white">{weeklyPlan.userTargets.carbs}g</span> <span className="text-slate-400">UH</span>
                   {(weeklyPlan.days[selectedDay]?.dailyTotals as any)?.deviation && (
                     <div className="text-xs mt-0.5">
-                      <span className="text-gray-500">Ostvareno: </span>
+                      <span className="text-slate-500">Ostvareno: </span>
                       <span className={`font-medium ${
                         Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs) <= 5
-                          ? 'text-green-600'
+                          ? 'text-violet-400'
                           : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs) <= 10
-                          ? 'text-yellow-600'
-                          : 'text-red-600'
+                          ? 'text-amber-400'
+                          : 'text-red-400'
                       }`}>
                         {weeklyPlan.days[selectedDay].dailyTotals.carbs}g
                         ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs > 0 ? '+' : ''}
@@ -356,16 +365,16 @@ export default function MealsPage() {
                   )}
                 </div>
                 <div>
-                  <span className="font-semibold text-gray-900">{weeklyPlan.userTargets.fat}g</span> <span className="text-gray-500">masti</span>
+                  <span className="font-semibold text-white">{weeklyPlan.userTargets.fat}g</span> <span className="text-slate-400">masti</span>
                   {(weeklyPlan.days[selectedDay]?.dailyTotals as any)?.deviation && (
                     <div className="text-xs mt-0.5">
-                      <span className="text-gray-500">Ostvareno: </span>
+                      <span className="text-slate-500">Ostvareno: </span>
                       <span className={`font-medium ${
                         Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat) <= 5
-                          ? 'text-green-600'
+                          ? 'text-violet-400'
                           : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat) <= 10
-                          ? 'text-yellow-600'
-                          : 'text-red-600'
+                          ? 'text-amber-400'
+                          : 'text-red-400'
                       }`}>
                         {weeklyPlan.days[selectedDay].dailyTotals.fat}g
                         ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat > 0 ? '+' : ''}
@@ -379,16 +388,16 @@ export default function MealsPage() {
 
             {/* Napomena za cilj */}
             {weeklyPlan.goalNote && (
-              <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <div className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+              <div className="mb-6 p-4 bg-slate-800/50 border border-slate-700 rounded-xl">
+                <div className="text-sm text-slate-300 whitespace-pre-line leading-relaxed">
                   {weeklyPlan.goalNote}
                 </div>
               </div>
             )}
 
             {/* Napomena o odstupanju */}
-            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="text-sm text-yellow-800 whitespace-pre-line leading-relaxed">
+            <div className="mb-6 p-4 bg-amber-900/20 border border-amber-800/50 rounded-xl">
+              <div className="text-sm text-amber-200/80 whitespace-pre-line leading-relaxed">
                 ℹ️ Napomena: Stvarni dnevni unos može odstupati do ±15% od zadanih ciljeva zbog realističnih ograničenja porcija i dostupnih kombinacija namirnica. Generator optimizira plan da bude što bliže ciljevima uz održavanje raznolikosti i realističnih obroka.
         </div>
       </div>
@@ -401,8 +410,8 @@ export default function MealsPage() {
                   onClick={() => setSelectedDay(index)}
                   className={`px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-all ${
                     selectedDay === index
-                      ? "bg-gray-900 text-white"
-                      : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+                      ? "bg-violet-600 text-white shadow-lg shadow-violet-500/20"
+                      : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white border border-slate-700"
                   }`}
                 >
                   {day.dayName}
@@ -423,19 +432,19 @@ export default function MealsPage() {
                   {/* Dan header */}
                   <div className="flex justify-between items-center py-3 mb-4">
             <div>
-                      <h2 className="text-lg font-semibold text-gray-900">{weeklyPlan.days[selectedDay].dayName}</h2>
-                      <p className="text-xs text-gray-400">{weeklyPlan.days[selectedDay].date}</p>
+                      <h2 className="text-lg font-semibold text-white">{weeklyPlan.days[selectedDay].dayName}</h2>
+                      <p className="text-xs text-slate-500">{weeklyPlan.days[selectedDay].date}</p>
             </div>
                     <div className="text-right">
                       <div className="flex items-center gap-2">
-                        <p className="text-lg font-semibold text-gray-900">{weeklyPlan.days[selectedDay].dailyTotals.calories} kcal</p>
+                        <p className="text-lg font-semibold text-white">{weeklyPlan.days[selectedDay].dailyTotals.calories} kcal</p>
                         {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation && (
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                             Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories) <= 5
-                              ? 'bg-green-100 text-green-700'
+                              ? 'bg-violet-900/50 text-violet-400'
                               : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories) <= 10
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-red-100 text-red-700'
+                              ? 'bg-amber-900/50 text-amber-400'
+                              : 'bg-red-900/50 text-red-400'
                           }`}>
                             {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories > 0 ? '+' : ''}
                             {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories.toFixed(1)}%
@@ -443,56 +452,56 @@ export default function MealsPage() {
                         )}
             </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-slate-500">
                           P: {weeklyPlan.days[selectedDay].dailyTotals.protein}g
                           {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation && (
                             <span className={`ml-1 ${
                               Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein) <= 5
-                                ? 'text-green-600'
+                                ? 'text-violet-400'
                                 : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein) <= 10
-                                ? 'text-yellow-600'
-                                : 'text-red-600'
+                                ? 'text-amber-400'
+                                : 'text-red-400'
                             }`}>
                               ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein > 0 ? '+' : ''}
                               {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein.toFixed(1)}%)
                             </span>
                           )}
                         </p>
-                        <span className="text-gray-300">·</span>
-                        <p className="text-xs text-gray-400">
+                        <span className="text-slate-600">·</span>
+                        <p className="text-xs text-slate-500">
                           C: {weeklyPlan.days[selectedDay].dailyTotals.carbs}g
                           {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation && (
                             <span className={`ml-1 ${
                               Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs) <= 5
-                                ? 'text-green-600'
+                                ? 'text-violet-400'
                                 : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs) <= 10
-                                ? 'text-yellow-600'
-                                : 'text-red-600'
+                                ? 'text-amber-400'
+                                : 'text-red-400'
                             }`}>
                               ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs > 0 ? '+' : ''}
                               {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs.toFixed(1)}%)
                             </span>
                           )}
                         </p>
-                        <span className="text-gray-300">·</span>
-                        <p className="text-xs text-gray-400">
+                        <span className="text-slate-600">·</span>
+                        <p className="text-xs text-slate-500">
                           F: {weeklyPlan.days[selectedDay].dailyTotals.fat}g
                           {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation && (
                             <span className={`ml-1 ${
                               Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat) <= 5
-                                ? 'text-green-600'
+                                ? 'text-violet-400'
                                 : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat) <= 10
-                                ? 'text-yellow-600'
-                                : 'text-red-600'
+                                ? 'text-amber-400'
+                                : 'text-red-400'
                             }`}>
                               ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat > 0 ? '+' : ''}
                               {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat.toFixed(1)}%)
                             </span>
                           )}
                         </p>
-            </div>
-          </div>
-      </div>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Grid obroka */}
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -540,15 +549,30 @@ export default function MealsPage() {
             </AnimatePresence>
 
             {/* Tjedni prosjek */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Tjedni prosjek</p>
+            <div className="mt-8 pt-6 border-t border-slate-800">
+              <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Tjedni prosjek</p>
               <div className="flex gap-6 text-sm">
-                <div><span className="font-semibold text-gray-900">{weeklyPlan.weeklyTotals.avgCalories}</span> <span className="text-gray-500">kcal</span></div>
-                <div><span className="font-semibold text-gray-900">{weeklyPlan.weeklyTotals.avgProtein}g</span> <span className="text-gray-500">P</span></div>
-                <div><span className="font-semibold text-gray-900">{weeklyPlan.weeklyTotals.avgCarbs}g</span> <span className="text-gray-500">C</span></div>
-                <div><span className="font-semibold text-gray-900">{weeklyPlan.weeklyTotals.avgFat}g</span> <span className="text-gray-500">F</span></div>
-          </div>
+                <div><span className="font-semibold text-white">{weeklyPlan.weeklyTotals.avgCalories}</span> <span className="text-slate-500">kcal</span></div>
+                <div><span className="font-semibold text-white">{weeklyPlan.weeklyTotals.avgProtein}g</span> <span className="text-slate-500">P</span></div>
+                <div><span className="font-semibold text-white">{weeklyPlan.weeklyTotals.avgCarbs}g</span> <span className="text-slate-500">C</span></div>
+                <div><span className="font-semibold text-white">{weeklyPlan.weeklyTotals.avgFat}g</span> <span className="text-slate-500">F</span></div>
+              </div>
             </div>
+            
+            {/* Napomena o suplementaciji */}
+            {weeklyPlan.supplementNote && (
+              <div className="mt-6 p-4 bg-gradient-to-r from-violet-900/30 to-purple-900/30 rounded-xl border border-violet-800/50">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">💪</span>
+                  <div>
+                    <p className="text-sm font-medium text-violet-400 mb-1">Napomena o suplementaciji</p>
+                    <p className="text-sm text-violet-200/80">
+                      Između obroka i nakon treninga, sukladno vlastitim potrebama, preporuča se konzumacija <strong className="text-violet-300">whey proteina</strong> kao suplementacije i dodatka prehrani - miješati s vodom.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -563,7 +587,7 @@ export default function MealsPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
               onClick={() => setSelectedMeal(null)}
             />
             
@@ -578,20 +602,20 @@ export default function MealsPage() {
                 damping: 25,
                 mass: 0.8
               }}
-              className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-lg md:max-h-[85vh] bg-white rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col"
+              className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-lg md:max-h-[85vh] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl shadow-black/50 z-50 overflow-hidden flex flex-col"
             >
               {/* Modal Header */}
-              <div className="p-5 border-b border-gray-100">
+              <div className="p-5 border-b border-slate-800">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wide">{selectedMeal.title}</p>
-                    <h3 className="text-xl font-semibold text-gray-900 mt-1">{selectedMeal.meal.name}</h3>
+                    <p className="text-xs text-violet-500 uppercase tracking-wide font-medium">{selectedMeal.title}</p>
+                    <h3 className="text-xl font-semibold text-white mt-1">{selectedMeal.meal.name}</h3>
                   </div>
         <button
                     onClick={() => setSelectedMeal(null)}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700 transition-colors"
         >
-                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
         </button>
@@ -601,7 +625,7 @@ export default function MealsPage() {
               {/* Modal Body - Scrollable */}
               <div className="flex-1 overflow-y-auto p-5 space-y-5">
                 {/* Slika jela */}
-                <div className="w-full h-48 bg-gray-100 rounded-xl overflow-hidden">
+                <div className="w-full h-48 bg-slate-800 rounded-xl overflow-hidden">
                   {selectedMeal.meal.image ? (
                     <img 
                       src={selectedMeal.meal.image} 
@@ -610,7 +634,7 @@ export default function MealsPage() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <svg className="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-16 h-16 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
@@ -619,27 +643,27 @@ export default function MealsPage() {
 
       {/* Makroi */}
                 <div className="grid grid-cols-4 gap-3">
-                  <div className="text-center p-3 bg-gray-50 rounded-xl">
-                    <p className="text-xl font-bold text-gray-900">{selectedMeal.meal.totals.calories}</p>
-                    <p className="text-xs text-gray-500">kcal</p>
+                  <div className="text-center p-3 bg-slate-800 rounded-xl border border-slate-700">
+                    <p className="text-xl font-bold text-white">{selectedMeal.meal.totals.calories}</p>
+                    <p className="text-xs text-slate-500">kcal</p>
         </div>
-                  <div className="text-center p-3 bg-gray-50 rounded-xl">
-                    <p className="text-xl font-bold text-gray-900">{selectedMeal.meal.totals.protein}g</p>
-                    <p className="text-xs text-gray-500">Proteini</p>
+                  <div className="text-center p-3 bg-slate-800 rounded-xl border border-slate-700">
+                    <p className="text-xl font-bold text-violet-400">{selectedMeal.meal.totals.protein}g</p>
+                    <p className="text-xs text-slate-500">Proteini</p>
         </div>
-                  <div className="text-center p-3 bg-gray-50 rounded-xl">
-                    <p className="text-xl font-bold text-gray-900">{selectedMeal.meal.totals.carbs}g</p>
-                    <p className="text-xs text-gray-500">UH</p>
+                  <div className="text-center p-3 bg-slate-800 rounded-xl border border-slate-700">
+                    <p className="text-xl font-bold text-amber-400">{selectedMeal.meal.totals.carbs}g</p>
+                    <p className="text-xs text-slate-500">UH</p>
         </div>
-                  <div className="text-center p-3 bg-gray-50 rounded-xl">
-                    <p className="text-xl font-bold text-gray-900">{selectedMeal.meal.totals.fat}g</p>
-                    <p className="text-xs text-gray-500">Masti</p>
+                  <div className="text-center p-3 bg-slate-800 rounded-xl border border-slate-700">
+                    <p className="text-xl font-bold text-rose-400">{selectedMeal.meal.totals.fat}g</p>
+                    <p className="text-xs text-slate-500">Masti</p>
         </div>
       </div>
 
                 {/* Sastojci */}
                 <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">Sastojci</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">Sastojci</p>
                   <div className="space-y-2">
                     {selectedMeal.meal.components.map((comp, idx) => (
                       <motion.div
@@ -647,10 +671,10 @@ export default function MealsPage() {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.1 + idx * 0.05 }}
-                        className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg"
+                        className="flex justify-between items-center py-2 px-3 bg-slate-800/50 rounded-lg border border-slate-700/50"
                       >
-                        <span className="text-gray-700">{comp.name}</span>
-                        <span className="text-gray-900 font-semibold tabular-nums">{formatAmount(comp.name, comp.grams)}</span>
+                        <span className="text-slate-300">{comp.name}</span>
+                        <span className="text-white font-semibold tabular-nums">{formatAmount(comp.name, comp.grams)}</span>
                       </motion.div>
                     ))}
               </div>
@@ -659,8 +683,8 @@ export default function MealsPage() {
                 {/* Opis jela */}
                 {selectedMeal.meal.description && (
                   <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">O jelu</p>
-                    <p className="text-gray-600 leading-relaxed text-sm">
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">O jelu</p>
+                    <p className="text-slate-400 leading-relaxed text-sm">
                       {selectedMeal.meal.description}
                     </p>
         </div>
@@ -668,8 +692,8 @@ export default function MealsPage() {
 
                 {/* Priprema */}
                 <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">Priprema</p>
-                  <p className="text-gray-600 leading-relaxed text-sm">
+                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">Priprema</p>
+                  <p className="text-slate-400 leading-relaxed text-sm">
                     {selectedMeal.meal.preparationTip || getPreparationInstructions(selectedMeal.meal.name)}
                   </p>
                 </div>
@@ -694,29 +718,29 @@ function MealTile({ title, meal, onClick, delay }: { title: string; meal: Genera
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-lg hover:border-gray-300 transition-shadow"
+      className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 cursor-pointer hover:bg-slate-800 hover:border-slate-600 hover:shadow-xl hover:shadow-violet-500/5 transition-all"
     >
       {/* Slika jela */}
-      <div className="w-full h-24 bg-gray-100 rounded-lg mb-3 overflow-hidden">
+      <div className="w-full h-24 bg-slate-900 rounded-lg mb-3 overflow-hidden">
         {meal.image ? (
           <img 
             src={meal.image} 
             alt={meal.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity"
             loading="lazy"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-8 h-8 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
         )}
       </div>
       
-      <p className="text-xs text-gray-400 uppercase tracking-wide">{title}</p>
-      <p className="font-medium text-gray-900 text-sm mt-0.5 line-clamp-2">{meal.name}</p>
-      <p className="text-xs text-gray-500 mt-1">{meal.totals.calories} kcal</p>
+      <p className="text-xs text-violet-500 uppercase tracking-wide font-medium">{title}</p>
+      <p className="font-medium text-white text-sm mt-0.5 line-clamp-2">{meal.name}</p>
+      <p className="text-xs text-slate-400 mt-1">{meal.totals.calories} kcal</p>
     </motion.div>
   );
 }

@@ -105,6 +105,7 @@ interface WeeklyMealPlan {
     avgCarbs: number;
     avgFat: number;
   };
+  supplementNote: string;
 }
 
 interface UserPreferences {
@@ -1641,6 +1642,9 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
   console.log(`📊 Tjedni prosjek: ${weeklyTotals.avgCalories} kcal, P: ${weeklyTotals.avgProtein}g, C: ${weeklyTotals.avgCarbs}g, F: ${weeklyTotals.avgFat}g`);
   console.log(`🎯 Target: ${calculations.targetCalories} kcal, P: ${calculations.targetProtein}g, C: ${calculations.targetCarbs}g, F: ${calculations.targetFat}g`);
 
+  // Napomena o suplementaciji
+  const supplementNote = "💪 NAPOMENA: Između obroka i nakon treninga, sukladno vlastitim potrebama, preporuča se konzumacija whey proteina kao suplementacije i dodatka prehrani - miješati s vodom.";
+
   return {
     userId,
     generatedAt: new Date().toISOString(),
@@ -1654,6 +1658,7 @@ export async function generateWeeklyMealPlan(userId: string): Promise<WeeklyMeal
     },
     days,
     weeklyTotals,
+    supplementNote,
   };
 }
 
