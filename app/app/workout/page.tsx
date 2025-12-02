@@ -89,15 +89,15 @@ interface AvailableProgram {
   description: string;
 }
 
-// Ikone za tipove dana
-const dayTypeIcons: Record<string, string> = {
-  "Push": "🏋️",
-  "Pull": "💪",
-  "Legs": "🦵",
-  "Upper": "👆",
-  "Lower": "👇",
-  "Full Body A": "🔥",
-  "Full Body B": "⚡",
+// Oznake za tipove dana (za buduću uporabu)
+const _dayTypeLabels: Record<string, string> = {
+  "Push": "P",
+  "Pull": "L",
+  "Legs": "N",
+  "Upper": "G",
+  "Lower": "D",
+  "Full Body A": "A",
+  "Full Body B": "B",
   "Glute dominant": "🍑",
   "Legs mix": "🦿",
   "cardio": "🏃",
@@ -503,7 +503,6 @@ export default function WorkoutPage() {
                         : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white border border-slate-700"
                     }`}
                   >
-                    <span className="mr-1">{dayTypeIcons[day.splitName || day.type] || "📅"}</span>
                     {day.dayName}
                   </motion.button>
                 ))}
@@ -522,11 +521,10 @@ export default function WorkoutPage() {
                     {/* Dan header */}
                     <div className="flex justify-between items-center py-3 mb-4">
                       <div>
-                        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                          <span className="text-2xl">{dayTypeIcons[workoutPlan.days[selectedDay].splitName || "strength"]}</span>
+                        <h2 className="text-lg font-semibold text-white">
                           {workoutPlan.days[selectedDay].splitName || workoutPlan.days[selectedDay].type}
                         </h2>
-                        <p className="text-xs text-slate-500">{workoutPlan.days[selectedDay].dayName}</p>
+                        <p className="text-xs text-slate-500">{workoutPlan.days[selectedDay].dayName} • {workoutPlan.days[selectedDay].estimatedDuration} min</p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm text-white font-medium">~{workoutPlan.days[selectedDay].estimatedDuration} min</p>
@@ -566,19 +564,19 @@ export default function WorkoutPage() {
                     {workoutPlan.days[selectedDay].cardio && (
                       <div className="mb-6">
                         <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">Cardio</p>
-                        <div className="p-4 bg-gradient-to-r from-blue-900/30 to-cyan-900/30 rounded-xl border border-blue-800/50">
-                          <div className="flex items-center gap-3 mb-2">
-                            <span className="text-2xl">🏃</span>
+                        <div className="p-4 bg-slate-800/60 rounded-xl border border-slate-700/50">
+                          <div className="flex justify-between items-start">
                             <div>
                               <p className="text-white font-medium capitalize">
-                                {workoutPlan.days[selectedDay].cardio!.type} - {workoutPlan.days[selectedDay].cardio!.duration} min
+                                {workoutPlan.days[selectedDay].cardio!.type}
                               </p>
-                              <p className="text-xs text-blue-400">{workoutPlan.days[selectedDay].cardio!.intensity}</p>
+                              <p className="text-xs text-slate-500">{workoutPlan.days[selectedDay].cardio!.intensity}</p>
                             </div>
+                            <p className="text-sm text-violet-400 font-semibold">{workoutPlan.days[selectedDay].cardio!.duration} min</p>
                           </div>
-                          <p className="text-sm text-slate-300 mt-2">{workoutPlan.days[selectedDay].cardio!.protocol}</p>
+                          <p className="text-sm text-slate-400 mt-3">{workoutPlan.days[selectedDay].cardio!.protocol}</p>
                           {workoutPlan.days[selectedDay].cardio!.notes && (
-                            <p className="text-xs text-slate-400 mt-2">💓 {workoutPlan.days[selectedDay].cardio!.notes}</p>
+                            <p className="text-xs text-slate-500 mt-2">{workoutPlan.days[selectedDay].cardio!.notes}</p>
                           )}
                         </div>
                       </div>
@@ -587,18 +585,18 @@ export default function WorkoutPage() {
                     {/* Pliometrija */}
                     {workoutPlan.days[selectedDay].plyometrics && (
                       <div className="mb-6">
-                        <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">Pliometrija (~{workoutPlan.days[selectedDay].plyometrics!.totalDuration} min)</p>
+                        <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">Pliometrija • {workoutPlan.days[selectedDay].plyometrics!.totalDuration} min</p>
                         <div className="space-y-2">
                           {workoutPlan.days[selectedDay].plyometrics!.exercises.map((plyo, idx) => (
-                            <div key={idx} className="p-3 bg-gradient-to-r from-amber-900/30 to-orange-900/30 rounded-xl border border-amber-800/50">
+                            <div key={idx} className="p-4 bg-slate-800/60 rounded-xl border border-slate-700/50">
                               <div className="flex justify-between items-center">
                                 <div>
-                                  <p className="text-white font-medium">⚡ {plyo.nameHr}</p>
-                                  {plyo.notes && <p className="text-xs text-amber-400">{plyo.notes}</p>}
+                                  <p className="text-white font-medium">{plyo.nameHr}</p>
+                                  {plyo.notes && <p className="text-xs text-slate-500">{plyo.notes}</p>}
                                 </div>
                                 <div className="text-right">
-                                  <p className="text-sm text-white">{plyo.sets}×{plyo.reps}</p>
-                                  <p className="text-xs text-slate-400">odmor {plyo.rest}s</p>
+                                  <p className="text-sm text-violet-400 font-semibold">{plyo.sets} × {plyo.reps}</p>
+                                  <p className="text-xs text-slate-500">{plyo.rest}s odmor</p>
                                 </div>
                               </div>
                             </div>
@@ -647,8 +645,9 @@ export default function WorkoutPage() {
               <div className="p-5 border-b border-slate-800">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-xs text-violet-500 uppercase tracking-wide font-medium">{selectedExercise.equipment}</p>
-                    <h3 className="text-xl font-semibold text-white mt-1">{selectedExercise.nameHr}</h3>
+                    <h3 className="text-xl font-semibold text-white">{selectedExercise.nameHr}</h3>
+                    <p className="text-sm text-slate-400 mt-0.5">{selectedExercise.name}</p>
+                    <p className="text-xs text-violet-500 uppercase tracking-wide font-medium mt-2">{selectedExercise.equipment}</p>
                   </div>
                   <button
                     onClick={() => setSelectedExercise(null)}
@@ -663,17 +662,6 @@ export default function WorkoutPage() {
 
               {/* Modal Body */}
               <div className="flex-1 overflow-y-auto p-5 space-y-5">
-                {/* Slika vježbe */}
-                {selectedExercise.imageUrl && (
-                  <div className="w-full h-48 bg-slate-800 rounded-xl overflow-hidden">
-                    <img 
-                      src={selectedExercise.imageUrl} 
-                      alt={selectedExercise.nameHr}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-
                 {/* Parametri */}
                 <div className="grid grid-cols-4 gap-3">
                   <div className="text-center p-3 bg-slate-800 rounded-xl border border-slate-700">
@@ -719,11 +707,11 @@ export default function WorkoutPage() {
                 {/* Savjeti */}
                 {selectedExercise.tips && selectedExercise.tips.length > 0 && (
                   <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">✅ Savjeti</p>
-                    <ul className="space-y-2">
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Savjeti za izvedbu</p>
+                    <ul className="space-y-1.5">
                       {selectedExercise.tips.map((tip, idx) => (
-                        <li key={idx} className="text-sm text-green-400 flex items-start gap-2">
-                          <span className="text-green-500 mt-0.5">•</span>
+                        <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
+                          <span className="text-violet-400 mt-0.5">•</span>
                           {tip}
                         </li>
                       ))}
@@ -734,11 +722,11 @@ export default function WorkoutPage() {
                 {/* Česte greške */}
                 {selectedExercise.commonMistakes && selectedExercise.commonMistakes.length > 0 && (
                   <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">⚠️ Česte greške</p>
-                    <ul className="space-y-2">
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Izbjegavaj</p>
+                    <ul className="space-y-1.5">
                       {selectedExercise.commonMistakes.map((mistake, idx) => (
-                        <li key={idx} className="text-sm text-red-400 flex items-start gap-2">
-                          <span className="text-red-500 mt-0.5">•</span>
+                        <li key={idx} className="text-sm text-slate-400 flex items-start gap-2">
+                          <span className="text-red-400 mt-0.5">×</span>
                           {mistake}
                         </li>
                       ))}
@@ -749,20 +737,20 @@ export default function WorkoutPage() {
                 {/* Alternativne vježbe */}
                 {selectedExercise.alternatives && selectedExercise.alternatives.length > 0 && (
                   <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">🔄 Alternativne vježbe</p>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">Alternativne vježbe</p>
                     <div className="space-y-2">
                       {selectedExercise.alternatives.map((alt, idx) => (
                         <div 
                           key={idx} 
-                          className="p-3 bg-gradient-to-r from-slate-800 to-slate-800/50 rounded-xl border border-slate-700 hover:border-violet-500/50 transition-colors"
+                          className="p-3 bg-slate-800/50 rounded-xl border border-slate-700/50"
                         >
                           <div className="flex justify-between items-start">
                             <div>
                               <p className="text-white font-medium">{alt.nameHr}</p>
-                              <p className="text-xs text-slate-500">{alt.equipment}</p>
+                              <p className="text-xs text-slate-500">{alt.name} • {alt.equipment}</p>
                             </div>
                           </div>
-                          <p className="text-xs text-violet-400 mt-2">💡 {alt.reason}</p>
+                          <p className="text-xs text-slate-400 mt-1.5">{alt.reason}</p>
                         </div>
                       ))}
                     </div>
@@ -792,41 +780,28 @@ function ExerciseTile({ exercise, index, onClick }: { exercise: ExerciseParams; 
   return (
     <motion.div
       variants={exerciseCardVariants}
-      whileHover={{ scale: 1.02, x: 5 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
       onClick={onClick}
-      className="p-4 bg-slate-800/50 border border-slate-700 rounded-xl cursor-pointer hover:bg-slate-800 hover:border-violet-500/50 transition-colors"
+      className="p-4 bg-slate-800/60 border border-slate-700/50 rounded-xl cursor-pointer hover:bg-slate-800 hover:border-violet-500/30 transition-all"
     >
       <div className="flex items-center gap-4">
-        {/* Thumbnail slika */}
-        {exercise.imageUrl ? (
-          <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-            <img 
-              src={exercise.imageUrl} 
-              alt={exercise.nameHr}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        ) : (
-          <span className="w-16 h-16 flex items-center justify-center bg-violet-600/20 text-violet-400 rounded-lg text-lg font-bold flex-shrink-0">
-            {index + 1}
-          </span>
-        )}
+        {/* Broj vježbe */}
+        <span className="w-10 h-10 flex items-center justify-center bg-violet-600/20 text-violet-400 rounded-lg text-sm font-bold flex-shrink-0">
+          {index + 1}
+        </span>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-white font-medium truncate">{exercise.nameHr}</p>
-              <p className="text-xs text-slate-500">{exercise.equipment}</p>
+              <p className="text-white font-medium">{exercise.nameHr}</p>
+              <p className="text-xs text-slate-500">{exercise.name}</p>
             </div>
             <div className="text-right flex-shrink-0">
-              <p className="text-sm text-white font-medium">{exercise.sets}×{exercise.reps}</p>
-              <p className="text-xs text-slate-500">odmor {exercise.restSeconds}s</p>
+              <p className="text-sm text-violet-400 font-semibold">{exercise.sets} × {exercise.reps}</p>
+              <p className="text-xs text-slate-500">{exercise.restSeconds}s odmor</p>
             </div>
           </div>
-          {exercise.musclesWorked && (
-            <p className="text-xs text-slate-400 mt-1 line-clamp-1">💪 {exercise.musclesWorked}</p>
-          )}
         </div>
       </div>
     </motion.div>

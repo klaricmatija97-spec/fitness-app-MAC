@@ -830,26 +830,47 @@ const MALE_PPL = {
     { name: "Bench press", nameHr: "Potisak s klupe", equipment: "barbell", isPrimary: true },
     { name: "Incline dumbbell press", nameHr: "Kosi potisak s bučicama", equipment: "dumbbells", isPrimary: true },
     { name: "Overhead shoulder press", nameHr: "Vojnički potisak", equipment: "barbell/dumbbells", isPrimary: true },
+    { name: "Dumbbell bench press", nameHr: "Potisak s bučicama", equipment: "dumbbells", isPrimary: true },
+    { name: "Incline barbell press", nameHr: "Kosi potisak sa šipkom", equipment: "barbell", isPrimary: true },
     { name: "Lateral raises", nameHr: "Lateralna odručenja", equipment: "dumbbells", isPrimary: false },
     { name: "Cable chest fly", nameHr: "Kabelska križa za prsa", equipment: "cable", isPrimary: false },
     { name: "Triceps pushdown", nameHr: "Triceps potisak na kabelu", equipment: "cable", isPrimary: false },
+    { name: "Triceps rope pushdown", nameHr: "Triceps potisak s užetom", equipment: "cable", isPrimary: false },
+    { name: "Overhead triceps extension", nameHr: "Triceps ekstenzija iznad glave", equipment: "cable/dumbbell", isPrimary: false },
+    { name: "Dips", nameHr: "Propadanja", equipment: "bodyweight", isPrimary: false },
+    { name: "Machine chest press", nameHr: "Potisak na spravi za prsa", equipment: "machine", isPrimary: false },
+    { name: "Front raises", nameHr: "Frontalna odručenja", equipment: "dumbbells", isPrimary: false },
   ],
   pull: [
     { name: "Lat pulldown", nameHr: "Povlačenje na lat spravi", equipment: "cable", isPrimary: true },
     { name: "Seated cable row", nameHr: "Veslanje na kabelu sjedeći", equipment: "cable", isPrimary: true },
     { name: "T-bar row", nameHr: "T-bar veslanje", equipment: "barbell", isPrimary: true },
+    { name: "Pull-ups", nameHr: "Zgibovi", equipment: "bodyweight", isPrimary: true },
+    { name: "Barbell row", nameHr: "Veslanje sa šipkom", equipment: "barbell", isPrimary: true },
+    { name: "Dumbbell row", nameHr: "Veslanje s bučicom", equipment: "dumbbells", isPrimary: true },
     { name: "Face pull", nameHr: "Face pull", equipment: "cable", isPrimary: false },
     { name: "Barbell curls", nameHr: "Pregib s šipkom za biceps", equipment: "barbell", isPrimary: false },
     { name: "Hammer curls", nameHr: "Hammer pregib za biceps", equipment: "dumbbells", isPrimary: false },
+    { name: "Dumbbell curls", nameHr: "Pregib s bučicama", equipment: "dumbbells", isPrimary: false },
+    { name: "Preacher curl", nameHr: "Pregib na Scott klupi", equipment: "barbell/dumbbells", isPrimary: false },
+    { name: "Cable curl", nameHr: "Pregib na kabelu", equipment: "cable", isPrimary: false },
+    { name: "Reverse fly", nameHr: "Obrnuta križa", equipment: "dumbbells/cable", isPrimary: false },
+    { name: "Shrugs", nameHr: "Podizanje ramena", equipment: "dumbbells/barbell", isPrimary: false },
   ],
   legs: [
     { name: "Back squat", nameHr: "Stražnji čučanj", equipment: "barbell", isPrimary: true },
     { name: "Leg press", nameHr: "Nožna preša", equipment: "machine", isPrimary: true },
     { name: "Romanian deadlift", nameHr: "Rumunjsko mrtvo dizanje", equipment: "barbell", isPrimary: true },
+    { name: "Front squat", nameHr: "Prednji čučanj", equipment: "barbell", isPrimary: true },
+    { name: "Hack squat", nameHr: "Hack čučanj", equipment: "machine", isPrimary: true },
     { name: "Leg extension", nameHr: "Ekstenzija nogu", equipment: "machine", isPrimary: false },
     { name: "Leg curl", nameHr: "Pregib nogu", equipment: "machine", isPrimary: false },
     { name: "Hip thrust", nameHr: "Hip thrust", equipment: "barbell", isPrimary: false },
+    { name: "Bulgarian split squat", nameHr: "Bugarski split čučanj", equipment: "dumbbells", isPrimary: false },
+    { name: "Walking lunges", nameHr: "Hodajući iskoraci", equipment: "dumbbells", isPrimary: false },
+    { name: "Calf raises", nameHr: "Podizanje na prste", equipment: "machine", isPrimary: false },
     { name: "Hanging leg raises", nameHr: "Podizanje nogu u visu", equipment: "bodyweight", isPrimary: false },
+    { name: "Goblet squat", nameHr: "Goblet čučanj", equipment: "dumbbell", isPrimary: false },
   ],
 };
 
@@ -859,17 +880,25 @@ const MALE_FULL_BODY = {
     { name: "Back squat", nameHr: "Stražnji čučanj", equipment: "barbell", isPrimary: true },
     { name: "Bench press", nameHr: "Potisak s klupe", equipment: "barbell", isPrimary: true },
     { name: "Seated cable row", nameHr: "Veslanje na kabelu sjedeći", equipment: "cable", isPrimary: true },
+    { name: "Leg press", nameHr: "Nožna preša", equipment: "machine", isPrimary: true },
+    { name: "Incline dumbbell press", nameHr: "Kosi potisak s bučicama", equipment: "dumbbells", isPrimary: true },
     { name: "Lateral raises", nameHr: "Lateralna odručenja", equipment: "dumbbells", isPrimary: false },
     { name: "Biceps curls", nameHr: "Pregib za biceps", equipment: "dumbbells", isPrimary: false },
+    { name: "Leg extension", nameHr: "Ekstenzija nogu", equipment: "machine", isPrimary: false },
     { name: "Plank", nameHr: "Plank", equipment: "bodyweight", isPrimary: false },
+    { name: "Face pull", nameHr: "Face pull", equipment: "cable", isPrimary: false },
   ],
   dayB: [
     { name: "Romanian deadlift", nameHr: "Rumunjsko mrtvo dizanje", equipment: "barbell", isPrimary: true },
     { name: "Shoulder press", nameHr: "Potisak za ramena", equipment: "dumbbells", isPrimary: true },
     { name: "Lat pulldown", nameHr: "Povlačenje na lat spravi", equipment: "cable", isPrimary: true },
+    { name: "Hip thrust", nameHr: "Hip thrust", equipment: "barbell", isPrimary: true },
+    { name: "Dumbbell row", nameHr: "Veslanje s bučicom", equipment: "dumbbells", isPrimary: true },
     { name: "Cable chest fly", nameHr: "Kabelska križa za prsa", equipment: "cable", isPrimary: false },
     { name: "Triceps rope pushdown", nameHr: "Triceps potisak s užetom", equipment: "cable", isPrimary: false },
+    { name: "Leg curl", nameHr: "Pregib nogu", equipment: "machine", isPrimary: false },
     { name: "Hanging leg raises", nameHr: "Podizanje nogu u visu", equipment: "bodyweight", isPrimary: false },
+    { name: "Hammer curls", nameHr: "Hammer pregib", equipment: "dumbbells", isPrimary: false },
   ],
 };
 
@@ -878,16 +907,24 @@ const FEMALE_GLUTE_LEGS = {
   gluteDominant: [
     { name: "Hip thrust", nameHr: "Hip thrust", equipment: "barbell/smith", isPrimary: true },
     { name: "Romanian deadlift", nameHr: "Rumunjsko mrtvo dizanje", equipment: "barbell", isPrimary: true },
+    { name: "Sumo deadlift", nameHr: "Sumo mrtvo dizanje", equipment: "barbell", isPrimary: true },
+    { name: "Glute bridge", nameHr: "Most za gluteuse", equipment: "barbell/bodyweight", isPrimary: true },
     { name: "Cable glute kickbacks", nameHr: "Kabelski kickback za gluteus", equipment: "cable", isPrimary: false },
     { name: "Hip abductions", nameHr: "Abdukcije kukova", equipment: "machine/cable", isPrimary: false },
     { name: "Reverse lunges", nameHr: "Iskoraci unatrag", equipment: "dumbbells", isPrimary: false },
+    { name: "Cable pull-through", nameHr: "Provlačenje kabela", equipment: "cable", isPrimary: false },
+    { name: "Single leg Romanian deadlift", nameHr: "Jednonožno rumunjsko mrtvo dizanje", equipment: "dumbbells", isPrimary: false },
     { name: "Cable crunch", nameHr: "Kabelski crunch", equipment: "cable", isPrimary: false },
   ],
   legsMix: [
     { name: "Leg press (wide stance)", nameHr: "Nožna preša (široki stav)", equipment: "machine", isPrimary: true },
     { name: "Bulgarian split squat", nameHr: "Bugarski split čučanj", equipment: "dumbbells", isPrimary: true },
+    { name: "Back squat", nameHr: "Stražnji čučanj", equipment: "barbell/smith", isPrimary: true },
+    { name: "Hack squat", nameHr: "Hack čučanj", equipment: "machine", isPrimary: true },
     { name: "Leg curl", nameHr: "Pregib nogu", equipment: "machine", isPrimary: false },
+    { name: "Leg extension", nameHr: "Ekstenzija nogu", equipment: "machine", isPrimary: false },
     { name: "Goblet squat", nameHr: "Goblet čučanj", equipment: "dumbbell", isPrimary: false },
+    { name: "Walking lunges", nameHr: "Hodajući iskoraci", equipment: "dumbbells", isPrimary: false },
     { name: "Calf raises", nameHr: "Podizanje na prste", equipment: "machine", isPrimary: false },
     { name: "Side plank", nameHr: "Bočni plank", equipment: "bodyweight", isPrimary: false },
   ],
@@ -899,17 +936,27 @@ const FEMALE_UPPER_LOWER = {
     { name: "Shoulder press", nameHr: "Potisak za ramena", equipment: "machine/dumbbells", isPrimary: true },
     { name: "Lat pulldown", nameHr: "Povlačenje na lat spravi", equipment: "cable", isPrimary: true },
     { name: "Seated cable row", nameHr: "Veslanje na kabelu sjedeći", equipment: "cable", isPrimary: true },
+    { name: "Machine chest press", nameHr: "Potisak na spravi za prsa", equipment: "machine", isPrimary: true },
+    { name: "Dumbbell row", nameHr: "Veslanje s bučicom", equipment: "dumbbells", isPrimary: true },
     { name: "Lateral raises", nameHr: "Lateralna odručenja", equipment: "dumbbells", isPrimary: false },
+    { name: "Face pull", nameHr: "Face pull", equipment: "cable", isPrimary: false },
     { name: "Triceps pushdown", nameHr: "Triceps potisak", equipment: "cable", isPrimary: false },
     { name: "Dumbbell curls", nameHr: "Pregib s bučicama", equipment: "dumbbells", isPrimary: false },
+    { name: "Cable fly", nameHr: "Kabelska križa", equipment: "cable", isPrimary: false },
+    { name: "Plank", nameHr: "Plank", equipment: "bodyweight", isPrimary: false },
   ],
   lower: [
     { name: "Hip thrust", nameHr: "Hip thrust", equipment: "barbell", isPrimary: true },
     { name: "Back squat", nameHr: "Stražnji čučanj", equipment: "barbell/smith", isPrimary: true },
     { name: "Leg press", nameHr: "Nožna preša", equipment: "machine", isPrimary: true },
+    { name: "Romanian deadlift", nameHr: "Rumunjsko mrtvo dizanje", equipment: "barbell", isPrimary: true },
+    { name: "Bulgarian split squat", nameHr: "Bugarski split čučanj", equipment: "dumbbells", isPrimary: true },
     { name: "Step-ups", nameHr: "Step-up na klupu", equipment: "dumbbells", isPrimary: false },
     { name: "Leg extension", nameHr: "Ekstenzija nogu", equipment: "machine", isPrimary: false },
+    { name: "Leg curl", nameHr: "Pregib nogu", equipment: "machine", isPrimary: false },
     { name: "Hip abductions", nameHr: "Abdukcije kukova", equipment: "machine/cable", isPrimary: false },
+    { name: "Calf raises", nameHr: "Podizanje na prste", equipment: "machine", isPrimary: false },
+    { name: "Cable glute kickbacks", nameHr: "Kabelski kickback za gluteus", equipment: "cable", isPrimary: false },
   ],
 };
 
@@ -1423,7 +1470,9 @@ export function generateWorkoutPlan(userInputs: UserInputs): WorkoutPlan {
     wantsPlyometrics
   );
 
-  // 3. Generiraj dane treninga
+  // 3. Generiraj dane treninga - prati korištene vježbe po split-u
+  const usedExercisesBySplit: Record<string, Set<string>> = {};
+  
   const workoutDays: WorkoutDay[] = weekSchedule.map((dayConfig) => {
     const day: WorkoutDay = {
       dayIndex: dayConfig.dayIndex,
@@ -1435,8 +1484,37 @@ export function generateWorkoutPlan(userInputs: UserInputs): WorkoutPlan {
 
     // Strength vježbe
     if (dayConfig.type !== "cardio" && dayConfig.splitName) {
-      const exercises = getExercisesForSplit(dayConfig.splitName, gender, selectedProgram);
-      const selectedExercises = exercises.slice(0, exerciseCount);
+      const splitName = dayConfig.splitName;
+      const allExercises = getExercisesForSplit(splitName, gender, selectedProgram);
+      
+      // Inicijaliziraj set za ovaj split ako ne postoji
+      if (!usedExercisesBySplit[splitName]) {
+        usedExercisesBySplit[splitName] = new Set();
+      }
+      
+      // Odaberi vježbe koje još nisu korištene u ovom split-u
+      const unusedExercises = allExercises.filter(ex => !usedExercisesBySplit[splitName].has(ex.name));
+      
+      // Ako smo potrošili sve vježbe, resetiraj i koristi sve (shuffle)
+      let exercisesToUse = unusedExercises;
+      if (unusedExercises.length < exerciseCount) {
+        // Resetiraj korištene vježbe za ovaj split
+        usedExercisesBySplit[splitName].clear();
+        // Miješaj sve vježbe za varijaciju
+        exercisesToUse = [...allExercises].sort(() => Math.random() - 0.5);
+      }
+      
+      // Sortiraj da primary vježbe budu prvo
+      exercisesToUse = exercisesToUse.sort((a, b) => {
+        if (a.isPrimary && !b.isPrimary) return -1;
+        if (!a.isPrimary && b.isPrimary) return 1;
+        return 0;
+      });
+      
+      const selectedExercises = exercisesToUse.slice(0, exerciseCount);
+      
+      // Označi odabrane vježbe kao korištene
+      selectedExercises.forEach(ex => usedExercisesBySplit[splitName].add(ex.name));
       
       day.exercises = selectedExercises.map((ex) => generateExerciseParams(ex, userInputs));
       
