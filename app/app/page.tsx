@@ -20,6 +20,7 @@ import EducationalSlide from "./components/EducationalSlide";
 import EducationalWizard from "./components/EducationalWizard";
 import MealPlanWelcomeScreen from "./components/MealPlanWelcomeScreen";
 import CalculatorScreen, { CalcCard, CalcInput, CalcSelect, CalcButton, CalcResult, CalcInfoCard } from "./components/CalculatorScreen";
+import CalcFAQRotation from "./components/CalcFAQRotation";
 
 // ============================================
 // DEBUG TEST FLAG (samo za development)
@@ -2928,9 +2929,9 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
           onBack={prevSlide}
         >
           <div className="space-y-8">
-            {/* FAQ Section */}
-            <div className="text-center mb-8">
-              <FAQWrapper />
+            {/* Animated Messages Section */}
+            <div className="mb-8">
+              <CalcFAQRotation />
             </div>
 
             {/* Calculator Cards */}
