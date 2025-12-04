@@ -677,29 +677,6 @@
       "source": "edamam"
     },
     {
-      "id": "lunch_lose_10",
-      "name": "Pureća salama s rižom i salatom",
-      "nutrition": {
-        "calories": 880,
-        "protein": 58.7,
-        "carbs": 134,
-        "fat": 17,
-        "fiber": 20.1,
-        "sugar": 3,
-        "sodium": 99,
-        "saturatedFat": 4.3,
-        "vitaminA": 203,
-        "vitaminC": 15,
-        "vitaminD": 0,
-        "vitaminB12": 0.6,
-        "calcium": 95,
-        "iron": 7.2,
-        "potassium": 1668,
-        "magnesium": 474
-      },
-      "source": "edamam"
-    },
-    {
       "id": "lunch_lose_11",
       "name": "Pileća prsa s pire krumpirom",
       "nutrition": {

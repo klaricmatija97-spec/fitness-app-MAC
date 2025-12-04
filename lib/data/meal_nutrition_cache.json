@@ -1,7 +1,7 @@
 {
   "lastUpdated": "2025-12-04T19:59:22.027Z",
   "source": "edamam",
-  "totalMeals": 156,
+  "totalMeals": 155,
   "nutritionById": {
     "breakfast_lose_1": {
       "calories": 412,
@@ -524,24 +524,6 @@
       "iron": 5.7,
       "potassium": 2202,
       "magnesium": 188
-    },
-    "lunch_lose_10": {
-      "calories": 880,
-      "protein": 58.7,
-      "carbs": 134,
-      "fat": 17,
-      "fiber": 20.1,
-      "sugar": 3,
-      "sodium": 99,
-      "saturatedFat": 4.3,
-      "vitaminA": 203,
-      "vitaminC": 15,
-      "vitaminD": 0,
-      "vitaminB12": 0.6,
-      "calcium": 95,
-      "iron": 7.2,
-      "potassium": 1668,
-      "magnesium": 474
     },
     "lunch_lose_11": {
       "calories": 438,

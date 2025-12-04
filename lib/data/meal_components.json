@@ -1538,43 +1538,6 @@
       ]
     },
     {
-      "id": "lunch_lose_10",
-      "name": "Pureća salama s rižom i salatom",
-      "description": "Praktičan obrok s pilicom salamom - brzo i jednostavno. Pileća/pureća salama ima manje masti od klasične, a s rižom i salatom daje kompletan obrok.",
-      "image": "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&h=300&fit=crop",
-      "preparationTip": "Salamu nasjeckaj i lagano zagrij na tavi. Rižu kuhaj standardno. Salatu posluži svježu.",
-      "components": [
-        {
-          "food": "Turkey breast",
-          "grams": 150,
-          "displayName": "Pureća salama"
-        },
-        {
-          "food": "Buckwheat",
-          "grams": 180,
-          "displayName": "Kuhana riža"
-        },
-        {
-          "food": "Lettuce",
-          "grams": 100,
-          "displayName": "Zelena salata"
-        },
-        {
-          "food": "Tomato",
-          "grams": 80,
-          "displayName": "Cherry rajčice"
-        }
-      ],
-      "tags": [
-        "quick",
-        "high-protein",
-        "practical"
-      ],
-      "suitableFor": [
-        "lose"
-      ]
-    },
-    {
       "id": "lunch_lose_11",
       "name": "Pileća prsa s pire krumpirom",
       "description": "Klasičan comfort food za deficit! Sočna pileća prsa iz air fryera s kremastim pire krumpirom bez maslaca. Visok protein, umjereni UH.",
