@@ -1341,6 +1341,53 @@ function buildCompositeMealForSlot(
     .map(convertToMealOption)
     .filter(opt => !excludedMealNames.has(opt.name));
 
+  // NOVO: Filtriraj obroke koji imaju iste GLAVNE namirnice kao prethodni obroci danas
+  // Glavne namirnice su: proteini (jaja, jogurt, piletina, tuna, itd.) i ugljikohidrati (riža, tjestenina, kruh)
+  const mainIngredientKeywords = [
+    'egg', 'jaja', 'yogurt', 'jogurt', 'chicken', 'piletina', 'tuna', 'salmon', 'losos',
+    'beef', 'junetina', 'turkey', 'puretina', 'cottage', 'skyr', 'whey', 'protein',
+    'rice', 'riža', 'pasta', 'tjestenina', 'bread', 'kruh', 'toast', 'oats', 'zobene',
+    'banana', 'avocado', 'avokado', 'greek yogurt', 'grčki jogurt'
+  ];
+  
+  // Izvuci glavne namirnice iz prethodnih obroka danas
+  const usedMainIngredientsToday = new Set<string>();
+  for (const prevMeal of previousMeals) {
+    for (const comp of prevMeal.components) {
+      const foodLower = comp.food.toLowerCase();
+      for (const keyword of mainIngredientKeywords) {
+        if (foodLower.includes(keyword)) {
+          usedMainIngredientsToday.add(keyword);
+        }
+      }
+    }
+  }
+  
+  // Filtriraj obroke koji koriste iste glavne namirnice
+  if (usedMainIngredientsToday.size > 0) {
+    const beforeFilter = mealOptions.length;
+    mealOptions = mealOptions.filter(option => {
+      for (const comp of option.components) {
+        const foodLower = comp.food.toLowerCase();
+        for (const usedIngredient of usedMainIngredientsToday) {
+          if (foodLower.includes(usedIngredient)) {
+            // Ova namirnica je već korištena danas - isključi ovaj obrok
+            return false;
+          }
+        }
+      }
+      return true;
+    });
+    
+    // Ako smo previše suzili izbor, popusti pravilo (ali logiraj upozorenje)
+    if (mealOptions.length === 0) {
+      console.warn(`⚠️ Svi obroci za ${slot} imaju namirnice koje su već korištene danas, popuštam pravilo...`);
+      mealOptions = definitions.map(convertToMealOption).filter(opt => !excludedMealNames.has(opt.name));
+    } else if (mealOptions.length < beforeFilter) {
+      console.log(`   🔄 Filtrirano ${beforeFilter - mealOptions.length} obroka zbog ponavljanja namirnica (ostalo: ${mealOptions.length})`);
+    }
+  }
+
   // VALIDACIJA: Za snack, filtriraj template-e koji ne zadovoljavaju uvjete
   if (slot === "snack" || slot === "extraSnack") {
     mealOptions = mealOptions.filter(option => {

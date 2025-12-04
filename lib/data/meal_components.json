@@ -63,7 +63,7 @@
         {
           "food": "Greek yogurt",
           "grams": 150,
-          "displayName": "Grčki jogurt 0%"
+          "displayName": "Grčki jogurt"
         },
         {
           "food": "Banana",
@@ -839,12 +839,12 @@
       "name": "Proteinski smoothie bowl",
       "description": "Kremasti smoothie bowl s grčkim jogurtom i proteinom. Borovnice pružaju antioksidanse, chia sjemenke vlakna. Savršen za vruće dane.",
       "image": "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=400&h=300&fit=crop",
-      "preparationTip": "U blender stavi smrznute borovnice i grčki jogurt 0%. Dodaj protein prah, miksaj 30 sek dok ne postane gusto. Prebaci u zdjelu, posloži svježe borovnice, chia sjemenke i prelij medom.",
+      "preparationTip": "U blender stavi smrznute borovnice i grčki jogurt. Dodaj protein prah, miksaj 30 sek dok ne postane gusto. Prebaci u zdjelu, posloži svježe borovnice, chia sjemenke i prelij medom.",
       "components": [
         {
           "food": "Greek yogurt",
           "grams": 200,
-          "displayName": "Grčki jogurt 0%"
+          "displayName": "Grčki jogurt"
         },
         {
           "food": "Whey",
@@ -3428,12 +3428,12 @@
       "name": "Grčki jogurt s proteinima i voćem",
       "description": "Niskokalorična večera bogata kazeinom za noćnu regeneraciju. Probiotici iz jogurta podržavaju probavu, a borovnice pružaju antioksidanse. Idealno za kasnu večeru.",
       "image": "https://images.unsplash.com/photo-1505253758473-96b7015fcd40?w=400&h=300&fit=crop",
-      "preparationTip": "Koristi grčki jogurt 0% mm. Whey pomiješaj dok ne postane kremast. Voće dodaj svježe na vrh.",
+      "preparationTip": "Koristi grčki jogurt mm. Whey pomiješaj dok ne postane kremast. Voće dodaj svježe na vrh.",
       "components": [
         {
           "food": "Greek yogurt",
           "grams": 200,
-          "displayName": "Grčki jogurt 0%"
+          "displayName": "Grčki jogurt"
         },
         {
           "food": "Whey",
@@ -3689,7 +3689,7 @@
         {
           "food": "Greek yogurt",
           "grams": 150,
-          "displayName": "Grčki jogurt 0%"
+          "displayName": "Grčki jogurt"
         },
         {
           "food": "Cucumber",
@@ -5424,7 +5424,7 @@
         {
           "food": "Greek yogurt",
           "grams": 150,
-          "displayName": "Grčki jogurt 0%"
+          "displayName": "Grčki jogurt"
         }
       ],
       "tags": [
