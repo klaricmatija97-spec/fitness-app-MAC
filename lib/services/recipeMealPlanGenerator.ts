@@ -216,24 +216,49 @@ function getQueryTypeForSlot(slotType: string): string {
 // ============================================
 
 /**
- * Dohvati korisničke ciljeve iz baze
+ * Dohvati korisničke ciljeve iz baze (iz client_calculations tablice)
  */
 async function getUserTargets(userId: string): Promise<UserNutritionTargets> {
+  // Prvo pokušaj iz client_calculations
   const { data, error } = await supabase
-    .from('clients')
+    .from('client_calculations')
     .select('target_calories, protein_grams, carbs_grams, fats_grams, goal_type')
-    .eq('id', userId)
+    .eq('client_id', userId)
     .single();
 
   if (error || !data) {
-    throw new Error(`Nije moguće dohvatiti korisničke podatke: ${error?.message}`);
+    // Fallback - pokušaj iz clients tablice
+    const { data: clientData, error: clientError } = await supabase
+      .from('clients')
+      .select('bmr, tdee, target_calories, protein_grams, carbs_grams, fats_grams, goal_type')
+      .eq('id', userId)
+      .single();
+
+    if (clientError || !clientData) {
+      throw new Error(`Nema kalkulacija u bazi. Molimo prvo izračunajte kalkulacije na kalkulatoru.`);
+    }
+
+    return {
+      calories: clientData.target_calories || 2000,
+      protein: clientData.protein_grams || 150,
+      carbs: clientData.carbs_grams || 200,
+      fat: clientData.fats_grams || 65,
+      goalType: (clientData.goal_type as 'lose' | 'maintain' | 'gain') || 'maintain',
+    };
   }
 
+  // Parse numeric values (mogu biti string ili number)
+  const parseNumeric = (value: any): number => {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') return parseFloat(value) || 0;
+    return 0;
+  };
+
   return {
-    calories: data.target_calories || 2000,
-    protein: data.protein_grams || 150,
-    carbs: data.carbs_grams || 200,
-    fat: data.fats_grams || 65,
+    calories: parseNumeric(data.target_calories) || 2000,
+    protein: parseNumeric(data.protein_grams) || 150,
+    carbs: parseNumeric(data.carbs_grams) || 200,
+    fat: parseNumeric(data.fats_grams) || 65,
     goalType: (data.goal_type as 'lose' | 'maintain' | 'gain') || 'maintain',
   };
 }
