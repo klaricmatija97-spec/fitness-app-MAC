@@ -316,49 +316,69 @@ async function findRecipeForMeal(
   const queryType = getQueryTypeForSlot(slot.type);
   const query = getRandomQuery(queryType);
 
-  // Adjust calorie range based on goal
-  let calorieMin = Math.round(targetCalories * 0.7);
-  let calorieMax = Math.round(targetCalories * 1.3);
-
-  if (goalType === 'lose') {
-    calorieMax = Math.round(targetCalories * 1.1);
-  } else if (goalType === 'gain') {
-    calorieMin = Math.round(targetCalories * 0.9);
-  }
-
   // Determine diet based on goal
   let diet: 'balanced' | 'high-protein' | 'low-carb' | 'low-fat' | undefined;
   if (goalType === 'gain') {
     diet = 'high-protein';
   } else if (goalType === 'lose') {
-    diet = 'high-protein'; // High protein helps preserve muscle
+    diet = 'high-protein';
   }
 
-  const recipes = await searchRecipes({
+  // FIRST TRY: bez kalorijskih filtera (jer Edamam filtrira total, ne po porciji)
+  let recipes = await searchRecipes({
     query,
     mealType,
     diet,
     health: healthLabels.length > 0 ? healthLabels : undefined,
-    calories: { min: calorieMin, max: calorieMax },
     excluded: excludedIngredients.length > 0 ? excludedIngredients : undefined,
+    random: true,
+    limit: 20,
+  });
+
+  // Filter by per-serving calories (±50% tolerance for more results)
+  const calorieMin = Math.round(targetCalories * 0.5);
+  const calorieMax = Math.round(targetCalories * 1.5);
+  
+  let filteredRecipes = recipes.filter(r => 
+    r.calories >= calorieMin && r.calories <= calorieMax && !usedRecipeIds.has(r.id)
+  );
+
+  if (filteredRecipes.length > 0) {
+    // Sort by how close to target calories
+    filteredRecipes.sort((a, b) => 
+      Math.abs(a.calories - targetCalories) - Math.abs(b.calories - targetCalories)
+    );
+    return filteredRecipes[0];
+  }
+
+  // FALLBACK: bilo koji recept koji nije korišten
+  const availableRecipes = recipes.filter(r => !usedRecipeIds.has(r.id));
+  if (availableRecipes.length > 0) {
+    return availableRecipes[Math.floor(Math.random() * availableRecipes.length)];
+  }
+
+  // LAST RESORT: pokušaj s jednostavnijim queryem
+  const fallbackQueries: Record<string, string> = {
+    breakfast: 'eggs toast',
+    lunch: 'chicken rice',
+    dinner: 'salmon vegetables',
+    snack: 'yogurt fruit',
+  };
+
+  console.log(`   ⚠️ Fallback search za ${slot.name}...`);
+  const fallbackRecipes = await searchRecipes({
+    query: fallbackQueries[queryType] || 'healthy meal',
+    mealType,
     random: true,
     limit: 10,
   });
 
-  // Filter out already used recipes
-  const availableRecipes = recipes.filter(r => !usedRecipeIds.has(r.id));
-
-  if (availableRecipes.length > 0) {
-    // Pick random from available
-    return availableRecipes[Math.floor(Math.random() * availableRecipes.length)];
+  const fallbackAvailable = fallbackRecipes.filter(r => !usedRecipeIds.has(r.id));
+  if (fallbackAvailable.length > 0) {
+    return fallbackAvailable[0];
   }
 
-  // Fallback: try without some filters
-  if (recipes.length > 0) {
-    return recipes[0];
-  }
-
-  return null;
+  return recipes[0] || null;
 }
 
 /**

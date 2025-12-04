@@ -22,66 +22,70 @@ export async function GET() {
     // Generiraj jedan dan kao demo
     const meals = [];
 
-    // Doručak (~25% = 550 kcal)
+    // Doručak - jednostavniji query
     const breakfastRecipes = await searchRecipes({
-      query: "eggs protein breakfast",
-      mealType: "Breakfast",
-      diet: "high-protein",
-      calories: { min: 400, max: 650 },
-      limit: 3,
+      query: "scrambled eggs bacon",
+      random: true,
+      limit: 10,
     });
 
+    console.log(`Breakfast recipes found: ${breakfastRecipes.length}`);
+    
     if (breakfastRecipes.length > 0) {
+      const filtered = breakfastRecipes.filter(r => r.calories >= 250 && r.calories <= 800);
       meals.push({
         slot: "Doručak",
-        recipe: breakfastRecipes[0],
+        recipe: filtered[0] || breakfastRecipes[0],
       });
     }
 
-    // Ručak (~35% = 770 kcal)
+    // Ručak
     const lunchRecipes = await searchRecipes({
-      query: "chicken breast lunch",
+      query: "grilled chicken salad",
       mealType: "Lunch",
       diet: "high-protein",
-      calories: { min: 600, max: 900 },
-      limit: 3,
+      random: true,
+      limit: 5,
     });
 
     if (lunchRecipes.length > 0) {
+      const filtered = lunchRecipes.filter(r => r.calories >= 400 && r.calories <= 900);
       meals.push({
         slot: "Ručak",
-        recipe: lunchRecipes[0],
+        recipe: filtered[0] || lunchRecipes[0],
       });
     }
 
-    // Večera (~30% = 660 kcal)
+    // Večera
     const dinnerRecipes = await searchRecipes({
-      query: "salmon dinner healthy",
+      query: "salmon lemon dinner",
       mealType: "Dinner",
       diet: "high-protein",
-      calories: { min: 500, max: 800 },
-      limit: 3,
+      random: true,
+      limit: 5,
     });
 
     if (dinnerRecipes.length > 0) {
+      const filtered = dinnerRecipes.filter(r => r.calories >= 350 && r.calories <= 800);
       meals.push({
         slot: "Večera",
-        recipe: dinnerRecipes[0],
+        recipe: filtered[0] || dinnerRecipes[0],
       });
     }
 
-    // Užina (~10% = 220 kcal)
+    // Užina
     const snackRecipes = await searchRecipes({
-      query: "greek yogurt protein snack",
+      query: "greek yogurt berries",
       mealType: "Snack",
-      calories: { min: 150, max: 300 },
-      limit: 3,
+      random: true,
+      limit: 5,
     });
 
     if (snackRecipes.length > 0) {
+      const filtered = snackRecipes.filter(r => r.calories >= 100 && r.calories <= 350);
       meals.push({
         slot: "Užina",
-        recipe: snackRecipes[0],
+        recipe: filtered[0] || snackRecipes[0],
       });
     }
 
