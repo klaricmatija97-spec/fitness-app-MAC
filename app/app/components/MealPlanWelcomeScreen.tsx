@@ -39,7 +39,10 @@ export default function MealPlanWelcomeScreen({ onNavigate }: MealPlanWelcomeScr
   const descriptionText = "Generator na temelju vaših osobnih preferencija bira namirnice i isporučuje sedmodnevni jelovnik sukladno vašim dnevnim kalorijskim potrebama i vašim izračunatim makronutrijentima.";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black">
+      {/* Solid black base - prevents any flash */}
+      <div className="absolute inset-0 bg-black" />
+      
       {/* Rotating Background Images - Full Screen */}
       <AnimatePresence mode="sync">
         <motion.div
