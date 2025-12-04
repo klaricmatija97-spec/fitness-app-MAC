@@ -138,45 +138,33 @@ const ALLERGY_MAP: Record<string, string> = {
   'vegan': 'vegan',
 };
 
-// Query strings za različite obroke - FITNESS FOCUSED HIGH PROTEIN
-const MEAL_QUERIES: Record<string, string[]> = {
-  breakfast: [
-    'egg whites omelette turkey',
-    'chicken breast eggs breakfast',
-    'protein pancakes egg whites',
-    'greek yogurt cottage cheese',
-    'scrambled eggs lean turkey',
-    'egg white frittata vegetables',
-    'oatmeal protein powder eggs',
-  ],
-  lunch: [
-    'grilled chicken breast broccoli rice',
-    'lean turkey breast vegetables',
-    'tuna steak grilled asparagus',
-    'chicken breast quinoa salad',
-    'grilled fish tilapia vegetables',
-    'lean beef sirloin vegetables',
-    'shrimp grilled zucchini',
-  ],
-  dinner: [
-    'grilled salmon broccoli lean',
-    'chicken breast sweet potato',
-    'lean steak asparagus',
-    'baked cod fish vegetables',
-    'turkey breast roasted vegetables',
-    'grilled tilapia spinach',
-    'lean pork tenderloin vegetables',
-  ],
-  snack: [
-    'cottage cheese protein',
-    'greek yogurt protein',
-    'egg whites hard boiled',
-    'turkey breast slices',
-    'tuna protein snack',
-    'chicken breast cold',
-    'protein shake smoothie',
-  ],
+// Query strings prilagođeni CILJU korisnika
+const MEAL_QUERIES_BY_GOAL: Record<'lose' | 'maintain' | 'gain', Record<string, string[]>> = {
+  // MRŠAVLJENJE: visoki proteini, niže kalorije, manje UH
+  lose: {
+    breakfast: ['egg whites vegetables', 'omelette spinach lean', 'cottage cheese breakfast'],
+    lunch: ['grilled chicken salad', 'fish vegetables steamed', 'turkey breast lean'],
+    dinner: ['grilled fish vegetables', 'chicken breast broccoli', 'salmon asparagus lean'],
+    snack: ['greek yogurt protein', 'hard boiled eggs', 'cottage cheese low fat'],
+  },
+  // ODRŽAVANJE: balansirano
+  maintain: {
+    breakfast: ['eggs bacon breakfast', 'omelette cheese vegetables', 'protein pancakes'],
+    lunch: ['chicken breast rice vegetables', 'salmon quinoa', 'turkey wrap healthy'],
+    dinner: ['salmon dinner vegetables', 'chicken breast potato', 'lean steak vegetables'],
+    snack: ['greek yogurt berries', 'nuts almonds protein', 'protein shake'],
+  },
+  // BULK: više ugljikohidrata za energiju
+  gain: {
+    breakfast: ['oatmeal banana protein', 'pancakes eggs carbs', 'breakfast burrito eggs'],
+    lunch: ['chicken rice pasta', 'beef steak potatoes', 'pasta chicken vegetables'],
+    dinner: ['pasta chicken dinner', 'steak rice carbs', 'chicken potato dinner'],
+    snack: ['banana peanut butter', 'oatmeal protein shake', 'granola yogurt'],
+  },
 };
+
+// Fallback za stare pozive
+const MEAL_QUERIES: Record<string, string[]> = MEAL_QUERIES_BY_GOAL.maintain;
 
 // ============================================
 // HELPER FUNCTIONS
@@ -191,8 +179,9 @@ function getMealSlots(mealsPerDay: 3 | 5 | 6): MealSlot[] {
   }
 }
 
-function getRandomQuery(mealType: string): string {
-  const queries = MEAL_QUERIES[mealType] || MEAL_QUERIES.lunch;
+function getRandomQuery(mealType: string, goalType: 'lose' | 'maintain' | 'gain' = 'maintain'): string {
+  const goalQueries = MEAL_QUERIES_BY_GOAL[goalType];
+  const queries = goalQueries[mealType] || goalQueries.lunch;
   return queries[Math.floor(Math.random() * queries.length)];
 }
 
@@ -310,7 +299,7 @@ async function getUserPreferences(userId: string): Promise<UserPreferences> {
 }
 
 /**
- * Pronađi recept za određeni obrok - PRIORITIZIRA VISOKE PROTEINE
+ * Pronađi recept za određeni obrok - PRILAGOĐENO CILJU KORISNIKA
  */
 async function findRecipeForMeal(
   slot: MealSlot,
@@ -322,16 +311,20 @@ async function findRecipeForMeal(
 ): Promise<SimplifiedRecipe | null> {
   const mealType = getMealTypeForSlot(slot.type);
   const queryType = getQueryTypeForSlot(slot.type);
-  const query = getRandomQuery(queryType);
+  
+  // Koristi query prilagođen cilju
+  const query = getRandomQuery(queryType, goalType);
 
-  // UVIJEK koristi high-protein za fitness
-  const diet: 'high-protein' = 'high-protein';
+  // Diet prema cilju
+  const diet = goalType === 'lose' ? 'high-protein' : 
+               goalType === 'gain' ? 'balanced' : 
+               'high-protein';
 
   // Pretraži recepte
   let recipes = await searchRecipes({
     query,
     mealType,
-    diet,
+    diet: diet as any,
     health: healthLabels.length > 0 ? healthLabels : undefined,
     excluded: excludedIngredients.length > 0 ? excludedIngredients : undefined,
     random: true,
@@ -342,11 +335,24 @@ async function findRecipeForMeal(
   let availableRecipes = recipes.filter(r => !usedRecipeIds.has(r.id));
 
   if (availableRecipes.length > 0) {
-    // SORTIRAJ PO PROTEIN RATIO (g proteina po 100 kcal)
+    // SORTIRAJ PREMA CILJU
     availableRecipes.sort((a, b) => {
-      const ratioA = (a.protein / a.calories) * 100;
-      const ratioB = (b.protein / b.calories) * 100;
-      return ratioB - ratioA; // Viši protein = bolje
+      if (goalType === 'lose') {
+        // Za mršavljenje: prioritet protein ratio
+        const ratioA = (a.protein / a.calories) * 100;
+        const ratioB = (b.protein / b.calories) * 100;
+        return ratioB - ratioA;
+      } else if (goalType === 'gain') {
+        // Za bulk: prioritet ugljikohidrati
+        const carbsRatioA = (a.carbs * 4 / a.calories);
+        const carbsRatioB = (b.carbs * 4 / b.calories);
+        return carbsRatioB - carbsRatioA;
+      } else {
+        // Održavanje: balansirano (protein prvo)
+        const ratioA = (a.protein / a.calories) * 100;
+        const ratioB = (b.protein / b.calories) * 100;
+        return ratioB - ratioA;
+      }
     });
 
     // Uzmi top 10 po proteinima

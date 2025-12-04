@@ -1,21 +1,82 @@
 /**
  * API Route: GET /api/meal-plan/recipes/demo
  * 
- * Demo endpoint - generira plan s demo podacima i SKALIRA recepte prema ciljevima
+ * Demo endpoint - generira plan prilagođen CILJU korisnika:
+ * - BULK (gain): Više ugljikohidrata, umjereni proteini, više kalorija
+ * - CUT (lose): Manje kalorija, visoki proteini, manje UH/masti
+ * - MAINTAIN: Balansirano
  */
 
 import { NextResponse } from "next/server";
 import { searchRecipes, SimplifiedRecipe } from "@/lib/services/edamamRecipeService";
 
-// Meal slot configuration - FITNESS FOCUSED
-// diet: undefined za fleksibilnije rezultate, filtriramo po protein ratio
-const MEAL_SLOTS = [
-  { slot: "Doručak", queries: ["eggs bacon breakfast", "omelette vegetables cheese"], percent: 0.25 },
-  { slot: "Užina 1", queries: ["cottage cheese", "greek yogurt protein"], percent: 0.10 },
-  { slot: "Ručak", queries: ["chicken breast vegetables", "grilled chicken rice"], percent: 0.30 },
-  { slot: "Užina 2", queries: ["hard boiled eggs", "turkey slices"], percent: 0.10 },
-  { slot: "Večera", queries: ["salmon dinner", "chicken breast dinner"], percent: 0.25 },
+// ============================================
+// GOAL-SPECIFIC CONFIGURATIONS
+// ============================================
+
+type GoalType = 'lose' | 'maintain' | 'gain';
+
+interface MealSlotConfig {
+  slot: string;
+  percent: number;
+  queries: Record<GoalType, string[]>;
+}
+
+// Različiti queryji za različite ciljeve
+const MEAL_SLOTS: MealSlotConfig[] = [
+  { 
+    slot: "Doručak", 
+    percent: 0.25,
+    queries: {
+      lose: ["egg whites vegetables", "omelette spinach low fat"],
+      maintain: ["eggs bacon breakfast", "omelette cheese vegetables"],
+      gain: ["oatmeal banana protein", "pancakes eggs breakfast carbs"],
+    }
+  },
+  { 
+    slot: "Užina 1", 
+    percent: 0.10,
+    queries: {
+      lose: ["cottage cheese low fat", "greek yogurt protein"],
+      maintain: ["greek yogurt berries", "protein snack"],
+      gain: ["banana peanut butter", "oatmeal protein shake"],
+    }
+  },
+  { 
+    slot: "Ručak", 
+    percent: 0.30,
+    queries: {
+      lose: ["grilled chicken salad lean", "fish vegetables steamed"],
+      maintain: ["chicken breast rice vegetables", "salmon quinoa"],
+      gain: ["chicken rice pasta", "beef steak potatoes carbs"],
+    }
+  },
+  { 
+    slot: "Užina 2", 
+    percent: 0.10,
+    queries: {
+      lose: ["hard boiled eggs", "turkey breast slices lean"],
+      maintain: ["nuts almonds protein", "cheese crackers"],
+      gain: ["rice cakes peanut butter", "granola yogurt"],
+    }
+  },
+  { 
+    slot: "Večera", 
+    percent: 0.25,
+    queries: {
+      lose: ["grilled fish vegetables", "chicken breast broccoli lean"],
+      maintain: ["salmon dinner vegetables", "chicken breast potato"],
+      gain: ["pasta chicken dinner", "steak rice dinner carbs"],
+    }
+  },
 ];
+
+// Ciljani macro omjeri po cilju (% kalorija)
+const MACRO_TARGETS: Record<GoalType, { protein: number; carbs: number; fat: number }> = {
+  lose: { protein: 0.40, carbs: 0.30, fat: 0.30 },    // Visoki protein, niži UH
+  maintain: { protein: 0.30, carbs: 0.40, fat: 0.30 }, // Balansirano
+  gain: { protein: 0.25, carbs: 0.50, fat: 0.25 },    // Visoki UH za bulk
+};
 
 interface ScaledMeal {
   slot: string;
@@ -29,39 +90,90 @@ interface ScaledMeal {
   };
 }
 
-export async function GET() {
-  try {
-    console.log("🚀 Demo Recipe Plan Generator with SCALING...");
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
 
-    // Demo targets (realistični za osobu koja gradi mišiće)
+function scoreRecipeForGoal(recipe: SimplifiedRecipe, goal: GoalType, targetCalories: number): number {
+  const macroTargets = MACRO_TARGETS[goal];
+  
+  // Izračunaj stvarne macro omjere recepta
+  const totalMacroCals = (recipe.protein * 4) + (recipe.carbs * 4) + (recipe.fat * 9);
+  const actualProteinRatio = (recipe.protein * 4) / totalMacroCals;
+  const actualCarbsRatio = (recipe.carbs * 4) / totalMacroCals;
+  const actualFatRatio = (recipe.fat * 9) / totalMacroCals;
+  
+  // Score = koliko je recept blizu ciljanim omjerima
+  const proteinScore = 1 - Math.abs(actualProteinRatio - macroTargets.protein);
+  const carbsScore = 1 - Math.abs(actualCarbsRatio - macroTargets.carbs);
+  const fatScore = 1 - Math.abs(actualFatRatio - macroTargets.fat);
+  
+  // Kalorijska blizina
+  const calorieDiff = Math.abs(recipe.calories - targetCalories) / targetCalories;
+  const calorieScore = Math.max(0, 1 - calorieDiff);
+  
+  // Težinski score prema cilju
+  let score = 0;
+  if (goal === 'lose') {
+    // Za mršavljenje: prioritet protein, zatim niske kalorije
+    score = proteinScore * 0.5 + calorieScore * 0.3 + carbsScore * 0.1 + fatScore * 0.1;
+  } else if (goal === 'gain') {
+    // Za bulk: prioritet ugljikohidrati, zatim kalorije
+    score = carbsScore * 0.4 + calorieScore * 0.3 + proteinScore * 0.2 + fatScore * 0.1;
+  } else {
+    // Održavanje: balansirano
+    score = proteinScore * 0.3 + carbsScore * 0.3 + calorieScore * 0.25 + fatScore * 0.15;
+  }
+  
+  return score;
+}
+
+// ============================================
+// MAIN HANDLER
+// ============================================
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const goalParam = searchParams.get('goal') as GoalType | null;
+    const goal: GoalType = goalParam && ['lose', 'maintain', 'gain'].includes(goalParam) 
+      ? goalParam 
+      : 'maintain';
+
+    console.log(`\n🚀 Recipe Plan Generator - CILJ: ${goal.toUpperCase()}`);
+
+    // Demo targets prilagođeni cilju
+    const baseCalories = goal === 'lose' ? 1800 : goal === 'gain' ? 2800 : 2200;
+    const macroRatios = MACRO_TARGETS[goal];
+    
     const targets = {
-      calories: 2200,
-      protein: 165,
-      carbs: 220,
-      fat: 73,
+      calories: baseCalories,
+      protein: Math.round((baseCalories * macroRatios.protein) / 4), // g proteina
+      carbs: Math.round((baseCalories * macroRatios.carbs) / 4),     // g UH
+      fat: Math.round((baseCalories * macroRatios.fat) / 9),         // g masti
+      goal,
     };
+
+    console.log(`📊 Ciljevi: ${targets.calories} kcal | P: ${targets.protein}g | C: ${targets.carbs}g | F: ${targets.fat}g`);
 
     const meals: ScaledMeal[] = [];
 
-    // Izračunaj ciljane proteine po obroku (proporcionalno kalorijama)
-    const targetProteinPerMeal = targets.protein;
-
     for (const mealSlot of MEAL_SLOTS) {
       const targetCalories = Math.round(targets.calories * mealSlot.percent);
-      const targetProtein = Math.round(targetProteinPerMeal * mealSlot.percent);
+      const queries = mealSlot.queries[goal];
       
-      console.log(`\n🍽️ ${mealSlot.slot}: tražim recept za ~${targetCalories} kcal, ~${targetProtein}g proteina...`);
+      console.log(`\n🍽️ ${mealSlot.slot}: tražim recepte za ${goal}...`);
 
-      // Probaj oba querya
+      // Pretraži s oba querya
       let recipes: SimplifiedRecipe[] = [];
-      for (const query of mealSlot.queries) {
+      for (const query of queries) {
         const results = await searchRecipes({
           query,
           random: true,
-          limit: 15,
+          limit: 12,
         });
         recipes = [...recipes, ...results];
-        if (recipes.length >= 10) break; // Dosta recepata
+        if (recipes.length >= 15) break;
         await new Promise(resolve => setTimeout(resolve, 100));
       }
       
@@ -73,41 +185,20 @@ export async function GET() {
       console.log(`   Pronađeno ${uniqueRecipes.length} recepata`);
 
       if (uniqueRecipes.length > 0) {
-        // PRIORITIZIRAJ recepte s visokim proteinima!
-        // Sortiraj po omjeru proteina (g proteina po 100 kalorija)
-        const sortedByProtein = [...uniqueRecipes].sort((a, b) => {
-          const ratioA = (a.protein / a.calories) * 100;
-          const ratioB = (b.protein / b.calories) * 100;
-          return ratioB - ratioA; // Viši protein ratio = bolje
-        });
-
-        // Uzmi top 5 po proteinima, pa od njih biraj najbliži kalorijama
-        const topProteinRecipes = sortedByProtein.slice(0, 8);
+        // SCORE svaki recept prema cilju
+        const scoredRecipes = uniqueRecipes.map(recipe => ({
+          recipe,
+          score: scoreRecipeForGoal(recipe, goal, targetCalories),
+        }));
         
-        const minCal = targetCalories * 0.4;
-        const maxCal = targetCalories * 2.5;
+        // Sortiraj po score-u (najbolji prvi)
+        scoredRecipes.sort((a, b) => b.score - a.score);
         
-        let bestRecipe = topProteinRecipes[0];
-        let bestScore = 0;
+        // Uzmi najbolji
+        const bestRecipe = scoredRecipes[0].recipe;
         
-        for (const recipe of topProteinRecipes) {
-          if (recipe.calories >= minCal && recipe.calories <= maxCal) {
-            // Score = protein ratio * closeness to target calories
-            const proteinRatio = (recipe.protein / recipe.calories) * 100;
-            const calorieDiff = 1 - Math.abs(recipe.calories - targetCalories) / targetCalories;
-            const score = proteinRatio * 0.7 + calorieDiff * 30; // Protein je prioritet
-            
-            if (score > bestScore) {
-              bestScore = score;
-              bestRecipe = recipe;
-            }
-          }
-        }
-
-        // Skaliraj recept prema ciljanim kalorijama
+        // Skaliraj prema ciljanim kalorijama
         const scaleFactor = targetCalories / bestRecipe.calories;
-        
-        // Ograniči skaliranje na 0.4x - 3x (fitness obroci su često manji pa treba više skalirati)
         const clampedScale = Math.max(0.4, Math.min(3, scaleFactor));
         
         const scaled = {
@@ -124,15 +215,14 @@ export async function GET() {
           scaled,
         });
 
-        console.log(`   ✅ ${bestRecipe.name}`);
-        console.log(`      Original: ${bestRecipe.calories} kcal | Skalirano (${clampedScale.toFixed(2)}x): ${scaled.calories} kcal`);
+        console.log(`   ✅ ${bestRecipe.name} (score: ${scoredRecipes[0].score.toFixed(2)})`);
+        console.log(`      ${scaled.calories} kcal | P: ${scaled.protein}g | C: ${scaled.carbs}g | F: ${scaled.fat}g`);
       }
 
-      // Pauza između API poziva
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 150));
     }
 
-    // Izračunaj skalirane totale
+    // Izračunaj totale
     const totals = meals.reduce(
       (acc, m) => ({
         calories: acc.calories + m.scaled.calories,
@@ -151,22 +241,38 @@ export async function GET() {
       fatPercent: Math.round((totals.fat / targets.fat) * 100),
     };
 
-    console.log(`\n📊 REZULTATI:`);
-    console.log(`   Ciljevi: ${targets.calories} kcal, ${targets.protein}g P, ${targets.carbs}g C, ${targets.fat}g F`);
-    console.log(`   Ostvareno: ${totals.calories} kcal, ${totals.protein}g P, ${totals.carbs}g C, ${totals.fat}g F`);
-    console.log(`   Točnost: ${accuracy.caloriesPercent}% kcal, ${accuracy.proteinPercent}% P`);
+    // Preporuke prema cilju
+    const recommendations: string[] = [];
+    if (goal === 'lose') {
+      recommendations.push("Fokusiraj se na proteine za očuvanje mišića");
+      recommendations.push("Pij puno vode između obroka");
+      recommendations.push("Izbjegavaj prerađenu hranu i skrivene kalorije");
+    } else if (goal === 'gain') {
+      recommendations.push("Jedi dovoljno ugljikohidrata za energiju na treningu");
+      recommendations.push("Uzmi kreatin (3-5g dnevno) ako nemaš kontraindikacija");
+      recommendations.push("Proteinski shake nakon treninga");
+    } else {
+      recommendations.push("Održavaj balans između proteina, UH i masti");
+      recommendations.push("Slušaj svoje tijelo i prilagođavaj unos");
+    }
+
+    console.log(`\n📊 REZULTATI za ${goal.toUpperCase()}:`);
+    console.log(`   Ciljevi: ${targets.calories} kcal | P: ${targets.protein}g | C: ${targets.carbs}g | F: ${targets.fat}g`);
+    console.log(`   Ostvareno: ${totals.calories} kcal | P: ${totals.protein}g | C: ${totals.carbs}g | F: ${totals.fat}g`);
+    console.log(`   Točnost: Kcal ${accuracy.caloriesPercent}% | P ${accuracy.proteinPercent}% | C ${accuracy.carbsPercent}% | F ${accuracy.fatPercent}%`);
 
     return NextResponse.json({
       success: true,
-      message: "Demo dnevni plan s receptima (SKALIRANO)",
+      message: `Plan prehrane za ${goal === 'lose' ? 'MRŠAVLJENJE' : goal === 'gain' ? 'BULK' : 'ODRŽAVANJE'}`,
+      goal,
       targets,
       totals,
       accuracy,
+      recommendations,
       meals: meals.map(m => ({
         slot: m.slot,
         name: m.recipe.name,
         image: m.recipe.image,
-        originalCalories: m.recipe.calories,
         scaleFactor: Math.round(m.scaleFactor * 100) / 100,
         calories: m.scaled.calories,
         protein: m.scaled.protein,
@@ -175,14 +281,11 @@ export async function GET() {
         portionNote: m.scaleFactor > 1.1 ? `${Math.round(m.scaleFactor * 100)}% porcije` : 
                      m.scaleFactor < 0.9 ? `${Math.round(m.scaleFactor * 100)}% porcije` : 
                      "Standardna porcija",
-        // Skalirane gramaže sastojaka
         ingredientsWithGrams: (m.recipe.ingredientsWithGrams || []).map(ing => ({
           food: ing.food,
           grams: Math.round(ing.grams * m.scaleFactor),
-          text: ing.text,
         })),
         totalWeight: Math.round((m.recipe.totalWeight || 0) * m.scaleFactor),
-        ingredients: m.recipe.ingredients.slice(0, 8),
         source: m.recipe.source,
       })),
     });
