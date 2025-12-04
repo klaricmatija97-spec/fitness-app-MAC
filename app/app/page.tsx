@@ -991,6 +991,7 @@ function AppDashboardContent() {
     selectedWorkout,
     setSelectedWorkout,
     setCurrentSlide,
+    prevSlide,
     intakeSubmitted,
     isSubmittingIntake,
     submitIntake,
@@ -1013,7 +1014,7 @@ function AppDashboardContent() {
     setGeneratingMealPlan,
     finalMacros,
     setFinalMacros,
-  }), [intakeForm, updateIntakeForm, toggleIntakeArrayValue, intakeValidationMap, showBMRCalc, showTDEECalc, showTargetCalc, showMacrosCalc, bmrInputs, bmrResult, tdeeInputs, tdeeResult, targetInputs, targetResult, macrosInputs, macrosResult, bmrConfirmed, tdeeConfirmed, targetConfirmed, macrosConfirmed, mealPlanPreference, generatedMealPlan, showMealPlan, trainingSplit, trainingFrequency, trainingType, trainingGender, generatedTrainingPlan, showTrainingPlan, selectedWorkout, setCurrentSlide, intakeSubmitted, isSubmittingIntake, submitIntake, finalDataSubmitted, isSubmittingFinalData, submitFinalData, generatingWeeklyPlan, weeklyMealPlan, weeklyPlanError, router, mealPlanError, generatingMealPlan, finalMacros, setFinalMacros]);
+  }), [intakeForm, updateIntakeForm, toggleIntakeArrayValue, intakeValidationMap, showBMRCalc, showTDEECalc, showTargetCalc, showMacrosCalc, bmrInputs, bmrResult, tdeeInputs, tdeeResult, targetInputs, targetResult, macrosInputs, macrosResult, bmrConfirmed, tdeeConfirmed, targetConfirmed, macrosConfirmed, mealPlanPreference, generatedMealPlan, showMealPlan, trainingSplit, trainingFrequency, trainingType, trainingGender, generatedTrainingPlan, showTrainingPlan, selectedWorkout, setCurrentSlide, prevSlide, intakeSubmitted, isSubmittingIntake, submitIntake, finalDataSubmitted, isSubmittingFinalData, submitFinalData, generatingWeeklyPlan, weeklyMealPlan, weeklyPlanError, router, mealPlanError, generatingMealPlan, finalMacros, setFinalMacros]);
 
   // Ref za praćenje prethodnih slideova da spriječimo beskonačnu petlju
   const prevSlidesRef = useRef<string>("");
@@ -2223,6 +2224,7 @@ type BuildSlidesProps = {
   selectedWorkout: number | null;
   setSelectedWorkout: (workout: number | null) => void;
   setCurrentSlide: (slide: number) => void;
+  prevSlide: () => void;
   intakeSubmitted: boolean;
   isSubmittingIntake: boolean;
   submitIntake: () => Promise<void>;
@@ -2317,6 +2319,7 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
     selectedWorkout,
     setSelectedWorkout,
     setCurrentSlide,
+    prevSlide,
     intakeForm,
     updateIntakeForm,
     toggleIntakeArrayValue,
