@@ -791,6 +791,48 @@ function AppDashboardContent() {
     }
   }, []);
 
+  // Sync intakeForm data to calculator inputs (da korisnik ne unosi podatke dva puta)
+  useEffect(() => {
+    // Parse weight from intakeForm
+    let weightKg = parseFloat(intakeForm.weight.value);
+    if (!isNaN(weightKg) && weightKg > 0) {
+      if (intakeForm.weight.unit === "lb") {
+        weightKg = weightKg * 0.453592;
+      }
+      // Update BMR inputs with weight from intake
+      setBMRInputs(prev => ({ ...prev, weight: Math.round(weightKg) }));
+      setMacrosInputs(prev => ({ ...prev, weight: Math.round(weightKg) }));
+    }
+
+    // Parse height from intakeForm
+    let heightCm = parseFloat(intakeForm.height.value);
+    if (!isNaN(heightCm) && heightCm > 0) {
+      if (intakeForm.height.unit === "in") {
+        heightCm = heightCm * 2.54;
+      }
+      setBMRInputs(prev => ({ ...prev, height: Math.round(heightCm) }));
+    }
+
+    // Parse age from ageRange
+    if (intakeForm.ageRange && intakeForm.ageRange !== "other") {
+      const [min, max] = intakeForm.ageRange.split("-").map(Number);
+      if (min && max) {
+        const avgAge = Math.floor((min + max) / 2);
+        setBMRInputs(prev => ({ ...prev, age: avgAge }));
+      } else if (intakeForm.ageRange.startsWith("70")) {
+        setBMRInputs(prev => ({ ...prev, age: 75 }));
+      } else if (intakeForm.ageRange.startsWith("10")) {
+        setBMRInputs(prev => ({ ...prev, age: 15 }));
+      }
+    }
+
+    // Parse gender from honorific
+    if (intakeForm.honorific) {
+      const gender = intakeForm.honorific === "mr" ? "male" : "female";
+      setBMRInputs(prev => ({ ...prev, gender: gender as Gender }));
+    }
+  }, [intakeForm.weight.value, intakeForm.weight.unit, intakeForm.height.value, intakeForm.height.unit, intakeForm.ageRange, intakeForm.honorific]);
+
   useEffect(() => {
     const clientId = localStorage.getItem("clientId");
     if (clientId) {
