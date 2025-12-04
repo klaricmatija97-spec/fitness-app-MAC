@@ -1350,6 +1350,25 @@ function buildCompositeMealForSlot(
     'banana', 'avocado', 'avokado', 'greek yogurt', 'grčki jogurt'
   ];
   
+  // NOVO: Stilovi jela koji se ne smiju ponavljati u istom danu
+  const mealStyleKeywords: Record<string, string[]> = {
+    'rižot': ['rižot', 'risotto'],
+    'gulaš': ['gulaš', 'goulash'],
+    'varivo': ['varivo', 'stew'],
+    'salata': ['salata', 'salad'],
+    'smoothie': ['smoothie', 'shake'],
+    'bowl': ['bowl', 'zdjela'],
+    'wrap': ['wrap', 'tortilla'],
+    'sendvič': ['sendvič', 'sandwich', 'toast'],
+    'juha': ['juha', 'soup'],
+    'tjestenina': ['tjestenina', 'pasta', 'špageti', 'spaghetti'],
+    'burger': ['burger', 'hamburger'],
+    'pizza': ['pizza'],
+    'palačinke': ['palačinke', 'pancake'],
+    'omlette': ['omlet', 'omelette', 'fritata'],
+    'pečeno': ['pečen', 'roasted', 'baked'],
+  };
+  
   // Izvuci glavne namirnice iz prethodnih obroka danas
   const usedMainIngredientsToday = new Set<string>();
   for (const prevMeal of previousMeals) {
@@ -1385,6 +1404,63 @@ function buildCompositeMealForSlot(
       mealOptions = definitions.map(convertToMealOption).filter(opt => !excludedMealNames.has(opt.name));
     } else if (mealOptions.length < beforeFilter) {
       console.log(`   🔄 Filtrirano ${beforeFilter - mealOptions.length} obroka zbog ponavljanja namirnica (ostalo: ${mealOptions.length})`);
+    }
+  }
+  
+  // NOVO: Filtriraj obroke istog STILA (npr. dva rižota u istom danu)
+  const usedMealStyles = new Set<string>();
+  for (const prevMeal of previousMeals) {
+    const mealNameLower = prevMeal.name.toLowerCase();
+    for (const [style, keywords] of Object.entries(mealStyleKeywords)) {
+      for (const keyword of keywords) {
+        if (mealNameLower.includes(keyword)) {
+          usedMealStyles.add(style);
+          break;
+        }
+      }
+    }
+  }
+  
+  // Filtriraj obroke koji su istog stila kao prethodni obroci danas
+  if (usedMealStyles.size > 0) {
+    const beforeStyleFilter = mealOptions.length;
+    mealOptions = mealOptions.filter(option => {
+      const optionNameLower = option.name.toLowerCase();
+      for (const usedStyle of usedMealStyles) {
+        const styleKeywords = mealStyleKeywords[usedStyle];
+        if (styleKeywords) {
+          for (const keyword of styleKeywords) {
+            if (optionNameLower.includes(keyword)) {
+              // Ovaj obrok je istog stila kao neki prethodni - isključi ga
+              return false;
+            }
+          }
+        }
+      }
+      return true;
+    });
+    
+    // Ako smo previše suzili izbor, popusti pravilo
+    if (mealOptions.length === 0) {
+      console.warn(`⚠️ Svi obroci za ${slot} su istog stila kao prethodni obroci danas, popuštam pravilo...`);
+      // Vrati opcije samo bez ponavljanja namirnica
+      mealOptions = definitions.map(convertToMealOption).filter(opt => {
+        if (excludedMealNames.has(opt.name)) return false;
+        // Zadrži filtriranje namirnica
+        for (const comp of opt.components) {
+          const foodLower = comp.food.toLowerCase();
+          for (const usedIngredient of usedMainIngredientsToday) {
+            if (foodLower.includes(usedIngredient)) return false;
+          }
+        }
+        return true;
+      });
+      // Ako i dalje nema, vrati sve
+      if (mealOptions.length === 0) {
+        mealOptions = definitions.map(convertToMealOption).filter(opt => !excludedMealNames.has(opt.name));
+      }
+    } else if (mealOptions.length < beforeStyleFilter) {
+      console.log(`   🎨 Filtrirano ${beforeStyleFilter - mealOptions.length} obroka zbog istog stila (ostalo: ${mealOptions.length})`);
     }
   }
 
