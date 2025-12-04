@@ -146,15 +146,82 @@ function formatAmount(name: string, grams: number): string {
   return `${grams}g`;
 }
 
+// Tip za Recipe-based jela
+interface RecipeMeal {
+  id: string;
+  slotType: string;
+  slotName: string;
+  recipe: {
+    id: string;
+    name: string;
+    image: string;
+    source: string;
+    sourceUrl: string;
+    servings: number;
+    prepTime: number;
+    ingredients: string[];
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber: number;
+  };
+  scaleFactor: number;
+  adjustedNutrition: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber: number;
+  };
+}
+
+interface RecipeDayPlan {
+  dayIndex: number;
+  dayName: string;
+  meals: RecipeMeal[];
+  totals: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber: number;
+  };
+}
+
+interface RecipeWeeklyPlan {
+  userId: string;
+  generatedAt: string;
+  weekStartDate: string;
+  userTargets: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    goalType: string;
+  };
+  days: RecipeDayPlan[];
+  weeklyAverages: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  };
+  source: string;
+}
+
 export default function MealsPage() {
   const router = useRouter();
   const [clientId, setClientId] = useState<string | null>(null);
   const [weeklyPlan, setWeeklyPlan] = useState<WeeklyMealPlan | null>(null);
+  const [recipePlan, setRecipePlan] = useState<RecipeWeeklyPlan | null>(null);
+  const [planMode, setPlanMode] = useState<'classic' | 'recipe'>('classic');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState(0);
   const [selectedMeal, setSelectedMeal] = useState<{ title: string; meal: GeneratedMeal } | null>(null);
-  const [planKey, setPlanKey] = useState(0); // Za animaciju novog plana
+  const [selectedRecipeMeal, setSelectedRecipeMeal] = useState<RecipeMeal | null>(null);
+  const [planKey, setPlanKey] = useState(0);
 
   useEffect(() => {
     const id = localStorage.getItem("clientId");
@@ -171,7 +238,11 @@ export default function MealsPage() {
     setError(null);
 
     try {
-      const res = await fetch("/api/meal-plan/weekly", {
+      const endpoint = planMode === 'recipe' 
+        ? "/api/meal-plan/recipes"
+        : "/api/meal-plan/weekly";
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: clientId }),
@@ -183,40 +254,18 @@ export default function MealsPage() {
         throw new Error(data.message || "Greška pri generiranju plana");
       }
 
-      // DEBUG: Log plan data to verify it matches generator output
-      console.log("📊 WEEKLY PLAN DATA FROM GENERATOR:", data.plan);
-      
-      // Log Thursday (index 3) as example day
-      if (data.plan?.days?.[3]) {
-        const thursday = data.plan.days[3];
-        console.log("\n🔍 THURSDAY (Dan 4) VERIFICATION:");
-        console.log("Daily totals from generator:", thursday.dailyTotals);
-        
-        // Sum meal totals manually
-        let manualSum = { calories: 0, protein: 0, carbs: 0, fat: 0 };
-        const mealTypes = ['breakfast', 'snack1', 'lunch', 'snack2', 'dinner', 'snack3'] as const;
-        mealTypes.forEach(mealType => {
-          const meal = thursday.meals[mealType];
-          if (meal && meal.totals) {
-            console.log(`  ${mealType}: ${meal.name} - ${meal.totals.calories} kcal, P: ${meal.totals.protein}g, C: ${meal.totals.carbs}g, F: ${meal.totals.fat}g`);
-            manualSum.calories += meal.totals.calories;
-            manualSum.protein += meal.totals.protein;
-            manualSum.carbs += meal.totals.carbs;
-            manualSum.fat += meal.totals.fat;
-          }
-        });
-        
-        // Calculate calories from macros
-        const calculatedCalories = Math.round(manualSum.protein * 4 + manualSum.carbs * 4 + manualSum.fat * 9);
-        console.log("\n📈 MANUAL SUM (from meal.totals):", manualSum);
-        console.log("📈 CALCULATED CALORIES (P×4 + C×4 + F×9):", calculatedCalories);
-        console.log("📈 GENERATOR dailyTotals.calories:", thursday.dailyTotals.calories);
-        console.log("✅ Match:", calculatedCalories === thursday.dailyTotals.calories ? "YES" : "NO");
-      }
+      console.log("📊 Plan generiran:", planMode, data.plan);
 
-      setWeeklyPlan(data.plan);
-      setPlanKey(prev => prev + 1); // Trigger animacije za novi plan
-      setSelectedDay(0); // Reset na prvi dan
+      if (planMode === 'recipe') {
+        setRecipePlan(data.plan);
+        setWeeklyPlan(null);
+      } else {
+        setWeeklyPlan(data.plan);
+        setRecipePlan(null);
+      }
+      
+      setPlanKey(prev => prev + 1);
+      setSelectedDay(0);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Greška pri generiranju plana";
       setError(errorMessage);
@@ -226,7 +275,7 @@ export default function MealsPage() {
   };
 
   useEffect(() => {
-    if (clientId && !weeklyPlan && !loading) {
+    if (clientId && !weeklyPlan && !recipePlan && !loading) {
       generateWeeklyPlan();
     }
   }, [clientId]);
@@ -263,18 +312,44 @@ export default function MealsPage() {
 
       <div className="mx-auto max-w-4xl px-4 py-8">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Tjedni Plan Prehrane</h1>
-            <p className="text-sm text-slate-400 mt-1">Personalizirani plan sa 6 obroka dnevno</p>
-            </div>
-            <button
+            <p className="text-sm text-slate-400 mt-1">
+              {planMode === 'recipe' ? 'Recepti s fotografijama iz Edamam baze' : 'Personalizirani plan sa 6 obroka dnevno'}
+            </p>
+          </div>
+          <button
             onClick={generateWeeklyPlan}
             disabled={loading}
             className="px-5 py-2.5 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-500 disabled:opacity-50 transition-colors shadow-lg shadow-violet-500/20"
-            >
+          >
             {loading ? "Generiram..." : "Novi plan"}
-            </button>
+          </button>
+        </div>
+
+        {/* Mode Toggle */}
+        <div className="mb-6 flex items-center gap-1 p-1 bg-slate-900 rounded-xl w-fit">
+          <button
+            onClick={() => { setPlanMode('classic'); setRecipePlan(null); }}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              planMode === 'classic' 
+                ? 'bg-violet-600 text-white shadow-lg' 
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Klasični Plan
+          </button>
+          <button
+            onClick={() => { setPlanMode('recipe'); setWeeklyPlan(null); }}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+              planMode === 'recipe' 
+                ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg' 
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <span>📸</span> Recepti
+          </button>
         </div>
 
         {/* Error */}
@@ -285,16 +360,229 @@ export default function MealsPage() {
         )}
 
         {/* Loading */}
-        {loading && !weeklyPlan && (
+        {loading && !weeklyPlan && !recipePlan && (
           <div className="text-center py-16">
             <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-slate-700 border-t-violet-500"></div>
-            <p className="mt-3 text-slate-400 text-sm">Generiram tvoj plan prehrane...</p>
+            <p className="mt-3 text-slate-400 text-sm">
+              {planMode === 'recipe' ? 'Tražim recepte s fotografijama...' : 'Generiram tvoj plan prehrane...'}
+            </p>
           </div>
         )}
 
-        {/* Plan */}
+        {/* Recipe Plan */}
         <AnimatePresence mode="wait">
-        {weeklyPlan && (
+        {recipePlan && planMode === 'recipe' && (
+          <motion.div
+            key={`recipe-${planKey}`}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          >
+            {/* Ciljevi - Recipe */}
+            <motion.div 
+              className="mb-4 p-4 bg-gradient-to-r from-orange-900/30 to-amber-900/30 border border-orange-800/50 rounded-xl"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-orange-300/70 uppercase tracking-wide">Dnevni ciljevi</p>
+                <span className="text-xs px-2 py-1 rounded-full bg-orange-800/50 text-orange-300 border border-orange-700">
+                  {recipePlan.userTargets.goalType === 'lose' ? '🎯 Skidanje kila' : 
+                   recipePlan.userTargets.goalType === 'gain' ? '💪 Dobivanje mišića' : '⚖️ Održavanje'}
+                </span>
+              </div>
+              <div className="flex gap-6 text-sm">
+                <div><span className="font-semibold text-white">{recipePlan.userTargets.calories}</span> <span className="text-orange-300/70">kcal</span></div>
+                <div><span className="font-semibold text-white">{recipePlan.userTargets.protein}g</span> <span className="text-orange-300/70">proteina</span></div>
+                <div><span className="font-semibold text-white">{recipePlan.userTargets.carbs}g</span> <span className="text-orange-300/70">UH</span></div>
+                <div><span className="font-semibold text-white">{recipePlan.userTargets.fat}g</span> <span className="text-orange-300/70">masti</span></div>
+              </div>
+            </motion.div>
+
+            {/* Dani - Recipe */}
+            <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+              {recipePlan.days.map((day, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedDay(idx)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                    selectedDay === idx
+                      ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg'
+                      : 'bg-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {day.dayName}
+                </button>
+              ))}
+            </div>
+
+            {/* Recipe Meals Grid */}
+            <div className="grid gap-4">
+              {recipePlan.days[selectedDay]?.meals.map((meal, idx) => (
+                <motion.div
+                  key={meal.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  className="bg-slate-800/50 rounded-xl overflow-hidden border border-slate-700 hover:border-orange-600/50 transition-colors cursor-pointer"
+                  onClick={() => setSelectedRecipeMeal(meal)}
+                >
+                  <div className="flex">
+                    {/* Slika */}
+                    <div className="w-32 h-32 flex-shrink-0 relative">
+                      <img 
+                        src={meal.recipe.image} 
+                        alt={meal.recipe.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/images/placeholder-food.jpg';
+                        }}
+                      />
+                      <div className="absolute top-2 left-2">
+                        <span className="px-2 py-1 bg-black/60 backdrop-blur-sm rounded-full text-xs text-white">
+                          {meal.slotName}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Info */}
+                    <div className="flex-1 p-4">
+                      <h3 className="font-semibold text-white text-sm line-clamp-2 mb-2">
+                        {meal.recipe.name}
+                      </h3>
+                      <p className="text-xs text-slate-500 mb-2">
+                        Izvor: {meal.recipe.source}
+                      </p>
+                      <div className="flex gap-3 text-xs">
+                        <span className="text-orange-400">{meal.adjustedNutrition.calories} kcal</span>
+                        <span className="text-slate-400">P: {meal.adjustedNutrition.protein}g</span>
+                        <span className="text-slate-400">C: {meal.adjustedNutrition.carbs}g</span>
+                        <span className="text-slate-400">F: {meal.adjustedNutrition.fat}g</span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Dnevni totali - Recipe */}
+            {recipePlan.days[selectedDay] && (
+              <motion.div 
+                className="mt-4 p-4 bg-slate-800/30 rounded-xl border border-slate-700"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                <p className="text-xs text-slate-500 uppercase mb-2">Dnevni unos</p>
+                <div className="flex justify-between text-sm">
+                  <span className="text-orange-400 font-semibold">{recipePlan.days[selectedDay].totals.calories} kcal</span>
+                  <span className="text-slate-300">{recipePlan.days[selectedDay].totals.protein}g proteina</span>
+                  <span className="text-slate-300">{recipePlan.days[selectedDay].totals.carbs}g UH</span>
+                  <span className="text-slate-300">{recipePlan.days[selectedDay].totals.fat}g masti</span>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+        </AnimatePresence>
+
+        {/* Recipe Meal Modal */}
+        <AnimatePresence>
+          {selectedRecipeMeal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setSelectedRecipeMeal(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                className="bg-slate-900 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header Image */}
+                <div className="relative h-48">
+                  <img 
+                    src={selectedRecipeMeal.recipe.image} 
+                    alt={selectedRecipeMeal.recipe.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent" />
+                  <button
+                    onClick={() => setSelectedRecipeMeal(null)}
+                    className="absolute top-3 right-3 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center text-white"
+                  >
+                    ✕
+                  </button>
+                  <div className="absolute bottom-3 left-4 right-4">
+                    <span className="text-xs text-orange-400 uppercase tracking-wide">{selectedRecipeMeal.slotName}</span>
+                    <h2 className="text-xl font-bold text-white mt-1">{selectedRecipeMeal.recipe.name}</h2>
+                  </div>
+                </div>
+
+                <div className="p-4 overflow-y-auto max-h-[50vh]">
+                  {/* Makrosi */}
+                  <div className="grid grid-cols-4 gap-2 mb-4">
+                    <div className="bg-orange-900/30 rounded-lg p-3 text-center">
+                      <p className="text-lg font-bold text-orange-400">{selectedRecipeMeal.adjustedNutrition.calories}</p>
+                      <p className="text-xs text-slate-400">kcal</p>
+                    </div>
+                    <div className="bg-slate-800 rounded-lg p-3 text-center">
+                      <p className="text-lg font-bold text-white">{selectedRecipeMeal.adjustedNutrition.protein}g</p>
+                      <p className="text-xs text-slate-400">Proteini</p>
+                    </div>
+                    <div className="bg-slate-800 rounded-lg p-3 text-center">
+                      <p className="text-lg font-bold text-white">{selectedRecipeMeal.adjustedNutrition.carbs}g</p>
+                      <p className="text-xs text-slate-400">UH</p>
+                    </div>
+                    <div className="bg-slate-800 rounded-lg p-3 text-center">
+                      <p className="text-lg font-bold text-white">{selectedRecipeMeal.adjustedNutrition.fat}g</p>
+                      <p className="text-xs text-slate-400">Masti</p>
+                    </div>
+                  </div>
+
+                  {/* Sastojci */}
+                  <div className="mb-4">
+                    <h3 className="text-sm font-semibold text-white mb-2">Sastojci</h3>
+                    <ul className="space-y-1">
+                      {selectedRecipeMeal.recipe.ingredients.map((ing, i) => (
+                        <li key={i} className="text-sm text-slate-300 flex items-start gap-2">
+                          <span className="text-orange-500 mt-1">•</span>
+                          {ing}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Izvor */}
+                  <div className="pt-3 border-t border-slate-700">
+                    <p className="text-xs text-slate-500">
+                      Izvor: <span className="text-slate-400">{selectedRecipeMeal.recipe.source}</span>
+                    </p>
+                    {selectedRecipeMeal.recipe.sourceUrl && (
+                      <a 
+                        href={selectedRecipeMeal.recipe.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-orange-400 hover:underline mt-1 inline-block"
+                      >
+                        Pogledaj originalni recept →
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Classic Plan */}
+        <AnimatePresence mode="wait">
+        {weeklyPlan && planMode === 'classic' && (
           <motion.div
             key={planKey}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
