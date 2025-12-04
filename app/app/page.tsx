@@ -1140,7 +1140,7 @@ function AppDashboardContent() {
   return (
     <main className={clsx(
       "relative bg-[#0D0F10] flex flex-col",
-                    currentId === "intro" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) || ["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros"].includes(currentId) ? "h-screen w-screen fixed inset-0 overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "min-h-screen w-screen overflow-y-auto" : "min-h-screen w-screen overflow-y-auto"
+                    currentId === "intro" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) || ["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros", "contact"].includes(currentId) ? "h-screen w-screen fixed inset-0 overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "min-h-screen w-screen overflow-y-auto" : "min-h-screen w-screen overflow-y-auto"
     )}>
       {/* AI Chat Bubble - Persistent on all slides */}
       <AIChat />
@@ -1148,10 +1148,10 @@ function AppDashboardContent() {
       {/* Main Layout - 100vh, no scroll */}
       <div className={clsx(
         "flex flex-col min-h-0",
-        currentId === "intro" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) || ["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros"].includes(currentId) ? "h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 overflow-y-auto" : "flex-1 overflow-y-auto"
+        currentId === "intro" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) || ["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros", "contact"].includes(currentId) ? "h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 overflow-y-auto" : "flex-1 overflow-y-auto"
       )}>
         {/* Header/Sidebar - Hidden on intro, login, educational slides, meals welcome screen, and calculator slides */}
-        {currentId !== "intro" && currentId !== "login" && currentId !== "edu_wizard" && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && !["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros"].includes(currentId) && (
+        {currentId !== "intro" && currentId !== "login" && currentId !== "edu_wizard" && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && !["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros", "contact"].includes(currentId) && (
         <div className="flex-shrink-0 px-6 py-5 border-b border-gray-800 bg-[#0D0F10] relative">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             {/* Lijevo - Hamburger menu */}
@@ -1248,7 +1248,7 @@ function AppDashboardContent() {
         <div 
           className={clsx(
           "relative",
-            currentId === "intro" || currentId === "login" || currentId === "edu_wizard" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) || ["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros"].includes(currentId) ? "fixed inset-0 z-30 h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 pb-20 overflow-y-auto min-h-0" : "flex-1 pb-20 overflow-y-auto min-h-0"
+            currentId === "intro" || currentId === "login" || currentId === "edu_wizard" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) || ["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros", "contact"].includes(currentId) ? "fixed inset-0 z-30 h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 pb-20 overflow-y-auto min-h-0" : "flex-1 pb-20 overflow-y-auto min-h-0"
           )}
           style={{
             willChange: "transform",
@@ -1355,7 +1355,7 @@ function AppDashboardContent() {
                         currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "overflow-y-auto min-h-0" : "overflow-y-auto min-h-0"
                       )}>
                       {/* Navigation Arrow - Left (Back) - Hidden on meals welcome screen and calculator slides */}
-                      {currentSlide > 0 && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && !["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros"].includes(currentId) && (
+                      {currentSlide > 0 && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && !["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros", "contact"].includes(currentId) && (
                         <motion.div
                           className="absolute left-8 top-1/2 -translate-y-1/2 z-[100] group"
                           initial={{ opacity: 0.7, scale: 1, x: 0 }}
@@ -1397,7 +1397,7 @@ function AppDashboardContent() {
                       )}
                       
                       {/* Navigation Arrow - Right (Next) - Hidden on meals welcome screen and calculator slides */}
-                      {!isLastSlide && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && !["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros"].includes(currentId) && (
+                      {!isLastSlide && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && !["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros", "contact"].includes(currentId) && (
                         <motion.div
                           className="absolute right-8 top-1/2 -translate-y-1/2 z-[100] group"
                           initial={{ opacity: 0.7, scale: 1, x: 0 }}
@@ -3511,161 +3511,166 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
     },
     {
       id: "contact",
-      title: "Hajdemo početi",
-      description:
-        "Pregledaj svoje kalkulacije i pošalji sve podatke za generiranje plana prehrane.",
+      title: "Sažetak Kalkulacija",
+      description: "Pregledaj svoje kalkulacije i spremi podatke.",
       render: (
-        <div className="space-y-6 overflow-y-auto h-full">
-          {finalMacros && (
-            <div className="rounded-2xl border border-gray-600 bg-gray-900/40 px-4 py-3 text-sm text-gray-100">
-              <p className="font-semibold mb-2">Tvoj sažetak izračuna</p>
-              <ul className="grid gap-1 sm:grid-cols-2">
-                <li>
-                  Kalorije:{" "}
-                  <span className="font-semibold">{finalMacros.calories}</span> kcal/dan
-                </li>
-                <li>
-                  Proteini:{" "}
-                  <span className="font-semibold">{finalMacros.protein.toFixed(1)}</span> g/dan
-                </li>
-                <li>
-                  Ugljikohidrati:{" "}
-                  <span className="font-semibold">{finalMacros.carbs.toFixed(1)}</span> g/dan
-                </li>
-                <li>
-                  Masti:{" "}
-                  <span className="font-semibold">{finalMacros.fat.toFixed(1)}</span> g/dan
-                </li>
-              </ul>
-            </div>
-          )}
-          {finalDataSubmitted ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="flex flex-col items-center justify-center py-12 text-center"
-            >
+        <CalculatorScreen
+          title="SAŽETAK KALKULACIJA"
+          subtitle="Vaši personalizirani rezultati"
+          onBack={prevSlide}
+        >
+          <AnimatePresence mode="wait">
+            {finalDataSubmitted ? (
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="text-6xl mb-4"
+                key="success"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-col items-center justify-center py-12 text-center"
               >
-                ✓
+                <motion.div
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                  className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center mb-6"
+                >
+                  <svg className="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </motion.div>
+                <motion.h2
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-2xl md:text-3xl font-light text-white mb-4"
+                >
+                  Podaci su spremljeni!
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="text-white/50 mb-8"
+                >
+                  Sada možete generirati personalizirani plan prehrane.
+                </motion.p>
+                <CalcButton
+                  onClick={() => setCurrentSlide(slideOrder.indexOf("meals"))}
+                >
+                  Idi na plan prehrane →
+                </CalcButton>
               </motion.div>
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="text-3xl font-bold text-[#F4F4F4] mb-2"
-                style={{ fontFamily: "var(--font-inter), sans-serif" }}
+            ) : (
+              <motion.div
+                key="form"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="space-y-6"
               >
-                Podaci su spremljeni! Sada možete generirati plan prehrane.
-              </motion.h2>
-            </motion.div>
-          ) : (
-            <>
-              {/* Input polja za kontakt podatke */}
-              <div className="rounded-[20px] border border-[#E8E8E8] bg-white/80 backdrop-blur-sm p-5 text-sm text-[#1A1A1A] space-y-4">
-                <p className="font-semibold text-[#1A1A1A] mb-4">Kontakt podaci</p>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Ime (opcionalno)
-                  </label>
-                  <input
-                    type="text"
-                    value={intakeForm.name || ""}
-                    onChange={(e) => updateIntakeForm("name", e.target.value)}
-                    placeholder="Tvoje ime"
-                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm text-[#1A1A1A] focus:border-[#4B0082] focus:outline-none"
+                {/* Calculation Results Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <CalcResult
+                    label="BMR"
+                    value={bmrResult ? bmrResult.toFixed(0) : "—"}
+                    unit="kcal"
+                  />
+                  <CalcResult
+                    label="TDEE"
+                    value={tdeeResult ? tdeeResult.toFixed(0) : "—"}
+                    unit="kcal"
+                  />
+                  <CalcResult
+                    label="Ciljane"
+                    value={targetResult ? targetResult.toFixed(0) : "—"}
+                    unit="kcal"
+                    highlight
+                  />
+                  <CalcResult
+                    label="Proteini"
+                    value={macrosResult ? `${macrosResult.protein.toFixed(0)}g` : "—"}
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email (opcionalno)
-                  </label>
-                  <input
-                    type="email"
-                    value={intakeForm.email || ""}
-                    onChange={(e) => updateIntakeForm("email", e.target.value)}
-                    placeholder="tvoj@email.com"
-                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm text-[#1A1A1A] focus:border-[#4B0082] focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Telefon (opcionalno)
-                  </label>
-                  <input
-                    type="tel"
-                    value={intakeForm.phone || ""}
-                    onChange={(e) => updateIntakeForm("phone", e.target.value)}
-                    placeholder="+385 12 345 678"
-                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm text-[#1A1A1A] focus:border-[#4B0082] focus:outline-none"
-                  />
-                </div>
-              </div>
-              
-              <div className="rounded-[20px] border border-[#E8E8E8] bg-white/80 backdrop-blur-sm p-5 text-sm text-[#1A1A1A]">
-                <p className="font-semibold text-[#1A1A1A] mb-4">Tvoje kalkulacije</p>
-                <div className="space-y-3">
-                  {bmrResult && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">BMR:</span>
-                      <span className="font-semibold text-[#1A1A1A]">{bmrResult.toFixed(0)} kcal</span>
-                    </div>
-                  )}
-                  {tdeeResult && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">TDEE:</span>
-                      <span className="font-semibold text-[#1A1A1A]">{tdeeResult.toFixed(0)} kcal</span>
-                    </div>
-                  )}
-                  {targetResult && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Target Calories:</span>
-                      <span className="font-semibold text-[#1A1A1A]">{targetResult.toFixed(0)} kcal</span>
-                    </div>
-                  )}
-                  {macrosResult && (
-                    <>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Proteini:</span>
-                        <span className="font-semibold text-[#1A1A1A]">{macrosResult.protein.toFixed(1)}g</span>
+
+                {/* Macros breakdown */}
+                {macrosResult && (
+                  <CalcCard>
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div>
+                        <div className="text-2xl font-light text-white">{macrosResult.protein.toFixed(0)}g</div>
+                        <div className="text-xs text-white/40 mt-1">Proteini</div>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Ugljikohidrati:</span>
-                        <span className="font-semibold text-[#1A1A1A]">{macrosResult.carbs.toFixed(1)}g</span>
+                      <div>
+                        <div className="text-2xl font-light text-white">{macrosResult.carbs.toFixed(0)}g</div>
+                        <div className="text-xs text-white/40 mt-1">Ugljikohidrati</div>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Masti:</span>
-                        <span className="font-semibold text-[#1A1A1A]">{macrosResult.fats.toFixed(1)}g</span>
+                      <div>
+                        <div className="text-2xl font-light text-white">{macrosResult.fats.toFixed(0)}g</div>
+                        <div className="text-xs text-white/40 mt-1">Masti</div>
                       </div>
-                    </>
-                  )}
-                  {(!bmrResult || !tdeeResult || !targetResult || !macrosResult) && (
-                    <div className="text-red-600 text-sm mt-2">
-                      ⚠️ Molimo izračunajte sve kalkulacije (BMR, TDEE, Target Calories, Makrosi) prije slanja podataka.
                     </div>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={submitFinalData}
-                disabled={isSubmittingFinalData || !bmrResult || !tdeeResult || !targetResult || !macrosResult}
-                className={clsx(
-                  "w-full rounded-[20px] bg-[#4B0082] px-6 py-4 text-lg font-semibold text-white transition-all",
-                  "hover:bg-[#5a0099] focus:outline-none focus:ring-2 focus:ring-[#4B0082] focus:ring-offset-2",
-                  "disabled:opacity-50 disabled:cursor-not-allowed"
+                  </CalcCard>
                 )}
-                style={{ fontFamily: "var(--font-inter), sans-serif" }}
-              >
-                {isSubmittingFinalData ? "Šaljem..." : "Pošalji podatke"}
-              </button>
-            </>
-          )}
-        </div>
+
+                {/* Warning if not all calculated */}
+                {(!bmrResult || !tdeeResult || !targetResult || !macrosResult) && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-center">
+                    <p className="text-red-400 text-sm">
+                      Molimo izračunajte sve kalkulacije prije spremanja podataka.
+                    </p>
+                  </div>
+                )}
+
+                {/* Contact info (optional, collapsed) */}
+                <CalcCard>
+                  <p className="text-white/60 text-sm mb-4">Kontakt podaci (opcionalno)</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <CalcInput
+                      label="Ime"
+                      value={intakeForm.name || ""}
+                      onChange={(v) => updateIntakeForm("name", v)}
+                      placeholder="Tvoje ime"
+                    />
+                    <CalcInput
+                      label="Email"
+                      value={intakeForm.email || ""}
+                      onChange={(v) => updateIntakeForm("email", v)}
+                      placeholder="tvoj@email.com"
+                    />
+                    <CalcInput
+                      label="Telefon"
+                      value={intakeForm.phone || ""}
+                      onChange={(v) => updateIntakeForm("phone", v)}
+                      placeholder="+385..."
+                    />
+                  </div>
+                </CalcCard>
+
+                {/* Submit Button */}
+                <motion.button
+                  onClick={submitFinalData}
+                  disabled={isSubmittingFinalData || !bmrResult || !tdeeResult || !targetResult || !macrosResult}
+                  whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(255,255,255,0.2)" }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full py-4 bg-gradient-to-r from-white/10 to-white/5 border-2 border-white/40 text-white font-medium rounded-xl 
+                             hover:border-white/60 hover:from-white/15 hover:to-white/10
+                             disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100
+                             transition-all duration-300"
+                >
+                  {isSubmittingFinalData ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Spremam...
+                    </span>
+                  ) : (
+                    "Spremi podatke i nastavi →"
+                  )}
+                </motion.button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </CalculatorScreen>
       ),
     },
     {
