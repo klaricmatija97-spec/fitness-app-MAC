@@ -5410,33 +5410,6 @@
       ]
     },
     {
-      "id": "snack_lose_7",
-      "name": "Kuhana jaja s krastavcima",
-      "description": "Klasična proteinska užina - jednostavna i učinkovita. Kuhana jaja pružaju kompletne proteine i kolin, a krastavci dodaju volumen.",
-      "image": "https://images.unsplash.com/photo-1510693206972-df098062cb71?w=400&h=300&fit=crop",
-      "preparationTip": "Jaja kuhaj 10 min za tvrdo kuhana. Posluži s krastavcima i malo soli.",
-      "components": [
-        {
-          "food": "Egg",
-          "grams": 100,
-          "displayName": "Kuhana jaja (2 kom)"
-        },
-        {
-          "food": "Cucumber",
-          "grams": 100,
-          "displayName": "Svježi krastavci"
-        }
-      ],
-      "tags": [
-        "classic",
-        "high-protein",
-        "simple"
-      ],
-      "suitableFor": [
-        "lose"
-      ]
-    },
-    {
       "id": "snack_lose_8",
       "name": "Whey s grčkim jogurtom",
       "description": "Dvostruki protein shake - whey za brzu apsorpciju, jogurt za kazein. Kremasta tekstura s minimalnim kalorijama i maksimumom proteina.",

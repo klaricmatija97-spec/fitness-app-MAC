@@ -2241,29 +2241,6 @@
       "source": "edamam"
     },
     {
-      "id": "snack_lose_7",
-      "name": "Kuhana jaja s krastavcima",
-      "nutrition": {
-        "calories": 158,
-        "protein": 13.3,
-        "carbs": 4.4,
-        "fat": 9.6,
-        "fiber": 0.5,
-        "sugar": 2,
-        "sodium": 144,
-        "saturatedFat": 3.2,
-        "vitaminA": 165,
-        "vitaminC": 3,
-        "vitaminD": 2,
-        "vitaminB12": 0.9,
-        "calcium": 72,
-        "iron": 2,
-        "potassium": 285,
-        "magnesium": 25
-      },
-      "source": "edamam"
-    },
-    {
       "id": "snack_lose_8",
       "name": "Whey s grčkim jogurtom",
       "nutrition": {
