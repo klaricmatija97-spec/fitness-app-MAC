@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Tipovi
@@ -146,6 +147,7 @@ function formatAmount(name: string, grams: number): string {
 }
 
 export default function MealsPage() {
+  const router = useRouter();
   const [clientId, setClientId] = useState<string | null>(null);
   const [weeklyPlan, setWeeklyPlan] = useState<WeeklyMealPlan | null>(null);
   const [loading, setLoading] = useState(false);
@@ -636,6 +638,19 @@ export default function MealsPage() {
                 </div>
               </div>
             )}
+            
+            {/* Gumb za odlazak na trening */}
+            <div className="mt-8 pt-6 border-t border-slate-800">
+              <button
+                onClick={() => router.push("/app/workout")}
+                className="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 px-6 py-4 text-lg font-semibold text-white transition hover:opacity-90 shadow-lg"
+              >
+                🏋️ Generiraj Plan Treninga
+              </button>
+              <p className="text-center text-sm text-slate-500 mt-2">
+                Nastavi na personalizirani plan vježbanja
+              </p>
+            </div>
           </motion.div>
         )}
         </AnimatePresence>

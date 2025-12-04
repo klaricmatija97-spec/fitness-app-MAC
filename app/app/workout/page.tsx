@@ -109,6 +109,14 @@ const _dayTypeLabels: Record<string, string> = {
   "strength": "🏋️",
 };
 
+// Urbane pozadinske slike
+const URBAN_IMAGES = [
+  "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&q=80",
+  "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=1920&q=80",
+  "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=1920&q=80",
+  "https://images.unsplash.com/photo-1558611848-73f7eb4001a1?w=1920&q=80",
+];
+
 export default function WorkoutPage() {
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
   const [loading, setLoading] = useState(false);
@@ -116,9 +124,13 @@ export default function WorkoutPage() {
   const [selectedDay, setSelectedDay] = useState(0);
   const [selectedExercise, setSelectedExercise] = useState<ExerciseParams | null>(null);
   const [planKey, setPlanKey] = useState(0);
+  const [bgIndex, setBgIndex] = useState(0);
+  const [clientId, setClientId] = useState<string | null>(null);
+  const [userDataLoaded, setUserDataLoaded] = useState(false);
   
   // Form state za generiranje
-  const [showForm, setShowForm] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [showForm, setShowForm] = useState(false);
   const [availablePrograms, setAvailablePrograms] = useState<AvailableProgram[]>([]);
   const [formData, setFormData] = useState({
     gender: "muško" as "muško" | "žensko",
@@ -135,6 +147,48 @@ export default function WorkoutPage() {
     wantsPlyometrics: false,
   });
 
+  // Dohvati clientId iz localStorage
+  useEffect(() => {
+    const id = localStorage.getItem("clientId");
+    setClientId(id);
+  }, []);
+
+  // Dohvati korisničke podatke iz baze
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!clientId || userDataLoaded) return;
+      try {
+        const res = await fetch(`/api/workout-plan/user-data?userId=${clientId}`);
+        const data = await res.json();
+        if (data.success && data.userData) {
+          setFormData(prev => ({
+            ...prev,
+            gender: data.userData.gender,
+            age: data.userData.age,
+            height: data.userData.height,
+            weight: data.userData.weight,
+            level: data.userData.level,
+            primaryGoal: data.userData.primaryGoal,
+            trainingDaysPerWeek: data.userData.trainingDaysPerWeek,
+            sessionDuration: data.userData.sessionDuration,
+          }));
+          setUserDataLoaded(true);
+        }
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+      }
+    };
+    fetchUserData();
+  }, [clientId, userDataLoaded]);
+
+  // Rotacija pozadinskih slika
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBgIndex(prev => (prev + 1) % URBAN_IMAGES.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Dohvati dostupne programe kad se spol promijeni
   useEffect(() => {
     const fetchPrograms = async () => {
@@ -143,7 +197,6 @@ export default function WorkoutPage() {
         const data = await res.json();
         if (data.success) {
           setAvailablePrograms(data.programs);
-          // Postavi prvi program kao default
           if (data.programs.length > 0 && !formData.selectedProgram) {
             setFormData(prev => ({ ...prev, selectedProgram: data.programs[0].id }));
           }
@@ -185,13 +238,34 @@ export default function WorkoutPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Urbana pozadinska slika */}
+      <AnimatePresence mode="wait">
+        <motion.div 
+          key={bgIndex}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 1.5 }}
+          className="fixed inset-0 z-0"
+          style={{
+            backgroundImage: `url(${URBAN_IMAGES[bgIndex]})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'brightness(0.15)',
+          }}
+        />
+      </AnimatePresence>
+      
+      {/* Overlay gradient */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80" />
+
       {/* Top Navigation Bar */}
-      <div className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800">
-        <div className="mx-auto max-w-4xl px-4 py-3 flex items-center justify-between">
+      <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-md border-b border-white/10">
+        <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between">
           <a 
             href="/app" 
-            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -199,254 +273,221 @@ export default function WorkoutPage() {
             <span className="text-sm font-medium">Natrag</span>
           </a>
           
-          {/* CORPEX Logo */}
+          {/* CORPEX Logo - BIJELO */}
           <div className="absolute left-1/2 -translate-x-1/2">
-            <span className="text-xl font-black tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-purple-500">
+            <span className="text-lg font-bold tracking-[0.2em] text-white">
               CORPEX
             </span>
           </div>
           
           <div className="flex items-center gap-3">
-            <a href="/app/meals" className="text-xs text-slate-500 hover:text-slate-300">Prehrana</a>
-            <span className="text-slate-700">|</span>
-            <a href="/app/profile" className="text-xs text-slate-500 hover:text-slate-300">Profil</a>
+            <a href="/app/meals" className="text-xs text-white/50 hover:text-white">Prehrana</a>
+            <span className="text-white/20">|</span>
+            <a href="/app/profile" className="text-xs text-white/50 hover:text-white">Profil</a>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-4xl px-4 py-8">
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Plan Treninga</h1>
-            <p className="text-sm text-slate-400 mt-1">Personalizirani tjedni program vježbanja</p>
-          </div>
-          {workoutPlan && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="px-5 py-2.5 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-500 transition-colors shadow-lg shadow-violet-500/20"
-            >
-              Novi plan
-            </button>
-          )}
-        </div>
-
-        {/* Error */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-900/30 border border-red-800 rounded-lg">
-            <p className="text-red-300 text-sm">{error}</p>
-          </div>
-        )}
-
-        {/* Form za generiranje */}
+      <div className="relative z-10 mx-auto max-w-4xl px-4 py-8">
+        {/* WELCOME SCREEN */}
         <AnimatePresence mode="wait">
-          {showForm && (
+          {showWelcome && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, y: -30 }}
+              className="min-h-[70vh] flex flex-col items-center justify-center text-center px-4"
             >
-              {/* Osobni podaci */}
-              <div className="p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
-                <h3 className="text-sm text-slate-400 uppercase tracking-wide mb-4">Osobni podaci</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Spol</label>
-                    <select
-                      value={formData.gender}
-                      onChange={(e) => setFormData({ ...formData, gender: e.target.value as "muško" | "žensko", selectedProgram: "" })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500"
-                    >
-                      <option value="muško">Muško</option>
-                      <option value="žensko">Žensko</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Dob</label>
-                    <input
-                      type="number"
-                      value={formData.age}
-                      onChange={(e) => setFormData({ ...formData, age: Number(e.target.value) })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Visina (cm)</label>
-                    <input
-                      type="number"
-                      value={formData.height}
-                      onChange={(e) => setFormData({ ...formData, height: Number(e.target.value) })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Težina (kg)</label>
-                    <input
-                      type="number"
-                      value={formData.weight}
-                      onChange={(e) => setFormData({ ...formData, weight: Number(e.target.value) })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500"
-                    />
-                  </div>
-                </div>
+              <motion.h1
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="text-3xl md:text-5xl font-bold text-white mb-8 tracking-wide"
+              >
+                DOBRODOŠLI U GENERATOR TRENINGA
+              </motion.h1>
+              
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+                className="max-w-2xl mb-12"
+              >
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7, duration: 0.6 }}
+                  className="text-white/70 text-lg md:text-xl leading-relaxed mb-6"
+                >
+                  Naš sustav analizira vaše ciljeve, iskustvo i preferencije te automatski izrađuje personalizirani plan treninga.
+                </motion.p>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.0, duration: 0.6 }}
+                  className="text-white/60 text-base md:text-lg leading-relaxed"
+                >
+                  Dizajniran je da vam pomogne pri odabiru idealnog tipa treninga i pomogne vam napredovati u potpunosti samostalno, brže i učinkovitije.
+                </motion.p>
+              </motion.div>
+              
+              <motion.button
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 1.4, duration: 0.5 }}
+                whileHover={{ scale: 1.05, boxShadow: "0 0 40px rgba(255,255,255,0.2)" }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  setShowWelcome(false);
+                  setShowForm(true);
+                }}
+                className="px-12 py-4 bg-transparent border border-white/50 text-white font-semibold text-lg rounded-full hover:bg-white/10 transition-all duration-300"
+                style={{ boxShadow: "0 0 20px rgba(255,255,255,0.1)" }}
+              >
+                ZAPOČNI
+              </motion.button>
+              
+              <motion.div
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ delay: 1.6, duration: 0.8 }}
+                className="mt-16 w-32 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* PROGRAM SELECTION */}
+        <AnimatePresence mode="wait">
+          {showForm && !showWelcome && (
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              {/* Header */}
+              <div className="mb-10 text-center">
+                <motion.h1 
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-3xl font-bold text-white mb-2"
+                >
+                  Odaberi Program
+                </motion.h1>
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-white/50"
+                >
+                  Personalizirano prema tvojim podacima
+                </motion.p>
               </div>
 
-              {/* Razina i cilj */}
-              <div className="p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
-                <h3 className="text-sm text-slate-400 uppercase tracking-wide mb-4">Razina i cilj</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Razina iskustva</label>
-                    <select
-                      value={formData.level}
-                      onChange={(e) => setFormData({ ...formData, level: e.target.value as "početnik" | "srednji" | "napredni" })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500"
-                    >
-                      <option value="početnik">Početnik</option>
-                      <option value="srednji">Srednji</option>
-                      <option value="napredni">Napredni</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Primarni cilj</label>
-                    <select
-                      value={formData.primaryGoal}
-                      onChange={(e) => setFormData({ ...formData, primaryGoal: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500"
-                    >
-                      <option value="povećati mišićnu masu">💪 Povećati mišićnu masu</option>
-                      <option value="gubiti masnoću">🔥 Gubiti masnoću</option>
-                      <option value="povećati snagu">🏋️ Povećati snagu</option>
-                      <option value="povećati izdržljivost">❤️ Povećati izdržljivost</option>
-                      <option value="povećati brzinu">⚡ Povećati brzinu</option>
-                    </select>
-                  </div>
+              {/* Error */}
+              {error && (
+                <div className="mb-6 p-4 bg-red-900/50 border border-red-500/50 rounded-xl backdrop-blur-sm">
+                  <p className="text-white text-sm">{error}</p>
                 </div>
-              </div>
+              )}
 
-              {/* Raspored */}
-              <div className="p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
-                <h3 className="text-sm text-slate-400 uppercase tracking-wide mb-4">Raspored treninga</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Dana tjedno</label>
-                    <select
-                      value={formData.trainingDaysPerWeek}
-                      onChange={(e) => setFormData({ ...formData, trainingDaysPerWeek: Number(e.target.value) as 2 | 3 | 4 | 5 | 6 })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500"
-                    >
-                      <option value={2}>2 dana</option>
-                      <option value={3}>3 dana</option>
-                      <option value={4}>4 dana</option>
-                      <option value={5}>5 dana</option>
-                      <option value={6}>6 dana</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Trajanje treninga</label>
-                    <select
-                      value={formData.sessionDuration}
-                      onChange={(e) => setFormData({ ...formData, sessionDuration: Number(e.target.value) as 30 | 45 | 60 | 75 | 90 })}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500"
-                    >
-                      <option value={30}>30 minuta</option>
-                      <option value={45}>45 minuta</option>
-                      <option value={60}>60 minuta</option>
-                      <option value={75}>75 minuta</option>
-                      <option value={90}>90 minuta</option>
-                    </select>
-                  </div>
+              <div className="space-y-8">
+                {/* Spol toggle */}
+                <div className="flex justify-center gap-4">
+                  <button
+                    onClick={() => setFormData({ ...formData, gender: "muško", selectedProgram: "" })}
+                    className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                      formData.gender === "muško"
+                        ? "bg-white/80 text-black"
+                        : "bg-white/10 text-white/70 hover:bg-white/15"
+                    }`}
+                  >
+                    Muško
+                  </button>
+                  <button
+                    onClick={() => setFormData({ ...formData, gender: "žensko", selectedProgram: "" })}
+                    className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+                      formData.gender === "žensko"
+                        ? "bg-white/80 text-black"
+                        : "bg-white/10 text-white/70 hover:bg-white/15"
+                    }`}
+                  >
+                    Žensko
+                  </button>
                 </div>
-              </div>
 
-              {/* Program */}
-              <div className="p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
-                <h3 className="text-sm text-slate-400 uppercase tracking-wide mb-4">Odaberi program</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Program Cards */}
+                <motion.div 
+                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                >
                   {availablePrograms.map((program) => (
-                    <motion.button
+                    <motion.div
                       key={program.id}
-                      whileHover={{ scale: 1.02 }}
+                      whileHover={{ scale: 1.02, y: -3 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => setFormData({ ...formData, selectedProgram: program.id })}
-                      className={`p-4 rounded-xl border text-left transition-all ${
+                      className={`relative cursor-pointer rounded-2xl overflow-hidden backdrop-blur-md transition-all ${
                         formData.selectedProgram === program.id
-                          ? "bg-violet-600/20 border-violet-500 shadow-lg shadow-violet-500/20"
-                          : "bg-slate-900 border-slate-700 hover:border-slate-600"
+                          ? "bg-white/10 border border-white/60 shadow-lg shadow-white/5"
+                          : "bg-white/5 border border-white/15 hover:bg-white/8 hover:border-white/25"
                       }`}
                     >
-                      <p className={`font-semibold ${formData.selectedProgram === program.id ? "text-violet-400" : "text-white"}`}>
-                        {program.name}
-                      </p>
-                      <p className="text-xs text-slate-400 mt-1">{program.description}</p>
-                    </motion.button>
+                      <div className="p-7 min-h-[160px] flex flex-col justify-center">
+                        <h3 className="text-lg font-semibold text-white/90 mb-3">
+                          {program.name}
+                        </h3>
+                        <p className="text-sm text-white/50 leading-relaxed">
+                          {program.description}
+                        </p>
+                        
+                        {formData.selectedProgram === program.id && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="absolute top-4 right-4 w-6 h-6 bg-white/80 rounded-full flex items-center justify-center"
+                          >
+                            <svg className="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </motion.div>
+                        )}
+                      </div>
+                    </motion.div>
                   ))}
-                </div>
-              </div>
+                </motion.div>
 
-              {/* Dodatne opcije */}
-              <div className="p-6 bg-slate-800/50 border border-slate-700 rounded-xl">
-                <h3 className="text-sm text-slate-400 uppercase tracking-wide mb-4">Dodatne opcije</h3>
-                <div className="space-y-4">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.wantsCardio}
-                      onChange={(e) => setFormData({ ...formData, wantsCardio: e.target.checked })}
-                      className="w-5 h-5 rounded border-slate-600 bg-slate-900 text-violet-500 focus:ring-violet-500"
-                    />
-                    <div>
-                      <span className="text-white">🏃 Uključi cardio</span>
-                      <p className="text-xs text-slate-500">Dodaj trčanje ili hodanje u plan</p>
-                    </div>
-                  </label>
-                  
-                  {formData.wantsCardio && (
-                    <div className="ml-8">
-                      <select
-                        value={formData.cardioType}
-                        onChange={(e) => setFormData({ ...formData, cardioType: e.target.value as "trčanje" | "hodanje" })}
-                        className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-violet-500"
-                      >
-                        <option value="trčanje">Trčanje</option>
-                        <option value="hodanje">Hodanje</option>
-                      </select>
-                    </div>
+                {/* Generate Button */}
+                <motion.button
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  whileHover={{ 
+                    scale: 1.02,
+                    boxShadow: "0 0 25px rgba(255,255,255,0.15)"
+                  }}
+                  whileTap={{ 
+                    scale: 0.98,
+                    boxShadow: "0 0 40px rgba(255,255,255,0.25)"
+                  }}
+                  onClick={generateWorkoutPlan}
+                  disabled={loading || !formData.selectedProgram}
+                  className="w-full py-4 bg-transparent border border-white/50 text-white/90 font-semibold text-lg rounded-2xl hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  style={{ boxShadow: "0 0 15px rgba(255,255,255,0.05)" }}
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Generiram...
+                    </span>
+                  ) : (
+                    "GENERIRAJ PLAN"
                   )}
-                  
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.wantsPlyometrics}
-                      onChange={(e) => setFormData({ ...formData, wantsPlyometrics: e.target.checked })}
-                      className="w-5 h-5 rounded border-slate-600 bg-slate-900 text-violet-500 focus:ring-violet-500"
-                    />
-                    <div>
-                      <span className="text-white">⚡ Uključi pliometriju</span>
-                      <p className="text-xs text-slate-500">Dodaj eksplozivne vježbe (skokovi, sprintovi)</p>
-                    </div>
-                  </label>
-                </div>
+                </motion.button>
               </div>
-
-              {/* Generate button */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={generateWorkoutPlan}
-                disabled={loading || !formData.selectedProgram}
-                className="w-full py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold rounded-xl hover:from-violet-500 hover:to-purple-500 disabled:opacity-50 transition-all shadow-lg shadow-violet-500/30"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Generiram plan...
-                  </span>
-                ) : (
-                  "🏋️ Generiraj plan treninga"
-                )}
-              </motion.button>
             </motion.div>
           )}
         </AnimatePresence>
