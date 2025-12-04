@@ -3619,31 +3619,6 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                   </div>
                 )}
 
-                {/* Contact info (optional, collapsed) */}
-                <CalcCard>
-                  <p className="text-white/60 text-sm mb-4">Kontakt podaci (opcionalno)</p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <CalcInput
-                      label="Ime"
-                      value={intakeForm.name || ""}
-                      onChange={(v) => updateIntakeForm("name", v)}
-                      placeholder="Tvoje ime"
-                    />
-                    <CalcInput
-                      label="Email"
-                      value={intakeForm.email || ""}
-                      onChange={(v) => updateIntakeForm("email", v)}
-                      placeholder="tvoj@email.com"
-                    />
-                    <CalcInput
-                      label="Telefon"
-                      value={intakeForm.phone || ""}
-                      onChange={(v) => updateIntakeForm("phone", v)}
-                      placeholder="+385..."
-                    />
-                  </div>
-                </CalcCard>
-
                 {/* Submit Button */}
                 <motion.button
                   onClick={submitFinalData}
