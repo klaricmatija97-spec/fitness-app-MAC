@@ -147,6 +147,12 @@ function formatAmount(name: string, grams: number): string {
 }
 
 // Tip za Recipe-based jela
+interface IngredientGrams {
+  food: string;
+  grams: number;
+  text: string;
+}
+
 interface RecipeMeal {
   id: string;
   slotType: string;
@@ -160,6 +166,8 @@ interface RecipeMeal {
     servings: number;
     prepTime: number;
     ingredients: string[];
+    ingredientsWithGrams?: IngredientGrams[];
+    totalWeight?: number;
     calories: number;
     protein: number;
     carbs: number;
@@ -167,6 +175,8 @@ interface RecipeMeal {
     fiber: number;
   };
   scaleFactor: number;
+  scaledIngredientsWithGrams?: IngredientGrams[];
+  scaledTotalWeight?: number;
   adjustedNutrition: {
     calories: number;
     protein: number;
@@ -545,16 +555,33 @@ export default function MealsPage() {
                     </div>
                   </div>
 
-                  {/* Sastojci */}
+                  {/* Sastojci s gramažama */}
                   <div className="mb-4">
-                    <h3 className="text-sm font-semibold text-white mb-2">Sastojci</h3>
-                    <ul className="space-y-1">
-                      {selectedRecipeMeal.recipe.ingredients.map((ing, i) => (
-                        <li key={i} className="text-sm text-slate-300 flex items-start gap-2">
-                          <span className="text-orange-500 mt-1">•</span>
-                          {ing}
-                        </li>
-                      ))}
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-semibold text-white">Sastojci</h3>
+                      {selectedRecipeMeal.scaledTotalWeight && (
+                        <span className="text-xs text-orange-400">Ukupno: {selectedRecipeMeal.scaledTotalWeight}g</span>
+                      )}
+                    </div>
+                    <ul className="space-y-1.5">
+                      {selectedRecipeMeal.scaledIngredientsWithGrams && selectedRecipeMeal.scaledIngredientsWithGrams.length > 0 ? (
+                        selectedRecipeMeal.scaledIngredientsWithGrams.map((ing, i) => (
+                          <li key={i} className="text-sm flex items-center justify-between">
+                            <span className="text-slate-300 flex items-center gap-2">
+                              <span className="text-orange-500">•</span>
+                              {ing.food}
+                            </span>
+                            <span className="text-orange-400 font-medium">{ing.grams}g</span>
+                          </li>
+                        ))
+                      ) : (
+                        selectedRecipeMeal.recipe.ingredients.map((ing, i) => (
+                          <li key={i} className="text-sm text-slate-300 flex items-start gap-2">
+                            <span className="text-orange-500 mt-1">•</span>
+                            {ing}
+                          </li>
+                        ))
+                      )}
                     </ul>
                   </div>
 

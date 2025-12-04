@@ -36,12 +36,20 @@ export interface MealSlot {
   caloriePercent: number;
 }
 
+export interface ScaledIngredient {
+  food: string;
+  grams: number;
+  text: string;
+}
+
 export interface GeneratedMealRecipe {
   id: string;
   slotType: string;
   slotName: string;
   recipe: SimplifiedRecipe;
   scaleFactor: number;
+  scaledIngredientsWithGrams: ScaledIngredient[];
+  scaledTotalWeight: number;
   adjustedNutrition: {
     calories: number;
     protein: number;
@@ -426,24 +434,39 @@ async function generateDayPlan(
 
       // Calculate scale factor to match target calories
       const scaleFactor = targetCalories / recipe.calories;
+      
+      // Clamp scale factor za realistične porcije (0.4x - 3x)
+      const clampedScale = Math.max(0.4, Math.min(3, scaleFactor));
+      
       const adjustedNutrition = {
-        calories: Math.round(recipe.calories * scaleFactor),
-        protein: Math.round(recipe.protein * scaleFactor * 10) / 10,
-        carbs: Math.round(recipe.carbs * scaleFactor * 10) / 10,
-        fat: Math.round(recipe.fat * scaleFactor * 10) / 10,
-        fiber: Math.round(recipe.fiber * scaleFactor * 10) / 10,
+        calories: Math.round(recipe.calories * clampedScale),
+        protein: Math.round(recipe.protein * clampedScale * 10) / 10,
+        carbs: Math.round(recipe.carbs * clampedScale * 10) / 10,
+        fat: Math.round(recipe.fat * clampedScale * 10) / 10,
+        fiber: Math.round(recipe.fiber * clampedScale * 10) / 10,
       };
+
+      // Skalirane gramaže sastojaka
+      const scaledIngredientsWithGrams: ScaledIngredient[] = (recipe.ingredientsWithGrams || []).map(ing => ({
+        food: ing.food,
+        grams: Math.round(ing.grams * clampedScale),
+        text: ing.text,
+      }));
+      
+      const scaledTotalWeight = Math.round((recipe.totalWeight || 0) * clampedScale);
 
       meals.push({
         id: recipe.id,
         slotType: slot.type,
         slotName: slot.name,
         recipe,
-        scaleFactor,
+        scaleFactor: clampedScale,
+        scaledIngredientsWithGrams,
+        scaledTotalWeight,
         adjustedNutrition,
       });
 
-      console.log(`      ✅ ${recipe.name} (${adjustedNutrition.calories} kcal, ${adjustedNutrition.protein}g P)`);
+      console.log(`      ✅ ${recipe.name} (${adjustedNutrition.calories} kcal, ${adjustedNutrition.protein}g P, ${scaledTotalWeight}g)`);
     } else {
       console.log(`      ⚠️ Nije pronađen recept za ${slot.name}`);
     }

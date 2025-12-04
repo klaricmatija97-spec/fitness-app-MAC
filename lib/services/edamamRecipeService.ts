@@ -72,6 +72,12 @@ export interface RecipeSearchResponse {
   hits: RecipeHit[];
 }
 
+export interface IngredientWithGrams {
+  food: string;
+  grams: number;
+  text: string; // Original text (e.g., "2 tablespoons olive oil")
+}
+
 export interface SimplifiedRecipe {
   id: string;
   name: string;
@@ -81,7 +87,9 @@ export interface SimplifiedRecipe {
   sourceUrl: string;
   servings: number;
   prepTime: number;
-  ingredients: string[];
+  ingredients: string[]; // Original text for display
+  ingredientsWithGrams: IngredientWithGrams[]; // Detailed with grams
+  totalWeight: number; // Total grams for scaling
   calories: number;
   protein: number;
   carbs: number;
@@ -128,6 +136,15 @@ function simplifyRecipe(hit: RecipeHit): SimplifiedRecipe {
   const r = hit.recipe;
   const servings = r.yield || 1;
   
+  // Izračunaj gramaže po porciji
+  const ingredientsWithGrams: IngredientWithGrams[] = (r.ingredients || []).map(ing => ({
+    food: ing.food,
+    grams: Math.round(ing.weight / servings), // Grams per serving
+    text: ing.text,
+  }));
+  
+  const totalWeight = Math.round((r.totalWeight || 0) / servings);
+  
   return {
     id: extractIdFromUri(r.uri),
     name: r.label,
@@ -138,6 +155,8 @@ function simplifyRecipe(hit: RecipeHit): SimplifiedRecipe {
     servings,
     prepTime: r.totalTime || 0,
     ingredients: r.ingredientLines,
+    ingredientsWithGrams,
+    totalWeight,
     // Per serving
     calories: Math.round(r.calories / servings),
     protein: Math.round((r.totalNutrients.PROCNT?.quantity || 0) / servings * 10) / 10,

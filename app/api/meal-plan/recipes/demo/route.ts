@@ -175,7 +175,14 @@ export async function GET() {
         portionNote: m.scaleFactor > 1.1 ? `${Math.round(m.scaleFactor * 100)}% porcije` : 
                      m.scaleFactor < 0.9 ? `${Math.round(m.scaleFactor * 100)}% porcije` : 
                      "Standardna porcija",
-        ingredients: m.recipe.ingredients.slice(0, 5),
+        // Skalirane gramaže sastojaka
+        ingredientsWithGrams: (m.recipe.ingredientsWithGrams || []).map(ing => ({
+          food: ing.food,
+          grams: Math.round(ing.grams * m.scaleFactor),
+          text: ing.text,
+        })),
+        totalWeight: Math.round((m.recipe.totalWeight || 0) * m.scaleFactor),
+        ingredients: m.recipe.ingredients.slice(0, 8),
         source: m.recipe.source,
       })),
     });

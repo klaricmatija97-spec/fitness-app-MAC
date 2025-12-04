@@ -32,6 +32,8 @@ export async function GET() {
           protein: r.protein,
           carbs: r.carbs,
           fat: r.fat,
+          totalWeight: r.totalWeight,
+          ingredientsWithGrams: r.ingredientsWithGrams?.slice(0, 5),
           ingredients: r.ingredients.slice(0, 5),
           source: r.source,
         })),
