@@ -3947,7 +3947,10 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
               </div>
             </div>
           ) : !showMealPlan ? (
-            <MealPlanWelcomeScreen onNavigate={() => router.push("/app/meals")} />
+            <MealPlanWelcomeScreen 
+              onNavigate={() => router.push("/app/meals")} 
+              onBack={() => prevSlide()}
+            />
           ) : (
             <div className="flex-1 overflow-y-auto pb-32 px-1 min-h-0 h-full" style={{ paddingBottom: '10rem', height: '100%', maxHeight: 'none' }}>
               <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl flex flex-col w-full">

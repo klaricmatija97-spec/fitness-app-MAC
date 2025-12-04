@@ -15,11 +15,13 @@ const FOOD_IMAGES = [
 
 interface MealPlanWelcomeScreenProps {
   onNavigate: () => void;
+  onBack?: () => void;
 }
 
-export default function MealPlanWelcomeScreen({ onNavigate }: MealPlanWelcomeScreenProps) {
+export default function MealPlanWelcomeScreen({ onNavigate, onBack }: MealPlanWelcomeScreenProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [showBackArrow, setShowBackArrow] = useState(false);
 
   // Trigger animations on mount
   useEffect(() => {
@@ -71,6 +73,44 @@ export default function MealPlanWelcomeScreen({ onNavigate }: MealPlanWelcomeScr
       <div className="absolute inset-0" style={{
         background: "radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.4) 100%)"
       }} />
+
+      {/* Back Arrow - Fixed to left */}
+      {onBack && (
+        <motion.div
+          className="fixed left-6 md:left-10 top-1/2 -translate-y-1/2 z-[60]"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ 
+            opacity: showBackArrow ? 1 : 0.6,
+            x: 0,
+            scale: showBackArrow ? 1.1 : 1
+          }}
+          transition={{ duration: 0.3, delay: 0.5 }}
+          onMouseEnter={() => setShowBackArrow(true)}
+          onMouseLeave={() => setShowBackArrow(false)}
+        >
+          <motion.button
+            onClick={onBack}
+            whileHover={{ scale: 1.15, x: -5 }}
+            whileTap={{ scale: 0.95 }}
+            className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-white/20 hover:border-white/40"
+            aria-label="Nazad"
+          >
+            <svg
+              className="w-6 h-6 md:w-7 md:h-7 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </motion.button>
+        </motion.div>
+      )}
 
       {/* Content Container - Centered */}
       <div className="relative z-10 flex flex-col items-center justify-center px-6 md:px-12 max-w-5xl mx-auto text-center">
