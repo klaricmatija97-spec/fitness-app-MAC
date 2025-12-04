@@ -19,6 +19,7 @@ import EducationalOnboarding from "./components/EducationalOnboarding";
 import EducationalSlide from "./components/EducationalSlide";
 import EducationalWizard from "./components/EducationalWizard";
 import MealPlanWelcomeScreen from "./components/MealPlanWelcomeScreen";
+import CalculatorScreen, { CalcCard, CalcInput, CalcSelect, CalcButton, CalcResult, CalcInfoCard } from "./components/CalculatorScreen";
 
 // ============================================
 // DEBUG TEST FLAG (samo za development)
@@ -1138,7 +1139,7 @@ function AppDashboardContent() {
   return (
     <main className={clsx(
       "relative bg-[#0D0F10] flex flex-col",
-                    currentId === "intro" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) ? "h-screen w-screen fixed inset-0 overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "min-h-screen w-screen overflow-y-auto" : "min-h-screen w-screen overflow-y-auto"
+                    currentId === "intro" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) || ["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros"].includes(currentId) ? "h-screen w-screen fixed inset-0 overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "min-h-screen w-screen overflow-y-auto" : "min-h-screen w-screen overflow-y-auto"
     )}>
       {/* AI Chat Bubble - Persistent on all slides */}
       <AIChat />
@@ -1146,10 +1147,10 @@ function AppDashboardContent() {
       {/* Main Layout - 100vh, no scroll */}
       <div className={clsx(
         "flex flex-col min-h-0",
-        currentId === "intro" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) ? "h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 overflow-y-auto" : "flex-1 overflow-y-auto"
+        currentId === "intro" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) || ["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros"].includes(currentId) ? "h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 overflow-y-auto" : "flex-1 overflow-y-auto"
       )}>
-        {/* Header/Sidebar - Hidden on intro, login, educational slides, and meals welcome screen */}
-        {currentId !== "intro" && currentId !== "login" && currentId !== "edu_wizard" && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && (
+        {/* Header/Sidebar - Hidden on intro, login, educational slides, meals welcome screen, and calculator slides */}
+        {currentId !== "intro" && currentId !== "login" && currentId !== "edu_wizard" && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && !["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros"].includes(currentId) && (
         <div className="flex-shrink-0 px-6 py-5 border-b border-gray-800 bg-[#0D0F10] relative">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             {/* Lijevo - Hamburger menu */}
@@ -1246,7 +1247,7 @@ function AppDashboardContent() {
         <div 
           className={clsx(
           "relative",
-            currentId === "intro" || currentId === "login" || currentId === "edu_wizard" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) ? "fixed inset-0 z-30 h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 pb-20 overflow-y-auto min-h-0" : "flex-1 pb-20 overflow-y-auto min-h-0"
+            currentId === "intro" || currentId === "login" || currentId === "edu_wizard" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) || ["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros"].includes(currentId) ? "fixed inset-0 z-30 h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 pb-20 overflow-y-auto min-h-0" : "flex-1 pb-20 overflow-y-auto min-h-0"
           )}
           style={{
             willChange: "transform",
@@ -1352,8 +1353,8 @@ function AppDashboardContent() {
                         "flex-1 px-6 py-6 relative bg-[#0D0F10] flex flex-col",
                         currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "overflow-y-auto min-h-0" : "overflow-y-auto min-h-0"
                       )}>
-                      {/* Navigation Arrow - Left (Back) - Hidden on meals welcome screen */}
-                      {currentSlide > 0 && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && (
+                      {/* Navigation Arrow - Left (Back) - Hidden on meals welcome screen and calculator slides */}
+                      {currentSlide > 0 && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && !["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros"].includes(currentId) && (
                         <motion.div
                           className="absolute left-8 top-1/2 -translate-y-1/2 z-[100] group"
                           initial={{ opacity: 0.7, scale: 1, x: 0 }}
@@ -1394,8 +1395,8 @@ function AppDashboardContent() {
                         </motion.div>
                       )}
                       
-                      {/* Navigation Arrow - Right (Next) - Hidden on meals welcome screen */}
-                      {!isLastSlide && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && (
+                      {/* Navigation Arrow - Right (Next) - Hidden on meals welcome screen and calculator slides */}
+                      {!isLastSlide && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && !["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros"].includes(currentId) && (
                         <motion.div
                           className="absolute right-8 top-1/2 -translate-y-1/2 z-[100] group"
                           initial={{ opacity: 0.7, scale: 1, x: 0 }}
@@ -2921,37 +2922,52 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
       title: "Kalkulatori Kalorija",
       description: "Upoznaj se s alatima za izračun kalorija. Svaki kalkulator ima svoju ulogu.",
       render: (
-        <div className="h-full flex flex-col gap-8 overflow-y-auto">
-          {/* FAQ Rotation Section */}
-          <div className="relative flex-1 min-h-[300px] max-h-[400px] flex items-center justify-center">
-            <FAQWrapper />
-          </div>
+        <CalculatorScreen
+          title="KALKULATORI KALORIJA"
+          subtitle="Precizni alati za izračun vaših dnevnih potreba"
+          onBack={prevSlide}
+        >
+          <div className="space-y-8">
+            {/* FAQ Section */}
+            <div className="text-center mb-8">
+              <FAQWrapper />
+            </div>
 
-          {/* Calculator Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-shrink-0">
-            <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg hover:shadow-xl transition-shadow">
-              <div className="text-2xl font-bold text-[#1A1A1A] mb-3">1</div>
-              <h3 className="text-lg font-semibold text-[#1A1A1A] mb-2">BMR Kalkulator</h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
-              Izračunaj svoju bazalnu metaboličku stopu - kalorije koje sagoriš u mirovanju.
-            </p>
-          </div>
-            <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg hover:shadow-xl transition-shadow">
-              <div className="text-2xl font-bold text-[#1A1A1A] mb-3">2</div>
-              <h3 className="text-lg font-semibold text-[#1A1A1A] mb-2">TDEE Kalkulator</h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
-              Izračunaj ukupne dnevne potrebe za kalorijama uključujući sve aktivnosti.
-            </p>
-          </div>
-            <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg hover:shadow-xl transition-shadow">
-              <div className="text-2xl font-bold text-[#1A1A1A] mb-3">3</div>
-              <h3 className="text-lg font-semibold text-[#1A1A1A] mb-2">Target Calories Kalkulator</h3>
-              <p className="text-sm text-gray-600 leading-relaxed">
-              Odredi koliko kalorija trebaš jesti da postigneš svoj cilj (gubitak/održavanje/dobitak).
-            </p>
+            {/* Calculator Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <CalcCard>
+                <div className="text-3xl font-light text-white/30 mb-4">01</div>
+                <h3 className="text-lg font-medium text-white mb-2">BMR Kalkulator</h3>
+                <p className="text-sm text-white/50 leading-relaxed">
+                  Bazalna metabolička stopa - kalorije koje tijelo sagori u potpunom mirovanju.
+                </p>
+              </CalcCard>
+              
+              <CalcCard>
+                <div className="text-3xl font-light text-white/30 mb-4">02</div>
+                <h3 className="text-lg font-medium text-white mb-2">TDEE Kalkulator</h3>
+                <p className="text-sm text-white/50 leading-relaxed">
+                  Ukupne dnevne potrebe za energijom uključujući sve aktivnosti.
+                </p>
+              </CalcCard>
+              
+              <CalcCard>
+                <div className="text-3xl font-light text-white/30 mb-4">03</div>
+                <h3 className="text-lg font-medium text-white mb-2">Target Kalorije</h3>
+                <p className="text-sm text-white/50 leading-relaxed">
+                  Ciljani unos kalorija prema vašem cilju - gubitak, održavanje ili dobitak.
+                </p>
+              </CalcCard>
+            </div>
+
+            {/* Next Button */}
+            <div className="pt-4">
+              <CalcButton onClick={() => setCurrentSlide(slideOrder.indexOf("bmr-calc"))}>
+                Započni s izračunom →
+              </CalcButton>
             </div>
           </div>
-        </div>
+        </CalculatorScreen>
       ),
     },
     {
@@ -2959,158 +2975,125 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
       title: "BMR Kalkulator",
       description: "Izračunaj svoju bazalnu metaboličku stopu.",
       render: (
-        <div className="h-full overflow-y-auto">
+        <CalculatorScreen
+          title="BMR KALKULATOR"
+          subtitle="Bazalna metabolička stopa - temelj za sve izračune"
+          step={1}
+          totalSteps={4}
+          onBack={prevSlide}
+        >
           <AnimatePresence mode="wait">
-          {!showBMRCalc ? (
+            {!showBMRCalc ? (
               <motion.div
                 key="info"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-                className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-8"
+                className="space-y-6"
               >
-              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
-                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Što je BMR?</h3>
-                <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-                  <strong>BMR (Basal Metabolic Rate)</strong> je broj kalorija koje tvoje tijelo sagori u potpunom mirovanju - 
-                  samo za osnovne životne funkcije (disanje, cirkulacija, probava, održavanje temperature tijela).
-                </p>
-                <p className="text-gray-700 text-sm leading-relaxed">
-                  To je tvoja minimalna potreba za energijom - koliko bi sagorio da cijeli dan ležiš u krevetu.
-                </p>
-              </div>
-
-              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
-                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Kako se koristi?</h3>
-                <ol className="space-y-2 text-sm text-gray-600 list-decimal list-inside leading-relaxed">
-                  <li>Unesi svoju dob, spol, visinu i težinu</li>
-                  <li>Kalkulator koristi <strong>Mifflin-St Jeor formulu</strong></li>
-                  <li>Dobit ćeš svoj BMR u kalorijama</li>
-                  <li>Ovaj broj je osnova za izračun TDEE-a</li>
-                </ol>
-              </div>
-
-              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
-                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Formula</h3>
-                <p className="text-gray-600 text-sm mb-3 leading-relaxed">
-                  <strong>Za muškarce:</strong> BMR = 10 × težina(kg) + 6.25 × visina(cm) - 5 × dob + 5
-                </p>
-                <p className="text-gray-700 text-sm leading-relaxed">
-                  <strong>Za žene:</strong> BMR = 10 × težina(kg) + 6.25 × visina(cm) - 5 × dob - 161
-                </p>
-              </div>
-              <div className="lg:col-span-3 pb-8">
-                <button
-                  onClick={() => setShowBMRCalc(true)}
-                  className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-4 text-white font-semibold text-lg transition hover:-translate-y-0.5 hover:shadow-lg"
-                >
-                  ✓ Koristi kalkulator
-                </button>
-              </div>
+                {/* Info Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <CalcInfoCard title="Što je BMR?">
+                    Broj kalorija koje tijelo sagori u potpunom mirovanju - samo za osnovne životne funkcije.
+                  </CalcInfoCard>
+                  <CalcInfoCard title="Kako se koristi?">
+                    Unesi dob, spol, visinu i težinu. Koristimo Mifflin-St Jeor formulu za precizni izračun.
+                  </CalcInfoCard>
+                  <CalcInfoCard title="Zašto je važno?">
+                    BMR je osnova za sve ostale izračune - TDEE, ciljane kalorije i makronutrijente.
+                  </CalcInfoCard>
+                </div>
+                <CalcButton onClick={() => setShowBMRCalc(true)}>
+                  Pokreni kalkulator
+                </CalcButton>
               </motion.div>
-          ) : (
+            ) : (
               <motion.div
                 key="calc"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-                className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl flex-1 overflow-y-auto"
-                style={{ willChange: "transform, opacity" }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
               >
-              <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                <h3 className="text-2xl font-semibold text-[#1A1A1A]">BMR Kalkulator</h3>
-                <button
-                  onClick={() => setShowBMRCalc(false)}
-                  className="text-gray-500 hover:text-[#1A1A1A] text-2xl transition"
-                >
-                  ×
-                </button>
-              </div>
-              
-              <div className="space-y-4 pb-12 flex-1">
-                <div>
-                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Dob</label>
-                  <input
-                    type="number"
-                    value={bmrInputs.age}
-                    onChange={(e) => setBMRInputs({ ...bmrInputs, age: parseInt(e.target.value) || 0 })}
-                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Spol</label>
-                  <select
-                    value={bmrInputs.gender}
-                    onChange={(e) => setBMRInputs({ ...bmrInputs, gender: e.target.value as Gender })}
-                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
-                  >
-                    <option value="male">Muškarac</option>
-                    <option value="female">Žena</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Težina (kg)</label>
-                  <input
-                    type="number"
-                    value={bmrInputs.weight}
-                    onChange={(e) => setBMRInputs({ ...bmrInputs, weight: parseFloat(e.target.value) || 0 })}
-                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Visina (cm)</label>
-                  <input
-                    type="number"
-                    value={bmrInputs.height}
-                    onChange={(e) => setBMRInputs({ ...bmrInputs, height: parseFloat(e.target.value) || 0 })}
-                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition"
-                  />
-                </div>
-                
-                <button
-                  onClick={() => {
-                    const result = calculateBMR(bmrInputs.weight, bmrInputs.height, bmrInputs.age, bmrInputs.gender);
-                    setBMRResult(Math.round(result));
-                  }}
-                  className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-3 text-white font-semibold transition hover:-translate-y-0.5 hover:shadow-lg"
-                >
-                  Izračunaj BMR
-                </button>
-                
+                <CalcCard highlighted>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <CalcInput
+                      label="Dob"
+                      type="number"
+                      value={bmrInputs.age}
+                      onChange={(v) => setBMRInputs({ ...bmrInputs, age: parseInt(v) || 0 })}
+                      unit="godina"
+                    />
+                    <CalcSelect
+                      label="Spol"
+                      value={bmrInputs.gender}
+                      onChange={(v) => setBMRInputs({ ...bmrInputs, gender: v as Gender })}
+                      options={[
+                        { value: "male", label: "Muškarac" },
+                        { value: "female", label: "Žena" },
+                      ]}
+                    />
+                    <CalcInput
+                      label="Težina"
+                      type="number"
+                      value={bmrInputs.weight}
+                      onChange={(v) => setBMRInputs({ ...bmrInputs, weight: parseFloat(v) || 0 })}
+                      unit="kg"
+                    />
+                    <CalcInput
+                      label="Visina"
+                      type="number"
+                      value={bmrInputs.height}
+                      onChange={(v) => setBMRInputs({ ...bmrInputs, height: parseFloat(v) || 0 })}
+                      unit="cm"
+                    />
+                  </div>
+                  <div className="mt-6">
+                    <CalcButton onClick={() => {
+                      const result = calculateBMR(bmrInputs.weight, bmrInputs.height, bmrInputs.age, bmrInputs.gender);
+                      setBMRResult(Math.round(result));
+                    }}>
+                      Izračunaj BMR
+                    </CalcButton>
+                  </div>
+                </CalcCard>
+
                 {bmrResult !== null && (
-                  <div className="space-y-4">
-                    <div className="rounded-[20px] bg-[#E8E8E8] p-6 text-center">
-                      <div className="text-sm text-gray-600 mb-1">Tvoj BMR</div>
-                      <div className="text-4xl font-bold text-[#1A1A1A]">{bmrResult}</div>
-                      <div className="text-sm text-gray-600 mt-1">kalorija/dan</div>
-                    </div>
-                    <button
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="space-y-4"
+                  >
+                    <CalcResult
+                      label="Tvoj BMR"
+                      value={bmrResult}
+                      unit="kalorija/dan"
+                      highlight
+                    />
+                    <CalcButton
+                      variant={bmrConfirmed ? "success" : "primary"}
                       onClick={() => {
                         setBMRConfirmed(true);
                         setTDEEInputs({ ...tdeeInputs, bmr: bmrResult });
-                        // Sinkroniziraj težinu na macros kalkulator
                         setMacrosInputs({ ...macrosInputs, weight: bmrInputs.weight || macrosInputs.weight });
+                        setCurrentSlide(slideOrder.indexOf("tdee-calc"));
                       }}
-                      className={`w-full rounded-[16px] px-6 py-3 font-semibold transition hover:-translate-y-0.5 hover:shadow-lg ${
-                        bmrConfirmed
-                          ? "bg-green-600 text-white"
-                          : "bg-[#1A1A1A] text-white"
-                      }`}
                     >
-                      {bmrConfirmed ? "✓ Potvrđeno" : "✓ Potvrdi BMR"}
-                    </button>
-                  </div>
+                      {bmrConfirmed ? "✓ Potvrđeno" : "Potvrdi i nastavi →"}
+                    </CalcButton>
+                  </motion.div>
                 )}
-              </div>
+
+                <button
+                  onClick={() => setShowBMRCalc(false)}
+                  className="text-white/40 hover:text-white/70 text-sm transition-colors"
+                >
+                  ← Natrag na informacije
+                </button>
               </motion.div>
-          )}
+            )}
           </AnimatePresence>
-        </div>
+        </CalculatorScreen>
       ),
     },
     {
@@ -3118,148 +3101,121 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
       title: "TDEE Kalkulator",
       description: "Izračunaj svoje ukupne dnevne potrebe za kalorijama.",
       render: (
-        <div className="h-full overflow-y-auto">
+        <CalculatorScreen
+          title="TDEE KALKULATOR"
+          subtitle="Ukupna dnevna potrošnja energije"
+          step={2}
+          totalSteps={4}
+          onBack={prevSlide}
+        >
           <AnimatePresence mode="wait">
-          {!showTDEECalc ? (
+            {!showTDEECalc ? (
               <motion.div
                 key="info"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-                className="space-y-6 pb-8"
+                className="space-y-6"
               >
-              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
-                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Što je TDEE?</h3>
-                <p className="text-gray-600 text-sm mb-4">
-                  <strong>TDEE (Total Daily Energy Expenditure)</strong> je ukupan broj kalorija koje tvoje tijelo sagori 
-                  tijekom dana, uključujući sve aktivnosti - od spavanja do treninga.
-                </p>
-                <p className="text-gray-600 text-sm">
-                  To je tvoja stvarna dnevna potreba za kalorijama. Ako jedeš točno TDEE, održavat ćeš trenutnu težinu.
-                </p>
-              </div>
-
-              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
-                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Kako se koristi?</h3>
-                <ol className="space-y-2 text-sm text-gray-600 list-decimal list-inside mb-4">
-                  <li>Prvo izračunaj svoj BMR (koristi BMR kalkulator)</li>
-                  <li>Odaberi svoju razinu aktivnosti</li>
-                  <li>TDEE = BMR × aktivnostni multiplikator</li>
-                  <li>Dobit ćeš svoj TDEE u kalorijama</li>
-                </ol>
-                <div className="mt-4 space-y-2 text-sm text-gray-600">
-                  <p><strong>Aktivnostni multiplikatori:</strong></p>
-                  <ul className="list-disc list-inside ml-4 space-y-1">
-                    <li>Sjedilački (malo ili nimalo vježbanja): 1.2</li>
-                    <li>Lagana aktivnost (1-3 dana/tjedan): 1.375</li>
-                    <li>Umjerena aktivnost (3-5 dana/tjedan): 1.55</li>
-                    <li>Visoka aktivnost (6-7 dana/tjedan): 1.725</li>
-                    <li>Vrlo visoka aktivnost (2x dnevno): 1.9</li>
-                  </ul>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <CalcInfoCard title="Što je TDEE?">
+                    Ukupan broj kalorija koje tijelo sagori tijekom dana, uključujući sve aktivnosti.
+                  </CalcInfoCard>
+                  <CalcInfoCard title="Zašto je važan?">
+                    TDEE određuje koliko kalorija trebaš jesti za gubitak, održavanje ili dobitak težine.
+                  </CalcInfoCard>
                 </div>
-              </div>
-
-              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
-                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Zašto je važan?</h3>
-                <p className="text-gray-600 text-sm">
-                  TDEE je ključan za određivanje koliko kalorija trebaš jesti. Ako jedeš manje od TDEE-a, 
-                  gubit ćeš težinu. Ako jedeš više, dobivat ćeš težinu.
-                </p>
-              </div>
-              <div className="pb-8">
-                <button
-                  onClick={() => setShowTDEECalc(true)}
-                  className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-4 text-white font-semibold text-lg transition hover:-translate-y-0.5 hover:shadow-lg"
-                >
-                  ✓ Koristi kalkulator
-                </button>
-              </div>
+                
+                <CalcCard>
+                  <h4 className="text-white/90 font-medium mb-3">Aktivnostni multiplikatori</h4>
+                  <div className="space-y-2 text-sm text-white/50">
+                    <div className="flex justify-between"><span>Sjedilački</span><span className="text-white/70">× 1.2</span></div>
+                    <div className="flex justify-between"><span>Lagana aktivnost</span><span className="text-white/70">× 1.375</span></div>
+                    <div className="flex justify-between"><span>Umjerena aktivnost</span><span className="text-white/70">× 1.55</span></div>
+                    <div className="flex justify-between"><span>Visoka aktivnost</span><span className="text-white/70">× 1.725</span></div>
+                    <div className="flex justify-between"><span>Vrlo visoka aktivnost</span><span className="text-white/70">× 1.9</span></div>
+                  </div>
+                </CalcCard>
+                
+                <CalcButton onClick={() => setShowTDEECalc(true)}>
+                  Pokreni kalkulator
+                </CalcButton>
               </motion.div>
-          ) : (
+            ) : (
               <motion.div
                 key="calc"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-                className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl flex-1 overflow-y-auto"
-                style={{ willChange: "transform, opacity" }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
               >
-              <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                <h3 className="text-2xl font-semibold text-[#1A1A1A]">TDEE Kalkulator</h3>
-                <button
-                  onClick={() => setShowTDEECalc(false)}
-                  className="text-gray-500 hover:text-[#1A1A1A] text-xl transition"
-                >
-                  ×
-                </button>
-              </div>
-              
-              <div className="space-y-4 pb-12 flex-1">
-                <div>
-                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">BMR (iz BMR kalkulatora)</label>
-                  <input
-                    type="number"
-                    value={tdeeInputs.bmr}
-                    onChange={(e) => setTDEEInputs({ ...tdeeInputs, bmr: parseInt(e.target.value) || 0 })}
-                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
-                    placeholder="Unesi svoj BMR"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Razina aktivnosti</label>
-                  <select
-                    value={tdeeInputs.activityLevel}
-                    onChange={(e) => setTDEEInputs({ ...tdeeInputs, activityLevel: e.target.value as ActivityLevel })}
-                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
-                  >
-                    <option value="sedentary">Sjedilački (1.2)</option>
-                    <option value="light">Lagana aktivnost (1.375)</option>
-                    <option value="moderate">Umjerena aktivnost (1.55)</option>
-                    <option value="active">Visoka aktivnost (1.725)</option>
-                    <option value="very_active">Vrlo visoka aktivnost (1.9)</option>
-                  </select>
-                </div>
-                
-                <button
-                  onClick={() => {
-                    const result = calculateTDEE(tdeeInputs.bmr, tdeeInputs.activityLevel);
-                    setTDEEResult(result);
-                  }}
-                  className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-3 text-white font-semibold transition hover:-translate-y-0.5 hover:shadow-lg"
-                >
-                  Izračunaj TDEE
-                </button>
-                
-                {tdeeResult !== null && (
+                <CalcCard highlighted>
                   <div className="space-y-4">
-                    <div className="rounded-[20px] bg-[#E8E8E8] p-6 text-center">
-                      <div className="text-sm text-gray-600 mb-1">Tvoj TDEE</div>
-                      <div className="text-4xl font-bold text-[#1A1A1A]">{tdeeResult}</div>
-                      <div className="text-sm text-gray-600 mt-1">kalorija/dan</div>
-                    </div>
-                    <button
+                    <CalcInput
+                      label="BMR (iz prethodnog koraka)"
+                      type="number"
+                      value={tdeeInputs.bmr}
+                      onChange={(v) => setTDEEInputs({ ...tdeeInputs, bmr: parseInt(v) || 0 })}
+                      unit="kcal"
+                    />
+                    <CalcSelect
+                      label="Razina aktivnosti"
+                      value={tdeeInputs.activityLevel}
+                      onChange={(v) => setTDEEInputs({ ...tdeeInputs, activityLevel: v as ActivityLevel })}
+                      options={[
+                        { value: "sedentary", label: "Sjedilački (× 1.2)" },
+                        { value: "light", label: "Lagana aktivnost (× 1.375)" },
+                        { value: "moderate", label: "Umjerena aktivnost (× 1.55)" },
+                        { value: "active", label: "Visoka aktivnost (× 1.725)" },
+                        { value: "very_active", label: "Vrlo visoka aktivnost (× 1.9)" },
+                      ]}
+                    />
+                  </div>
+                  <div className="mt-6">
+                    <CalcButton onClick={() => {
+                      const result = calculateTDEE(tdeeInputs.bmr, tdeeInputs.activityLevel);
+                      setTDEEResult(result);
+                    }}>
+                      Izračunaj TDEE
+                    </CalcButton>
+                  </div>
+                </CalcCard>
+
+                {tdeeResult !== null && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="space-y-4"
+                  >
+                    <CalcResult
+                      label="Tvoj TDEE"
+                      value={tdeeResult}
+                      unit="kalorija/dan"
+                      highlight
+                    />
+                    <CalcButton
+                      variant={tdeeConfirmed ? "success" : "primary"}
                       onClick={() => {
                         setTDEEConfirmed(true);
                         setTargetInputs({ ...targetInputs, tdee: tdeeResult });
+                        setCurrentSlide(slideOrder.indexOf("target-calc"));
                       }}
-                      className={`w-full rounded-[16px] px-6 py-3 font-semibold transition hover:-translate-y-0.5 hover:shadow-lg ${
-                        tdeeConfirmed
-                          ? "bg-green-600 text-white"
-                          : "bg-[#1A1A1A] text-white"
-                      }`}
                     >
-                      {tdeeConfirmed ? "✓ Potvrđeno" : "✓ Potvrdi TDEE"}
-                    </button>
-                  </div>
+                      {tdeeConfirmed ? "✓ Potvrđeno" : "Potvrdi i nastavi →"}
+                    </CalcButton>
+                  </motion.div>
                 )}
-              </div>
+
+                <button
+                  onClick={() => setShowTDEECalc(false)}
+                  className="text-white/40 hover:text-white/70 text-sm transition-colors"
+                >
+                  ← Natrag na informacije
+                </button>
               </motion.div>
-          )}
+            )}
           </AnimatePresence>
-        </div>
+        </CalculatorScreen>
       ),
     },
     {
@@ -3267,162 +3223,131 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
       title: "Target Calories Kalkulator",
       description: "Odredi koliko kalorija trebaš jesti da postigneš svoj cilj.",
       render: (
-        <div className="h-full overflow-y-auto">
+        <CalculatorScreen
+          title="CILJANE KALORIJE"
+          subtitle="Prilagođeni unos prema vašem cilju"
+          step={3}
+          totalSteps={4}
+          onBack={prevSlide}
+        >
           <AnimatePresence mode="wait">
-          {!showTargetCalc ? (
+            {!showTargetCalc ? (
               <motion.div
                 key="info"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-                className="space-y-6 pb-8"
+                className="space-y-6"
               >
-              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
-                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Što su Target Calories?</h3>
-                <p className="text-gray-600 text-sm mb-4">
-                  <strong>Target Calories (Ciljne Kalorije)</strong> su broj kalorija koje trebaš jesti dnevno 
-                  da postigneš svoj cilj - gubitak težine, održavanje težine ili povećanje težine.
-                </p>
-                <p className="text-gray-600 text-sm">
-                  Ove kalorije su prilagođene tvojim ciljevima i razini aktivnosti.
-                </p>
-              </div>
-
-              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
-                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Kako se koristi?</h3>
-                <ol className="space-y-2 text-sm text-gray-600 list-decimal list-inside mb-4">
-                  <li>Prvo izračunaj svoj TDEE (koristi TDEE kalkulator)</li>
-                  <li>Odaberi svoj cilj (gubitak/održavanje/dobitak)</li>
-                  <li>Kalkulator će automatski izračunati target calories</li>
-                </ol>
-                <div className="mt-4 space-y-3 text-sm text-gray-600">
-                  <div>
-                    <p><strong>Za gubitak težine:</strong></p>
-                    <p className="ml-4">Target = TDEE - 500 kcal</p>
-                    <p className="ml-4 text-xs text-gray-500">Gubitak ~0.5 kg/tjedan</p>
-                  </div>
-                  <div>
-                    <p><strong>Za održavanje težine:</strong></p>
-                    <p className="ml-4">Target = TDEE</p>
-                    <p className="ml-4 text-xs text-gray-500">Održava trenutnu težinu</p>
-                  </div>
-                  <div>
-                    <p><strong>Za povećanje težine:</strong></p>
-                    <p className="ml-4">Target = TDEE + 500 kcal</p>
-                    <p className="ml-4 text-xs text-gray-500">Dobitak ~0.5 kg/tjedan</p>
-                  </div>
+                <CalcInfoCard title="Što su ciljane kalorije?">
+                  Broj kalorija prilagođen vašem cilju - gubitak, održavanje ili dobitak težine.
+                </CalcInfoCard>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <CalcCard>
+                    <div className="text-center">
+                      <div className="text-2xl text-white/30 mb-2">−500</div>
+                      <div className="text-white/90 font-medium">Gubitak</div>
+                      <div className="text-xs text-white/40 mt-1">~0.5 kg/tjedan</div>
+                    </div>
+                  </CalcCard>
+                  <CalcCard>
+                    <div className="text-center">
+                      <div className="text-2xl text-white/30 mb-2">=</div>
+                      <div className="text-white/90 font-medium">Održavanje</div>
+                      <div className="text-xs text-white/40 mt-1">Stabilna težina</div>
+                    </div>
+                  </CalcCard>
+                  <CalcCard>
+                    <div className="text-center">
+                      <div className="text-2xl text-white/30 mb-2">+500</div>
+                      <div className="text-white/90 font-medium">Dobitak</div>
+                      <div className="text-xs text-white/40 mt-1">~0.5 kg/tjedan</div>
+                    </div>
+                  </CalcCard>
                 </div>
-              </div>
-
-              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
-                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Zašto 500 kcal?</h3>
-                <p className="text-gray-600 text-sm mb-2">
-                  <strong>500 kcal/dan = ~3500 kcal/tjedan = ~0.5 kg masti</strong>
-                </p>
-                <p className="text-gray-600 text-sm">
-                  To je siguran i održiv tempo promjene. Prebrzi gubitak/dobitak može dovesti do gubitka mišića 
-                  ili nezdravog povećanja masti.
-                </p>
-              </div>
-              <div className="pb-8">
-                <button
-                  onClick={() => setShowTargetCalc(true)}
-                  className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-4 text-white font-semibold text-lg transition hover:-translate-y-0.5 hover:shadow-lg"
-                >
-                  ✓ Koristi kalkulator
-                </button>
-              </div>
+                
+                <CalcButton onClick={() => setShowTargetCalc(true)}>
+                  Pokreni kalkulator
+                </CalcButton>
               </motion.div>
-          ) : (
+            ) : (
               <motion.div
                 key="calc"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-                className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl flex-1 overflow-y-auto"
-                style={{ willChange: "transform, opacity" }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
               >
-              <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                <h3 className="text-2xl font-semibold text-[#1A1A1A]">Target Calories Kalkulator</h3>
-                <button
-                  onClick={() => setShowTargetCalc(false)}
-                  className="text-gray-500 hover:text-[#1A1A1A] text-xl transition"
-                >
-                  ×
-                </button>
-              </div>
-              
-              <div className="space-y-4 pb-12 flex-1">
-                <div>
-                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">TDEE (iz TDEE kalkulatora)</label>
-                  <input
-                    type="number"
-                    value={targetInputs.tdee}
-                    onChange={(e) => setTargetInputs({ ...targetInputs, tdee: parseInt(e.target.value) || 0 })}
-                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
-                    placeholder="Unesi svoj TDEE"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Cilj</label>
-                  <select
-                    value={targetInputs.goalType}
-                    onChange={(e) => setTargetInputs({ ...targetInputs, goalType: e.target.value as GoalType })}
-                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
-                  >
-                    <option value="lose">Gubitak težine (-500 kcal)</option>
-                    <option value="maintain">Održavanje težine (= TDEE)</option>
-                    <option value="gain">Povećanje težine (+500 kcal)</option>
-                  </select>
-                </div>
-                
-                <button
-                  onClick={() => {
-                    const result = calculateTargetCalories(targetInputs.tdee, targetInputs.goalType);
-                    setTargetResult(result);
-                  }}
-                  className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-3 text-white font-semibold transition hover:-translate-y-0.5 hover:shadow-lg"
-                >
-                  Izračunaj Target Calories
-                </button>
-                
-                {targetResult !== null && (
+                <CalcCard highlighted>
                   <div className="space-y-4">
-                    <div className="rounded-[20px] bg-[#E8E8E8] p-6 text-center">
-                      <div className="text-sm text-gray-600 mb-1">Tvoje Target Calories</div>
-                      <div className="text-4xl font-bold text-[#1A1A1A]">{targetResult}</div>
-                      <div className="text-sm text-gray-600 mt-1">
-                        kalorija/dan ({targetInputs.goalType === "lose" ? "Gubitak" : targetInputs.goalType === "gain" ? "Dobivanje" : "Održavanje"})
-                      </div>
-                    </div>
-                    <button
+                    <CalcInput
+                      label="TDEE (iz prethodnog koraka)"
+                      type="number"
+                      value={targetInputs.tdee}
+                      onChange={(v) => setTargetInputs({ ...targetInputs, tdee: parseInt(v) || 0 })}
+                      unit="kcal"
+                    />
+                    <CalcSelect
+                      label="Cilj"
+                      value={targetInputs.goalType}
+                      onChange={(v) => setTargetInputs({ ...targetInputs, goalType: v as GoalType })}
+                      options={[
+                        { value: "lose", label: "Gubitak težine (−500 kcal)" },
+                        { value: "maintain", label: "Održavanje težine (= TDEE)" },
+                        { value: "gain", label: "Povećanje težine (+500 kcal)" },
+                      ]}
+                    />
+                  </div>
+                  <div className="mt-6">
+                    <CalcButton onClick={() => {
+                      const result = calculateTargetCalories(targetInputs.tdee, targetInputs.goalType);
+                      setTargetResult(result);
+                    }}>
+                      Izračunaj ciljane kalorije
+                    </CalcButton>
+                  </div>
+                </CalcCard>
+
+                {targetResult !== null && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="space-y-4"
+                  >
+                    <CalcResult
+                      label={`Ciljane kalorije (${targetInputs.goalType === "lose" ? "Gubitak" : targetInputs.goalType === "gain" ? "Dobitak" : "Održavanje"})`}
+                      value={targetResult}
+                      unit="kalorija/dan"
+                      highlight
+                    />
+                    <CalcButton
+                      variant={targetConfirmed ? "success" : "primary"}
                       onClick={() => {
                         setTargetConfirmed(true);
-                        // Sinkroniziraj targetCalories i goalType na macros kalkulator
                         setMacrosInputs({ 
                           ...macrosInputs, 
                           targetCalories: targetResult || macrosInputs.targetCalories,
                           goalType: targetInputs.goalType 
                         });
+                        setCurrentSlide(slideOrder.indexOf("macros"));
                       }}
-                      className={`w-full rounded-[16px] px-6 py-3 font-semibold transition hover:-translate-y-0.5 hover:shadow-lg ${
-                        targetConfirmed
-                          ? "bg-green-600 text-white"
-                          : "bg-[#1A1A1A] text-white"
-                      }`}
                     >
-                      {targetConfirmed ? "✓ Potvrđeno" : "✓ Potvrdi Target Calories"}
-                    </button>
-                  </div>
+                      {targetConfirmed ? "✓ Potvrđeno" : "Potvrdi i nastavi →"}
+                    </CalcButton>
+                  </motion.div>
                 )}
-              </div>
+
+                <button
+                  onClick={() => setShowTargetCalc(false)}
+                  className="text-white/40 hover:text-white/70 text-sm transition-colors"
+                >
+                  ← Natrag na informacije
+                </button>
               </motion.div>
-          )}
+            )}
           </AnimatePresence>
-        </div>
+        </CalculatorScreen>
       ),
     },
     {
@@ -3430,215 +3355,157 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
       title: "Makrosi (Makronutrijenti)",
       description: "Proteini, ugljikohidrati i masti - tri ključna elementa tvoje prehrane.",
       render: (
-        <div className="h-full overflow-y-auto">
+        <CalculatorScreen
+          title="MAKRONUTRIJENTI"
+          subtitle="Proteini, ugljikohidrati i masti - temelji prehrane"
+          step={4}
+          totalSteps={4}
+          onBack={prevSlide}
+        >
           <AnimatePresence mode="wait">
-          {!showMacrosCalc ? (
+            {!showMacrosCalc ? (
               <motion.div
                 key="info"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-                className="space-y-6 pb-8"
+                className="space-y-6"
               >
-              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
-                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Proteini</h3>
-                <p className="text-gray-600 text-sm mb-2">
-                  <strong>Što je:</strong> Građevni blokovi mišića. 1g proteina = 4 kcal.
-                </p>
-                <p className="text-gray-600 text-sm mb-2">
-                  <strong>Čemu služi:</strong> Rast i popravak mišića, osjećaj sitosti, podrška metabolizmu.
-                </p>
-                <p className="text-gray-600 text-sm">
-                  <strong>Preporuka:</strong> 1.9-2.2g po kg tjelesne težine. 2.2g/kg za gubitak masti, 
-                  2.0g/kg za povećanje mišića, 1.9g/kg za održavanje.
-                </p>
-              </div>
-
-              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
-                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Ugljikohidrati</h3>
-                <p className="text-gray-600 text-sm mb-2">
-                  <strong>Što je:</strong> Glavni izvor energije. 1g ugljikohidrata = 4 kcal.
-                </p>
-                <p className="text-gray-600 text-sm mb-2">
-                  <strong>Čemu služi:</strong> Energija za trening, oporavak, moždane funkcije.
-                </p>
-                <p className="text-gray-600 text-sm">
-                  <strong>Preporuka:</strong> Ostatak kalorija nakon proteina i masti. Automatski se izračunava 
-                  na temelju tvojih target kalorija.
-                </p>
-              </div>
-
-              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
-                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Masti</h3>
-                <p className="text-gray-600 text-sm mb-2">
-                  <strong>Što je:</strong> Koncentrirani izvor energije. 1g masti = 9 kcal.
-                </p>
-                <p className="text-gray-600 text-sm mb-2">
-                  <strong>Čemu služi:</strong> Hormonska produkcija, apsorpcija vitamina, osjećaj sitosti.
-                </p>
-                <p className="text-gray-600 text-sm">
-                  <strong>Preporuka:</strong> 0.8-1.0g po kg tjelesne težine (0.9g/kg). Dovoljno za hormonsku 
-                  funkciju, apsorpciju vitamina i osjećaj sitosti.
-                </p>
-              </div>
-              <div className="pb-8">
-                <button
-                  onClick={() => setShowMacrosCalc(true)}
-                  className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-4 text-white font-semibold text-lg transition hover:-translate-y-0.5 hover:shadow-lg"
-                >
-                  ✓ Koristi kalkulator
-                </button>
-              </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <CalcCard>
+                    <div className="text-center">
+                      <div className="text-3xl mb-2">🥩</div>
+                      <h4 className="text-white/90 font-medium mb-2">Proteini</h4>
+                      <div className="text-xs text-white/50">1g = 4 kcal</div>
+                      <div className="text-xs text-white/40 mt-1">1.9-2.2g/kg</div>
+                    </div>
+                  </CalcCard>
+                  <CalcCard>
+                    <div className="text-center">
+                      <div className="text-3xl mb-2">🍚</div>
+                      <h4 className="text-white/90 font-medium mb-2">Ugljikohidrati</h4>
+                      <div className="text-xs text-white/50">1g = 4 kcal</div>
+                      <div className="text-xs text-white/40 mt-1">Ostatak kalorija</div>
+                    </div>
+                  </CalcCard>
+                  <CalcCard>
+                    <div className="text-center">
+                      <div className="text-3xl mb-2">🥑</div>
+                      <h4 className="text-white/90 font-medium mb-2">Masti</h4>
+                      <div className="text-xs text-white/50">1g = 9 kcal</div>
+                      <div className="text-xs text-white/40 mt-1">0.8-1.0g/kg</div>
+                    </div>
+                  </CalcCard>
+                </div>
+                
+                <CalcButton onClick={() => setShowMacrosCalc(true)}>
+                  Pokreni kalkulator
+                </CalcButton>
               </motion.div>
-          ) : (
+            ) : (
               <motion.div
                 key="calc"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-                className="rounded-[16px] bg-white/80 backdrop-blur-sm border-2 border-gray-900 p-6 shadow-xl flex-1 overflow-y-auto"
-                style={{ willChange: "transform, opacity" }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-6"
               >
-              <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                <h3 className="text-2xl font-semibold text-gray-900">Kalkulator Makrosa</h3>
-                <button
-                  onClick={() => setShowMacrosCalc(false)}
-                  className="text-gray-500 hover:text-gray-900 text-xl"
-                >
-                  ×
-                </button>
-              </div>
-              
-              <div className="space-y-4 pb-12 flex-1">
-                <div>
-                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Target Calories (iz Target Calories kalkulatora)</label>
-                  <input
-                    type="number"
-                    value={macrosInputs.targetCalories}
-                    onChange={(e) => setMacrosInputs({ ...macrosInputs, targetCalories: parseInt(e.target.value) || 0 })}
-                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
-                    placeholder="Unesi target calories"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Težina (kg)</label>
-                  <input
-                    type="number"
-                    value={macrosInputs.weight}
-                    onChange={(e) => setMacrosInputs({ ...macrosInputs, weight: parseFloat(e.target.value) || 0 })}
-                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
-                    placeholder="Unesi svoju težinu"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Cilj</label>
-                  <select
-                    value={macrosInputs.goalType}
-                    onChange={(e) => setMacrosInputs({ ...macrosInputs, goalType: e.target.value as GoalType })}
-                    className="w-full rounded-[16px] border border-[#E8E8E8] bg-white px-4 py-3 text-[#1A1A1A] focus:border-[#1A1A1A] focus:outline-none transition-colors"
-                  >
-                    <option value="lose">Gubitak težine</option>
-                    <option value="maintain">Održavanje težine</option>
-                    <option value="gain">Povećanje težine</option>
-                  </select>
-                </div>
-                
-                <button
-                  onClick={() => {
-                    const result = calculateMacros(macrosInputs.targetCalories, macrosInputs.goalType, macrosInputs.weight);
-                    setMacrosResult(result);
-                    // Spremi finalne makrose
-                    setFinalMacros({
-                      calories: macrosInputs.targetCalories,
-                      protein: result.protein,
-                      carbs: result.carbs,
-                      fat: result.fats,
-                    });
-                  }}
-                  className="w-full rounded-[16px] bg-[#1A1A1A] px-6 py-3 text-white font-semibold transition hover:-translate-y-0.5 hover:shadow-lg"
-                >
-                  Izračunaj Makrose
-                </button>
-                
+                <CalcCard highlighted>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <CalcInput
+                      label="Ciljane kalorije"
+                      type="number"
+                      value={macrosInputs.targetCalories}
+                      onChange={(v) => setMacrosInputs({ ...macrosInputs, targetCalories: parseInt(v) || 0 })}
+                      unit="kcal"
+                    />
+                    <CalcInput
+                      label="Težina"
+                      type="number"
+                      value={macrosInputs.weight}
+                      onChange={(v) => setMacrosInputs({ ...macrosInputs, weight: parseFloat(v) || 0 })}
+                      unit="kg"
+                    />
+                    <CalcSelect
+                      label="Cilj"
+                      value={macrosInputs.goalType}
+                      onChange={(v) => setMacrosInputs({ ...macrosInputs, goalType: v as GoalType })}
+                      options={[
+                        { value: "lose", label: "Gubitak težine" },
+                        { value: "maintain", label: "Održavanje" },
+                        { value: "gain", label: "Dobitak mase" },
+                      ]}
+                    />
+                  </div>
+                  <div className="mt-6">
+                    <CalcButton onClick={() => {
+                      const result = calculateMacros(macrosInputs.targetCalories, macrosInputs.goalType, macrosInputs.weight);
+                      setMacrosResult(result);
+                      setFinalMacros({
+                        calories: macrosInputs.targetCalories,
+                        protein: result.protein,
+                        carbs: result.carbs,
+                        fat: result.fats,
+                      });
+                    }}>
+                      Izračunaj makronutrijente
+                    </CalcButton>
+                  </div>
+                </CalcCard>
+
                 {macrosResult && (
-                  <div className="space-y-4">
-                    <div className="rounded-[20px] bg-[#E8E8E8] p-6">
-                      <div className="text-sm text-gray-600 mb-1">Proteini</div>
-                      <div className="text-3xl font-bold text-[#1A1A1A]">{macrosResult.protein}g</div>
-                      <div className="text-sm text-gray-600">
-                        {macrosInputs.weight > 0 ? `${(macrosResult.protein / macrosInputs.weight).toFixed(1)}g po kg` : ""}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {macrosInputs.goalType === "lose" 
-                          ? "2.2g/kg - više proteina za očuvanje mišića tijekom gubitka"
-                          : macrosInputs.goalType === "gain"
-                          ? "2.0g/kg - dovoljno za rast mišića"
-                          : "1.9g/kg - uravnoteženo za održavanje"}
-                      </div>
-                    </div>
-
-                    <div className="rounded-[20px] bg-[#E8E8E8] p-6">
-                      <div className="text-sm text-gray-600 mb-1">Ugljikohidrati</div>
-                      <div className="text-3xl font-bold text-[#1A1A1A]">{macrosResult.carbs}g</div>
-                      <div className="text-sm text-gray-600">
-                        {macrosInputs.targetCalories > 0 
-                          ? `${Math.round((macrosResult.carbs * 4 / macrosInputs.targetCalories) * 100)}% dnevnih kalorija`
-                          : ""}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Ostatak kalorija nakon proteina i masti - optimizirano za tvoj cilj
-                      </div>
-                    </div>
-
-                    <div className="rounded-[20px] bg-[#E8E8E8] p-6">
-                      <div className="text-sm text-gray-600 mb-1">Masti</div>
-                      <div className="text-3xl font-bold text-[#1A1A1A]">{macrosResult.fats}g</div>
-                      <div className="text-sm text-gray-600">
-                        {macrosInputs.targetCalories > 0 
-                          ? `${Math.round((macrosResult.fats * 9 / macrosInputs.targetCalories) * 100)}% dnevnih kalorija`
-                          : ""}
-                      </div>
-                      <div className="text-sm text-gray-600 mb-2">
-                        {macrosInputs.weight > 0 ? `${(macrosResult.fats / macrosInputs.weight).toFixed(1)}g po kg` : ""}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        0.9g/kg (raspon 0.8-1.0g/kg) - dovoljno za hormonsku funkciju i zdravlje
-                      </div>
-                    </div>
-
-                    <div className="rounded-[20px] bg-[#1A1A1A] text-white p-6 text-center">
-                      <div className="text-sm opacity-80 mb-1">Ukupno kalorija iz makrosa</div>
-                      <div className="text-2xl font-bold">
-                        {macrosResult.protein * 4 + macrosResult.carbs * 4 + macrosResult.fats * 9} kcal
-                      </div>
-                      <div className="text-xs opacity-70 mt-1">
-                        (od {macrosInputs.targetCalories} target calories)
-                      </div>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="space-y-4"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <CalcResult
+                        label="Proteini"
+                        value={`${macrosResult.protein}g`}
+                        unit={macrosInputs.weight > 0 ? `${(macrosResult.protein / macrosInputs.weight).toFixed(1)}g/kg` : ""}
+                      />
+                      <CalcResult
+                        label="Ugljikohidrati"
+                        value={`${macrosResult.carbs}g`}
+                        unit={macrosInputs.targetCalories > 0 ? `${Math.round((macrosResult.carbs * 4 / macrosInputs.targetCalories) * 100)}% kcal` : ""}
+                      />
+                      <CalcResult
+                        label="Masti"
+                        value={`${macrosResult.fats}g`}
+                        unit={macrosInputs.weight > 0 ? `${(macrosResult.fats / macrosInputs.weight).toFixed(1)}g/kg` : ""}
+                      />
                     </div>
                     
-                    <button
+                    <CalcResult
+                      label="Ukupno kalorija iz makrosa"
+                      value={macrosResult.protein * 4 + macrosResult.carbs * 4 + macrosResult.fats * 9}
+                      unit={`od ${macrosInputs.targetCalories} ciljanih`}
+                      highlight
+                    />
+                    
+                    <CalcButton
+                      variant={macrosConfirmed ? "success" : "primary"}
                       onClick={() => {
                         setMacrosConfirmed(true);
+                        setCurrentSlide(slideOrder.indexOf("meals"));
                       }}
-                      className={`w-full rounded-[16px] px-6 py-3 font-semibold transition hover:-translate-y-0.5 hover:shadow-lg ${
-                        macrosConfirmed
-                          ? "bg-green-600 text-white"
-                          : "bg-[#1A1A1A] text-white"
-                      }`}
                     >
-                      {macrosConfirmed ? "✓ Potvrđeno" : "✓ Potvrdi Makrose"}
-                    </button>
-                  </div>
+                      {macrosConfirmed ? "✓ Potvrđeno" : "Potvrdi i nastavi na plan prehrane →"}
+                    </CalcButton>
+                  </motion.div>
                 )}
-              </div>
+
+                <button
+                  onClick={() => setShowMacrosCalc(false)}
+                  className="text-white/40 hover:text-white/70 text-sm transition-colors"
+                >
+                  ← Natrag na informacije
+                </button>
               </motion.div>
-          )}
+            )}
           </AnimatePresence>
-        </div>
+        </CalculatorScreen>
       ),
     },
     {
