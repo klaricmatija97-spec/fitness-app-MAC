@@ -7,13 +7,14 @@
 import { NextResponse } from "next/server";
 import { searchRecipes, SimplifiedRecipe } from "@/lib/services/edamamRecipeService";
 
-// Meal slot configuration with calorie percentages
+// Meal slot configuration - FITNESS FOCUSED
+// diet: undefined za fleksibilnije rezultate, filtriramo po protein ratio
 const MEAL_SLOTS = [
-  { slot: "Doručak", query: "eggs omelette protein", percent: 0.25 },
-  { slot: "Užina 1", query: "protein bar snack", percent: 0.10 },
-  { slot: "Ručak", query: "chicken breast rice vegetables", percent: 0.30 },
-  { slot: "Užina 2", query: "greek yogurt fruit", percent: 0.10 },
-  { slot: "Večera", query: "salmon fish dinner", percent: 0.25 },
+  { slot: "Doručak", queries: ["eggs bacon breakfast", "omelette vegetables cheese"], percent: 0.25 },
+  { slot: "Užina 1", queries: ["cottage cheese", "greek yogurt protein"], percent: 0.10 },
+  { slot: "Ručak", queries: ["chicken breast vegetables", "grilled chicken rice"], percent: 0.30 },
+  { slot: "Užina 2", queries: ["hard boiled eggs", "turkey slices"], percent: 0.10 },
+  { slot: "Večera", queries: ["salmon dinner", "chicken breast dinner"], percent: 0.25 },
 ];
 
 interface ScaledMeal {
@@ -42,33 +43,62 @@ export async function GET() {
 
     const meals: ScaledMeal[] = [];
 
+    // Izračunaj ciljane proteine po obroku (proporcionalno kalorijama)
+    const targetProteinPerMeal = targets.protein;
+
     for (const mealSlot of MEAL_SLOTS) {
       const targetCalories = Math.round(targets.calories * mealSlot.percent);
+      const targetProtein = Math.round(targetProteinPerMeal * mealSlot.percent);
       
-      console.log(`\n🍽️ ${mealSlot.slot}: tražim recept za ~${targetCalories} kcal...`);
+      console.log(`\n🍽️ ${mealSlot.slot}: tražim recept za ~${targetCalories} kcal, ~${targetProtein}g proteina...`);
 
-      const recipes = await searchRecipes({
-        query: mealSlot.query,
-        random: true,
-        limit: 15,
-      });
+      // Probaj oba querya
+      let recipes: SimplifiedRecipe[] = [];
+      for (const query of mealSlot.queries) {
+        const results = await searchRecipes({
+          query,
+          random: true,
+          limit: 15,
+        });
+        recipes = [...recipes, ...results];
+        if (recipes.length >= 10) break; // Dosta recepata
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      // Ukloni duplikate
+      const uniqueRecipes = recipes.filter((r, i, arr) => 
+        arr.findIndex(x => x.id === r.id) === i
+      );
 
-      console.log(`   Pronađeno ${recipes.length} recepata`);
+      console.log(`   Pronađeno ${uniqueRecipes.length} recepata`);
 
-      if (recipes.length > 0) {
-        // Filtriraj recepte koji su u razumnom rasponu (50-200% ciljanih kalorija)
-        // da skaliranje bude realistično (0.5x - 2x porcija)
-        const minCal = targetCalories * 0.5;
-        const maxCal = targetCalories * 2;
+      if (uniqueRecipes.length > 0) {
+        // PRIORITIZIRAJ recepte s visokim proteinima!
+        // Sortiraj po omjeru proteina (g proteina po 100 kalorija)
+        const sortedByProtein = [...uniqueRecipes].sort((a, b) => {
+          const ratioA = (a.protein / a.calories) * 100;
+          const ratioB = (b.protein / b.calories) * 100;
+          return ratioB - ratioA; // Viši protein ratio = bolje
+        });
+
+        // Uzmi top 5 po proteinima, pa od njih biraj najbliži kalorijama
+        const topProteinRecipes = sortedByProtein.slice(0, 8);
         
-        let bestRecipe = recipes[0];
-        let bestDiff = Math.abs(recipes[0].calories - targetCalories);
+        const minCal = targetCalories * 0.4;
+        const maxCal = targetCalories * 2.5;
         
-        for (const recipe of recipes) {
+        let bestRecipe = topProteinRecipes[0];
+        let bestScore = 0;
+        
+        for (const recipe of topProteinRecipes) {
           if (recipe.calories >= minCal && recipe.calories <= maxCal) {
-            const diff = Math.abs(recipe.calories - targetCalories);
-            if (diff < bestDiff) {
-              bestDiff = diff;
+            // Score = protein ratio * closeness to target calories
+            const proteinRatio = (recipe.protein / recipe.calories) * 100;
+            const calorieDiff = 1 - Math.abs(recipe.calories - targetCalories) / targetCalories;
+            const score = proteinRatio * 0.7 + calorieDiff * 30; // Protein je prioritet
+            
+            if (score > bestScore) {
+              bestScore = score;
               bestRecipe = recipe;
             }
           }
@@ -77,8 +107,8 @@ export async function GET() {
         // Skaliraj recept prema ciljanim kalorijama
         const scaleFactor = targetCalories / bestRecipe.calories;
         
-        // Ograniči skaliranje na 0.5x - 2x za realistične porcije
-        const clampedScale = Math.max(0.5, Math.min(2, scaleFactor));
+        // Ograniči skaliranje na 0.4x - 3x (fitness obroci su često manji pa treba više skalirati)
+        const clampedScale = Math.max(0.4, Math.min(3, scaleFactor));
         
         const scaled = {
           calories: Math.round(bestRecipe.calories * clampedScale),

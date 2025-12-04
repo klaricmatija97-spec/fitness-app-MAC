@@ -130,43 +130,43 @@ const ALLERGY_MAP: Record<string, string> = {
   'vegan': 'vegan',
 };
 
-// Query strings za različite obroke
+// Query strings za različite obroke - FITNESS FOCUSED HIGH PROTEIN
 const MEAL_QUERIES: Record<string, string[]> = {
   breakfast: [
-    'eggs breakfast protein',
-    'oatmeal healthy breakfast',
-    'protein pancakes',
-    'greek yogurt parfait',
-    'avocado toast eggs',
-    'smoothie bowl protein',
-    'breakfast burrito healthy',
+    'egg whites omelette turkey',
+    'chicken breast eggs breakfast',
+    'protein pancakes egg whites',
+    'greek yogurt cottage cheese',
+    'scrambled eggs lean turkey',
+    'egg white frittata vegetables',
+    'oatmeal protein powder eggs',
   ],
   lunch: [
-    'chicken breast salad',
-    'grilled salmon vegetables',
-    'turkey wrap healthy',
-    'quinoa bowl protein',
-    'tuna salad healthy',
-    'beef stir fry vegetables',
-    'shrimp rice bowl',
+    'grilled chicken breast broccoli rice',
+    'lean turkey breast vegetables',
+    'tuna steak grilled asparagus',
+    'chicken breast quinoa salad',
+    'grilled fish tilapia vegetables',
+    'lean beef sirloin vegetables',
+    'shrimp grilled zucchini',
   ],
   dinner: [
-    'grilled chicken dinner',
-    'baked salmon lemon',
-    'lean beef steak vegetables',
-    'turkey meatballs pasta',
-    'cod fish healthy',
-    'pork tenderloin roasted',
-    'chicken curry healthy',
+    'grilled salmon broccoli lean',
+    'chicken breast sweet potato',
+    'lean steak asparagus',
+    'baked cod fish vegetables',
+    'turkey breast roasted vegetables',
+    'grilled tilapia spinach',
+    'lean pork tenderloin vegetables',
   ],
   snack: [
-    'protein snack healthy',
-    'greek yogurt berries',
-    'nuts trail mix',
-    'cottage cheese fruit',
-    'protein bar homemade',
-    'hummus vegetables',
-    'apple peanut butter',
+    'cottage cheese protein',
+    'greek yogurt protein',
+    'egg whites hard boiled',
+    'turkey breast slices',
+    'tuna protein snack',
+    'chicken breast cold',
+    'protein shake smoothie',
   ],
 };
 
@@ -302,7 +302,7 @@ async function getUserPreferences(userId: string): Promise<UserPreferences> {
 }
 
 /**
- * Pronađi recept za određeni obrok
+ * Pronađi recept za određeni obrok - PRIORITIZIRA VISOKE PROTEINE
  */
 async function findRecipeForMeal(
   slot: MealSlot,
@@ -316,15 +316,10 @@ async function findRecipeForMeal(
   const queryType = getQueryTypeForSlot(slot.type);
   const query = getRandomQuery(queryType);
 
-  // Determine diet based on goal
-  let diet: 'balanced' | 'high-protein' | 'low-carb' | 'low-fat' | undefined;
-  if (goalType === 'gain') {
-    diet = 'high-protein';
-  } else if (goalType === 'lose') {
-    diet = 'high-protein';
-  }
+  // UVIJEK koristi high-protein za fitness
+  const diet: 'high-protein' = 'high-protein';
 
-  // FIRST TRY: bez kalorijskih filtera (jer Edamam filtrira total, ne po porciji)
+  // Pretraži recepte
   let recipes = await searchRecipes({
     query,
     mealType,
@@ -332,49 +327,65 @@ async function findRecipeForMeal(
     health: healthLabels.length > 0 ? healthLabels : undefined,
     excluded: excludedIngredients.length > 0 ? excludedIngredients : undefined,
     random: true,
-    limit: 20,
+    limit: 25,
   });
 
-  // Filter by per-serving calories (±50% tolerance for more results)
-  const calorieMin = Math.round(targetCalories * 0.5);
-  const calorieMax = Math.round(targetCalories * 1.5);
-  
-  let filteredRecipes = recipes.filter(r => 
-    r.calories >= calorieMin && r.calories <= calorieMax && !usedRecipeIds.has(r.id)
-  );
+  // Filtriraj nekorištene recepte
+  let availableRecipes = recipes.filter(r => !usedRecipeIds.has(r.id));
 
-  if (filteredRecipes.length > 0) {
-    // Sort by how close to target calories
-    filteredRecipes.sort((a, b) => 
-      Math.abs(a.calories - targetCalories) - Math.abs(b.calories - targetCalories)
-    );
-    return filteredRecipes[0];
-  }
-
-  // FALLBACK: bilo koji recept koji nije korišten
-  const availableRecipes = recipes.filter(r => !usedRecipeIds.has(r.id));
   if (availableRecipes.length > 0) {
-    return availableRecipes[Math.floor(Math.random() * availableRecipes.length)];
+    // SORTIRAJ PO PROTEIN RATIO (g proteina po 100 kcal)
+    availableRecipes.sort((a, b) => {
+      const ratioA = (a.protein / a.calories) * 100;
+      const ratioB = (b.protein / b.calories) * 100;
+      return ratioB - ratioA; // Viši protein = bolje
+    });
+
+    // Uzmi top 10 po proteinima
+    const topProtein = availableRecipes.slice(0, 10);
+
+    // Od top proteina, biraj najbliži ciljanim kalorijama
+    const calorieMin = Math.round(targetCalories * 0.4);
+    const calorieMax = Math.round(targetCalories * 2.5);
+    
+    const inRange = topProtein.filter(r => r.calories >= calorieMin && r.calories <= calorieMax);
+    
+    if (inRange.length > 0) {
+      // Sortiraj po blizini ciljanim kalorijama
+      inRange.sort((a, b) => 
+        Math.abs(a.calories - targetCalories) - Math.abs(b.calories - targetCalories)
+      );
+      return inRange[0];
+    }
+
+    // Ako nema u rasponu, vrati prvi s najviše proteina
+    return topProtein[0];
   }
 
-  // LAST RESORT: pokušaj s jednostavnijim queryem
+  // FALLBACK: fitness-focused jednostavniji query
   const fallbackQueries: Record<string, string> = {
-    breakfast: 'eggs toast',
-    lunch: 'chicken rice',
-    dinner: 'salmon vegetables',
-    snack: 'yogurt fruit',
+    breakfast: 'egg whites chicken',
+    lunch: 'grilled chicken breast',
+    dinner: 'grilled salmon lean',
+    snack: 'cottage cheese greek yogurt',
   };
 
-  console.log(`   ⚠️ Fallback search za ${slot.name}...`);
+  console.log(`   ⚠️ Fallback fitness search za ${slot.name}...`);
   const fallbackRecipes = await searchRecipes({
-    query: fallbackQueries[queryType] || 'healthy meal',
-    mealType,
+    query: fallbackQueries[queryType] || 'chicken breast lean',
+    diet: 'high-protein',
     random: true,
-    limit: 10,
+    limit: 15,
   });
 
   const fallbackAvailable = fallbackRecipes.filter(r => !usedRecipeIds.has(r.id));
   if (fallbackAvailable.length > 0) {
+    // Sortiraj i fallback po proteinima
+    fallbackAvailable.sort((a, b) => {
+      const ratioA = (a.protein / a.calories) * 100;
+      const ratioB = (b.protein / b.calories) * 100;
+      return ratioB - ratioA;
+    });
     return fallbackAvailable[0];
   }
 
