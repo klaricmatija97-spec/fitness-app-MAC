@@ -18,6 +18,7 @@ import LoginSlideContent from "./components/LoginSlideContent";
 import EducationalOnboarding from "./components/EducationalOnboarding";
 import EducationalSlide from "./components/EducationalSlide";
 import EducationalWizard from "./components/EducationalWizard";
+import MealPlanWelcomeScreen from "./components/MealPlanWelcomeScreen";
 
 // ============================================
 // DEBUG TEST FLAG (samo za development)
@@ -3946,127 +3947,7 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
               </div>
             </div>
           ) : !showMealPlan ? (
-            <div className="flex-1 overflow-y-auto space-y-6 pb-32 px-1 min-h-0" style={{ paddingBottom: '10rem' }}>
-              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
-                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Kako funkcionira</h3>
-                <p className="text-gray-600 text-sm mb-4">
-                  Plan prehrane se generira na temelju tvojih izračunatih kalorija i makroa. 
-                  Svaki obrok je prilagođen tvojim ciljevima i preferencijama.
-                </p>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li>• <strong>Tjedni meni</strong> - 7 dana, 3-4 obroka dnevno</li>
-                  <li>• <strong>Zdrave namirnice</strong> - bez slatkiša, nezdravih masti, svinjetine</li>
-                  <li>• <strong>Dvije opcije</strong> - slatko ili slano, isti makrosi</li>
-                  <li>• <strong>Popis za kupnju</strong> - sve što trebaš za tjedan</li>
-                </ul>
-              </div>
-
-              <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border border-[#E8E8E8] p-6 shadow-lg">
-                <h3 className="text-xl font-semibold text-[#1A1A1A] mb-3">Što dobivaš</h3>
-                <p className="text-gray-600 text-sm mb-4">
-                  Svaki plan uključuje detaljne recepte, količine, kalorije i makroe po obroku. 
-                  Možeš prilagoditi prema svojim preferencijama i dostupnim namirnicama.
-                </p>
-              </div>
-
-              {/* Kvačica za generiranje plana prehrane */}
-              {macrosResult && macrosConfirmed && (
-                <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl">
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <h3 className="text-xl font-semibold text-[#1A1A1A] mb-2">Spremno za generiranje plana prehrane</h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Svi izračuni su potvrđeni. Odaberi preferencu i generiraj plan.
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-[#1A1A1A] mb-2">Preferenca</label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <button
-                          onClick={() => setMealPlanPreference("sweet")}
-                          className={`rounded-[16px] border-2 p-4 text-center transition ${
-                            mealPlanPreference === "sweet"
-                              ? "border-[#1A1A1A] bg-[#1A1A1A] text-white"
-                              : "border-[#E8E8E8] bg-white text-[#1A1A1A] hover:border-[#1A1A1A]"
-                          }`}
-                        >
-                          <div className="font-semibold">Slatko</div>
-                          <div className="text-xs mt-1 opacity-80">Voće, zobene, med, jogurt</div>
-                        </button>
-                        <button
-                          onClick={() => setMealPlanPreference("savory")}
-                          className={`rounded-[16px] border-2 p-4 text-center transition ${
-                            mealPlanPreference === "savory"
-                              ? "border-gray-900 bg-gray-900 text-white"
-                              : "border-gray-300 bg-white text-gray-900 hover:border-gray-400"
-                          }`}
-                        >
-                          <div className="font-semibold">Slano</div>
-                          <div className="text-xs mt-1 opacity-80">Meso, povrće, riža, jaja</div>
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <button
-                      onClick={async () => {
-                        const clientId = localStorage.getItem("clientId");
-                        if (!clientId) {
-                          setMealPlanError("Prvo moraš izračunati svoje kalorije i makroe. Provjeri da li si prijavljen.");
-                          return;
-                        }
-
-                        setGeneratingMealPlan(true);
-                        setMealPlanError(null);
-
-                        try {
-                          const response = await fetch("/api/meal-plan/pro/generate", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ userId: clientId }),
-                          });
-
-                          if (!response.ok) {
-                            const errorData = await response.json().catch(() => ({}));
-                            throw new Error(errorData.message || "Greška pri generiranju plana prehrane");
-                          }
-
-                          const data = await response.json();
-                          if (!data.ok || !data.plan) {
-                            throw new Error(data.message || "Plan prehrane nije generiran");
-                          }
-
-                          // Konvertuj PRO plan u format koji se prikazuje
-                          const proPlan = data.plan;
-                          setGeneratedMealPlan(proPlan);
-                        setShowMealPlan(true);
-                        } catch (error) {
-                          console.error("Error generating meal plan:", error);
-                          setMealPlanError(error instanceof Error ? error.message : "Greška pri generiranju plana prehrane");
-                        } finally {
-                          setGeneratingMealPlan(false);
-                        }
-                      }}
-                      disabled={generatingMealPlan}
-                      className={clsx(
-                        "w-full rounded-[16px] px-6 py-3 text-white font-semibold transition hover:-translate-y-0.5 hover:shadow-lg",
-                        generatingMealPlan
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-[#1A1A1A] hover:bg-[#2A2A2A]"
-                      )}
-                    >
-                      {generatingMealPlan ? "⏳ Generiranje..." : "✓ Generiraj PRO Plan Prehrane"}
-                    </button>
-                    
-                    {mealPlanError && (
-                      <div className="mt-4 p-4 rounded-[12px] bg-red-50 border border-red-200">
-                        <p className="text-sm text-red-600">{mealPlanError}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            <MealPlanWelcomeScreen onNavigate={() => router.push("/app/meals")} />
           ) : (
             <div className="flex-1 overflow-y-auto pb-32 px-1 min-h-0 h-full" style={{ paddingBottom: '10rem', height: '100%', maxHeight: 'none' }}>
               <div className="rounded-[24px] bg-white/80 backdrop-blur-sm border-2 border-[#1A1A1A] p-6 shadow-xl flex flex-col w-full">
