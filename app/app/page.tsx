@@ -3489,10 +3489,10 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
                       variant={macrosConfirmed ? "success" : "primary"}
                       onClick={() => {
                         setMacrosConfirmed(true);
-                        setCurrentSlide(slideOrder.indexOf("meals"));
+                        setCurrentSlide(slideOrder.indexOf("contact"));
                       }}
                     >
-                      {macrosConfirmed ? "✓ Potvrđeno" : "Potvrdi i nastavi na plan prehrane →"}
+                      {macrosConfirmed ? "✓ Potvrđeno" : "Potvrdi i nastavi →"}
                     </CalcButton>
                   </motion.div>
                 )}
