@@ -1369,6 +1369,11 @@ function buildCompositeMealForSlot(
     'pečeno': ['pečen', 'roasted', 'baked'],
   };
   
+  // NOVO: Proteini koji se NE SMIJU kombinirati u istom danu (previše slični)
+  const conflictingProteins: [string[], string[]][] = [
+    [['chicken', 'piletina', 'pileć'], ['turkey', 'puretina', 'pureć']], // Piletina i puretina
+  ];
+  
   // Izvuci glavne namirnice iz prethodnih obroka danas
   const usedMainIngredientsToday = new Set<string>();
   for (const prevMeal of previousMeals) {
@@ -1461,6 +1466,53 @@ function buildCompositeMealForSlot(
       }
     } else if (mealOptions.length < beforeStyleFilter) {
       console.log(`   🎨 Filtrirano ${beforeStyleFilter - mealOptions.length} obroka zbog istog stila (ostalo: ${mealOptions.length})`);
+    }
+  }
+  
+  // NOVO: Filtriraj obroke s konfliktnim proteinima (npr. piletina i puretina ne smiju biti u istom danu)
+  // Pronađi koje proteine smo već koristili danas
+  const usedProteinGroups = new Set<number>();
+  for (const prevMeal of previousMeals) {
+    for (const comp of prevMeal.components) {
+      const foodLower = comp.food.toLowerCase();
+      conflictingProteins.forEach((pair, index) => {
+        const [group1, group2] = pair;
+        if (group1.some(keyword => foodLower.includes(keyword))) {
+          usedProteinGroups.add(index * 2); // Označava prvu grupu para
+        }
+        if (group2.some(keyword => foodLower.includes(keyword))) {
+          usedProteinGroups.add(index * 2 + 1); // Označava drugu grupu para
+        }
+      });
+    }
+  }
+  
+  // Filtriraj obroke koji bi stvorili konflikt proteina
+  if (usedProteinGroups.size > 0) {
+    const beforeProteinFilter = mealOptions.length;
+    mealOptions = mealOptions.filter(option => {
+      for (const comp of option.components) {
+        const foodLower = comp.food.toLowerCase();
+        for (let i = 0; i < conflictingProteins.length; i++) {
+          const [group1, group2] = conflictingProteins[i];
+          // Ako je korištena grupa 1, ne dozvoli grupu 2
+          if (usedProteinGroups.has(i * 2) && group2.some(keyword => foodLower.includes(keyword))) {
+            return false;
+          }
+          // Ako je korištena grupa 2, ne dozvoli grupu 1
+          if (usedProteinGroups.has(i * 2 + 1) && group1.some(keyword => foodLower.includes(keyword))) {
+            return false;
+          }
+        }
+      }
+      return true;
+    });
+    
+    if (mealOptions.length === 0) {
+      console.warn(`⚠️ Svi obroci za ${slot} imaju konfliktne proteine, popuštam pravilo...`);
+      mealOptions = definitions.map(convertToMealOption).filter(opt => !excludedMealNames.has(opt.name));
+    } else if (mealOptions.length < beforeProteinFilter) {
+      console.log(`   🍗 Filtrirano ${beforeProteinFilter - mealOptions.length} obroka zbog konfliktnih proteina (ostalo: ${mealOptions.length})`);
     }
   }
 

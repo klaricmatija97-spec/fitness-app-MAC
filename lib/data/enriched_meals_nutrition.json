@@ -1321,29 +1321,6 @@
       "source": "edamam"
     },
     {
-      "id": "lunch_gain_16",
-      "name": "Krumpir i riža s povrćem",
-      "nutrition": {
-        "calories": 605,
-        "protein": 19.4,
-        "carbs": 97.2,
-        "fat": 15.7,
-        "fiber": 10.9,
-        "sugar": 10.6,
-        "sodium": 248,
-        "saturatedFat": 8.8,
-        "vitaminA": 656,
-        "vitaminC": 75,
-        "vitaminD": 0.1,
-        "vitaminB12": 0.3,
-        "calcium": 122,
-        "iron": 5.3,
-        "potassium": 1347,
-        "magnesium": 104
-      },
-      "source": "edamam"
-    },
-    {
       "id": "lunch_gain_17",
       "name": "Sendvič combo s voćem",
       "nutrition": {

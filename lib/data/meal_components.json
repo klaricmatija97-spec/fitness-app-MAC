@@ -379,7 +379,7 @@
     },
     {
       "id": "breakfast_gain_3",
-      "name": "Omlet za masu s mlijekom i zobenima",
+      "name": "Omlet s mlijekom i zobenima",
       "description": "Kompletan doručak za ozbiljno dobivanje mišića. Omlet s više jaja, zobene na mlijeku i shake - sve što trebaš za jutarnju anaboličku eksploziju.",
       "image": "https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=400&h=300&fit=crop",
       "preparationTip": "Pripremi omlet od svih jaja. Zobene kuhaj na punomasnom mlijeku. Može i proteinski shake uz obrok.",
@@ -695,8 +695,8 @@
     },
     {
       "id": "breakfast_gain_11",
-      "name": "Bogati mješoviti doručak",
-      "description": "Sve po malo! Zobene, tost, voće i med - raznolik doručak s puno UH iz različitih izvora.",
+      "name": "Zobene s tostom i voćem",
+      "description": "Energetski doručak - zobene na mlijeku, hrskavi tost s medom i svježe voće.",
       "image": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=300&fit=crop",
       "preparationTip": "Zobene kuhaj na mlijeku. Tost prepeci i namazi medom. Voće posluži svježe.",
       "components": [
@@ -2641,53 +2641,6 @@
       "tags": [
         "high-carb",
         "mexican",
-        "vegetarian"
-      ],
-      "suitableFor": [
-        "gain"
-      ]
-    },
-    {
-      "id": "lunch_gain_16",
-      "name": "Krumpir i riža s povrćem",
-      "description": "Dupli UH! I krumpir i riža u jednom obroku s povrćem. Maksimalni ugljikohidrati.",
-      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
-      "preparationTip": "Kuhaj krumpir i rižu odvojeno. Posluži zajedno s povrćem.",
-      "components": [
-        {
-          "food": "Potatoes",
-          "grams": 200,
-          "displayName": "Kuhani krumpir"
-        },
-        {
-          "food": "Rice",
-          "grams": 150,
-          "displayName": "Kuhana riža"
-        },
-        {
-          "food": "Peas",
-          "grams": 80,
-          "displayName": "Grašak"
-        },
-        {
-          "food": "Carrot",
-          "grams": 60,
-          "displayName": "Mrkva"
-        },
-        {
-          "food": "Butter light",
-          "grams": 15,
-          "displayName": "Maslac"
-        },
-        {
-          "food": "Cottage cheese",
-          "grams": 60,
-          "displayName": "Cottage sir"
-        }
-      ],
-      "tags": [
-        "high-carb",
-        "double-carb",
         "vegetarian"
       ],
       "suitableFor": [
