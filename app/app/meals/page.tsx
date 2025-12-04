@@ -291,92 +291,120 @@ export default function MealsPage() {
   }, [clientId]);
 
     return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-black">
+      {/* Background */}
+      <div className="fixed inset-0 z-0">
+        <div 
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ 
+            backgroundImage: `url('https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1920&h=1080&fit=crop&q=80')`,
+            filter: "brightness(0.15) saturate(0.8)"
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/70" />
+      </div>
+
       {/* Top Navigation Bar */}
-      <div className="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-sm border-b border-slate-800">
-        <div className="mx-auto max-w-4xl px-4 py-3 flex items-center justify-between">
-          <a 
+      <div className="sticky top-0 z-30 bg-black/50 backdrop-blur-md border-b border-white/10">
+        <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
+          <motion.a 
             href="/app" 
-            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+            whileHover={{ x: -3 }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="text-sm font-medium">Natrag</span>
-          </a>
+            <span className="text-sm font-light tracking-wide">Natrag</span>
+          </motion.a>
           
           {/* CORPEX Logo */}
           <div className="absolute left-1/2 -translate-x-1/2">
-            <span className="text-xl font-black tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-purple-500">
-              CORPEX
+            <span className="text-sm font-light tracking-[0.4em] text-white/70 uppercase">
+              Corpex
             </span>
           </div>
           
-          <div className="flex items-center gap-3">
-            <a href="/app" className="text-xs text-slate-500 hover:text-slate-300">Početna</a>
-            <span className="text-slate-700">|</span>
-            <a href="/app/profile" className="text-xs text-slate-500 hover:text-slate-300">Profil</a>
-      </div>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-4xl px-4 py-8">
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Tjedni Plan Prehrane</h1>
-            <p className="text-sm text-slate-400 mt-1">
-              {planMode === 'recipe' ? 'Recepti s fotografijama iz Edamam baze' : 'Personalizirani plan sa 6 obroka dnevno'}
-            </p>
-          </div>
-          <button
+          <motion.button
             onClick={generateWeeklyPlan}
             disabled={loading}
-            className="px-5 py-2.5 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-500 disabled:opacity-50 transition-colors shadow-lg shadow-violet-500/20"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="px-5 py-2 bg-white/10 border border-white/20 text-white text-sm font-light tracking-wide rounded-full hover:bg-white/15 hover:border-white/30 disabled:opacity-50 transition-all"
           >
             {loading ? "Generiram..." : "Novi plan"}
-          </button>
+          </motion.button>
         </div>
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-5xl px-4 py-8">
+        {/* Header */}
+        <motion.div 
+          className="mb-8 text-center"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <h1 className="text-3xl md:text-4xl font-light text-white tracking-wide mb-2">
+            Tjedni Plan Prehrane
+          </h1>
+          <p className="text-sm text-white/40 font-light">
+            {planMode === 'recipe' ? 'Recepti s fotografijama' : 'Personalizirani plan'}
+          </p>
+        </motion.div>
 
         {/* Mode Toggle */}
-        <div className="mb-6 flex items-center gap-1 p-1 bg-slate-900 rounded-xl w-fit">
+        <motion.div 
+          className="mb-8 flex items-center justify-center gap-2"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
           <button
             onClick={() => { setPlanMode('classic'); setRecipePlan(null); }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`px-6 py-2.5 rounded-full text-sm font-light tracking-wide transition-all ${
               planMode === 'classic' 
-                ? 'bg-violet-600 text-white shadow-lg' 
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-white/15 text-white border border-white/30' 
+                : 'text-white/50 hover:text-white/80 border border-transparent'
             }`}
           >
             Klasični Plan
           </button>
           <button
             onClick={() => { setPlanMode('recipe'); setWeeklyPlan(null); }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+            className={`px-6 py-2.5 rounded-full text-sm font-light tracking-wide transition-all ${
               planMode === 'recipe' 
-                ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg' 
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-white/15 text-white border border-white/30' 
+                : 'text-white/50 hover:text-white/80 border border-transparent'
             }`}
           >
-            <span>📸</span> Recepti
+            Recepti
           </button>
-        </div>
+        </motion.div>
 
         {/* Error */}
         {error && (
-          <div className="mb-6 p-4 bg-red-900/30 border border-red-800 rounded-lg">
-            <p className="text-red-300 text-sm">{error}</p>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl backdrop-blur-sm"
+          >
+            <p className="text-red-300/80 text-sm font-light text-center">{error}</p>
+          </motion.div>
         )}
 
         {/* Loading */}
         {loading && !weeklyPlan && !recipePlan && (
-          <div className="text-center py-16">
-            <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-slate-700 border-t-violet-500"></div>
-            <p className="mt-3 text-slate-400 text-sm">
-              {planMode === 'recipe' ? 'Tražim recepte s fotografijama...' : 'Generiram tvoj plan prehrane...'}
+          <motion.div 
+            className="text-center py-20"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border border-white/20 border-t-white/70"></div>
+            <p className="mt-4 text-white/40 text-sm font-light tracking-wide">
+              {planMode === 'recipe' ? 'Tražim recepte...' : 'Generiram plan...'}
             </p>
-          </div>
+          </motion.div>
         )}
 
         {/* Recipe Plan */}
@@ -384,46 +412,48 @@ export default function MealsPage() {
         {recipePlan && planMode === 'recipe' && (
           <motion.div
             key={`recipe-${planKey}`}
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -20 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.4 }}
           >
             {/* Ciljevi - Recipe */}
             <motion.div 
-              className="mb-4 p-4 bg-gradient-to-r from-orange-900/30 to-amber-900/30 border border-orange-800/50 rounded-xl"
+              className="mb-6 p-5 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-orange-300/70 uppercase tracking-wide">Dnevni ciljevi</p>
-                <span className="text-xs px-2 py-1 rounded-full bg-orange-800/50 text-orange-300 border border-orange-700">
-                  {recipePlan.userTargets.goalType === 'lose' ? '🎯 Skidanje kila' : 
-                   recipePlan.userTargets.goalType === 'gain' ? '💪 Dobivanje mišića' : '⚖️ Održavanje'}
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-white/40 uppercase tracking-[0.2em] font-light">Dnevni ciljevi</p>
+                <span className="text-xs px-3 py-1 rounded-full bg-white/10 text-white/70 border border-white/10 font-light">
+                  {recipePlan.userTargets.goalType === 'lose' ? 'Skidanje kila' : 
+                   recipePlan.userTargets.goalType === 'gain' ? 'Dobivanje mišića' : 'Održavanje'}
                 </span>
               </div>
-              <div className="flex gap-6 text-sm">
-                <div><span className="font-semibold text-white">{recipePlan.userTargets.calories}</span> <span className="text-orange-300/70">kcal</span></div>
-                <div><span className="font-semibold text-white">{recipePlan.userTargets.protein}g</span> <span className="text-orange-300/70">proteina</span></div>
-                <div><span className="font-semibold text-white">{recipePlan.userTargets.carbs}g</span> <span className="text-orange-300/70">UH</span></div>
-                <div><span className="font-semibold text-white">{recipePlan.userTargets.fat}g</span> <span className="text-orange-300/70">masti</span></div>
+              <div className="flex gap-8 text-sm">
+                <div><span className="font-normal text-white">{recipePlan.userTargets.calories}</span> <span className="text-white/40 font-light">kcal</span></div>
+                <div><span className="font-normal text-white">{recipePlan.userTargets.protein}g</span> <span className="text-white/40 font-light">proteina</span></div>
+                <div><span className="font-normal text-white">{recipePlan.userTargets.carbs}g</span> <span className="text-white/40 font-light">UH</span></div>
+                <div><span className="font-normal text-white">{recipePlan.userTargets.fat}g</span> <span className="text-white/40 font-light">masti</span></div>
               </div>
             </motion.div>
 
             {/* Dani - Recipe */}
-            <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+            <div className="flex gap-2 mb-6 overflow-x-auto pb-2 justify-center">
               {recipePlan.days.map((day, idx) => (
-                <button
+                <motion.button
                   key={idx}
                   onClick={() => setSelectedDay(idx)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`px-5 py-2 rounded-full text-sm font-light tracking-wide transition-all whitespace-nowrap ${
                     selectedDay === idx
-                      ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg'
-                      : 'bg-slate-800 text-slate-400 hover:text-white'
+                      ? 'bg-white/15 text-white border border-white/30'
+                      : 'text-white/40 hover:text-white/70 border border-transparent hover:border-white/10'
                   }`}
                 >
                   {day.dayName}
-                </button>
+                </motion.button>
               ))}
             </div>
 
@@ -434,41 +464,43 @@ export default function MealsPage() {
                   key={meal.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  className="bg-slate-800/50 rounded-xl overflow-hidden border border-slate-700 hover:border-orange-600/50 transition-colors cursor-pointer"
+                  transition={{ delay: idx * 0.08 }}
+                  whileHover={{ scale: 1.01, borderColor: 'rgba(255,255,255,0.2)' }}
+                  className="bg-white/5 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/10 transition-all cursor-pointer group"
                   onClick={() => setSelectedRecipeMeal(meal)}
                 >
                   <div className="flex">
                     {/* Slika */}
-                    <div className="w-32 h-32 flex-shrink-0 relative">
+                    <div className="w-28 h-28 md:w-36 md:h-36 flex-shrink-0 relative overflow-hidden">
                       <img 
                         src={meal.recipe.image} 
                         alt={meal.recipe.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = '/images/placeholder-food.jpg';
                         }}
                       />
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/30" />
                       <div className="absolute top-2 left-2">
-                        <span className="px-2 py-1 bg-black/60 backdrop-blur-sm rounded-full text-xs text-white">
+                        <span className="px-2.5 py-1 bg-black/50 backdrop-blur-md rounded-full text-xs text-white/80 font-light">
                           {meal.slotName}
                         </span>
                       </div>
                     </div>
                     
                     {/* Info */}
-                    <div className="flex-1 p-4">
-                      <h3 className="font-semibold text-white text-sm line-clamp-2 mb-2">
+                    <div className="flex-1 p-4 flex flex-col justify-center">
+                      <h3 className="font-normal text-white text-sm md:text-base line-clamp-2 mb-1">
                         {meal.recipe.name}
                       </h3>
-                      <p className="text-xs text-slate-500 mb-2">
-                        Izvor: {meal.recipe.source}
+                      <p className="text-xs text-white/30 mb-3 font-light">
+                        {meal.recipe.source}
                       </p>
-                      <div className="flex gap-3 text-xs">
-                        <span className="text-orange-400">{meal.adjustedNutrition.calories} kcal</span>
-                        <span className="text-slate-400">P: {meal.adjustedNutrition.protein}g</span>
-                        <span className="text-slate-400">C: {meal.adjustedNutrition.carbs}g</span>
-                        <span className="text-slate-400">F: {meal.adjustedNutrition.fat}g</span>
+                      <div className="flex gap-4 text-xs">
+                        <span className="text-white/70">{meal.adjustedNutrition.calories} kcal</span>
+                        <span className="text-white/40">P: {meal.adjustedNutrition.protein}g</span>
+                        <span className="text-white/40">C: {meal.adjustedNutrition.carbs}g</span>
+                        <span className="text-white/40">F: {meal.adjustedNutrition.fat}g</span>
                       </div>
                     </div>
                   </div>
@@ -479,17 +511,17 @@ export default function MealsPage() {
             {/* Dnevni totali - Recipe */}
             {recipePlan.days[selectedDay] && (
               <motion.div 
-                className="mt-4 p-4 bg-slate-800/30 rounded-xl border border-slate-700"
+                className="mt-6 p-5 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                <p className="text-xs text-slate-500 uppercase mb-2">Dnevni unos</p>
+                <p className="text-xs text-white/40 uppercase tracking-[0.2em] mb-3 font-light">Dnevni unos</p>
                 <div className="flex justify-between text-sm">
-                  <span className="text-orange-400 font-semibold">{recipePlan.days[selectedDay].totals.calories} kcal</span>
-                  <span className="text-slate-300">{recipePlan.days[selectedDay].totals.protein}g proteina</span>
-                  <span className="text-slate-300">{recipePlan.days[selectedDay].totals.carbs}g UH</span>
-                  <span className="text-slate-300">{recipePlan.days[selectedDay].totals.fat}g masti</span>
+                  <span className="text-white font-normal">{recipePlan.days[selectedDay].totals.calories} kcal</span>
+                  <span className="text-white/60 font-light">{recipePlan.days[selectedDay].totals.protein}g proteina</span>
+                  <span className="text-white/60 font-light">{recipePlan.days[selectedDay].totals.carbs}g UH</span>
+                  <span className="text-white/60 font-light">{recipePlan.days[selectedDay].totals.fat}g masti</span>
                 </div>
               </motion.div>
             )}
@@ -504,80 +536,85 @@ export default function MealsPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4"
               onClick={() => setSelectedRecipeMeal(null)}
             >
               <motion.div
-                initial={{ scale: 0.9, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 20 }}
-                className="bg-slate-900 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-hidden"
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                transition={{ type: "spring", damping: 25 }}
+                className="bg-neutral-900/95 backdrop-blur-md rounded-3xl max-w-lg w-full max-h-[90vh] overflow-hidden border border-white/10"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header Image */}
-                <div className="relative h-48">
+                <div className="relative h-52">
                   <img 
                     src={selectedRecipeMeal.recipe.image} 
                     alt={selectedRecipeMeal.recipe.name}
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent" />
-                  <button
+                  <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-neutral-900/50 to-transparent" />
+                  <motion.button
                     onClick={() => setSelectedRecipeMeal(null)}
-                    className="absolute top-3 right-3 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center text-white"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="absolute top-4 right-4 w-10 h-10 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white/80 hover:text-white border border-white/10"
                   >
-                    ✕
-                  </button>
-                  <div className="absolute bottom-3 left-4 right-4">
-                    <span className="text-xs text-orange-400 uppercase tracking-wide">{selectedRecipeMeal.slotName}</span>
-                    <h2 className="text-xl font-bold text-white mt-1">{selectedRecipeMeal.recipe.name}</h2>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </motion.button>
+                  <div className="absolute bottom-4 left-5 right-5">
+                    <span className="text-xs text-white/50 uppercase tracking-[0.2em] font-light">{selectedRecipeMeal.slotName}</span>
+                    <h2 className="text-xl font-normal text-white mt-1">{selectedRecipeMeal.recipe.name}</h2>
                   </div>
                 </div>
 
-                <div className="p-4 overflow-y-auto max-h-[50vh]">
+                <div className="p-5 overflow-y-auto max-h-[50vh]">
                   {/* Makrosi */}
-                  <div className="grid grid-cols-4 gap-2 mb-4">
-                    <div className="bg-orange-900/30 rounded-lg p-3 text-center">
-                      <p className="text-lg font-bold text-orange-400">{selectedRecipeMeal.adjustedNutrition.calories}</p>
-                      <p className="text-xs text-slate-400">kcal</p>
+                  <div className="grid grid-cols-4 gap-3 mb-5">
+                    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center border border-white/10">
+                      <p className="text-lg font-normal text-white">{selectedRecipeMeal.adjustedNutrition.calories}</p>
+                      <p className="text-xs text-white/40 font-light">kcal</p>
                     </div>
-                    <div className="bg-slate-800 rounded-lg p-3 text-center">
-                      <p className="text-lg font-bold text-white">{selectedRecipeMeal.adjustedNutrition.protein}g</p>
-                      <p className="text-xs text-slate-400">Proteini</p>
+                    <div className="bg-white/5 rounded-xl p-3 text-center border border-white/5">
+                      <p className="text-lg font-normal text-white">{selectedRecipeMeal.adjustedNutrition.protein}g</p>
+                      <p className="text-xs text-white/40 font-light">Proteini</p>
                     </div>
-                    <div className="bg-slate-800 rounded-lg p-3 text-center">
-                      <p className="text-lg font-bold text-white">{selectedRecipeMeal.adjustedNutrition.carbs}g</p>
-                      <p className="text-xs text-slate-400">UH</p>
+                    <div className="bg-white/5 rounded-xl p-3 text-center border border-white/5">
+                      <p className="text-lg font-normal text-white">{selectedRecipeMeal.adjustedNutrition.carbs}g</p>
+                      <p className="text-xs text-white/40 font-light">UH</p>
                     </div>
-                    <div className="bg-slate-800 rounded-lg p-3 text-center">
-                      <p className="text-lg font-bold text-white">{selectedRecipeMeal.adjustedNutrition.fat}g</p>
-                      <p className="text-xs text-slate-400">Masti</p>
+                    <div className="bg-white/5 rounded-xl p-3 text-center border border-white/5">
+                      <p className="text-lg font-normal text-white">{selectedRecipeMeal.adjustedNutrition.fat}g</p>
+                      <p className="text-xs text-white/40 font-light">Masti</p>
                     </div>
                   </div>
 
                   {/* Sastojci s gramažama */}
                   <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-semibold text-white">Sastojci</h3>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-normal text-white">Sastojci</h3>
                       {selectedRecipeMeal.scaledTotalWeight && (
-                        <span className="text-xs text-orange-400">Ukupno: {selectedRecipeMeal.scaledTotalWeight}g</span>
+                        <span className="text-xs text-white/50 font-light">Ukupno: {selectedRecipeMeal.scaledTotalWeight}g</span>
                       )}
                     </div>
-                    <ul className="space-y-1.5">
+                    <ul className="space-y-2">
                       {selectedRecipeMeal.scaledIngredientsWithGrams && selectedRecipeMeal.scaledIngredientsWithGrams.length > 0 ? (
                         selectedRecipeMeal.scaledIngredientsWithGrams.map((ing, i) => (
-                          <li key={i} className="text-sm flex items-center justify-between">
-                            <span className="text-slate-300 flex items-center gap-2">
-                              <span className="text-orange-500">•</span>
+                          <li key={i} className="text-sm flex items-center justify-between py-1 border-b border-white/5 last:border-0">
+                            <span className="text-white/70 font-light flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white/30"></span>
                               {ing.food}
                             </span>
-                            <span className="text-orange-400 font-medium">{ing.grams}g</span>
+                            <span className="text-white/50 font-light">{ing.grams}g</span>
                           </li>
                         ))
                       ) : (
                         selectedRecipeMeal.recipe.ingredients.map((ing, i) => (
-                          <li key={i} className="text-sm text-slate-300 flex items-start gap-2">
-                            <span className="text-orange-500 mt-1">•</span>
+                          <li key={i} className="text-sm text-white/70 font-light flex items-start gap-2 py-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white/30 mt-1.5 flex-shrink-0"></span>
                             {ing}
                           </li>
                         ))
@@ -586,18 +623,21 @@ export default function MealsPage() {
                   </div>
 
                   {/* Izvor */}
-                  <div className="pt-3 border-t border-slate-700">
-                    <p className="text-xs text-slate-500">
-                      Izvor: <span className="text-slate-400">{selectedRecipeMeal.recipe.source}</span>
+                  <div className="pt-4 border-t border-white/10">
+                    <p className="text-xs text-white/40 font-light">
+                      Izvor: <span className="text-white/60">{selectedRecipeMeal.recipe.source}</span>
                     </p>
                     {selectedRecipeMeal.recipe.sourceUrl && (
                       <a 
                         href={selectedRecipeMeal.recipe.sourceUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-orange-400 hover:underline mt-1 inline-block"
+                        className="text-xs text-white/60 hover:text-white transition-colors mt-2 inline-flex items-center gap-1 font-light"
                       >
-                        Pogledaj originalni recept →
+                        Pogledaj originalni recept 
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
                       </a>
                     )}
                   </div>
@@ -612,149 +652,115 @@ export default function MealsPage() {
         {weeklyPlan && planMode === 'classic' && (
           <motion.div
             key={planKey}
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -20 }}
-            transition={{ 
-              type: "spring",
-              stiffness: 300,
-              damping: 30,
-              mass: 0.8
-            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.4 }}
           >
             {/* Ciljevi */}
             <motion.div 
-              className="mb-4 p-4 bg-slate-800/50 border border-slate-700 rounded-xl"
+              className="mb-6 p-5 bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-slate-500 uppercase tracking-wide">Dnevni ciljevi</p>
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                  weeklyPlan.userTargets.goal === 'lose' 
-                    ? 'bg-blue-900/50 text-blue-400 border border-blue-800' 
-                    : weeklyPlan.userTargets.goal === 'gain' 
-                    ? 'bg-violet-900/50 text-violet-400 border border-violet-800'
-                    : 'bg-slate-700 text-slate-300'
-                }`}>
-                  {weeklyPlan.userTargets.goal === 'lose' ? '🎯 Skidanje kila' : 
-                   weeklyPlan.userTargets.goal === 'gain' ? '💪 Dobivanje mišića' : 
-                   '⚖️ Održavanje'}
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-white/40 uppercase tracking-[0.2em] font-light">Dnevni ciljevi</p>
+                <span className="text-xs px-3 py-1 rounded-full bg-white/10 text-white/70 border border-white/10 font-light">
+                  {weeklyPlan.userTargets.goal === 'lose' ? 'Skidanje kila' : 
+                   weeklyPlan.userTargets.goal === 'gain' ? 'Dobivanje mišića' : 
+                   'Održavanje'}
                 </span>
               </div>
-              <div className="flex gap-6 text-sm">
+              <div className="flex flex-wrap gap-6 text-sm">
                 <div>
-                  <span className="font-semibold text-white">{weeklyPlan.userTargets.calories}</span> <span className="text-slate-400">kcal</span>
+                  <span className="font-normal text-white">{weeklyPlan.userTargets.calories}</span> <span className="text-white/40 font-light">kcal</span>
                   {(weeklyPlan.days[selectedDay]?.dailyTotals as any)?.deviation && (
-                    <div className="text-xs mt-0.5">
-                      <span className="text-slate-500">Ostvareno: </span>
-                      <span className={`font-medium ${
+                    <div className="text-xs mt-1">
+                      <span className={`font-light ${
                         Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories) <= 5
-                          ? 'text-violet-400'
+                          ? 'text-white/60'
                           : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories) <= 10
-                          ? 'text-amber-400'
-                          : 'text-red-400'
+                          ? 'text-amber-400/70'
+                          : 'text-red-400/70'
                       }`}>
                         {weeklyPlan.days[selectedDay].dailyTotals.calories} kcal
-                        ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories > 0 ? '+' : ''}
-                        {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories.toFixed(1)}%)
                       </span>
                     </div>
                   )}
                 </div>
                 <div>
-                  <span className="font-semibold text-white">{weeklyPlan.userTargets.protein}g</span> <span className="text-slate-400">proteina</span>
+                  <span className="font-normal text-white">{weeklyPlan.userTargets.protein}g</span> <span className="text-white/40 font-light">proteina</span>
                   {(weeklyPlan.days[selectedDay]?.dailyTotals as any)?.deviation && (
-                    <div className="text-xs mt-0.5">
-                      <span className="text-slate-500">Ostvareno: </span>
-                      <span className={`font-medium ${
+                    <div className="text-xs mt-1">
+                      <span className={`font-light ${
                         Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein) <= 5
-                          ? 'text-violet-400'
+                          ? 'text-white/60'
                           : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein) <= 10
-                          ? 'text-amber-400'
-                          : 'text-red-400'
+                          ? 'text-amber-400/70'
+                          : 'text-red-400/70'
                       }`}>
                         {weeklyPlan.days[selectedDay].dailyTotals.protein}g
-                        ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein > 0 ? '+' : ''}
-                        {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein.toFixed(1)}%)
                       </span>
                     </div>
                   )}
                 </div>
                 <div>
-                  <span className="font-semibold text-white">{weeklyPlan.userTargets.carbs}g</span> <span className="text-slate-400">UH</span>
+                  <span className="font-normal text-white">{weeklyPlan.userTargets.carbs}g</span> <span className="text-white/40 font-light">UH</span>
                   {(weeklyPlan.days[selectedDay]?.dailyTotals as any)?.deviation && (
-                    <div className="text-xs mt-0.5">
-                      <span className="text-slate-500">Ostvareno: </span>
-                      <span className={`font-medium ${
+                    <div className="text-xs mt-1">
+                      <span className={`font-light ${
                         Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs) <= 5
-                          ? 'text-violet-400'
+                          ? 'text-white/60'
                           : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs) <= 10
-                          ? 'text-amber-400'
-                          : 'text-red-400'
+                          ? 'text-amber-400/70'
+                          : 'text-red-400/70'
                       }`}>
                         {weeklyPlan.days[selectedDay].dailyTotals.carbs}g
-                        ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs > 0 ? '+' : ''}
-                        {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs.toFixed(1)}%)
                       </span>
                     </div>
                   )}
                 </div>
                 <div>
-                  <span className="font-semibold text-white">{weeklyPlan.userTargets.fat}g</span> <span className="text-slate-400">masti</span>
+                  <span className="font-normal text-white">{weeklyPlan.userTargets.fat}g</span> <span className="text-white/40 font-light">masti</span>
                   {(weeklyPlan.days[selectedDay]?.dailyTotals as any)?.deviation && (
-                    <div className="text-xs mt-0.5">
-                      <span className="text-slate-500">Ostvareno: </span>
-                      <span className={`font-medium ${
+                    <div className="text-xs mt-1">
+                      <span className={`font-light ${
                         Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat) <= 5
-                          ? 'text-violet-400'
+                          ? 'text-white/60'
                           : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat) <= 10
-                          ? 'text-amber-400'
-                          : 'text-red-400'
+                          ? 'text-amber-400/70'
+                          : 'text-red-400/70'
                       }`}>
                         {weeklyPlan.days[selectedDay].dailyTotals.fat}g
-                        ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat > 0 ? '+' : ''}
-                        {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat.toFixed(1)}%)
                       </span>
                     </div>
                   )}
                 </div>
-          </div>
-      </motion.div>
+              </div>
+            </motion.div>
 
             {/* Napomena za cilj */}
             {weeklyPlan.goalNote && (
-              <div className="mb-6 p-4 bg-slate-800/50 border border-slate-700 rounded-xl">
-                <div className="text-sm text-slate-300 whitespace-pre-line leading-relaxed">
+              <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-xl">
+                <div className="text-sm text-white/60 whitespace-pre-line leading-relaxed font-light">
                   {weeklyPlan.goalNote}
                 </div>
               </div>
             )}
 
-            {/* Napomena o odstupanju */}
-            <div className="mb-6 p-4 bg-amber-900/20 border border-amber-800/50 rounded-xl">
-              <div className="text-sm text-amber-200/80 whitespace-pre-line leading-relaxed">
-                ℹ️ Napomena: Stvarni dnevni unos može odstupati do ±15% od zadanih ciljeva zbog realističnih ograničenja porcija i dostupnih kombinacija namirnica. Generator optimizira plan da bude što bliže ciljevima uz održavanje raznolikosti i realističnih obroka.
-        </div>
-      </div>
-
             {/* Dani */}
-            <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
+            <div className="mb-6 flex gap-2 overflow-x-auto pb-2 justify-center">
               {weeklyPlan.days.map((day, index) => (
                 <motion.button
                   key={day.date}
                   onClick={() => setSelectedDay(index)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  animate={selectedDay === index ? { 
-                    scale: [1, 1.05, 1],
-                    transition: { duration: 0.3 }
-                  } : {}}
-                  className={`px-4 py-2 text-sm rounded-lg whitespace-nowrap transition-all ${
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`px-5 py-2 rounded-full text-sm font-light tracking-wide transition-all whitespace-nowrap ${
                     selectedDay === index
-                      ? "bg-violet-600 text-white shadow-lg shadow-violet-500/30"
-                      : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white border border-slate-700"
+                      ? "bg-white/15 text-white border border-white/30"
+                      : "text-white/40 hover:text-white/70 border border-transparent hover:border-white/10"
                   }`}
                 >
                   {day.dayName}
@@ -770,108 +776,35 @@ export default function MealsPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  transition={{ 
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 30
-                  }}
+                  transition={{ duration: 0.3 }}
                 >
                   {/* Dan header */}
                   <motion.div 
-                    className="flex justify-between items-center py-3 mb-4"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                    className="flex justify-between items-center py-4 mb-4"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                   >
-            <div>
-                      <motion.h2 
-                        className="text-lg font-semibold text-white"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                      >
+                    <div>
+                      <h2 className="text-lg font-normal text-white">
                         {weeklyPlan.days[selectedDay].dayName}
-                      </motion.h2>
-                      <motion.p 
-                        className="text-xs text-slate-500"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.15 }}
-                      >
+                      </h2>
+                      <p className="text-xs text-white/30 font-light">
                         {weeklyPlan.days[selectedDay].date}
-                      </motion.p>
-            </div>
+                      </p>
+                    </div>
                     <div className="text-right">
-                      <div className="flex items-center gap-2">
-                        <p className="text-lg font-semibold text-white">{weeklyPlan.days[selectedDay].dailyTotals.calories} kcal</p>
-                        {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation && (
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                            Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories) <= 5
-                              ? 'bg-violet-900/50 text-violet-400'
-                              : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories) <= 10
-                              ? 'bg-amber-900/50 text-amber-400'
-                              : 'bg-red-900/50 text-red-400'
-                          }`}>
-                            {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories > 0 ? '+' : ''}
-                            {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.calories.toFixed(1)}%
-                          </span>
-                        )}
-            </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-xs text-slate-500">
-                          P: {weeklyPlan.days[selectedDay].dailyTotals.protein}g
-                          {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation && (
-                            <span className={`ml-1 ${
-                              Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein) <= 5
-                                ? 'text-violet-400'
-                                : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein) <= 10
-                                ? 'text-amber-400'
-                                : 'text-red-400'
-                            }`}>
-                              ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein > 0 ? '+' : ''}
-                              {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.protein.toFixed(1)}%)
-                            </span>
-                          )}
-                        </p>
-                        <span className="text-slate-600">·</span>
-                        <p className="text-xs text-slate-500">
-                          C: {weeklyPlan.days[selectedDay].dailyTotals.carbs}g
-                          {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation && (
-                            <span className={`ml-1 ${
-                              Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs) <= 5
-                                ? 'text-violet-400'
-                                : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs) <= 10
-                                ? 'text-amber-400'
-                                : 'text-red-400'
-                            }`}>
-                              ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs > 0 ? '+' : ''}
-                              {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.carbs.toFixed(1)}%)
-                            </span>
-                          )}
-                        </p>
-                        <span className="text-slate-600">·</span>
-                        <p className="text-xs text-slate-500">
-                          F: {weeklyPlan.days[selectedDay].dailyTotals.fat}g
-                          {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation && (
-                            <span className={`ml-1 ${
-                              Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat) <= 5
-                                ? 'text-violet-400'
-                                : Math.abs((weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat) <= 10
-                                ? 'text-amber-400'
-                                : 'text-red-400'
-                            }`}>
-                              ({(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat > 0 ? '+' : ''}
-                              {(weeklyPlan.days[selectedDay].dailyTotals as any).deviation.fat.toFixed(1)}%)
-                            </span>
-                          )}
-                        </p>
+                      <p className="text-lg font-normal text-white">{weeklyPlan.days[selectedDay].dailyTotals.calories} kcal</p>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-white/40 font-light">
+                        <span>P: {weeklyPlan.days[selectedDay].dailyTotals.protein}g</span>
+                        <span>C: {weeklyPlan.days[selectedDay].dailyTotals.carbs}g</span>
+                        <span>F: {weeklyPlan.days[selectedDay].dailyTotals.fat}g</span>
                       </div>
                     </div>
                   </motion.div>
 
                   {/* Grid obroka */}
                   <motion.div 
-                    className="grid grid-cols-2 md:grid-cols-3 gap-3"
+                    className="grid grid-cols-2 md:grid-cols-3 gap-4"
                     initial="hidden"
                     animate="visible"
                     variants={{
@@ -879,7 +812,7 @@ export default function MealsPage() {
                       visible: {
                         opacity: 1,
                         transition: {
-                          staggerChildren: 0.08,
+                          staggerChildren: 0.06,
                           delayChildren: 0.1
                         }
                       }
@@ -981,45 +914,42 @@ export default function MealsPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+              className="fixed inset-0 bg-black/90 backdrop-blur-md z-40"
               onClick={() => setSelectedMeal(null)}
             />
             
-            {/* Modal - Mac style zoom animation */}
+            {/* Modal */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8, y: 20 }}
-              transition={{ 
-                type: "spring",
-                stiffness: 350,
-                damping: 25,
-                mass: 0.8
-              }}
-              className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-lg md:max-h-[85vh] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl shadow-black/50 z-50 overflow-hidden flex flex-col"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ type: "spring", damping: 25 }}
+              className="fixed inset-4 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-lg md:max-h-[85vh] bg-neutral-900/95 backdrop-blur-md border border-white/10 rounded-3xl shadow-2xl z-50 overflow-hidden flex flex-col"
             >
               {/* Modal Header */}
-              <div className="p-5 border-b border-slate-800">
+              <div className="p-5 border-b border-white/10">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-xs text-violet-500 uppercase tracking-wide font-medium">{selectedMeal.title}</p>
-                    <h3 className="text-xl font-semibold text-white mt-1">{selectedMeal.meal.name}</h3>
+                    <p className="text-xs text-white/40 uppercase tracking-[0.2em] font-light">{selectedMeal.title}</p>
+                    <h3 className="text-xl font-normal text-white mt-1">{selectedMeal.meal.name}</h3>
                   </div>
-        <button
+                  <motion.button
                     onClick={() => setSelectedMeal(null)}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700 transition-colors"
-        >
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/15 transition-colors border border-white/10"
+                  >
+                    <svg className="w-5 h-5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-        </button>
+                  </motion.button>
                 </div>
               </div>
 
               {/* Modal Body - Scrollable */}
               <div className="flex-1 overflow-y-auto p-5 space-y-5">
                 {/* Slika jela */}
-                <div className="w-full h-48 bg-slate-800 rounded-xl overflow-hidden">
+                <div className="w-full h-48 rounded-2xl overflow-hidden">
                   {selectedMeal.meal.image ? (
                     <img 
                       src={selectedMeal.meal.image} 
@@ -1027,74 +957,74 @@ export default function MealsPage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <svg className="w-16 h-16 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-full h-full flex items-center justify-center bg-white/5">
+                      <svg className="w-16 h-16 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
                   )}
-      </div>
+                </div>
 
-      {/* Makroi */}
+                {/* Makroi */}
                 <div className="grid grid-cols-4 gap-3">
-                  <div className="text-center p-3 bg-slate-800 rounded-xl border border-slate-700">
-                    <p className="text-xl font-bold text-white">{selectedMeal.meal.totals.calories}</p>
-                    <p className="text-xs text-slate-500">kcal</p>
-        </div>
-                  <div className="text-center p-3 bg-slate-800 rounded-xl border border-slate-700">
-                    <p className="text-xl font-bold text-violet-400">{selectedMeal.meal.totals.protein}g</p>
-                    <p className="text-xs text-slate-500">Proteini</p>
-        </div>
-                  <div className="text-center p-3 bg-slate-800 rounded-xl border border-slate-700">
-                    <p className="text-xl font-bold text-amber-400">{selectedMeal.meal.totals.carbs}g</p>
-                    <p className="text-xs text-slate-500">UH</p>
-        </div>
-                  <div className="text-center p-3 bg-slate-800 rounded-xl border border-slate-700">
-                    <p className="text-xl font-bold text-rose-400">{selectedMeal.meal.totals.fat}g</p>
-                    <p className="text-xs text-slate-500">Masti</p>
-        </div>
-      </div>
+                  <div className="text-center p-3 bg-white/10 rounded-xl border border-white/10">
+                    <p className="text-lg font-normal text-white">{selectedMeal.meal.totals.calories}</p>
+                    <p className="text-xs text-white/40 font-light">kcal</p>
+                  </div>
+                  <div className="text-center p-3 bg-white/5 rounded-xl border border-white/5">
+                    <p className="text-lg font-normal text-white">{selectedMeal.meal.totals.protein}g</p>
+                    <p className="text-xs text-white/40 font-light">Proteini</p>
+                  </div>
+                  <div className="text-center p-3 bg-white/5 rounded-xl border border-white/5">
+                    <p className="text-lg font-normal text-white">{selectedMeal.meal.totals.carbs}g</p>
+                    <p className="text-xs text-white/40 font-light">UH</p>
+                  </div>
+                  <div className="text-center p-3 bg-white/5 rounded-xl border border-white/5">
+                    <p className="text-lg font-normal text-white">{selectedMeal.meal.totals.fat}g</p>
+                    <p className="text-xs text-white/40 font-light">Masti</p>
+                  </div>
+                </div>
 
                 {/* Sastojci */}
                 <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">Sastojci</p>
+                  <p className="text-xs text-white/40 uppercase tracking-[0.15em] font-light mb-3">Sastojci</p>
                   <div className="space-y-2">
                     {selectedMeal.meal.components.map((comp, idx) => (
                       <motion.div
                         key={idx}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.1 + idx * 0.05 }}
-                        className="flex justify-between items-center py-2 px-3 bg-slate-800/50 rounded-lg border border-slate-700/50"
+                        transition={{ delay: 0.1 + idx * 0.04 }}
+                        className="flex justify-between items-center py-2.5 px-4 bg-white/5 rounded-xl border border-white/5"
                       >
-                        <span className="text-slate-300">{comp.name}</span>
-                        <span className="text-white font-semibold tabular-nums">{formatAmount(comp.name, comp.grams)}</span>
+                        <span className="text-white/70 font-light">{comp.name}</span>
+                        <span className="text-white/50 font-light tabular-nums">{formatAmount(comp.name, comp.grams)}</span>
                       </motion.div>
                     ))}
-              </div>
-            </div>
+                  </div>
+                </div>
 
                 {/* Opis jela */}
                 {selectedMeal.meal.description && (
                   <div>
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">O jelu</p>
-                    <p className="text-slate-400 leading-relaxed text-sm">
+                    <p className="text-xs text-white/40 uppercase tracking-[0.15em] font-light mb-3">O jelu</p>
+                    <p className="text-white/60 leading-relaxed text-sm font-light">
                       {selectedMeal.meal.description}
                     </p>
-        </div>
-      )}
+                  </div>
+                )}
 
                 {/* Priprema */}
-                <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wide mb-3">Priprema</p>
-                  <p className="text-slate-400 leading-relaxed text-sm">
+                <div className="pt-4 border-t border-white/10">
+                  <p className="text-xs text-white/40 uppercase tracking-[0.15em] font-light mb-3">Priprema</p>
+                  <p className="text-white/60 leading-relaxed text-sm font-light">
                     {selectedMeal.meal.preparationTip || getPreparationInstructions(selectedMeal.meal.name)}
                   </p>
                 </div>
-        </div>
+              </div>
             </motion.div>
           </>
-      )}
+        )}
       </AnimatePresence>
     </div>
   );
@@ -1104,17 +1034,15 @@ export default function MealsPage() {
 const mealCardVariants = {
   hidden: { 
     opacity: 0, 
-    y: 30,
-    scale: 0.9,
-    rotateX: -15
+    y: 20,
+    scale: 0.95
   },
   visible: { 
     opacity: 1, 
     y: 0,
     scale: 1,
-    rotateX: 0,
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 260,
       damping: 20
     }
@@ -1128,43 +1056,38 @@ function MealTile({ title, meal, onClick, index }: { title: string; meal: Genera
     <motion.div
       variants={mealCardVariants}
       whileHover={{ 
-        scale: 1.03, 
-        y: -5,
-        transition: { type: "spring", stiffness: 400, damping: 17 }
+        scale: 1.02, 
+        borderColor: 'rgba(255,255,255,0.2)',
       }}
-      whileTap={{ scale: 0.97 }}
+      whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 cursor-pointer hover:bg-slate-800 hover:border-violet-500/50 hover:shadow-xl hover:shadow-violet-500/10 transition-colors"
-      style={{ perspective: 1000 }}
+      className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 cursor-pointer transition-all group overflow-hidden"
     >
       {/* Slika jela */}
-      <motion.div 
-        className="w-full h-24 bg-slate-900 rounded-lg mb-3 overflow-hidden"
-        whileHover={{ scale: 1.02 }}
-        transition={{ type: "spring", stiffness: 300 }}
-      >
+      <div className="w-full h-24 rounded-xl mb-3 overflow-hidden relative">
         {meal.image ? (
           <img 
             src={meal.image} 
             alt={meal.name}
-            className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
-            <svg className="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-full h-full flex items-center justify-center bg-white/5">
+            <svg className="w-8 h-8 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
         )}
-      </motion.div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+      </div>
       
-      <p className="text-xs text-violet-400 uppercase tracking-wide font-medium">{title}</p>
-      <p className="font-medium text-white text-sm mt-0.5 line-clamp-2">{meal.name}</p>
-      <div className="flex items-center gap-2 mt-2">
-        <span className="text-xs text-slate-400">{meal.totals.calories} kcal</span>
-        <span className="text-slate-600">•</span>
-        <span className="text-xs text-violet-400/70">{meal.totals.protein}g P</span>
+      <p className="text-xs text-white/40 uppercase tracking-[0.15em] font-light">{title}</p>
+      <p className="font-normal text-white text-sm mt-1 line-clamp-2">{meal.name}</p>
+      <div className="flex items-center gap-3 mt-2 text-xs">
+        <span className="text-white/60">{meal.totals.calories} kcal</span>
+        <span className="text-white/30">·</span>
+        <span className="text-white/40">{meal.totals.protein}g P</span>
       </div>
     </motion.div>
   );
