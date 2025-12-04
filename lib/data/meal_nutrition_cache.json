@@ -1,7 +1,7 @@
 {
-  "lastUpdated": "2025-12-04T17:53:10Z",
+  "lastUpdated": "2025-12-04T19:59:22.027Z",
   "source": "edamam",
-  "totalMeals": 111,
+  "totalMeals": 158,
   "nutritionById": {
     "breakfast_lose_1": {
       "calories": 412,
@@ -2000,6 +2000,335 @@
       "iron": 5.9,
       "potassium": 849,
       "magnesium": 165
+    },
+    "breakfast_lose_5": {
+      "calories": 143,
+      "protein": 19,
+      "carbs": 15.6,
+      "fat": 0.8,
+      "fiber": 4.1
+    },
+    "breakfast_lose_6": {
+      "calories": 387,
+      "protein": 36.4,
+      "carbs": 32.2,
+      "fat": 14.3,
+      "fiber": 6.2
+    },
+    "breakfast_lose_7": {
+      "calories": 252,
+      "protein": 21.1,
+      "carbs": 4.6,
+      "fat": 16.3,
+      "fiber": 0.8
+    },
+    "breakfast_maintain_5": {
+      "calories": 524,
+      "protein": 20.6,
+      "carbs": 66.1,
+      "fat": 21.4,
+      "fiber": 8.6
+    },
+    "breakfast_maintain_6": {
+      "calories": 311,
+      "protein": 14.3,
+      "carbs": 44.3,
+      "fat": 10.1,
+      "fiber": 4.2
+    },
+    "breakfast_gain_13": {
+      "calories": 830,
+      "protein": 48.5,
+      "carbs": 104.7,
+      "fat": 27,
+      "fiber": 12.9
+    },
+    "breakfast_gain_14": {
+      "calories": 743,
+      "protein": 35.4,
+      "carbs": 46.4,
+      "fat": 45.9,
+      "fiber": 3.8
+    },
+    "breakfast_gain_15": {
+      "calories": 715,
+      "protein": 43.7,
+      "carbs": 86.8,
+      "fat": 24.3,
+      "fiber": 10.2
+    },
+    "breakfast_gain_16": {
+      "calories": 820,
+      "protein": 43.8,
+      "carbs": 92.2,
+      "fat": 31.9,
+      "fiber": 17.5
+    },
+    "lunch_maintain_10": {
+      "calories": 357,
+      "protein": 20.8,
+      "carbs": 29.7,
+      "fat": 20.1,
+      "fiber": 10.6
+    },
+    "lunch_maintain_11": {
+      "calories": 482,
+      "protein": 39.5,
+      "carbs": 38.1,
+      "fat": 19.4,
+      "fiber": 7.6
+    },
+    "lunch_maintain_12": {
+      "calories": 489,
+      "protein": 32.2,
+      "carbs": 43.8,
+      "fat": 21.1,
+      "fiber": 5.6
+    },
+    "lunch_gain_18": {
+      "calories": 455,
+      "protein": 37.9,
+      "carbs": 36.5,
+      "fat": 18,
+      "fiber": 2.7
+    },
+    "lunch_gain_19": {
+      "calories": 903,
+      "protein": 53.3,
+      "carbs": 34.7,
+      "fat": 60.6,
+      "fiber": 1.8
+    },
+    "lunch_gain_20": {
+      "calories": 965,
+      "protein": 52.8,
+      "carbs": 75.1,
+      "fat": 50.9,
+      "fiber": 11.3
+    },
+    "lunch_trad_1": {
+      "calories": 862,
+      "protein": 56.6,
+      "carbs": 132.9,
+      "fat": 14.4,
+      "fiber": 35.5
+    },
+    "lunch_trad_2": {
+      "calories": 757,
+      "protein": 44.6,
+      "carbs": 124.4,
+      "fat": 12,
+      "fiber": 34.3
+    },
+    "lunch_trad_3": {
+      "calories": 722,
+      "protein": 30.1,
+      "carbs": 116.4,
+      "fat": 16.9,
+      "fiber": 21.3
+    },
+    "lunch_trad_4": {
+      "calories": 853,
+      "protein": 54.9,
+      "carbs": 94.7,
+      "fat": 26.2,
+      "fiber": 6.8
+    },
+    "dinner_maintain_8": {
+      "calories": 542,
+      "protein": 35.7,
+      "carbs": 18.5,
+      "fat": 36.4,
+      "fiber": 4.3
+    },
+    "dinner_maintain_9": {
+      "calories": 443,
+      "protein": 38,
+      "carbs": 29.4,
+      "fat": 19.5,
+      "fiber": 5.9
+    },
+    "dinner_maintain_10": {
+      "calories": 438,
+      "protein": 33.4,
+      "carbs": 33.3,
+      "fat": 18.9,
+      "fiber": 5.5
+    },
+    "dinner_gain_18": {
+      "calories": 799,
+      "protein": 41.7,
+      "carbs": 40.2,
+      "fat": 54,
+      "fiber": 5.2
+    },
+    "dinner_gain_19": {
+      "calories": 1283,
+      "protein": 66.3,
+      "carbs": 132.4,
+      "fat": 53.5,
+      "fiber": 7.5
+    },
+    "dinner_gain_20": {
+      "calories": 661,
+      "protein": 51.3,
+      "carbs": 38.9,
+      "fat": 32.8,
+      "fiber": 3.7
+    },
+    "dinner_trad_1": {
+      "calories": 564,
+      "protein": 41.1,
+      "carbs": 73.9,
+      "fat": 8.7,
+      "fiber": 7.4
+    },
+    "dinner_trad_2": {
+      "calories": 498,
+      "protein": 35.8,
+      "carbs": 41.2,
+      "fat": 23.3,
+      "fiber": 8.3
+    },
+    "dinner_trad_3": {
+      "calories": 461,
+      "protein": 33.7,
+      "carbs": 32.5,
+      "fat": 22.2,
+      "fiber": 2.5
+    },
+    "dinner_trad_4": {
+      "calories": 539,
+      "protein": 44.4,
+      "carbs": 75.2,
+      "fat": 9.8,
+      "fiber": 8.5
+    },
+    "snack_lose_9": {
+      "calories": 169,
+      "protein": 17.6,
+      "carbs": 10.1,
+      "fat": 6.7,
+      "fiber": 1.8
+    },
+    "snack_maintain_6": {
+      "calories": 247,
+      "protein": 5.7,
+      "carbs": 29.5,
+      "fat": 14.2,
+      "fiber": 6.9
+    },
+    "snack_maintain_7": {
+      "calories": 414,
+      "protein": 9.6,
+      "carbs": 25.9,
+      "fat": 33.3,
+      "fiber": 6.8
+    },
+    "snack_gain_11": {
+      "calories": 543,
+      "protein": 39.9,
+      "carbs": 56,
+      "fat": 19.6,
+      "fiber": 6.3
+    },
+    "snack_gain_12": {
+      "calories": 347,
+      "protein": 8.9,
+      "carbs": 46.8,
+      "fat": 16.1,
+      "fiber": 3.7
+    },
+    "breakfast_new_1": {
+      "calories": 490,
+      "protein": 23.3,
+      "carbs": 46.6,
+      "fat": 24.3,
+      "fiber": 8.7
+    },
+    "breakfast_new_2": {
+      "calories": 524,
+      "protein": 20.6,
+      "carbs": 66.1,
+      "fat": 21.4,
+      "fiber": 8.6
+    },
+    "breakfast_new_3": {
+      "calories": 311,
+      "protein": 14.3,
+      "carbs": 44.3,
+      "fat": 10.1,
+      "fiber": 4.2
+    },
+    "lunch_new_1": {
+      "calories": 495,
+      "protein": 40.6,
+      "carbs": 27.4,
+      "fat": 26,
+      "fiber": 3.5
+    },
+    "lunch_new_2": {
+      "calories": 424,
+      "protein": 44.2,
+      "carbs": 7.9,
+      "fat": 23.7,
+      "fiber": 2.5
+    },
+    "lunch_new_3": {
+      "calories": 385,
+      "protein": 41.7,
+      "carbs": 17.6,
+      "fat": 17.7,
+      "fiber": 4.9
+    },
+    "lunch_new_4": {
+      "calories": 252,
+      "protein": 29.9,
+      "carbs": 24.7,
+      "fat": 3.5,
+      "fiber": 4.7
+    },
+    "dinner_new_1": {
+      "calories": 421,
+      "protein": 33.3,
+      "carbs": 32,
+      "fat": 18.5,
+      "fiber": 5.8
+    },
+    "dinner_new_2": {
+      "calories": 391,
+      "protein": 40,
+      "carbs": 31,
+      "fat": 12,
+      "fiber": 4.2
+    },
+    "dinner_new_3": {
+      "calories": 418,
+      "protein": 35.3,
+      "carbs": 13.9,
+      "fat": 25.8,
+      "fiber": 7.5
+    },
+    "dinner_new_4": {
+      "calories": 267,
+      "protein": 30.3,
+      "carbs": 27.5,
+      "fat": 1.4,
+      "fiber": 4.2
+    },
+    "snack_new_1": {
+      "calories": 165,
+      "protein": 5.6,
+      "carbs": 14.4,
+      "fat": 10.8,
+      "fiber": 4.1
+    },
+    "snack_new_2": {
+      "calories": 223,
+      "protein": 8.8,
+      "carbs": 27.9,
+      "fat": 10,
+      "fiber": 2.5
     }
   }
 }
