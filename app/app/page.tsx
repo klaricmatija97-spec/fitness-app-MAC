@@ -1351,8 +1351,8 @@ function AppDashboardContent() {
                         "flex-1 px-6 py-6 relative bg-[#0D0F10] flex flex-col",
                         currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "overflow-y-auto min-h-0" : "overflow-y-auto min-h-0"
                       )}>
-                      {/* Navigation Arrow - Left (Back) */}
-                      {currentSlide > 0 && (
+                      {/* Navigation Arrow - Left (Back) - Hidden on meals welcome screen */}
+                      {currentSlide > 0 && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && (
                         <motion.div
                           className="absolute left-8 top-1/2 -translate-y-1/2 z-[100] group"
                           initial={{ opacity: 0.7, scale: 1, x: 0 }}
@@ -1393,8 +1393,8 @@ function AppDashboardContent() {
                         </motion.div>
                       )}
                       
-                      {/* Navigation Arrow - Right (Next) */}
-                      {!isLastSlide && (
+                      {/* Navigation Arrow - Right (Next) - Hidden on meals welcome screen */}
+                      {!isLastSlide && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && (
                         <motion.div
                           className="absolute right-8 top-1/2 -translate-y-1/2 z-[100] group"
                           initial={{ opacity: 0.7, scale: 1, x: 0 }}
