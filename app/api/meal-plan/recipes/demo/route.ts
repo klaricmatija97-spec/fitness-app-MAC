@@ -1,17 +1,38 @@
 /**
  * API Route: GET /api/meal-plan/recipes/demo
  * 
- * Demo endpoint - generira plan s demo podacima (bez potrebe za bazom)
+ * Demo endpoint - generira plan s demo podacima i SKALIRA recepte prema ciljevima
  */
 
 import { NextResponse } from "next/server";
-import { searchRecipes } from "@/lib/services/edamamRecipeService";
+import { searchRecipes, SimplifiedRecipe } from "@/lib/services/edamamRecipeService";
+
+// Meal slot configuration with calorie percentages
+const MEAL_SLOTS = [
+  { slot: "Doručak", query: "eggs omelette protein", percent: 0.25 },
+  { slot: "Užina 1", query: "protein bar snack", percent: 0.10 },
+  { slot: "Ručak", query: "chicken breast rice vegetables", percent: 0.30 },
+  { slot: "Užina 2", query: "greek yogurt fruit", percent: 0.10 },
+  { slot: "Večera", query: "salmon fish dinner", percent: 0.25 },
+];
+
+interface ScaledMeal {
+  slot: string;
+  recipe: SimplifiedRecipe;
+  scaleFactor: number;
+  scaled: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  };
+}
 
 export async function GET() {
   try {
-    console.log("🚀 Demo Recipe Plan Generator...");
+    console.log("🚀 Demo Recipe Plan Generator with SCALING...");
 
-    // Demo targets
+    // Demo targets (realistični za osobu koja gradi mišiće)
     const targets = {
       calories: 2200,
       protein: 165,
@@ -19,100 +40,111 @@ export async function GET() {
       fat: 73,
     };
 
-    // Generiraj jedan dan kao demo
-    const meals = [];
+    const meals: ScaledMeal[] = [];
 
-    // Doručak - jednostavniji query
-    const breakfastRecipes = await searchRecipes({
-      query: "scrambled eggs bacon",
-      random: true,
-      limit: 10,
-    });
+    for (const mealSlot of MEAL_SLOTS) {
+      const targetCalories = Math.round(targets.calories * mealSlot.percent);
+      
+      console.log(`\n🍽️ ${mealSlot.slot}: tražim recept za ~${targetCalories} kcal...`);
 
-    console.log(`Breakfast recipes found: ${breakfastRecipes.length}`);
-    
-    if (breakfastRecipes.length > 0) {
-      const filtered = breakfastRecipes.filter(r => r.calories >= 250 && r.calories <= 800);
-      meals.push({
-        slot: "Doručak",
-        recipe: filtered[0] || breakfastRecipes[0],
+      const recipes = await searchRecipes({
+        query: mealSlot.query,
+        random: true,
+        limit: 15,
       });
+
+      console.log(`   Pronađeno ${recipes.length} recepata`);
+
+      if (recipes.length > 0) {
+        // Filtriraj recepte koji su u razumnom rasponu (50-200% ciljanih kalorija)
+        // da skaliranje bude realistično (0.5x - 2x porcija)
+        const minCal = targetCalories * 0.5;
+        const maxCal = targetCalories * 2;
+        
+        let bestRecipe = recipes[0];
+        let bestDiff = Math.abs(recipes[0].calories - targetCalories);
+        
+        for (const recipe of recipes) {
+          if (recipe.calories >= minCal && recipe.calories <= maxCal) {
+            const diff = Math.abs(recipe.calories - targetCalories);
+            if (diff < bestDiff) {
+              bestDiff = diff;
+              bestRecipe = recipe;
+            }
+          }
+        }
+
+        // Skaliraj recept prema ciljanim kalorijama
+        const scaleFactor = targetCalories / bestRecipe.calories;
+        
+        // Ograniči skaliranje na 0.5x - 2x za realistične porcije
+        const clampedScale = Math.max(0.5, Math.min(2, scaleFactor));
+        
+        const scaled = {
+          calories: Math.round(bestRecipe.calories * clampedScale),
+          protein: Math.round(bestRecipe.protein * clampedScale * 10) / 10,
+          carbs: Math.round(bestRecipe.carbs * clampedScale * 10) / 10,
+          fat: Math.round(bestRecipe.fat * clampedScale * 10) / 10,
+        };
+
+        meals.push({
+          slot: mealSlot.slot,
+          recipe: bestRecipe,
+          scaleFactor: clampedScale,
+          scaled,
+        });
+
+        console.log(`   ✅ ${bestRecipe.name}`);
+        console.log(`      Original: ${bestRecipe.calories} kcal | Skalirano (${clampedScale.toFixed(2)}x): ${scaled.calories} kcal`);
+      }
+
+      // Pauza između API poziva
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
 
-    // Ručak
-    const lunchRecipes = await searchRecipes({
-      query: "grilled chicken salad",
-      mealType: "Lunch",
-      diet: "high-protein",
-      random: true,
-      limit: 5,
-    });
-
-    if (lunchRecipes.length > 0) {
-      const filtered = lunchRecipes.filter(r => r.calories >= 400 && r.calories <= 900);
-      meals.push({
-        slot: "Ručak",
-        recipe: filtered[0] || lunchRecipes[0],
-      });
-    }
-
-    // Večera
-    const dinnerRecipes = await searchRecipes({
-      query: "salmon lemon dinner",
-      mealType: "Dinner",
-      diet: "high-protein",
-      random: true,
-      limit: 5,
-    });
-
-    if (dinnerRecipes.length > 0) {
-      const filtered = dinnerRecipes.filter(r => r.calories >= 350 && r.calories <= 800);
-      meals.push({
-        slot: "Večera",
-        recipe: filtered[0] || dinnerRecipes[0],
-      });
-    }
-
-    // Užina
-    const snackRecipes = await searchRecipes({
-      query: "greek yogurt berries",
-      mealType: "Snack",
-      random: true,
-      limit: 5,
-    });
-
-    if (snackRecipes.length > 0) {
-      const filtered = snackRecipes.filter(r => r.calories >= 100 && r.calories <= 350);
-      meals.push({
-        slot: "Užina",
-        recipe: filtered[0] || snackRecipes[0],
-      });
-    }
-
-    // Izračunaj totale
+    // Izračunaj skalirane totale
     const totals = meals.reduce(
       (acc, m) => ({
-        calories: acc.calories + m.recipe.calories,
-        protein: acc.protein + m.recipe.protein,
-        carbs: acc.carbs + m.recipe.carbs,
-        fat: acc.fat + m.recipe.fat,
+        calories: acc.calories + m.scaled.calories,
+        protein: acc.protein + m.scaled.protein,
+        carbs: acc.carbs + m.scaled.carbs,
+        fat: acc.fat + m.scaled.fat,
       }),
       { calories: 0, protein: 0, carbs: 0, fat: 0 }
     );
 
+    // Izračunaj točnost
+    const accuracy = {
+      caloriesPercent: Math.round((totals.calories / targets.calories) * 100),
+      proteinPercent: Math.round((totals.protein / targets.protein) * 100),
+      carbsPercent: Math.round((totals.carbs / targets.carbs) * 100),
+      fatPercent: Math.round((totals.fat / targets.fat) * 100),
+    };
+
+    console.log(`\n📊 REZULTATI:`);
+    console.log(`   Ciljevi: ${targets.calories} kcal, ${targets.protein}g P, ${targets.carbs}g C, ${targets.fat}g F`);
+    console.log(`   Ostvareno: ${totals.calories} kcal, ${totals.protein}g P, ${totals.carbs}g C, ${totals.fat}g F`);
+    console.log(`   Točnost: ${accuracy.caloriesPercent}% kcal, ${accuracy.proteinPercent}% P`);
+
     return NextResponse.json({
       success: true,
-      message: "Demo dnevni plan s receptima",
+      message: "Demo dnevni plan s receptima (SKALIRANO)",
       targets,
       totals,
+      accuracy,
       meals: meals.map(m => ({
         slot: m.slot,
         name: m.recipe.name,
         image: m.recipe.image,
-        calories: m.recipe.calories,
-        protein: m.recipe.protein,
-        carbs: m.recipe.carbs,
-        fat: m.recipe.fat,
+        originalCalories: m.recipe.calories,
+        scaleFactor: Math.round(m.scaleFactor * 100) / 100,
+        calories: m.scaled.calories,
+        protein: m.scaled.protein,
+        carbs: m.scaled.carbs,
+        fat: m.scaled.fat,
+        portionNote: m.scaleFactor > 1.1 ? `${Math.round(m.scaleFactor * 100)}% porcije` : 
+                     m.scaleFactor < 0.9 ? `${Math.round(m.scaleFactor * 100)}% porcije` : 
+                     "Standardna porcija",
         ingredients: m.recipe.ingredients.slice(0, 5),
         source: m.recipe.source,
       })),
@@ -126,4 +158,3 @@ export async function GET() {
     }, { status: 500 });
   }
 }
-
