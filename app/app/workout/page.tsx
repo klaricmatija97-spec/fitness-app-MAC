@@ -365,6 +365,7 @@ export default function WorkoutPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5 }}
+              className="min-h-[70vh] flex flex-col justify-center"
             >
               {/* Header */}
               <div className="mb-10 text-center">
@@ -393,30 +394,6 @@ export default function WorkoutPage() {
               )}
 
               <div className="space-y-8">
-                {/* Spol toggle */}
-                <div className="flex justify-center gap-4">
-                  <button
-                    onClick={() => setFormData({ ...formData, gender: "muško", selectedProgram: "" })}
-                    className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
-                      formData.gender === "muško"
-                        ? "bg-white/80 text-black"
-                        : "bg-white/10 text-white/70 hover:bg-white/15"
-                    }`}
-                  >
-                    Muško
-                  </button>
-                  <button
-                    onClick={() => setFormData({ ...formData, gender: "žensko", selectedProgram: "" })}
-                    className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
-                      formData.gender === "žensko"
-                        ? "bg-white/80 text-black"
-                        : "bg-white/10 text-white/70 hover:bg-white/15"
-                    }`}
-                  >
-                    Žensko
-                  </button>
-                </div>
-
                 {/* Program Cards */}
                 <motion.div 
                   className="grid grid-cols-1 md:grid-cols-2 gap-4"
