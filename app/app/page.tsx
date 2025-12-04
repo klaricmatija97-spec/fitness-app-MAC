@@ -1137,7 +1137,7 @@ function AppDashboardContent() {
   return (
     <main className={clsx(
       "relative bg-[#0D0F10] flex flex-col",
-                    currentId === "intro" ? "h-screen w-screen fixed inset-0 overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "min-h-screen w-screen overflow-y-auto" : "min-h-screen w-screen overflow-y-auto"
+                    currentId === "intro" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) ? "h-screen w-screen fixed inset-0 overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "min-h-screen w-screen overflow-y-auto" : "min-h-screen w-screen overflow-y-auto"
     )}>
       {/* AI Chat Bubble - Persistent on all slides */}
       <AIChat />
@@ -1145,10 +1145,10 @@ function AppDashboardContent() {
       {/* Main Layout - 100vh, no scroll */}
       <div className={clsx(
         "flex flex-col min-h-0",
-        currentId === "intro" ? "h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 overflow-y-auto" : "flex-1 overflow-y-auto"
+        currentId === "intro" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) ? "h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 overflow-y-auto" : "flex-1 overflow-y-auto"
       )}>
-        {/* Header/Sidebar - Hidden on intro, login and educational slides */}
-        {currentId !== "intro" && currentId !== "login" && currentId !== "edu_wizard" && (
+        {/* Header/Sidebar - Hidden on intro, login, educational slides, and meals welcome screen */}
+        {currentId !== "intro" && currentId !== "login" && currentId !== "edu_wizard" && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && (
         <div className="flex-shrink-0 px-6 py-5 border-b border-gray-800 bg-[#0D0F10] relative">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             {/* Lijevo - Hamburger menu */}
@@ -1245,7 +1245,7 @@ function AppDashboardContent() {
         <div 
           className={clsx(
           "relative",
-            currentId === "intro" || currentId === "login" || currentId === "edu_wizard" ? "fixed inset-0 z-30 h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 pb-20 overflow-y-auto min-h-0" : "flex-1 pb-20 overflow-y-auto min-h-0"
+            currentId === "intro" || currentId === "login" || currentId === "edu_wizard" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) ? "fixed inset-0 z-30 h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 pb-20 overflow-y-auto min-h-0" : "flex-1 pb-20 overflow-y-auto min-h-0"
           )}
           style={{
             willChange: "transform",
