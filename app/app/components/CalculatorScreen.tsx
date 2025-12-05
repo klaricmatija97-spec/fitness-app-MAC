@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, ReactNode } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { ReactNode } from "react";
+import { motion } from "framer-motion";
 
 // Dark-themed fitness/health images
 const CALCULATOR_IMAGES = [
@@ -29,101 +29,66 @@ export default function CalculatorScreen({
   totalSteps = 4,
   onBack 
 }: CalculatorScreenProps) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [showBackArrow, setShowBackArrow] = useState(false);
-
-  // Rotate background images every 8 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % CALCULATOR_IMAGES.length);
-    }, 8000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black">
-      {/* Solid black base */}
-      <div className="absolute inset-0 bg-black" />
-      
-      {/* Rotating Background Images */}
-      <AnimatePresence mode="sync">
-        <motion.div
-          key={currentImageIndex}
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 2, ease: "easeOut" }}
-          className="absolute inset-0"
-        >
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ 
-              backgroundImage: `url(${CALCULATOR_IMAGES[currentImageIndex]})`,
-              filter: "brightness(0.2) saturate(0.7)"
-            }}
-          />
-        </motion.div>
-      </AnimatePresence>
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden bg-black">
+      {/* Pozadinska slika - statična, bez rotacije za smooth prijelaze */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ 
+          backgroundImage: `url(${CALCULATOR_IMAGES[0]})`,
+          filter: "brightness(0.25) saturate(0.7)"
+        }}
+      />
 
-      {/* Gradient overlays */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/80" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/50" />
+      {/* Gradient overlays - profinjeniji */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/70" />
 
-      {/* Back Arrow */}
+      {/* Back Arrow - suptilniji */}
       {onBack && (
-        <motion.div
-          className="fixed left-6 md:left-10 top-1/2 -translate-y-1/2 z-[60]"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ 
-            opacity: showBackArrow ? 1 : 0.5,
-            x: 0,
-            scale: showBackArrow ? 1.1 : 1
-          }}
-          transition={{ duration: 0.3, delay: 0.3 }}
-          onMouseEnter={() => setShowBackArrow(true)}
-          onMouseLeave={() => setShowBackArrow(false)}
+        <motion.button
+          onClick={onBack}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.6 }}
+          whileHover={{ opacity: 1, x: -3 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ duration: 0.3 }}
+          className="absolute left-6 md:left-10 top-1/2 -translate-y-1/2 z-[60] w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-white/10 hover:border-white/20"
+          aria-label="Nazad"
         >
-          <motion.button
-            onClick={onBack}
-            whileHover={{ scale: 1.15, x: -5 }}
-            whileTap={{ scale: 0.95 }}
-            className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-white/20 hover:border-white/40"
-            aria-label="Nazad"
-          >
-            <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </motion.button>
-        </motion.div>
+          <svg className="w-4 h-4 md:w-5 md:h-5 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+          </svg>
+        </motion.button>
       )}
 
       {/* Main Content Container */}
       <div className="relative z-10 w-full max-w-4xl mx-auto px-6 py-8 flex flex-col items-center min-h-screen overflow-y-auto">
         
-        {/* Header */}
+        {/* Header - profinjenije animacije */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
           className="text-center mb-8 flex-shrink-0"
         >
           {/* CORPEX Logo */}
-          <span className="text-xs md:text-sm font-light tracking-[0.5em] text-white/50 uppercase block mb-6">
+          <span className="text-xs font-light tracking-[0.5em] text-white/40 uppercase block mb-6">
             Corpex
           </span>
           
-          {/* Step indicator */}
+          {/* Step indicator - suptilniji */}
           {step && (
-            <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="flex items-center justify-center gap-1.5 mb-6">
               {Array.from({ length: totalSteps }).map((_, i) => (
                 <div
                   key={i}
-                  className={`h-1 rounded-full transition-all duration-300 ${
+                  className={`h-0.5 rounded-full transition-all duration-500 ${
                     i + 1 === step 
-                      ? "w-8 bg-white" 
+                      ? "w-6 bg-white/80" 
                       : i + 1 < step 
-                        ? "w-4 bg-white/60" 
-                        : "w-4 bg-white/20"
+                        ? "w-3 bg-white/40" 
+                        : "w-3 bg-white/15"
                   }`}
                 />
               ))}
@@ -132,10 +97,10 @@ export default function CalculatorScreen({
           
           {/* Title */}
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="text-2xl md:text-3xl lg:text-4xl font-light text-white tracking-wide"
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="text-xl md:text-2xl lg:text-3xl font-light text-white tracking-wide"
           >
             {title}
           </motion.h1>
@@ -145,8 +110,8 @@ export default function CalculatorScreen({
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              className="text-sm md:text-base text-white/50 mt-3 font-light max-w-xl mx-auto"
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="text-sm text-white/40 mt-3 font-light max-w-xl mx-auto"
             >
               {subtitle}
             </motion.p>
@@ -187,16 +152,18 @@ interface CalcCardProps {
 
 export function CalcCard({ children, className = "", highlighted = false }: CalcCardProps) {
   return (
-    <div className={`
-      rounded-2xl p-6 backdrop-blur-md transition-all duration-300
-      ${highlighted 
-        ? "bg-white/15 border border-white/30 shadow-lg shadow-white/5" 
-        : "bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20"
-      }
-      ${className}
-    `}>
+    <motion.div 
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className={`
+        py-4 transition-all duration-300
+        ${highlighted ? "border-l-2 border-white/30 pl-4" : ""}
+        ${className}
+      `}
+    >
       {children}
-    </div>
+    </motion.div>
   );
 }
 
@@ -211,23 +178,28 @@ interface CalcInputProps {
 
 export function CalcInput({ label, value, onChange, type = "text", placeholder, unit }: CalcInputProps) {
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-light text-white/70 tracking-wide">{label}</label>
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="space-y-3"
+    >
+      <label className="block text-sm font-light text-white/50 tracking-wider uppercase">{label}</label>
       <div className="relative">
         <input
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/30 
-                     focus:outline-none focus:border-white/50 focus:bg-white/10 transition-all duration-300
+          className="w-full bg-transparent border-b border-white/20 px-0 py-2 text-xl text-white placeholder-white/20 
+                     focus:outline-none focus:border-white/50 transition-all duration-300
                      font-light tracking-wide"
         />
         {unit && (
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">{unit}</span>
+          <span className="absolute right-0 top-1/2 -translate-y-1/2 text-white/30 text-sm font-light">{unit}</span>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -240,15 +212,20 @@ interface CalcSelectProps {
 
 export function CalcSelect({ label, value, onChange, options }: CalcSelectProps) {
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-light text-white/70 tracking-wide">{label}</label>
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="space-y-3"
+    >
+      <label className="block text-sm font-light text-white/50 tracking-wider uppercase">{label}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white 
-                   focus:outline-none focus:border-white/50 focus:bg-white/10 transition-all duration-300
+        className="w-full bg-transparent border-b border-white/20 px-0 py-2 text-xl text-white 
+                   focus:outline-none focus:border-white/50 transition-all duration-300
                    font-light tracking-wide appearance-none cursor-pointer"
-        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.5rem' }}
+        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(255,255,255,0.3)'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0 center', backgroundSize: '1.2rem' }}
       >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value} className="bg-[#1a1a1a] text-white">
@@ -256,7 +233,7 @@ export function CalcSelect({ label, value, onChange, options }: CalcSelectProps)
           </option>
         ))}
       </select>
-    </div>
+    </motion.div>
   );
 }
 
@@ -269,22 +246,19 @@ interface CalcButtonProps {
 }
 
 export function CalcButton({ children, onClick, variant = "primary", disabled = false, className = "" }: CalcButtonProps) {
-  const variants = {
-    primary: "bg-transparent border-2 border-white/40 text-white hover:bg-white/10 hover:border-white/60",
-    secondary: "bg-white/5 border border-white/20 text-white/80 hover:bg-white/10",
-    success: "bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 hover:bg-emerald-500/30",
-  };
-
   return (
     <motion.button
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3, delay: 0.2 }}
       onClick={onClick}
       disabled={disabled}
-      whileHover={{ scale: disabled ? 1 : 1.02 }}
+      whileHover={{ opacity: disabled ? 0.5 : 0.8 }}
       whileTap={{ scale: disabled ? 1 : 0.98 }}
       className={`
-        w-full py-4 rounded-xl font-light tracking-wide transition-all duration-300
-        ${variants[variant]}
-        ${disabled ? "opacity-50 cursor-not-allowed" : ""}
+        w-full py-3 font-light tracking-wider text-white/70 hover:text-white transition-all duration-300
+        border-b border-white/20 hover:border-white/40
+        ${disabled ? "opacity-30 cursor-not-allowed" : ""}
         ${className}
       `}
     >
@@ -303,19 +277,16 @@ interface CalcResultProps {
 export function CalcResult({ label, value, unit, highlight = false }: CalcResultProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className={`
-        rounded-2xl p-6 text-center
-        ${highlight 
-          ? "bg-gradient-to-br from-white/15 to-white/5 border border-white/30" 
-          : "bg-white/5 border border-white/10"
-        }
-      `}
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="text-center py-6"
     >
-      <div className="text-sm text-white/50 mb-2 font-light tracking-wide">{label}</div>
-      <div className="text-4xl md:text-5xl font-light text-white tracking-tight">{value}</div>
-      {unit && <div className="text-sm text-white/40 mt-2 font-light">{unit}</div>}
+      <div className="text-xs text-white/40 mb-3 font-light tracking-widest uppercase">{label}</div>
+      <div className={`text-5xl md:text-6xl font-extralight text-white tracking-tight ${highlight ? "text-white" : "text-white/90"}`}>
+        {value}
+      </div>
+      {unit && <div className="text-sm text-white/30 mt-2 font-light tracking-wide">{unit}</div>}
     </motion.div>
   );
 }
@@ -328,15 +299,20 @@ interface CalcInfoCardProps {
 
 export function CalcInfoCard({ title, children, icon }: CalcInfoCardProps) {
   return (
-    <div className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/8 transition-all duration-300">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="py-4 border-b border-white/10"
+    >
       <div className="flex items-start gap-3">
-        {icon && <div className="text-white/60 mt-0.5">{icon}</div>}
+        {icon && <div className="text-white/40 mt-0.5">{icon}</div>}
         <div>
-          <h3 className="text-base font-medium text-white/90 mb-2">{title}</h3>
-          <div className="text-sm text-white/50 leading-relaxed font-light">{children}</div>
+          <h3 className="text-sm font-light text-white/70 mb-1 tracking-wide">{title}</h3>
+          <div className="text-sm text-white/40 leading-relaxed font-light">{children}</div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

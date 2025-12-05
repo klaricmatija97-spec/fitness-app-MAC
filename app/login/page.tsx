@@ -2,16 +2,29 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import clsx from "clsx";
+import { motion, AnimatePresence } from "framer-motion";
 
+// Premium sportske slike - Olympic lifting / F1 trening stil
 const backgroundImages = [
-  "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1920&q=80",
-  "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1920&q=80",
+  "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=1920&h=1080&fit=crop&q=80", // Olympic lifting
+  "https://images.unsplash.com/photo-1517963879433-6ad2b056d712?w=1920&h=1080&fit=crop&q=80", // Weightlifting
+  "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=1920&h=1080&fit=crop&q=80", // Athletic training
+  "https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?w=1920&h=1080&fit=crop&q=80", // Gym training
 ];
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center">Učitavanje...</div>}>
+    <Suspense fallback={
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-white/60 text-lg font-light tracking-widest"
+        >
+          CORPEX
+        </motion.div>
+      </div>
+    }>
       <LoginPageContent />
     </Suspense>
   );
@@ -25,13 +38,22 @@ function LoginPageContent() {
   const preview = searchParams.get("preview") === "true";
   const usernameParam = searchParams.get("username");
   
-  const [currentBgImage] = useState(0);
-  const [username, setUsername] = useState(usernameParam || "test");
-  const [tempPasswordInput, setTempPasswordInput] = useState(tempPassword || "test123");
+  const [currentBgImage, setCurrentBgImage] = useState(0);
+  const [username, setUsername] = useState(usernameParam || "");
+  const [tempPasswordInput, setTempPasswordInput] = useState(tempPassword || "");
   const [isTempPasswordVerified, setIsTempPasswordVerified] = useState(!!tempPassword || preview);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Rotiraj pozadinske slike
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentBgImage((prev) => (prev + 1) % backgroundImages.length);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
   
   // Ako je preview mod i ima tempPassword, automatski preskoči provjeru
   useEffect(() => {
@@ -45,12 +67,14 @@ function LoginPageContent() {
   const handleTempPasswordCheck = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
     // Ako je preview mod, preskoči API poziv
     if (preview) {
       setIsTempPasswordVerified(true);
       localStorage.setItem("authToken", "test-token");
       localStorage.setItem("clientId", clientId || "00000000-0000-0000-0000-000000000000");
+      setIsLoading(false);
       return;
     }
 
@@ -64,7 +88,6 @@ function LoginPageContent() {
       const data = await response.json();
 
       if (data.ok) {
-        // Jednokratna lozinka je ispravna, prikaži formu za novu lozinku
         setIsTempPasswordVerified(true);
         localStorage.setItem("authToken", data.token);
         localStorage.setItem("clientId", data.clientId || "00000000-0000-0000-0000-000000000000");
@@ -73,6 +96,8 @@ function LoginPageContent() {
       }
     } catch (error) {
       setError("Greška pri provjeri. Molimo pokušajte ponovno.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -90,9 +115,10 @@ function LoginPageContent() {
       return;
     }
 
+    setIsLoading(true);
+
     // Ako je preview mod, preskoči API poziv i idi na app
     if (preview) {
-      alert("Pregled mod: Lozinka je 'postavljena'! Preusmjeravam na aplikaciju...");
       router.push("/app?preview=true");
       return;
     }
@@ -113,189 +139,295 @@ function LoginPageContent() {
       const data = await response.json();
 
       if (data.ok) {
-        alert("Lozinka je uspješno postavljena! Preusmjeravam na aplikaciju...");
         router.push("/app");
       } else {
         setError(data.message || "Greška pri postavljanju lozinke");
       }
     } catch (error) {
       setError("Greška pri postavljanju lozinke. Molimo pokušajte ponovno.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleSkipLogin = () => {
+    localStorage.setItem("authToken", "test-token");
+    localStorage.setItem("clientId", "00000000-0000-0000-0000-000000000000");
+    router.push("/app?preview=true");
+  };
+
   return (
-    <main className="relative min-h-screen bg-slate-50 text-slate-900 overflow-hidden">
-      <div className="fixed inset-0 z-0">
-        <div
-          className="absolute inset-0 transition-opacity duration-2000 ease-in-out opacity-50"
-          style={{
-            backgroundImage: `url(${backgroundImages[currentBgImage]})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        />
-        <div className="absolute inset-0 bg-slate-50/50" />
-      </div>
+    <main className="fixed inset-0 bg-black overflow-hidden">
+      {/* Rotirajuće pozadinske slike */}
+      <AnimatePresence mode="sync">
+        {backgroundImages.map((img, idx) => (
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: idx === currentBgImage ? 1 : 0 }}
+            transition={{ duration: 2, ease: "easeInOut" }}
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${img})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              filter: "brightness(0.25) saturate(0.7)",
+            }}
+          />
+        ))}
+      </AnimatePresence>
 
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          <div className="mb-8 text-center">
-            <h1 className="text-4xl font-bold text-slate-800 md:text-5xl mb-4" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-              CORP<span className="text-purple-400">EX</span>
-            </h1>
-            <h2 className="text-2xl font-semibold text-slate-800" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-              {isTempPasswordVerified ? "Postavi novu lozinku" : "Prijava s jednokratnom lozinkom"}
-            </h2>
-            {preview && (
-              <div className="mt-4 rounded-2xl border border-blue-500 bg-blue-50 px-4 py-2 text-sm text-blue-800">
-                📋 PREGLED MOD: Koristim test podatke - nema stvarne provjere
-              </div>
-            )}
-          </div>
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
 
-          <div className="rounded-3xl border border-slate-300 bg-slate-100/80 backdrop-blur-sm p-8 shadow-xl">
-            {!preview && (
-              <div className="mb-4 text-center">
-                <button
-                  onClick={() => {
-                    // Preskoči login i idi direktno na app
-                    localStorage.setItem("authToken", "test-token");
-                    localStorage.setItem("clientId", "00000000-0000-0000-0000-000000000000");
-                    router.push("/app?preview=true");
-                  }}
-                  className="text-sm text-slate-600 hover:text-slate-800 underline"
-                  type="button"
-                >
-                  Preskoči login i pregledaj aplikaciju →
-                </button>
-              </div>
-            )}
-            {preview && (
-              <div className="mb-4 rounded-2xl border border-slate-300 bg-slate-100 p-4 text-center">
-                <p className="text-xs text-slate-600 mb-2">
-                  U pregled modu, privremena lozinka je automatski prihvaćena.
-                </p>
-                <p className="text-sm font-semibold text-slate-800 mb-1">Test podaci:</p>
-                <p className="text-xs text-slate-600">Korisničko ime: <strong>testuser</strong></p>
-                <p className="text-xs text-slate-600">Privremena lozinka: <strong>test123</strong></p>
-              </div>
-            )}
-            {isTempPasswordVerified ? (
-              <div className="space-y-6">
-                <form onSubmit={handleChangePassword} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Nova lozinka
-                    </label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-slate-600 focus:outline-none"
-                      required
-                      placeholder="Unesi novu lozinku"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Potvrdi novu lozinku
-                    </label>
-                    <input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-slate-600 focus:outline-none"
-                      required
-                      placeholder="Potvrdi novu lozinku"
-                    />
-                  </div>
-                  {error && (
-                    <div className="rounded-2xl border border-red-600/50 bg-red-100 px-4 py-3 text-sm text-red-800">
-                      {error}
-                    </div>
-                  )}
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-slate-200">
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setIsTempPasswordVerified(false);
-                      }}
-                      className="inline-flex items-center justify-center rounded-full border border-slate-300 px-6 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-100"
-                      type="button"
-                    >
-                      Natrag
-                    </button>
-                    <button
-                      type="submit"
-                      className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-slate-600 to-slate-500 px-8 py-3 text-sm font-semibold text-white transition hover:opacity-90"
-                    >
-                      Postavi lozinku
-                    </button>
-                  </div>
-                </form>
-              </div>
-            ) : (
+      {/* Corpex logo */}
+      <motion.p
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+        className="absolute top-8 left-1/2 -translate-x-1/2 text-white/80 text-sm tracking-[0.4em] font-light z-20"
+      >
+        CORPEX
+      </motion.p>
+
+      {/* Main content */}
+      <div className="relative z-10 h-full flex flex-col items-center justify-center px-6">
+        <AnimatePresence mode="wait">
+          {!isTempPasswordVerified ? (
+            <motion.div
+              key="login-form"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -30 }}
+              transition={{ duration: 0.6, ease: [0.22, 0.61, 0.36, 1] }}
+              className="w-full max-w-md"
+            >
+              {/* Title */}
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-3xl md:text-4xl font-light text-white text-center mb-3"
+              >
+                Prijava
+              </motion.h1>
+              
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="text-white/60 text-center text-sm mb-12"
+              >
+                Unesi podatke za pristup
+              </motion.p>
+
               <form onSubmit={handleTempPasswordCheck} className="space-y-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Korisničko ime
-                    </label>
-                    <input
-                      type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-slate-600 focus:outline-none"
-                      required
-                      placeholder="Unesi korisničko ime"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Jednokratna lozinka
-                    </label>
-                    <input
-                      type="password"
-                      value={tempPasswordInput}
-                      onChange={(e) => setTempPasswordInput(e.target.value)}
-                      className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-slate-600 focus:outline-none"
-                      required
-                      placeholder="Unesi jednokratnu lozinku (iz emaila)"
-                    />
-                    <p className="mt-2 text-xs text-slate-500">
-                      Jednokratna lozinka je poslana na tvoj email
-                    </p>
-                  </div>
+                {/* Username */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.3 }}
+                >
+                  <label className="block text-white/60 text-xs tracking-wider mb-2 uppercase">
+                    Korisničko ime
+                  </label>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full bg-transparent border-b border-white/30 py-3 text-white text-lg font-light focus:outline-none focus:border-white/70 transition-colors placeholder:text-white/30"
+                    required
+                    placeholder="ime.prezime"
+                  />
+                </motion.div>
+
+                {/* Password */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.4 }}
+                >
+                  <label className="block text-white/60 text-xs tracking-wider mb-2 uppercase">
+                    Jednokratna lozinka
+                  </label>
+                  <input
+                    type="password"
+                    value={tempPasswordInput}
+                    onChange={(e) => setTempPasswordInput(e.target.value)}
+                    className="w-full bg-transparent border-b border-white/30 py-3 text-white text-lg font-light focus:outline-none focus:border-white/70 transition-colors placeholder:text-white/30"
+                    required
+                    placeholder="••••••••"
+                  />
+                  <p className="mt-2 text-white/50 text-xs">
+                    Jednokratna lozinka je poslana na tvoj email
+                  </p>
+                </motion.div>
+
+                {/* Error */}
+                <AnimatePresence>
                   {error && (
-                    <div className="rounded-2xl border border-red-600/50 bg-red-100 px-4 py-3 text-sm text-red-800">
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="text-red-400/80 text-sm text-center py-2"
+                    >
                       {error}
-                    </div>
+                    </motion.div>
                   )}
-                </div>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-gray-200">
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      router.push("/payment?preview=true");
-                    }}
-                    className="inline-flex items-center justify-center rounded-full border border-gray-300 px-6 py-3 text-sm font-medium text-gray-700 transition hover:border-gray-400 hover:bg-gray-50"
-                    type="button"
-                  >
-                    Natrag
-                  </button>
+                </AnimatePresence>
+
+                {/* Submit button */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.5 }}
+                  className="pt-8"
+                >
                   <button
                     type="submit"
-                    className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-gray-900 to-gray-700 px-8 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+                    disabled={isLoading}
+                    className="w-full py-4 border border-white/30 text-white text-sm tracking-wider uppercase font-light transition-all duration-300 hover:bg-white/10 hover:border-white/50 disabled:opacity-50"
                   >
-                    Provjeri jednokratnu lozinku
+                    {isLoading ? "Provjeravam..." : "Nastavi"}
                   </button>
-                </div>
+                </motion.div>
               </form>
-            )}
-          </div>
-        </div>
+
+              {/* Skip login */}
+              {!preview && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.4, delay: 0.7 }}
+                  className="mt-8 text-center"
+                >
+                  <button
+                    onClick={handleSkipLogin}
+                    className="text-white/30 text-xs tracking-wider hover:text-white/50 transition-colors"
+                  >
+                    Preskoči prijavu →
+                  </button>
+                </motion.div>
+              )}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="password-form"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -30 }}
+              transition={{ duration: 0.6, ease: [0.22, 0.61, 0.36, 1] }}
+              className="w-full max-w-md"
+            >
+              {/* Title */}
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-3xl md:text-4xl font-light text-white text-center mb-3"
+              >
+                Nova lozinka
+              </motion.h1>
+              
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="text-white/60 text-center text-sm mb-12"
+              >
+                Postavi svoju trajnu lozinku
+              </motion.p>
+
+              <form onSubmit={handleChangePassword} className="space-y-6">
+                {/* New Password */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.3 }}
+                >
+                  <label className="block text-white/60 text-xs tracking-wider mb-2 uppercase">
+                    Nova lozinka
+                  </label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full bg-transparent border-b border-white/30 py-3 text-white text-lg font-light focus:outline-none focus:border-white/70 transition-colors placeholder:text-white/30"
+                    required
+                    placeholder="••••••••"
+                  />
+                </motion.div>
+
+                {/* Confirm Password */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.4 }}
+                >
+                  <label className="block text-white/60 text-xs tracking-wider mb-2 uppercase">
+                    Potvrdi lozinku
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full bg-transparent border-b border-white/30 py-3 text-white text-lg font-light focus:outline-none focus:border-white/70 transition-colors placeholder:text-white/30"
+                    required
+                    placeholder="••••••••"
+                  />
+                </motion.div>
+
+                {/* Error */}
+                <AnimatePresence>
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="text-red-400/80 text-sm text-center py-2"
+                    >
+                      {error}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Buttons */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.5 }}
+                  className="pt-8 space-y-4"
+                >
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-4 border border-white/30 text-white text-sm tracking-wider uppercase font-light transition-all duration-300 hover:bg-white/10 hover:border-white/50 disabled:opacity-50"
+                  >
+                    {isLoading ? "Postavljam..." : "Postavi lozinku"}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setIsTempPasswordVerified(false)}
+                    className="w-full py-3 text-white/40 text-xs tracking-wider hover:text-white/60 transition-colors"
+                  >
+                    ← Natrag
+                  </button>
+                </motion.div>
+              </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
+      {/* Bottom decoration line */}
+      <motion.div
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: 1 }}
+        transition={{ duration: 1.5, delay: 0.5, ease: [0.22, 0.61, 0.36, 1] }}
+        className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
+      />
     </main>
   );
 }
-

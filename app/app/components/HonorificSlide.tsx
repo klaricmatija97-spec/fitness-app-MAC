@@ -45,12 +45,22 @@ export default function HonorificSlide({
         className="absolute inset-0 bg-cover bg-center"
         style={{
           backgroundImage: `url(${BACKGROUND_IMAGE})`,
-          filter: "brightness(0.5) saturate(1.1)",
+          filter: "brightness(0.3) saturate(0.8)",
         }}
       />
 
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/70" />
+
+      {/* CORPEX logo - gore */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.8 }}
+        className="absolute top-8 left-1/2 -translate-x-1/2 z-20 text-xs font-light tracking-[0.5em] text-white/40 uppercase"
+      >
+        Corpex
+      </motion.p>
 
       {/* Sadržaj - centriran */}
       <div className="relative z-10 h-full w-full flex flex-col items-center justify-center px-8">
@@ -76,20 +86,20 @@ export default function HonorificSlide({
               >
                 <span
                   className={clsx(
-                    "text-6xl md:text-7xl transition-all duration-300",
+                    "text-7xl md:text-8xl transition-all duration-300",
                     intakeForm.honorific === item.value
-                      ? "text-purple-400 drop-shadow-[0_0_20px_rgba(168,85,247,0.5)]"
-                      : "text-white/60 group-hover:text-white"
+                      ? "text-purple-400 drop-shadow-[0_0_30px_rgba(168,85,247,0.6)]"
+                      : "text-white group-hover:text-purple-300"
                   )}
                 >
                   {item.symbol}
                 </span>
                 <span
                   className={clsx(
-                    "text-sm font-light tracking-wider transition-all duration-300",
+                    "text-base font-light tracking-wider transition-all duration-300",
                     intakeForm.honorific === item.value
                       ? "text-purple-400"
-                      : "text-white/40 group-hover:text-white/70"
+                      : "text-white/60 group-hover:text-white"
                   )}
                 >
                   {item.label}

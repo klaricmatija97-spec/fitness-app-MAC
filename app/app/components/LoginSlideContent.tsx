@@ -10,14 +10,12 @@ interface LoginSlideContentProps {
   onBack?: () => void;
 }
 
-// Fitness/sportske slike - 4K kvaliteta (Unsplash/Pexels)
+// Premium sportske slike - Olympic lifting stil
 const backgroundImages = [
-  "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=3840&q=90&auto=format&fit=crop", // gym equipment - 4K
-  "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=3840&q=90&auto=format&fit=crop", // workout - 4K
-  "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=3840&q=90&auto=format&fit=crop", // fitness - 4K
-  "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=3840&q=90&auto=format&fit=crop", // training - 4K
-  "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=3840&q=90&auto=format&fit=crop", // strength training - 4K
-  "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=3840&q=90&auto=format&fit=crop", // gym - 4K
+  "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=1920&h=1080&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1517963879433-6ad2b056d712?w=1920&h=1080&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=1920&h=1080&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?w=1920&h=1080&fit=crop&q=80",
 ];
 
 export default function LoginSlideContent({ onNext, nextSlideIndex, onBack }: LoginSlideContentProps) {
@@ -40,7 +38,6 @@ export default function LoginSlideContent({ onNext, nextSlideIndex, onBack }: Lo
       
       if (usernameParam && fromRegister === "true") {
         setUsername(usernameParam);
-        // Očisti URL parametre
         window.history.replaceState({}, "", "/app");
       }
     }
@@ -60,7 +57,7 @@ export default function LoginSlideContent({ onNext, nextSlideIndex, onBack }: Lo
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBgImage((prev) => (prev + 1) % backgroundImages.length);
-    }, 7000);
+    }, 8000);
     return () => clearInterval(interval);
   }, []);
 
@@ -98,7 +95,6 @@ export default function LoginSlideContent({ onNext, nextSlideIndex, onBack }: Lo
       if (data.ok) {
         localStorage.setItem("authToken", data.token);
         localStorage.setItem("clientId", data.clientId);
-        // Spremi username u localStorage ako postoji u response-u
         if (data.username) {
           localStorage.setItem("username", data.username);
         }
@@ -116,55 +112,17 @@ export default function LoginSlideContent({ onNext, nextSlideIndex, onBack }: Lo
   // Funkcija za validaciju emaila
   const isValidEmail = (email: string): boolean => {
     const trimmed = email.trim().toLowerCase();
-    
-    // Osnovna provjera
-    if (!trimmed.includes("@") || !trimmed.includes(".")) {
-      return false;
-    }
-    
+    if (!trimmed.includes("@") || !trimmed.includes(".")) return false;
     const parts = trimmed.split("@");
-    if (parts.length !== 2) {
-      return false;
-    }
-    
+    if (parts.length !== 2) return false;
     const [localPart, domain] = parts;
-    
-    // Provjeri lokalni dio (prije @)
-    if (localPart.length === 0 || localPart.length > 64) {
-      return false;
-    }
-    if (localPart.startsWith(".") || localPart.endsWith(".")) {
-      return false;
-    }
-    if (localPart.includes("..")) {
-      return false;
-    }
-    
-    // Provjeri domenu (nakon @)
-    if (domain.length === 0 || domain.length > 255) {
-      return false;
-    }
-    if (!domain.includes(".")) {
-      return false;
-    }
-    if (domain.startsWith(".") || domain.endsWith(".")) {
-      return false;
-    }
-    if (domain.startsWith("-") || domain.endsWith("-")) {
-      return false;
-    }
-    
-    // Provjeri da domena ima barem jednu točku i barem 2 znaka nakon zadnje točke
+    if (localPart.length === 0 || localPart.length > 64) return false;
+    if (domain.length === 0 || domain.length > 255) return false;
+    if (!domain.includes(".")) return false;
     const domainParts = domain.split(".");
-    if (domainParts.length < 2) {
-      return false;
-    }
+    if (domainParts.length < 2) return false;
     const tld = domainParts[domainParts.length - 1];
-    if (tld.length < 2) {
-      return false;
-    }
-    
-    // Provjeri regex
+    if (tld.length < 2) return false;
     const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
     return emailRegex.test(trimmed);
   };
@@ -179,9 +137,8 @@ export default function LoginSlideContent({ onNext, nextSlideIndex, onBack }: Lo
       return;
     }
 
-    // Validacija emaila
     if (!isValidEmail(registerEmail)) {
-      setRegisterError("Neispravan email format. Email mora biti u formatu: ime@domena.com");
+      setRegisterError("Neispravan email format");
       return;
     }
 
@@ -203,50 +160,21 @@ export default function LoginSlideContent({ onNext, nextSlideIndex, onBack }: Lo
     setRegisterLoading(true);
 
     try {
-      console.log("[Register Frontend] Sending registration request...");
-      console.log("[Register Frontend] Data:", {
-        name: registerName,
-        username: registerUsername,
-        email: registerEmail,
-        phone: registerPhone.substring(0, 3) + "***",
-      });
-      
-      const requestBody = {
-        name: registerName,
-        username: registerUsername,
-        email: registerEmail,
-        phone: registerPhone,
-        password: registerPassword,
-      };
-      
-      console.log("[Register Frontend] Request body (without password):", {
-        ...requestBody,
-        password: "***",
-      });
-      
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          name: registerName,
+          username: registerUsername,
+          email: registerEmail,
+          phone: registerPhone,
+          password: registerPassword,
+        }),
       });
-      
-      console.log("[Register Frontend] Response status:", response.status);
-      console.log("[Register Frontend] Response ok:", response.ok);
-      console.log("[Register Frontend] Response headers:", Object.fromEntries(response.headers.entries()));
 
-      // Provjeri da li response ima body - parsiraj čak i ako je status 500
       const text = await response.text();
-      console.log("[Register Frontend] Response text length:", text?.length || 0);
-      console.log("[Register Frontend] Response text preview:", text?.substring(0, 200) || "(empty)");
-      
       if (!text || text.trim().length === 0) {
-        console.error("[Register Frontend] Empty response body");
-        // Ako nema body-a i status je 500, prikaži generičku poruku
-        if (!response.ok && response.status >= 500) {
-          setRegisterError("Greška na serveru. Molimo pokušaj ponovno kasnije.");
-        } else {
-          setRegisterError("Server nije vratio odgovor. Molimo pokušaj ponovno.");
-        }
+        setRegisterError("Server nije vratio odgovor. Molimo pokušaj ponovno.");
         setRegisterLoading(false);
         return;
       }
@@ -254,104 +182,22 @@ export default function LoginSlideContent({ onNext, nextSlideIndex, onBack }: Lo
       let data;
       try {
         data = JSON.parse(text);
-        console.log("[Register Frontend] Parsed response data:", {
-          ok: data.ok,
-          message: data.message,
-          field: data.field,
-          hasAllErrors: !!data.allErrors,
-        });
       } catch (parseError) {
-        console.error("[Register] JSON parse error:", parseError);
-        console.error("[Register] Response text:", text);
-        // Ako ne može parsirati JSON i status je 500, prikaži generičku poruku
-        if (!response.ok && response.status >= 500) {
-          setRegisterError("Greška na serveru. Molimo pokušaj ponovno kasnije.");
-        } else {
-          setRegisterError("Greška pri obradi odgovora servera. Molimo pokušaj ponovno.");
-        }
-        setRegisterLoading(false);
-        return;
-      }
-      
-      // Ako je status 500 ali imamo parsirani JSON s porukom, koristi tu poruku
-      if (!response.ok && response.status >= 500) {
-        const errorMsg = data?.message || "Greška na serveru. Molimo pokušaj ponovno kasnije.";
-        console.error("[Register Frontend] Server error (500+):", errorMsg);
-        setRegisterError(errorMsg);
+        setRegisterError("Greška pri obradi odgovora servera.");
         setRegisterLoading(false);
         return;
       }
 
       if (data.ok) {
-        // Nakon uspješne registracije, preusmjeri na login s username-om
-        // Spremi token i clientId privremeno
         localStorage.setItem("authToken", data.token);
         localStorage.setItem("clientId", data.clientId);
         localStorage.setItem("registeredUsername", data.username || registerUsername);
-        
-        // Preusmjeri na login stranicu s username-om u URL parametrima
-        // Reload stranice da se učita login slide s username-om
         window.location.href = `/app?username=${encodeURIComponent(data.username || registerUsername)}&fromRegister=true`;
       } else {
-        // Prikaži detaljniju grešku ako postoji
-        let errorMessage = data.message || "Greška pri registraciji";
-        
-        // Ako postoji field-specific greška, prikaži je
-        if (data.field && data.allErrors && data.allErrors.length > 0) {
-          const fieldError = data.allErrors.find((e: any) => e.field === data.field);
-          if (fieldError) {
-            errorMessage = fieldError.message;
-          }
-        }
-        
-        // Ako postoji više grešaka, prikaži sve
-        if (data.allErrors && data.allErrors.length > 1) {
-          const allErrorMessages = data.allErrors.map((e: any) => {
-            const fieldName = e.fieldName || e.field;
-            return `${fieldName}: ${e.message}`;
-          }).join(" | ");
-          errorMessage = allErrorMessages;
-        }
-        
-        // Ako postoji details, dodaj ih u console za debugging
-        if (data.details) {
-          console.error("[Register] Error details:", data.details);
-        }
-        
-        // Loguj grešku za debugging - provjeri da li data postoji i ima svojstva
-        const errorDetails: any = {
-          message: errorMessage,
-        };
-        
-        if (data && typeof data === 'object') {
-          if (data.field) errorDetails.field = data.field;
-          if (data.code) errorDetails.code = data.code;
-          if (data.allErrors) errorDetails.allErrors = data.allErrors;
-          if (data.details) errorDetails.details = data.details;
-          errorDetails.fullResponse = data;
-        } else {
-          errorDetails.rawData = data;
-        }
-        
-        console.error("[Register] Registration error:", errorDetails);
-        
-        // Ako je greška prazan objekt ili nema poruke, koristi default poruku
-        if (!errorMessage || errorMessage.trim() === "" || errorMessage === "Greška pri registraciji") {
-          errorMessage = "Greška pri registraciji. Molimo provjeri sve podatke i pokušaj ponovno.";
-        }
-        
-        setRegisterError(errorMessage);
+        setRegisterError(data.message || "Greška pri registraciji");
       }
     } catch (error) {
-      console.error("[Register] Network error:", error);
-      console.error("[Register] Error details:", error instanceof Error ? error.message : String(error));
-      
-      // Provjeri da li je network error
-      if (error instanceof TypeError && error.message.includes("fetch")) {
-        setRegisterError("Nema konekcije s serverom. Provjeri internet konekciju i pokušaj ponovno.");
-      } else {
       setRegisterError("Greška pri registraciji. Molimo pokušajte ponovno.");
-      }
     } finally {
       setRegisterLoading(false);
     }
@@ -359,402 +205,346 @@ export default function LoginSlideContent({ onNext, nextSlideIndex, onBack }: Lo
 
   return (
     <div className="fixed inset-0 h-screen w-screen overflow-hidden bg-black">
-      {/* Tamnije pozadinske slike - preko cijelog ekrana */}
-      {backgroundImages.map((image, index) => (
-        <div
-          key={index}
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url(${image})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-            opacity: index === currentBgImage ? 1 : 0,
-            transition: "opacity 0.5s ease-in-out",
-            zIndex: index === currentBgImage ? 0 : -1,
-            filter: "brightness(0.35) contrast(1.2)",
-          }}
-        />
-      ))}
+      {/* Rotirajuće pozadinske slike */}
+      <AnimatePresence mode="sync">
+        {backgroundImages.map((img, idx) => (
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: idx === currentBgImage ? 1 : 0 }}
+            transition={{ duration: 2, ease: "easeInOut" }}
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${img})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              filter: "brightness(0.25) saturate(0.7)",
+            }}
+          />
+        ))}
+      </AnimatePresence>
 
-      {/* Naziv aplikacije - Gore - Fade In */}
-      <motion.div
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
+
+      {/* Corpex logo */}
+      <motion.p
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 0.61, 0.36, 1] }}
-        className="absolute top-8 left-1/2 -translate-x-1/2 z-30"
+        transition={{ duration: 0.8, delay: 0.2 }}
+        className="absolute top-8 left-1/2 -translate-x-1/2 text-white/80 text-sm tracking-[0.4em] font-light z-20"
       >
-        <h1
-          className="text-5xl font-bold text-white drop-shadow-2xl"
-          style={{
-            fontFamily: "var(--font-montserrat), sans-serif",
-            textShadow: "0 4px 30px rgba(0,0,0,0.9), 0 2px 15px rgba(0,0,0,0.7)",
-          }}
-        >
-          CORP<span className="text-purple-400">EX</span>
-        </h1>
-      </motion.div>
+        CORPEX
+      </motion.p>
 
-      {/* Content - Potpuno centrirano vertikalno i horizontalno */}
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-4">
-        {/* Subtle dark overlay za bolji kontrast */}
-        <div className="absolute inset-0 bg-black/20 pointer-events-none" />
-        
-        <div className="relative w-full max-w-md space-y-3">
-          {/* Form - Premium Fade Animations */}
-          <motion.div
-            key={isLoginMode ? "login" : "register"}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-            className="w-full"
-            style={{ willChange: "transform, opacity" }}
-          >
-            <AnimatePresence mode="wait">
-              {isLoginMode ? (
-                <motion.form
-                  key="login"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2, ease: [0.22, 0.61, 0.36, 1] }}
-                  onSubmit={handleLogin}
-                  className="space-y-3"
-                  style={{ willChange: "opacity" }}
-                >
-                  <div className="space-y-2.5">
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.1, ease: [0.22, 0.61, 0.36, 1] }}
-                    >
-                      <label className="mb-1 block text-sm font-bold text-white" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.8), 0 1px 4px rgba(0,0,0,0.6)" }}>
-                        Korisničko ime
-                      </label>
-                      <input
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        className="w-full rounded-[12px] border-[2px] border-white/60 bg-black/50 px-3 py-2 text-base text-white font-medium placeholder-white/80 backdrop-blur-lg transition-all focus:border-white focus:bg-black/70 focus:outline-none focus:ring-2 focus:ring-white/50 shadow-xl"
-                        required
-                        placeholder="Unesi korisničko ime"
-                      />
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.2, ease: [0.22, 0.61, 0.36, 1] }}
-                    >
-                      <label className="mb-1 block text-sm font-bold text-white" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.8), 0 1px 4px rgba(0,0,0,0.6)" }}>
-                        Lozinka
-                      </label>
-                      <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full rounded-[12px] border-[2px] border-white/60 bg-black/50 px-3 py-2 text-base text-white font-medium placeholder-white/80 backdrop-blur-lg transition-all focus:border-white focus:bg-black/70 focus:outline-none focus:ring-2 focus:ring-white/50 shadow-xl"
-                        required
-                        placeholder="Unesi lozinku"
-                      />
-                    </motion.div>
-                    {loginError && (
-                      <div className="rounded-[12px] border-2 border-red-500/50 bg-red-500/20 px-3 py-2 text-xs text-red-200 backdrop-blur-sm">
-                        {loginError}
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Toggle - Prijavi se / Registriraj se - Sitnije ispod, tamnije boje */}
-                  <div className="flex gap-2 justify-center pt-2">
-                    <button
-                      type={isLoginMode ? "submit" : "button"}
-                      onClick={isLoginMode ? undefined : () => {
-                        setIsLoginMode(true);
-                        setLoginError("");
-                        setRegisterError("");
-                      }}
-                      disabled={isLoginMode && loginLoading}
-                      className={`px-6 py-2.5 rounded-[12px] text-sm font-semibold transition-all duration-300 shadow-lg ${
-                        isLoginMode
-                          ? "bg-[#1A1A1A] text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                          : "bg-black/40 text-white border border-white/30 hover:bg-black/60 hover:border-white/50 backdrop-blur-sm"
-                      }`}
-                    >
-                      {isLoginMode && loginLoading ? "Prijavljuje se..." : "Prijavi se"}
-                    </button>
-                    <button
-                      type={!isLoginMode ? "submit" : "button"}
-                      onClick={!isLoginMode ? undefined : () => {
-                        setIsLoginMode(false);
-                        setLoginError("");
-                        setRegisterError("");
-                      }}
-                      disabled={!isLoginMode && registerLoading}
-                      className={`px-6 py-2.5 rounded-[12px] text-sm font-semibold transition-all duration-300 shadow-lg ${
-                        !isLoginMode
-                          ? "bg-[#1A1A1A] text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                          : "bg-black/40 text-white border border-white/30 hover:bg-black/60 hover:border-white/50 backdrop-blur-sm"
-                      }`}
-                    >
-                      {!isLoginMode && registerLoading ? "Registrira se..." : "Registriraj se"}
-                    </button>
-                  </div>
-                </motion.form>
-              ) : (
-                <motion.form
-                  key="register"
-                  initial={{ opacity: 0, x: 20 }}
+      {/* Main content */}
+      <div className="relative z-10 h-full flex flex-col items-center justify-center px-6">
+        <AnimatePresence mode="wait">
+          {isLoginMode ? (
+            <motion.div
+              key="login-form"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -30 }}
+              transition={{ duration: 0.6, ease: [0.22, 0.61, 0.36, 1] }}
+              className="w-full max-w-md"
+            >
+              {/* Title */}
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-3xl md:text-4xl font-light text-white text-center mb-3"
+              >
+                Prijava
+              </motion.h1>
+              
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="text-white/60 text-center text-sm mb-10"
+              >
+                Unesi podatke za pristup
+              </motion.p>
+
+              <form onSubmit={handleLogin} className="space-y-6">
+                {/* Username */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                  onSubmit={handleRegister}
-                  className="w-full space-y-2.5"
+                  transition={{ duration: 0.4, delay: 0.3 }}
                 >
-                  <div className="space-y-2">
+                  <label className="block text-white/60 text-xs tracking-wider mb-2 uppercase">
+                    Korisničko ime
+                  </label>
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full bg-transparent border-b border-white/30 py-3 text-white text-lg font-light focus:outline-none focus:border-white/70 transition-colors placeholder:text-white/30"
+                    required
+                    placeholder="ime.prezime"
+                  />
+                </motion.div>
+
+                {/* Password */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.4 }}
+                >
+                  <label className="block text-white/60 text-xs tracking-wider mb-2 uppercase">
+                    Lozinka
+                  </label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-transparent border-b border-white/30 py-3 text-white text-lg font-light focus:outline-none focus:border-white/70 transition-colors placeholder:text-white/30"
+                    required
+                    placeholder="••••••••"
+                  />
+                </motion.div>
+
+                {/* Error */}
+                <AnimatePresence>
+                  {loginError && (
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.1, ease: [0.22, 0.61, 0.36, 1] }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="text-red-400/80 text-sm text-center py-2"
                     >
-                      <label className="mb-1 block text-sm font-bold text-white" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.8), 0 1px 4px rgba(0,0,0,0.6)" }}>
-                        Ime i prezime
-                      </label>
-                      <input
-                        type="text"
-                        value={registerName}
-                        onChange={(e) => setRegisterName(e.target.value)}
-                        className="w-full rounded-[12px] border-[2px] border-white/60 bg-black/50 px-3 py-2 text-base text-white font-medium placeholder-white/80 backdrop-blur-lg transition-all focus:border-white focus:bg-black/70 focus:outline-none focus:ring-2 focus:ring-white/50 shadow-xl"
-                        required
-                        placeholder="Unesi ime i prezime"
-                      />
+                      {loginError}
                     </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.15, ease: [0.22, 0.61, 0.36, 1] }}
-                    >
-                      <label className="mb-1 block text-sm font-bold text-white" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.8), 0 1px 4px rgba(0,0,0,0.6)" }}>
-                        Korisničko ime
-                      </label>
-                      <input
-                        type="text"
-                        value={registerUsername}
-                        onChange={(e) => setRegisterUsername(e.target.value)}
-                        className="w-full rounded-[12px] border-[2px] border-white/60 bg-black/50 px-3 py-2 text-base text-white font-medium placeholder-white/80 backdrop-blur-lg transition-all focus:border-white focus:bg-black/70 focus:outline-none focus:ring-2 focus:ring-white/50 shadow-xl"
-                        required
-                        placeholder="Unesi korisničko ime"
-                      />
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.2, ease: [0.22, 0.61, 0.36, 1] }}
-                    >
-                      <label className="mb-1 block text-sm font-bold text-white" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.8), 0 1px 4px rgba(0,0,0,0.6)" }}>
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        value={registerEmail}
-                        onChange={(e) => {
-                          setRegisterEmail(e.target.value);
-                          // Očisti grešku kada korisnik počne tipkati
-                          if (registerError && registerError.includes("email")) {
-                            setRegisterError("");
-                          }
-                        }}
-                        onBlur={(e) => {
-                          // Provjeri email kada korisnik napusti polje
-                          if (e.target.value && !isValidEmail(e.target.value)) {
-                            setRegisterError("Neispravan email format. Email mora biti u formatu: ime@domena.com");
-                          }
-                        }}
-                        className="w-full rounded-[12px] border-[2px] border-white/60 bg-black/50 px-3 py-2 text-base text-white font-medium placeholder-white/80 backdrop-blur-lg transition-all focus:border-white focus:bg-black/70 focus:outline-none focus:ring-2 focus:ring-white/50 shadow-xl"
-                        required
-                        placeholder="npr. ime@domena.com"
-                      />
-                      {registerEmail && !isValidEmail(registerEmail) && (
-                        <p className="mt-1 text-xs text-red-300">
-                          Neispravan email format
-                        </p>
-                      )}
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.25, ease: [0.22, 0.61, 0.36, 1] }}
-                    >
-                      <label className="mb-1 block text-sm font-bold text-white" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.8), 0 1px 4px rgba(0,0,0,0.6)" }}>
-                        Telefon
-                      </label>
-                      <input
-                        type="tel"
-                        value={registerPhone}
-                        onChange={(e) => setRegisterPhone(e.target.value)}
-                        className="w-full rounded-[12px] border-[2px] border-white/60 bg-black/50 px-3 py-2 text-base text-white font-medium placeholder-white/80 backdrop-blur-lg transition-all focus:border-white focus:bg-black/70 focus:outline-none focus:ring-2 focus:ring-white/50 shadow-xl"
-                        required
-                        placeholder="Unesi telefon"
-                      />
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.3, ease: [0.22, 0.61, 0.36, 1] }}
-                    >
-                      <label className="mb-1 block text-sm font-bold text-white" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.8), 0 1px 4px rgba(0,0,0,0.6)" }}>
-                        Lozinka
-                      </label>
-                      <input
-                        type="password"
-                        value={registerPassword}
-                        onChange={(e) => setRegisterPassword(e.target.value)}
-                        className="w-full rounded-[12px] border-[2px] border-white/60 bg-black/50 px-3 py-2 text-base text-white font-medium placeholder-white/80 backdrop-blur-lg transition-all focus:border-white focus:bg-black/70 focus:outline-none focus:ring-2 focus:ring-white/50 shadow-xl"
-                        required
-                        placeholder="Unesi lozinku"
-                      />
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.35, ease: [0.22, 0.61, 0.36, 1] }}
-                    >
-                      <label className="mb-1 block text-sm font-bold text-white" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.8), 0 1px 4px rgba(0,0,0,0.6)" }}>
-                        Potvrdi lozinku
-                      </label>
-                      <input
-                        type="password"
-                        value={registerConfirmPassword}
-                        onChange={(e) => setRegisterConfirmPassword(e.target.value)}
-                        className="w-full rounded-[12px] border-[2px] border-white/60 bg-black/50 px-3 py-2 text-base text-white font-medium placeholder-white/80 backdrop-blur-lg transition-all focus:border-white focus:bg-black/70 focus:outline-none focus:ring-2 focus:ring-white/50 shadow-xl"
-                        required
-                        placeholder="Potvrdi lozinku"
-                      />
-                    </motion.div>
-                    <AnimatePresence>
-                    {registerError && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -5, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -5, scale: 0.95 }}
-                          transition={{ duration: 0.2, ease: [0.22, 0.61, 0.36, 1] }}
-                          className="rounded-[12px] border-2 border-red-500/50 bg-red-500/20 px-3 py-2 text-xs text-red-200 backdrop-blur-sm"
-                        >
-                        {registerError}
-                        </motion.div>
-                    )}
-                    </AnimatePresence>
-                  </div>
+                  )}
+                </AnimatePresence>
+
+                {/* Buttons */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.5 }}
+                  className="pt-6 space-y-4"
+                >
+                  <button
+                    type="submit"
+                    disabled={loginLoading}
+                    className="w-full py-4 border border-white/30 text-white text-sm tracking-wider uppercase font-light transition-all duration-300 hover:bg-white/10 hover:border-white/50 disabled:opacity-50"
+                  >
+                    {loginLoading ? "Prijavljujem..." : "Prijavi se"}
+                  </button>
                   
-                  {/* Toggle - Prijavi se / Registriraj se - Sitnije ispod, tamnije boje */}
-                  <div className="flex gap-2 justify-center pt-2">
-                    <button
-                      type={isLoginMode ? "submit" : "button"}
-                      onClick={isLoginMode ? undefined : () => {
-                        setIsLoginMode(true);
-                        setLoginError("");
-                        setRegisterError("");
-                      }}
-                      disabled={isLoginMode && loginLoading}
-                      className={`px-6 py-2.5 rounded-[12px] text-sm font-semibold transition-all duration-300 shadow-lg ${
-                        isLoginMode
-                          ? "bg-[#1A1A1A] text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                          : "bg-black/40 text-white border border-white/30 hover:bg-black/60 hover:border-white/50 backdrop-blur-sm"
-                      }`}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsLoginMode(false);
+                      setLoginError("");
+                    }}
+                    className="w-full py-3 text-white/50 text-xs tracking-wider hover:text-white/70 transition-colors"
+                  >
+                    Nemaš račun? Registriraj se →
+                  </button>
+                </motion.div>
+              </form>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="register-form"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -30 }}
+              transition={{ duration: 0.6, ease: [0.22, 0.61, 0.36, 1] }}
+              className="w-full max-w-md"
+            >
+              {/* Title */}
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-3xl md:text-4xl font-light text-white text-center mb-3"
+              >
+                Registracija
+              </motion.h1>
+              
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="text-white/60 text-center text-sm mb-8"
+              >
+                Kreiraj svoj račun
+              </motion.p>
+
+              <form onSubmit={handleRegister} className="space-y-4">
+                {/* Name */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.25 }}
+                >
+                  <label className="block text-white/60 text-xs tracking-wider mb-2 uppercase">
+                    Ime i prezime
+                  </label>
+                  <input
+                    type="text"
+                    value={registerName}
+                    onChange={(e) => setRegisterName(e.target.value)}
+                    className="w-full bg-transparent border-b border-white/30 py-2.5 text-white text-base font-light focus:outline-none focus:border-white/70 transition-colors placeholder:text-white/30"
+                    required
+                    placeholder="Ivan Horvat"
+                  />
+                </motion.div>
+
+                {/* Username */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.3 }}
+                >
+                  <label className="block text-white/60 text-xs tracking-wider mb-2 uppercase">
+                    Korisničko ime
+                  </label>
+                  <input
+                    type="text"
+                    value={registerUsername}
+                    onChange={(e) => setRegisterUsername(e.target.value)}
+                    className="w-full bg-transparent border-b border-white/30 py-2.5 text-white text-base font-light focus:outline-none focus:border-white/70 transition-colors placeholder:text-white/30"
+                    required
+                    placeholder="ivan.horvat"
+                  />
+                </motion.div>
+
+                {/* Email */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.35 }}
+                >
+                  <label className="block text-white/60 text-xs tracking-wider mb-2 uppercase">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={registerEmail}
+                    onChange={(e) => setRegisterEmail(e.target.value)}
+                    className="w-full bg-transparent border-b border-white/30 py-2.5 text-white text-base font-light focus:outline-none focus:border-white/70 transition-colors placeholder:text-white/30"
+                    required
+                    placeholder="ivan@email.com"
+                  />
+                </motion.div>
+
+                {/* Phone */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.4 }}
+                >
+                  <label className="block text-white/60 text-xs tracking-wider mb-2 uppercase">
+                    Telefon
+                  </label>
+                  <input
+                    type="tel"
+                    value={registerPhone}
+                    onChange={(e) => setRegisterPhone(e.target.value)}
+                    className="w-full bg-transparent border-b border-white/30 py-2.5 text-white text-base font-light focus:outline-none focus:border-white/70 transition-colors placeholder:text-white/30"
+                    required
+                    placeholder="+385 91 234 5678"
+                  />
+                </motion.div>
+
+                {/* Password */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.45 }}
+                >
+                  <label className="block text-white/60 text-xs tracking-wider mb-2 uppercase">
+                    Lozinka
+                  </label>
+                  <input
+                    type="password"
+                    value={registerPassword}
+                    onChange={(e) => setRegisterPassword(e.target.value)}
+                    className="w-full bg-transparent border-b border-white/30 py-2.5 text-white text-base font-light focus:outline-none focus:border-white/70 transition-colors placeholder:text-white/30"
+                    required
+                    placeholder="••••••••"
+                  />
+                </motion.div>
+
+                {/* Confirm Password */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.5 }}
+                >
+                  <label className="block text-white/60 text-xs tracking-wider mb-2 uppercase">
+                    Potvrdi lozinku
+                  </label>
+                  <input
+                    type="password"
+                    value={registerConfirmPassword}
+                    onChange={(e) => setRegisterConfirmPassword(e.target.value)}
+                    className="w-full bg-transparent border-b border-white/30 py-2.5 text-white text-base font-light focus:outline-none focus:border-white/70 transition-colors placeholder:text-white/30"
+                    required
+                    placeholder="••••••••"
+                  />
+                </motion.div>
+
+                {/* Error */}
+                <AnimatePresence>
+                  {registerError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="text-red-400/80 text-sm text-center py-2"
                     >
-                      {isLoginMode && loginLoading ? "Prijavljuje se..." : "Prijavi se"}
-                    </button>
-                    <button
-                      type={!isLoginMode ? "submit" : "button"}
-                      onClick={!isLoginMode ? undefined : () => {
-                        setIsLoginMode(false);
-                        setLoginError("");
-                        setRegisterError("");
-                      }}
-                      disabled={!isLoginMode && registerLoading}
-                      className={`px-6 py-2.5 rounded-[12px] text-sm font-semibold transition-all duration-300 shadow-lg ${
-                        !isLoginMode
-                          ? "bg-[#1A1A1A] text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                          : "bg-black/40 text-white border border-white/30 hover:bg-black/60 hover:border-white/50 backdrop-blur-sm"
-                      }`}
-                    >
-                      {!isLoginMode && registerLoading ? "Registrira se..." : "Registriraj se"}
-                    </button>
-                  </div>
-                </motion.form>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </div>
+                      {registerError}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Buttons */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.55 }}
+                  className="pt-4 space-y-4"
+                >
+                  <button
+                    type="submit"
+                    disabled={registerLoading}
+                    className="w-full py-4 border border-white/30 text-white text-sm tracking-wider uppercase font-light transition-all duration-300 hover:bg-white/10 hover:border-white/50 disabled:opacity-50"
+                  >
+                    {registerLoading ? "Registriram..." : "Registriraj se"}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsLoginMode(true);
+                      setRegisterError("");
+                    }}
+                    className="w-full py-3 text-white/50 text-xs tracking-wider hover:text-white/70 transition-colors"
+                  >
+                    ← Već imaš račun? Prijavi se
+                  </button>
+                </motion.div>
+              </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Navigation Arrow - Left side (nazad na login) */}
-      {!isLoginMode && (
-        <motion.div
-          className="absolute left-8 top-1/2 -translate-y-1/2 z-30 group"
-          whileHover={{ scale: 1.2 }}
-          transition={{ duration: 0.2 }}
-        >
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              setIsLoginMode(true);
-              setRegisterError("");
-              setLoginError("");
-            }}
-            className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-white/30 hover:border-white/50 hover:shadow-2xl"
-            aria-label="Back to login"
-          >
-            <svg
-              className="w-8 h-8 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={3}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-        </motion.div>
-      )}
-
-      {/* Navigation Arrow - Right side (dalje) */}
+      {/* Bottom decoration line */}
       <motion.div
-        className="absolute right-8 top-1/2 -translate-y-1/2 z-30 group"
-        whileHover={{ scale: 1.2 }}
-        transition={{ duration: 0.2 }}
-      >
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            if (isLoginMode && username && password) {
-              handleLogin(e as any);
-            } else if (!isLoginMode && registerName && registerEmail && registerPhone && registerPassword) {
-              handleRegister(e as any);
-            }
-          }}
-          className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center cursor-pointer transition-all duration-300 hover:bg-white/30 hover:border-white/50 hover:shadow-2xl"
-          aria-label="Next slide"
-        >
-          <svg
-            className="w-8 h-8 text-white"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={3}
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </button>
-      </motion.div>
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: 1 }}
+        transition={{ duration: 1.5, delay: 0.5, ease: [0.22, 0.61, 0.36, 1] }}
+        className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
+      />
     </div>
   );
 }

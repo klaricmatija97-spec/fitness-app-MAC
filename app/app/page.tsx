@@ -156,6 +156,16 @@ const initialIntakeForm: IntakeFormState = {
 };
 
 
+// Olimpijska dizanja - weightlifting slike
+const URBAN_SPORTS_IMAGES = [
+  "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=1920&q=80", // Olympic lift
+  "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=1920&q=80", // Snatch
+  "https://images.unsplash.com/photo-1533681904393-9ab6ebd60571?w=1920&q=80", // Clean and jerk
+  "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=1920&q=80", // Barbell lift
+  "https://images.unsplash.com/photo-1517963879433-6ad2b056d712?w=1920&q=80", // Weightlifting
+  "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=1920&q=80", // Olympic barbell
+];
+
 function AppDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -166,6 +176,15 @@ function AppDashboardContent() {
   const [showRightArrow, setShowRightArrow] = useState(false);
   const [showPortfolio, setShowPortfolio] = useState(false);
   const [userInitials, setUserInitials] = useState<string>("");
+  const [bgImageIndex, setBgImageIndex] = useState(0);
+  
+  // Rotiraj pozadinske slike svakih 8 sekundi
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBgImageIndex((prev) => (prev + 1) % URBAN_SPORTS_IMAGES.length);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
   const [portfolioData, setPortfolioData] = useState<any>(null);
   
   // State za kalkulatore
@@ -1262,18 +1281,21 @@ function AppDashboardContent() {
                   ) : (
                     // Other slides - CALCULATOR STYLE: full screen pozadina + centrirani sadržaj
                     <div className="relative h-full w-full bg-black overflow-hidden">
-                      {/* Pozadinska slika - SVJETLIJA */}
-                      <div 
-                        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
-                        style={{
-                          backgroundImage: "url(https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&q=80&auto=format&fit=crop)",
-                          filter: "brightness(0.4) saturate(0.9)",
-                        }}
-                      />
+                      {/* Rotirajuće pozadinske slike - olimpijska dizanja */}
+                      {URBAN_SPORTS_IMAGES.map((img, idx) => (
+                        <div 
+                          key={idx}
+                          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-[2500ms] ease-in-out"
+                          style={{
+                            backgroundImage: `url(${img})`,
+                            filter: "brightness(0.3) saturate(0.7)",
+                            opacity: idx === bgImageIndex ? 1 : 0,
+                          }}
+                        />
+                      ))}
                       
-                      {/* Gradient overlays - kao kalkulator */}
-                      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/70" />
-                      <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40" />
+                      {/* Gradient overlays */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/60" />
 
                       {/* Sadržaj - centriran */}
                       <div className={clsx(
@@ -1544,7 +1566,7 @@ function IntroSlideContent({ onNext, nextSlideIndex }: { onNext: (slide: number)
         className="absolute inset-0 bg-cover bg-center"
         style={{
           backgroundImage: "url(https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=1920&h=1080&fit=crop&q=80)",
-          filter: "brightness(0.5) saturate(1.1)",
+          filter: "brightness(0.3) saturate(0.8)",
         }}
       />
 
@@ -1553,26 +1575,18 @@ function IntroSlideContent({ onNext, nextSlideIndex }: { onNext: (slide: number)
 
       {/* Sadržaj - centriran */}
       <div className="relative z-10 h-full w-full flex flex-col items-center justify-center px-8">
+        {/* CORPEX logo - gore */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.8 }}
+          className="absolute top-8 left-1/2 -translate-x-1/2 text-xs font-light tracking-[0.5em] text-white/40 uppercase"
+        >
+          Corpex
+        </motion.p>
+
         <div className="w-full max-w-2xl text-center">
           
-          {/* Spreman za trening? - uvijek vidljivo */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="text-4xl md:text-5xl font-light text-white mb-8 tracking-wide"
-          >
-            Spreman za trening?
-          </motion.h1>
-
-          {/* Linija */}
-          <motion.div
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="w-16 h-[1px] bg-white/30 mx-auto mb-10"
-          />
-
           {/* Rotirajući citati sportaša */}
           <AnimatePresence mode="wait">
             <motion.div
@@ -1583,10 +1597,10 @@ function IntroSlideContent({ onNext, nextSlideIndex }: { onNext: (slide: number)
               transition={{ duration: 0.6 }}
               className="text-center"
             >
-              <blockquote className="text-xl md:text-2xl font-light text-white/80 leading-relaxed mb-4 italic">
+              <blockquote className="text-2xl md:text-4xl font-normal text-white leading-relaxed mb-6">
                 "{athleteQuotes[currentQuoteIndex >= 0 ? currentQuoteIndex : 0].text}"
               </blockquote>
-              <p className="text-sm text-white/50 font-light tracking-wider">
+              <p className="text-base text-white/70 font-light tracking-wider">
                 — {athleteQuotes[currentQuoteIndex >= 0 ? currentQuoteIndex : 0].author}
               </p>
             </motion.div>
@@ -1987,18 +2001,49 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
     },
     {
       id: "age",
-      title: "Dobna skupina",
-      description: "Pomaže mi prilagoditi oporavak, mobilnost i hormonsku podršku.",
+      title: "",
+      description: "",
       render: (
-        <div className="grid gap-3 sm:grid-cols-3">
-          {ageOptions.map((option) => (
-            <OptionButton
-              key={option.value}
-              label={option.label}
-              active={intakeForm.ageRange === option.value}
-              onClick={() => updateIntakeForm("ageRange", option.value)}
-            />
-          ))}
+        <div className="w-full max-w-lg mx-auto">
+          {/* Pitanje */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-2xl md:text-3xl font-light text-white text-center mb-12"
+          >
+            Koliko imaš godina?
+          </motion.p>
+          
+          {/* Opcije - vertikalni popis */}
+          <div className="space-y-1">
+            {ageOptions.map((option, index) => (
+              <motion.button
+                key={option.value}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
+                onClick={() => updateIntakeForm("ageRange", option.value)}
+                className={clsx(
+                  "w-full py-4 text-left transition-all duration-300 border-b border-white/15 group",
+                  intakeForm.ageRange === option.value
+                    ? "text-white"
+                    : "text-white/60 hover:text-white/80"
+                )}
+              >
+                <span className="flex items-center justify-between">
+                  <span className="text-xl font-light tracking-wide">{option.label}</span>
+                  {intakeForm.ageRange === option.value && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="w-2 h-2 rounded-full bg-white"
+                    />
+                  )}
+                </span>
+              </motion.button>
+            ))}
+          </div>
         </div>
       ),
     },
