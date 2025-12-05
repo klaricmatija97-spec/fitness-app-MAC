@@ -2275,6 +2275,20 @@
       "carbs": 27.9,
       "fat": 10,
       "fiber": 2.5
+    },
+    "snack_healthy_brownie": {
+      "calories": 173,
+      "protein": 10.4,
+      "carbs": 20.6,
+      "fat": 6.3,
+      "fiber": 1.8
+    },
+    "snack_healthy_cheesecake": {
+      "calories": 184,
+      "protein": 15.0,
+      "carbs": 17.4,
+      "fat": 6.8,
+      "fiber": 1.5
     }
   }
 }

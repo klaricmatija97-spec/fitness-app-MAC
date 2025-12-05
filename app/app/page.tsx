@@ -71,9 +71,6 @@ const slideOrder: SlideId[] = [
   "activities",
   "goals",
   "training-frequency",
-  "training-duration",
-  "training-location",
-  "equipment",
   "experience",
   "meal-frequency",
   "allergies",
@@ -756,8 +753,6 @@ function AppDashboardContent() {
       activities: intakeForm.activities.length > 0 || intakeForm.otherActivities.trim().length > 2,
       goals: intakeForm.goals.length > 0 || intakeForm.otherGoals.trim().length > 2,
       "training-frequency": Boolean(intakeForm.trainingFrequency),
-      "training-duration": Boolean(intakeForm.trainingDuration),
-      "training-location": Boolean(intakeForm.trainingLocation),
       equipment: true, // Opcionalno
       experience: Boolean(intakeForm.experience),
       "meal-frequency": Boolean(intakeForm.mealFrequency),
@@ -1231,7 +1226,7 @@ function AppDashboardContent() {
         <div 
           className={clsx(
           "relative",
-            currentId === "intro" || currentId === "login" || currentId === "edu_wizard" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) || ["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros", "contact"].includes(currentId) ? "fixed inset-0 z-30 h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 pb-20 overflow-y-auto min-h-0" : "flex-1 pb-20 overflow-y-auto min-h-0"
+            currentId === "intro" || currentId === "login" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) || ["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros", "contact"].includes(currentId) ? "fixed inset-0 z-30 h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 pb-20 overflow-y-auto min-h-0" : "flex-1 pb-20 overflow-y-auto min-h-0"
           )}
           style={{
             willChange: "transform",
@@ -1273,7 +1268,7 @@ function AppDashboardContent() {
                     "contain-paint"
                   )}
                 >
-                  {currentId === "intro" || currentId === "edu_wizard" || currentId === "honorific" ? (
+                  {currentId === "intro" || currentId === "honorific" ? (
                     // Intro, educational wizard, honorific - full screen
                     <div className="h-full w-full relative">
                       {slide.render}
@@ -1376,7 +1371,7 @@ function AppDashboardContent() {
           </AnimatePresence>
           
           {/* Slide Progress Dots - Tamno siva antracit boja */}
-          {currentId !== "intro" && currentId !== "edu_wizard" && (
+          {currentId !== "intro" && (
             <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-1.5 z-20">
               {slideOrder.map((_, idx) => (
                 <motion.div
@@ -1994,8 +1989,8 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
       render: (
         <HonorificSlide
           intakeForm={intakeForm}
-          updateIntakeForm={updateIntakeForm}
-          honorificOptions={honorificOptions}
+          updateIntakeForm={updateIntakeForm as any}
+          honorificOptions={honorificOptions as any}
         />
       ),
     },
@@ -2218,58 +2213,6 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
       ),
     },
     {
-      id: "training-duration",
-      title: "Koliko vremena prosječno imaš za jedan trening?",
-      description: "Koliko minuta možeš posvetiti jednom treningu?",
-      render: (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {trainingDurationOptions.map((option) => (
-            <OptionButton
-              key={option.value}
-              label={option.label}
-              active={intakeForm.trainingDuration === option.value}
-              onClick={() => updateIntakeForm("trainingDuration", option.value)}
-            />
-          ))}
-        </div>
-      ),
-    },
-    {
-      id: "training-location",
-      title: "Gdje najčešće treniraš?",
-      description: "Odaberi mjesto gdje obično treniraš. To će mi pomoći prilagoditi program.",
-      render: (
-        <div className="grid gap-3 sm:grid-cols-3">
-          {trainingLocationOptions.map((option) => (
-            <OptionButton
-              key={option.value}
-              label={option.label}
-              active={intakeForm.trainingLocation === option.value}
-              onClick={() => updateIntakeForm("trainingLocation", option.value)}
-            />
-          ))}
-        </div>
-      ),
-    },
-    {
-      id: "equipment",
-      title: "Koju opremu imaš na raspolaganju?",
-      description: "Možeš odabrati više opcija. Ovo će mi pomoći dizajnirati vježbe koje možeš raditi.",
-      render: (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {equipmentOptions.map((option) => (
-            <OptionButton
-              key={option.value}
-              label={option.label}
-              active={intakeForm.equipment.includes(option.value)}
-              onClick={() => toggleIntakeArrayValue("equipment", option.value)}
-              variant="ghost"
-            />
-          ))}
-        </div>
-      ),
-    },
-    {
       id: "experience",
       title: "Koliko iskustva imaš u treningu?",
       description: "Pomaže mi prilagoditi kompleksnost vježbi i program.",
@@ -2305,102 +2248,82 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
     },
     {
       id: "allergies",
-      title: "Alergije, preferencije i namirnice",
-      description: "Opiši sve što je važno za tvoj plan prehrane - alergije, što ne želiš jesti i što preferiraš.",
+      title: "",
+      description: "",
       render: (
-        <div className="space-y-5">
-          {/* Alergije */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-[#1A1A1A]">
-              🚨 Alergije i intolerancije <span className="text-red-500">*</span>
-            </label>
-          <textarea
-              placeholder="Npr. laktoza, gluten, orašasti plodovi, riba, jaja..."
-              className="w-full rounded-[20px] border border-[#E8E8E8] bg-white px-4 py-3 text-sm text-[#1A1A1A] placeholder:text-gray-400 focus:border-[#1A1A1A] focus:outline-none min-h-[100px]"
-            value={intakeForm.allergies}
-            onChange={(event) => updateIntakeForm("allergies", event.target.value)}
-          />
-            <p className="text-xs text-gray-500">
-              Namirnice na koje si alergičan/na ili imaš intoleranciju. Ovo je OBAVEZNO izbjegavati.
-            </p>
-          </div>
+        <div className="w-full max-w-lg mx-auto">
+          {/* Naslov */}
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-2xl md:text-3xl font-light text-white text-center mb-10"
+          >
+            Prilagodi prehranu
+          </motion.p>
 
-          {/* Ne želim jesti */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-[#1A1A1A]">
-              🚫 Ne želim jesti
-            </label>
-            <textarea
-              placeholder="Npr. piletina, tuna, tjestenina, mlijeko..."
-              className="w-full rounded-[20px] border border-[#E8E8E8] bg-white px-4 py-3 text-sm text-[#1A1A1A] placeholder:text-gray-400 focus:border-[#1A1A1A] focus:outline-none min-h-[100px]"
-              value={intakeForm.avoidIngredients}
-              onChange={(event) => updateIntakeForm("avoidIngredients", event.target.value)}
-            />
-            <p className="text-xs text-gray-500">
-              Namirnice koje ne voliš ili ne želiš u svom planu. Generator će ih izbjegavati.
-            </p>
-          </div>
-
-          {/* Preferiram */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-[#1A1A1A]">
-              ✅ Preferiram
-            </label>
-            <textarea
-              placeholder="Npr. junetina, losos, riža, zobene, avokado..."
-              className="w-full rounded-[20px] border border-[#E8E8E8] bg-white px-4 py-3 text-sm text-[#1A1A1A] placeholder:text-gray-400 focus:border-[#1A1A1A] focus:outline-none min-h-[100px]"
-              value={intakeForm.foodPreferences}
-              onChange={(event) => updateIntakeForm("foodPreferences", event.target.value)}
-            />
-            <p className="text-xs text-gray-500">
-              Namirnice koje voliš i želiš više u svom planu. Generator će ih prioritizirati.
-            </p>
-          </div>
-
-          <div className="rounded-lg bg-blue-50 p-3 border border-blue-200">
-            <p className="text-xs text-blue-800">
-              💡 <strong>Savjet:</strong> Možeš unijeti više namirnica odvojenih zarezom. Generator će automatski prepoznati i primijeniti tvoje preferencije.
-            </p>
-          </div>
-
-          {/* Gumb za spremanje */}
-          <div className="pt-2">
-            <button
-              onClick={savePreferences}
-              disabled={isSavingPreferences}
-              className={`w-full rounded-[20px] px-6 py-3 text-sm font-semibold transition-all duration-300 shadow-lg ${
-                preferencesSaved
-                  ? "bg-green-500 text-white"
-                  : isSavingPreferences
-                  ? "bg-gray-400 text-white cursor-not-allowed"
-                  : "bg-[#1A1A1A] text-white hover:bg-gray-800 active:scale-95"
-              }`}
+          <div className="space-y-8">
+            {/* Alergije */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
             >
-              {isSavingPreferences ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Spremanje...
-                </span>
-              ) : preferencesSaved ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Spremljeno!
-                </span>
-              ) : (
-                "💾 Pošalji"
-              )}
-            </button>
-            {preferencesSaved && (
-              <p className="text-xs text-green-600 text-center mt-2">
-                Tvoje preferencije su uspješno spremljene!
-              </p>
-            )}
+              <label className="block text-white/70 text-xs tracking-wider mb-3 uppercase">
+                Alergije i intolerancije
+              </label>
+              <textarea
+                placeholder="laktoza, gluten, orašasti plodovi..."
+                className="w-full bg-transparent border-b border-white/40 py-3 text-white text-base font-light focus:outline-none focus:border-white/80 transition-colors placeholder:text-white/40 resize-none min-h-[60px]"
+                value={intakeForm.allergies}
+                onChange={(event) => updateIntakeForm("allergies", event.target.value)}
+              />
+            </motion.div>
+
+            {/* Ne želim jesti */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+            >
+              <label className="block text-white/70 text-xs tracking-wider mb-3 uppercase">
+                Ne želim jesti
+              </label>
+              <textarea
+                placeholder="piletina, tuna, mlijeko..."
+                className="w-full bg-transparent border-b border-white/40 py-3 text-white text-base font-light focus:outline-none focus:border-white/80 transition-colors placeholder:text-white/40 resize-none min-h-[60px]"
+                value={intakeForm.avoidIngredients}
+                onChange={(event) => updateIntakeForm("avoidIngredients", event.target.value)}
+              />
+            </motion.div>
+
+            {/* Preferiram */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+            >
+              <label className="block text-white/70 text-xs tracking-wider mb-3 uppercase">
+                Preferiram
+              </label>
+              <textarea
+                placeholder="junetina, losos, riža, avokado..."
+                className="w-full bg-transparent border-b border-white/40 py-3 text-white text-base font-light focus:outline-none focus:border-white/80 transition-colors placeholder:text-white/40 resize-none min-h-[60px]"
+                value={intakeForm.foodPreferences}
+                onChange={(event) => updateIntakeForm("foodPreferences", event.target.value)}
+              />
+            </motion.div>
           </div>
+
+          {/* Hint */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="text-white/50 text-xs text-center mt-8"
+          >
+            Odvoji namirnice zarezom
+          </motion.p>
         </div>
       ),
     },

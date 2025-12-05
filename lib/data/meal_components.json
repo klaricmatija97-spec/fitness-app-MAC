@@ -82,7 +82,7 @@
     },
     {
       "id": "breakfast_lose_3",
-      "name": "Kajgana s bjelanjcima i cottage sirom",
+      "name": "Kajgana s bjelanjcima i zrnatim sirom",
       "description": "Proteinska bomba za definiciju! Jaje i bjelanjci pružaju aminokiseline, posni zrnati sir dodaje kazein za dugotrajnu sitost. Idealno za očuvanje mišića tijekom mršavljenja.",
       "image": "https://images.unsplash.com/photo-1464454709131-ffd692591ee5?w=400&h=300&fit=crop",
       "preparationTip": "Isprži jaja sa sprej uljem. Koristi posni zrnati sir do 5% mm. Bananu nasjeckaj uz obrok.",
@@ -1470,10 +1470,10 @@
     },
     {
       "id": "lunch_lose_8",
-      "name": "Piletina s cottage sirom i kuhanim povrćem",
-      "description": "Dvostruki protein iz piletine i posnog cottage sira. Ovaj obrok pruža preko 60g proteina uz minimalne masti - savršeno za održavanje mišića u deficitu.",
+      "name": "Piletina sa zrnatim sirom i kuhanim povrćem",
+      "description": "Dvostruki protein iz piletine i posnog zrnatog sira. Ovaj obrok pruža preko 60g proteina uz minimalne masti - savršeno za održavanje mišića u deficitu.",
       "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
-      "preparationTip": "Piletinu pripremi u air fryeru. Cottage sir posluži sa strane. Povrće kuhaj na pari.",
+      "preparationTip": "Piletinu pripremi u air fryeru. Zrnati sir posluži sa strane. Povrće kuhaj na pari.",
       "components": [
         {
           "food": "Chicken breast",
@@ -1483,7 +1483,7 @@
         {
           "food": "Cottage cheese",
           "grams": 150,
-          "displayName": "Posni cottage sir"
+          "displayName": "Posni zrnati sir"
         },
         {
           "food": "Broccoli",
@@ -2476,10 +2476,10 @@
     },
     {
       "id": "lunch_gain_12",
-      "name": "Pečeni batat s cottage sirom i voćem",
-      "description": "Slatki krumpir s cottage sirom, voćem i medom. Raznolik UH obrok.",
+      "name": "Pečeni batat sa zrnatim sirom i voćem",
+      "description": "Slatki krumpir sa zrnatim sirom, voćem i medom. Raznolik UH obrok.",
       "image": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400&h=300&fit=crop",
-      "preparationTip": "Batat izreži i peci 35-40 min na 200°C. Posluži s cottage sirom i voćem.",
+      "preparationTip": "Batat izreži i peci 35-40 min na 200°C. Posluži sa zrnatim sirom i voćem.",
       "components": [
         {
           "food": "Sweet potato",
@@ -2489,7 +2489,7 @@
         {
           "food": "Cottage cheese",
           "grams": 80,
-          "displayName": "Cottage sir"
+          "displayName": "Zrnati sir"
         },
         {
           "food": "Honey",
@@ -3523,10 +3523,10 @@
     },
     {
       "id": "dinner_lose_7",
-      "name": "Piletina s cottage sirom i špinatom",
-      "description": "Dvostruki protein za noćnu sintezu mišića. Kazein iz cottage sira pruža sporu apsorpciju proteina tijekom sna, a piletina kompletne aminokiseline.",
+      "name": "Piletina sa zrnatim sirom i špinatom",
+      "description": "Dvostruki protein za noćnu sintezu mišića. Kazein iz zrnatog sira pruža sporu apsorpciju proteina tijekom sna, a piletina kompletne aminokiseline.",
       "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
-      "preparationTip": "Piletinu pripremi u air fryeru. Cottage sir posluži hladan. Špinat blanširaj 1-2 min.",
+      "preparationTip": "Piletinu pripremi u air fryeru. Zrnati sir posluži hladan. Špinat blanširaj 1-2 min.",
       "components": [
         {
           "food": "Chicken breast",
@@ -3536,7 +3536,7 @@
         {
           "food": "Cottage cheese",
           "grams": 150,
-          "displayName": "Posni cottage sir"
+          "displayName": "Posni zrnati sir"
         },
         {
           "food": "Spinach",
@@ -4122,8 +4122,8 @@
     },
     {
       "id": "dinner_gain_6",
-      "name": "Pečeni krumpir s cottage sirom",
-      "description": "Jednostavna, ugljikohidratna večera. Puno pečenog krumpira s laganim cottage sirom za protein. Savršeno za punjenje glikogena.",
+      "name": "Pečeni krumpir sa zrnatim sirom",
+      "description": "Jednostavna, ugljikohidratna večera. Puno pečenog krumpira s laganim zrnatim sirom za protein. Savršeno za punjenje glikogena.",
       "image": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400&h=300&fit=crop",
       "preparationTip": "Krumpir izreži na kriške, poprskaj uljem i peci 30-35 min na 200°C.",
       "components": [
@@ -4135,7 +4135,7 @@
         {
           "food": "Cottage cheese",
           "grams": 100,
-          "displayName": "Cottage sir"
+          "displayName": "Zrnati sir"
         },
         {
           "food": "Olive oil",
@@ -5174,7 +5174,7 @@
       "name": "Pileća salama s krekerima i posnim sirom",
       "description": "Slana, proteinska užina bez puno kalorija. Pileća salama i posni sir pružaju proteine, a krekersi zadovoljavaju želju za hrskavim. Jogurt dodaje probiotike.",
       "image": "https://images.unsplash.com/photo-1628191139360-4083564d03fd?w=400&h=300&fit=crop",
-      "preparationTip": "Biraj pileću salamu s niskim udjelom masti. Posni sir može biti cottage cheese ili bilo koji do 10% mm.",
+      "preparationTip": "Biraj pileću salamu s niskim udjelom masti. Posni sir može biti zrnati sir ili bilo koji do 10% mm.",
       "components": [
         {
           "food": "Turkey breast",
@@ -5236,15 +5236,15 @@
     },
     {
       "id": "snack_lose_4",
-      "name": "Cottage sir s rajčicama",
-      "description": "Proteinska bomba s minimalnim kalorijama. Cottage sir pruža kazein za dugotrajnu sitost, a rajčice dodaju svježinu i likopen.",
+      "name": "Zrnati sir s rajčicama",
+      "description": "Proteinska bomba s minimalnim kalorijama. Zrnati sir pruža kazein za dugotrajnu sitost, a rajčice dodaju svježinu i likopen.",
       "image": "https://images.unsplash.com/photo-1464454709131-ffd692591ee5?w=400&h=300&fit=crop",
-      "preparationTip": "Koristi posni cottage sir. Rajčice nasjeckaj i pomiješaj sa sirom. Začini paprom.",
+      "preparationTip": "Koristi posni zrnati sir. Rajčice nasjeckaj i pomiješaj sa sirom. Začini paprom.",
       "components": [
         {
           "food": "Cottage cheese",
           "grams": 180,
-          "displayName": "Posni cottage sir"
+          "displayName": "Posni zrnati sir"
         },
         {
           "food": "Tomato",
@@ -5855,7 +5855,7 @@
     {
       "id": "snack_lose_9",
       "name": "Zrnati sir s paprikom",
-      "description": "Slana proteinska užina. Zrnati sir (cottage cheese) s hrskavom paprikom i vlascem. Puno proteina, malo kalorija.",
+      "description": "Slana proteinska užina. Zrnati sir s hrskavom paprikom i vlascem. Puno proteina, malo kalorija.",
       "image": "https://images.unsplash.com/photo-1628191139360-4083564d03fd?w=400&h=300&fit=crop",
       "preparationTip": "Papriku operi, nasjeckaj na kockice. Zrnati sir stavi u zdjelu, dodaj papriku. Pospi nasjeckanim vlascem, lagano posoli i popapri. Promiješaj.",
       "components": [
@@ -6029,6 +6029,102 @@
         "sweet"
       ],
       "suitableFor": [
+        "gain"
+      ]
+    },
+    {
+      "id": "snack_healthy_brownie",
+      "name": "Zdravi proteinski brownie",
+      "description": "Sportski alternativni slatkiš bez brašna i šećera! Banane daju prirodnu slatkoću, jaja i grčki jogurt osiguravaju proteine, a kakao onaj pravi čokoladni okus. Savršen za post-trening ili zdravu poslasticu.",
+      "image": "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400&h=300&fit=crop",
+      "preparationTip": "Zgnječi 4 banane u zdjeli. Dodaj 5 jaja i dobro umuti. Umiješaj 2 šalice grčkog jogurta, pola žlice kakao praha i 2 žlice meda. Sve dobro promiješaj. Izlij u kalup obložen papirom za pečenje. Peci na 250°C oko 20 minuta. Ostavi da se ohladi prije rezanja.",
+      "components": [
+        {
+          "food": "Banana",
+          "grams": 480,
+          "displayName": "Banane (4 kom)"
+        },
+        {
+          "food": "Whole egg",
+          "grams": 250,
+          "displayName": "Jaja (5 kom)"
+        },
+        {
+          "food": "Greek yogurt",
+          "grams": 460,
+          "displayName": "Grčki jogurt (2 šalice)"
+        },
+        {
+          "food": "Cocoa powder",
+          "grams": 5,
+          "displayName": "Kakao prah"
+        },
+        {
+          "food": "Honey",
+          "grams": 40,
+          "displayName": "Med (2 žlice)"
+        }
+      ],
+      "tags": [
+        "healthy-dessert",
+        "high-protein",
+        "no-flour",
+        "no-sugar",
+        "sweet"
+      ],
+      "suitableFor": [
+        "lose",
+        "maintain",
+        "gain"
+      ]
+    },
+    {
+      "id": "snack_healthy_cheesecake",
+      "name": "Zdravi proteinski cheesecake",
+      "description": "Kremasti cheesecake bez šećera i klasičnog brašna! Grčki jogurt i whey protein daju kremoznost i proteine, banane prirodnu slatkoću, a svježe borovnice osvježavajući završetak. Fitness verzija omiljenog deserta!",
+      "image": "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=400&h=300&fit=crop",
+      "preparationTip": "Zgnječi 3 banane. Dodaj 3 jaja i dobro umuti. Umiješaj 3 šalice grčkog jogurta, 1 mjericu whey proteina od vanilije, prašak za pecivo i 2 žlice zobenog brašna. Sve promiješaj do glatke smjese. Izlij u kalup obložen papirom za pečenje. Na vrh pospi svježe borovnice ili višnje. Peci na 250°C oko 20 minuta. Ostavi da se ohladi prije rezanja.",
+      "components": [
+        {
+          "food": "Banana",
+          "grams": 360,
+          "displayName": "Banane (3 kom)"
+        },
+        {
+          "food": "Whole egg",
+          "grams": 150,
+          "displayName": "Jaja (3 kom)"
+        },
+        {
+          "food": "Greek yogurt",
+          "grams": 690,
+          "displayName": "Grčki jogurt (3 šalice)"
+        },
+        {
+          "food": "Whey protein",
+          "grams": 30,
+          "displayName": "Whey protein vanilija (1 mjerica)"
+        },
+        {
+          "food": "Oats",
+          "grams": 20,
+          "displayName": "Zobeno brašno (2 žlice)"
+        },
+        {
+          "food": "Blueberries",
+          "grams": 100,
+          "displayName": "Svježe borovnice"
+        }
+      ],
+      "tags": [
+        "healthy-dessert",
+        "high-protein",
+        "no-sugar",
+        "sweet"
+      ],
+      "suitableFor": [
+        "lose",
+        "maintain",
         "gain"
       ]
     }

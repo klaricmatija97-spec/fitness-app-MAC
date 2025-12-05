@@ -2127,7 +2127,7 @@
     },
     {
       "id": "snack_lose_4",
-      "name": "Cottage sir s rajčicama",
+      "name": "Zrnati sir s rajčicama",
       "nutrition": {
         "calories": 194,
         "protein": 20.9,
@@ -2492,6 +2492,52 @@
         "magnesium": 165
       },
       "source": "edamam"
+    },
+    {
+      "id": "snack_healthy_brownie",
+      "name": "Zdravi proteinski brownie",
+      "nutrition": {
+        "calories": 173,
+        "protein": 10.4,
+        "carbs": 20.6,
+        "fat": 6.3,
+        "fiber": 1.8,
+        "sugar": 15.2,
+        "sodium": 85,
+        "saturatedFat": 2.1,
+        "vitaminA": 120,
+        "vitaminC": 5,
+        "vitaminD": 1.2,
+        "vitaminB12": 0.8,
+        "calcium": 95,
+        "iron": 1.2,
+        "potassium": 380,
+        "magnesium": 28
+      },
+      "source": "calculated"
+    },
+    {
+      "id": "snack_healthy_cheesecake",
+      "name": "Zdravi proteinski cheesecake",
+      "nutrition": {
+        "calories": 184,
+        "protein": 15.0,
+        "carbs": 17.4,
+        "fat": 6.8,
+        "fiber": 1.5,
+        "sugar": 12.8,
+        "sodium": 95,
+        "saturatedFat": 2.8,
+        "vitaminA": 140,
+        "vitaminC": 8,
+        "vitaminD": 1.5,
+        "vitaminB12": 1.0,
+        "calcium": 120,
+        "iron": 1.0,
+        "potassium": 350,
+        "magnesium": 32
+      },
+      "source": "calculated"
     }
   ]
 }

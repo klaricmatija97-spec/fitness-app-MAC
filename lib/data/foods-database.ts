@@ -150,7 +150,7 @@ export const NAMIRNICE: Namirnica[] = [
   },
   {
     id: 'cottage_cheese',
-    name: 'Svježi sir (cottage)',
+    name: 'Zrnati sir',
     nameEn: 'Cottage cheese',
     // USDA FDC 328841: Cheese, cottage, lowfat, 2% milkfat
     proteinPer100g: 11.0,
