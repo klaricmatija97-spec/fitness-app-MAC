@@ -14,100 +14,8 @@ topLeftImage: string;
 bottomRightImage: string;
 }
 
-// Array sa svim koracima edukativnog wizarda
-const educationalSteps: EducationalStep[] = [
-{
-slideId: "edu_nutrition_intro",
-title: "Prehrana koja nam pomaže da dostignemo svoje fitness rezultate",
-subtitle: "Mali pomaci u navikama, veliki pomaci u energiji.",
-body: "Ne moraš na dijeti da bi napredovao. Fokus je na hrani koja ti daje energiju bez stresa i brojanja kalorija.",
-points: [
-"Održav napredak, ne kratke dijete.",
-"Biraj hranu koja ti daje energiju.",
-"Male navike stvaraju velike rezultate."
-],
-topLeftImage: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1920&q=80&auto=format&fit=crop",
-bottomRightImage: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=1920&q=80&auto=format&fit=crop",
-},
-{
-slideId: "edu_kitchen",
-title: "Počni od kuhinje, ne od dijete",
-subtitle: "Ono što ti je pri ruci, to jedeš.",
-body: "Najveći padovi dolaze od logistike, ne od 'slabe volje'.",
-points: [
-"Drži zdrave opcije vidljivim.",
-"Sakrij/izbaci sabotere.",
-"Imaš barem 1 backup obrok."
-],
-topLeftImage: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=1920&q=80&auto=format&fit=crop",
-bottomRightImage: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1920&q=80&auto=format&fit=crop",
-},
-{
-slideId: "edu_simple_meals",
-title: "Obrok za dane kad nema vremena",
-subtitle: "Plan B koji spašava dan.",
-body: "Umjesto preskakanja obroka, imaj 1–2 brze opcije.",
-points: [
-"Protein + povrće + ugljikohidrat.",
-"Jednostavne namirnice uvijek pri ruci.",
-"Ako naručuješ, biraj jednostavnije."
-],
-topLeftImage: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1920&q=80&auto=format&fit=crop",
-bottomRightImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1920&q=80&auto=format&fit=crop",
-},
-{
-slideId: "edu_sweets",
-title: "Slatko može — ali pametnije",
-subtitle: "Bez zabrana i bez prejedanja.",
-body: "Cilj je kontrola, ne zabrana.",
-points: [
-"Jednom dnevno, nakon obroka.",
-"Male porcije.",
-"Planiraj unaprijed."
-],
-topLeftImage: "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=1920&q=80&auto=format&fit=crop",
-bottomRightImage: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1920&q=80&auto=format&fit=crop",
-},
-{
-slideId: "edu_hydration",
-title: "Najjeftiniji suplement — voda",
-subtitle: "Manjak vode = manjak energije.",
-body: "Već mala dehidracija utiče na fokus i trening.",
-points: [
-"2–3 litre dnevno (ovisno o aktivnosti).",
-"Pij prije nego što osjetiš žed.",
-"Voda prije kave."
-],
-topLeftImage: "https://images.unsplash.com/photo-1548839140-5a71977ae41f?w=1920&q=80&auto=format&fit=crop",
-bottomRightImage: "https://images.unsplash.com/photo-1523362628745-0c100150b504?w=1920&q=80&auto=format&fit=crop",
-},
-{
-slideId: "edu_habits",
-title: "Sedmica je bitna, ne jedan dan",
-subtitle: "1 loš obrok ne kvari ništa.",
-body: "Fokusiraj se na prosjek, ne na savršenstvo.",
-points: [
-"80% vremena = dobar izbor.",
-"20% vremena = uživanje bez grižnje savjesti.",
-"Konzistentnost > savršenstvo."
-],
-topLeftImage: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=1920&q=80&auto=format&fit=crop",
-bottomRightImage: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1920&q=80&auto=format&fit=crop",
-},
-{
-slideId: "edu_outro",
-title: "Idemo prilagoditi plan tebi",
-subtitle: "Kratka pitanja — personaliziran plan",
-body: "Sad kad znaš osnove, prelazimo na tvoje navike.",
-points: [
-"Odgovori na pitanja iskreno.",
-"Plan će biti prilagođen tvojim ciljevima.",
-"Krenimo zajedno!"
-],
-topLeftImage: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1920&q=80&auto=format&fit=crop",
-bottomRightImage: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=1920&q=80&auto=format&fit=crop",
-},
-];
+// Array sa svim koracima edukativnog wizarda - PRAZNO (svi slajdovi izbrisani)
+const educationalSteps: EducationalStep[] = [];
 
 interface EducationalWizardProps {
 onComplete?: () => void;
@@ -119,6 +27,18 @@ export default function EducationalWizard({ onComplete, onNext, onBack }: Educat
 const [currentStep, setCurrentStep] = useState(0);
 const [imagesLoaded, setImagesLoaded] = useState({ topLeft: false, bottomRight: false });
 const [isAnimating, setIsAnimating] = useState(false);
+
+// Ako nema slajdova, odmah završi wizard
+useEffect(() => {
+if (educationalSteps.length === 0) {
+onComplete?.();
+}
+}, [onComplete]);
+
+// Ako nema slajdova, ne renderaj ništa
+if (educationalSteps.length === 0) {
+return null;
+}
 
 const step = educationalSteps[currentStep];
 const isFirstStep = currentStep === 0;

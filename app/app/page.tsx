@@ -21,6 +21,7 @@ import EducationalWizard from "./components/EducationalWizard";
 import MealPlanWelcomeScreen from "./components/MealPlanWelcomeScreen";
 import CalculatorScreen, { CalcCard, CalcInput, CalcSelect, CalcButton, CalcResult, CalcInfoCard } from "./components/CalculatorScreen";
 import CalcFAQRotation from "./components/CalcFAQRotation";
+import HonorificSlide from "./components/HonorificSlide";
 
 // ============================================
 // DEBUG TEST FLAG (samo za development)
@@ -63,7 +64,6 @@ import { runTestScenarios } from "@/lib/services/debugTestScenarios";
 const slideOrder: SlideId[] = [
   "login",
   "intro",
-  "edu_wizard",
   "honorific",
   "age",
   "weight",
@@ -951,29 +951,43 @@ function AppDashboardContent() {
     }
   };
 
-  // Premium Combined/Composite Slide Variants - GPU Optimized
-  // Koristi transform3d za hardware acceleration i kombinirane efekte
+  // SCROLL MIŠEM - navigacija kroz slajdove
+  const lastWheelTime = useRef<number>(0);
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      const now = Date.now();
+      // Cooldown 600ms između scrollova
+      if (now - lastWheelTime.current < 600) return;
+      
+      if (Math.abs(e.deltaY) > 30) {
+        lastWheelTime.current = now;
+        if (e.deltaY > 0) {
+          // Scroll dolje = sljedeći slajd
+          nextSlide();
+        } else {
+          // Scroll gore = prethodni slajd
+          prevSlide();
+        }
+      }
+    };
+    
+    window.addEventListener('wheel', handleWheel, { passive: true });
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, [currentSlide]);
+
+  // SEAMLESS Slide Variants - bez crnih praznina
   const slideVariants = {
     enter: (direction: number) => ({
-      x: direction > 0 ? "100%" : "-100%",
-      opacity: 0,
-      scale: 0.96,
-      rotateY: direction > 0 ? 5 : -5, // Subtle 3D rotation
-      filter: "blur(8px) brightness(0.8)",
+      y: direction > 0 ? "100%" : "-100%",
+      opacity: 1,
     }),
     center: {
-      x: 0,
+      y: 0,
       opacity: 1,
-      scale: 1,
-      rotateY: 0,
-      filter: "blur(0px) brightness(1)",
     },
     exit: (direction: number) => ({
-      x: direction < 0 ? "100%" : "-100%",
-      opacity: 0,
-      scale: 1.04,
-      rotateY: direction < 0 ? -5 : 5,
-      filter: "blur(8px) brightness(0.8)",
+      y: direction < 0 ? "100%" : "-100%",
+      opacity: 1,
     }),
   };
 
@@ -1192,99 +1206,7 @@ function AppDashboardContent() {
         "flex flex-col min-h-0",
         currentId === "intro" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) || ["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros", "contact"].includes(currentId) ? "h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 overflow-y-auto" : "flex-1 overflow-y-auto"
       )}>
-        {/* Header/Sidebar - Hidden on intro, login, educational slides, meals welcome screen, and calculator slides */}
-        {currentId !== "intro" && currentId !== "login" && currentId !== "edu_wizard" && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && !["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros", "contact"].includes(currentId) && (
-        <div className="flex-shrink-0 px-6 py-5 border-b border-gray-800 bg-[#0D0F10] relative">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            {/* Lijevo - Hamburger menu */}
-            <div className="flex items-center">
-                      <button
-                        onClick={() => setShowSlideMenu(!showSlideMenu)}
-                className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-800 transition"
-                aria-label="Menu"
-                      >
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-                      </button>
-                      
-                      <AnimatePresence>
-                      {showSlideMenu && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                            transition={{ duration: 0.2, ease: [0.22, 0.61, 0.36, 1] }}
-                            className="absolute top-20 left-8 w-64 rounded-lg bg-[#1A1A1A] border border-gray-800 shadow-lg z-50 p-4 slide-menu-container"
-                          >
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                              Navigacija
-                            </p>
-                            {slides.map((slide, idx) => {
-                              const isActive = slide.id === currentId;
-                              return (
-                                <motion.button
-                                  key={slide.id}
-                                  initial={{ opacity: 0, x: -10 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={{ delay: idx * 0.03, duration: 0.2 }}
-                                  onClick={() => {
-                                    setCurrentSlide(idx);
-                                    setShowSlideMenu(false);
-                                  }}
-                                  className={clsx(
-                          "w-full text-left px-4 py-2 rounded-md text-sm transition mb-1",
-                                    isActive
-                            ? "bg-[#4B0082] text-white font-semibold"
-                            : "text-gray-300 hover:bg-gray-800"
-                                  )}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs opacity-60">
-                                      {String(idx + 1).padStart(2, "0")}
-                                    </span>
-                                    <span>{slide.title}</span>
-                                  </div>
-                                </motion.button>
-                              );
-                            })}
-                          </motion.div>
-                      )}
-                      </AnimatePresence>
-                    </div>
-
-            {/* Sredina - Logo/Naziv aplikacije */}
-            <div className="absolute left-1/2 transform -translate-x-1/2">
-              <h1 className="text-3xl font-bold text-white" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
-                CORP<span className="text-purple-400">EX</span>
-              </h1>
-              </div>
-
-            {/* Desno - Inicijali korisnika (Portfolio) */}
-            <div className="flex items-center">
-              {userInitials ? (
-                <button
-                  onClick={() => {
-                    const clientId = localStorage.getItem("clientId");
-                    if (clientId) {
-                      loadPortfolioData(clientId);
-                    }
-                    setShowPortfolio(true);
-                  }}
-                  className="w-12 h-12 rounded-full bg-[#4B0082] text-white font-bold text-lg flex items-center justify-center hover:bg-[#5A1A92] transition-all duration-200 hover:scale-110 shadow-lg"
-                  aria-label="Portfolio"
-                >
-                  {userInitials}
-                </button>
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center">
-                  <span className="text-gray-500 text-sm">U</span>
-            </div>
-              )}
-          </div>
-          </div>
-        </div>
-        )}
+        {/* Header uklonjen - clean full screen design */}
 
         {/* Slide Content - 100vh minus header/footer - Performance Optimized */}
         <div 
@@ -1298,7 +1220,7 @@ function AppDashboardContent() {
             contain: "layout paint",
           }}
         >
-          <AnimatePresence mode="wait" custom={direction} initial={false}>
+          <AnimatePresence mode="sync" custom={direction} initial={false}>
             {slides
               .filter((slide) => slide.id === currentId)
               .map((slide) => (
@@ -1310,28 +1232,10 @@ function AppDashboardContent() {
                   animate="center"
                   exit="exit"
                   transition={{
-                    x: { 
-                      type: "spring", 
-                      stiffness: 400, 
-                      damping: 35, 
-                      mass: 0.8,
-                      duration: currentId === "edu_wizard" ? 0.65 : 0.55 
-                    },
-                    opacity: { 
-                      duration: currentId === "edu_wizard" ? 0.5 : 0.4,
-                      ease: [0.22, 0.61, 0.36, 1]
-                    },
-                    scale: { 
-                      duration: currentId === "edu_wizard" ? 0.5 : 0.4,
-                      ease: [0.22, 0.61, 0.36, 1]
-                    },
-                    rotateY: {
-                      duration: currentId === "edu_wizard" ? 0.5 : 0.4,
-                      ease: [0.22, 0.61, 0.36, 1]
-                    },
-                    filter: { 
-                      duration: currentId === "edu_wizard" ? 0.45 : 0.35,
-                      ease: [0.22, 0.61, 0.36, 1]
+                    y: { 
+                      type: "tween",
+                      duration: 0.6,
+                      ease: [0.25, 0.1, 0.25, 1],
                     },
                   }}
                   style={{
@@ -1350,191 +1254,99 @@ function AppDashboardContent() {
                     "contain-paint"
                   )}
                 >
-                  {currentId === "intro" || currentId === "edu_wizard" ? (
-                    // Intro slide or educational wizard - full screen, no header
+                  {currentId === "intro" || currentId === "edu_wizard" || currentId === "honorific" ? (
+                    // Intro, educational wizard, honorific - full screen
                     <div className="h-full w-full relative">
                       {slide.render}
                   </div>
                   ) : (
-                    // Other slides - with header, rotating background images, and navigation arrows
-                    <div className={clsx(
-                      "flex-1 relative bg-[#0D0F10] flex h-full",
-                      currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "overflow-y-auto min-h-0" : "overflow-y-auto min-h-0"
-                    )}>
-                      {/* LIJEVO - Motivacijska slika */}
-                      <div className="relative w-[40%] overflow-hidden h-full bg-black">
-                        {/* Pozadinska slika */}
-                        <div 
-                          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                          style={{
-                            backgroundImage: "url(https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1920&q=80&auto=format&fit=crop)",
-                            filter: "brightness(0.6) contrast(1.1)",
-                          }}
-                        />
-                            {/* CORPEX Overlay - #000000 sa 35-40% opacity */}
-                          <div className="absolute inset-0 bg-[rgba(0,0,0,0.375)] z-[2]" />
+                    // Other slides - CALCULATOR STYLE: full screen pozadina + centrirani sadržaj
+                    <div className="relative h-full w-full bg-black overflow-hidden">
+                      {/* Pozadinska slika - SVJETLIJA */}
+                      <div 
+                        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
+                        style={{
+                          backgroundImage: "url(https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&q=80&auto=format&fit=crop)",
+                          filter: "brightness(0.4) saturate(0.9)",
+                        }}
+                      />
+                      
+                      {/* Gradient overlays - kao kalkulator */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/70" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40" />
 
-                        {/* Naziv aplikacije - PUNI KONTRАST */}
-                        <div className="absolute inset-0 flex items-center justify-center z-[10] px-6">
+                      {/* Sadržaj - centriran */}
+                      <div className={clsx(
+                        "relative z-10 h-full w-full flex flex-col items-center justify-center px-8 py-12",
+                        currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "overflow-y-auto" : ""
+                      )}>
+                        {/* Centrirani sadržaj - CALCULATOR STYLE */}
+                        <div className="w-full max-w-2xl text-center">
+                          {/* CORPEX logo mali */}
+                          <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.1 }}
+                            className="text-xs font-light tracking-[0.5em] text-white/40 uppercase mb-8"
+                          >
+                            Corpex
+                          </motion.p>
+                          
+                          {/* Broj slajda */}
+                          <motion.p
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                            className="text-sm font-light tracking-widest text-white/30 mb-4"
+                          >
+                            {String(slideOrder.indexOf(slide.id) + 1).padStart(2, "0")} / {slideOrder.length}
+                          </motion.p>
+                          
+                          {/* Naslov */}
                           <motion.h1
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 1, delay: 0.3 }}
-                            className="text-6xl font-bold text-white drop-shadow-2xl tracking-tight"
-                            style={{
-                              textShadow: "0 6px 30px rgba(0,0,0,0.9), 0 4px 15px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)",
-                              fontFamily: "var(--font-inter), sans-serif"
-                            }}
+                            transition={{ delay: 0.3, duration: 0.6 }}
+                            className="text-3xl md:text-4xl font-light text-white mb-4 tracking-wide"
+                            style={{ fontFamily: "var(--font-inter), sans-serif" }}
                           >
-                            CORP<span className="text-purple-400">EX</span>
+                            {slide.title}
                           </motion.h1>
+                          
+                          {/* Opis */}
+                          {slide.description && (
+                            <motion.p
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: 0.4 }}
+                              className="text-base text-white/50 mb-8 font-light max-w-xl mx-auto"
+                            >
+                              {slide.description}
+                            </motion.p>
+                          )}
+                          
+                          {/* Divider */}
+                          <motion.div
+                            initial={{ scaleX: 0 }}
+                            animate={{ scaleX: 1 }}
+                            transition={{ delay: 0.5, duration: 0.6 }}
+                            className="w-16 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent mx-auto mb-8"
+                          />
+
+                          {/* Sadržaj slajda */}
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.6 }}
+                            className={clsx(
+                              "text-left",
+                              (currentId === "meals" && (showMealPlan || weeklyMealPlan)) ? "overflow-y-auto max-h-[50vh]" : ""
+                            )}
+                          >
+                            {slide.render}
+                          </motion.div>
                         </div>
                       </div>
-
-                      {/* DESNO - Sadržaj sa porukama */}
-                      <div className={clsx(
-                        "flex-1 px-6 py-6 relative bg-[#0D0F10] flex flex-col",
-                        currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "overflow-y-auto min-h-0" : "overflow-y-auto min-h-0"
-                      )}>
-                      {/* Navigation Arrow - Left (Back) - Hidden on meals welcome screen and calculator slides */}
-                      {currentSlide > 0 && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && !["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros", "contact"].includes(currentId) && (
-                        <motion.div
-                          className="absolute left-8 top-1/2 -translate-y-1/2 z-[100] group"
-                          initial={{ opacity: 0.7, scale: 1, x: 0 }}
-                          animate={{ 
-                            opacity: showLeftArrow ? 1 : 0.7,
-                            scale: showLeftArrow ? 1.2 : 1,
-                            x: showLeftArrow ? 10 : 0
-                          }}
-                          whileHover={{ scale: 1.9, x: 25 }}
-                          transition={{ duration: 0.3, ease: "easeOut" }}
-                          onMouseEnter={() => setShowLeftArrow(true)}
-                          onMouseLeave={() => setShowLeftArrow(false)}
-                        >
-              <button
-                onClick={() => {
-                              console.log("Natrag clicked, currentSlide:", currentSlide);
-                              prevSlide();
-                            }}
-                            className="w-18 h-18 rounded-full bg-[#1A1A1A]/90 backdrop-blur-md border-2 border-[#1A1A1A] flex items-center justify-center cursor-pointer transition-all duration-300 group-hover:bg-[#1A1A1A] group-hover:border-[#1A1A1A] group-hover:shadow-2xl"
-                            aria-label="Previous slide"
-                          >
-                            <motion.svg
-                              className="w-9 h-9 text-white"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              whileHover={{ x: -5 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={3}
-                                d="M15 19l-7-7 7-7"
-                              />
-                            </motion.svg>
-              </button>
-                        </motion.div>
-                      )}
-                      
-                      {/* Navigation Arrow - Right (Next) - Hidden on meals welcome screen and calculator slides */}
-                      {!isLastSlide && !(currentId === "meals" && !showMealPlan && !weeklyMealPlan) && !["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros", "contact"].includes(currentId) && (
-                        <motion.div
-                          className="absolute right-8 top-1/2 -translate-y-1/2 z-[100] group"
-                          initial={{ opacity: 0.7, scale: 1, x: 0 }}
-                          animate={{ 
-                            opacity: showRightArrow ? 1 : 0.7,
-                            scale: showRightArrow ? 1.2 : 1,
-                            x: showRightArrow ? -10 : 0
-                          }}
-                          whileHover={{ scale: 1.9, x: -25 }}
-                          transition={{ duration: 0.3, ease: "easeOut" }}
-                          onMouseEnter={() => setShowRightArrow(true)}
-                          onMouseLeave={() => setShowRightArrow(false)}
-                        >
-              <button
-                            onClick={async () => {
-                              console.log("Dalje clicked, currentId:", currentId, "currentSlide:", currentSlide);
-                              console.log("intakeValidationMap:", intakeValidationMap);
-                              
-                              // Ako je contact slide, omogući napredovanje samo ako su podaci spremljeni
-                              if (currentId === "contact") {
-                                if (!finalDataSubmitted) {
-                                  return; // Ne dozvoli napredovanje dok se podaci ne spreme
-                                }
-                                // Ako su podaci spremljeni, dozvoli navigaciju
-                              }
-                              
-                              // Provjeri validaciju samo za intake slideove (osim intro koji je uvijek validan)
-                              const intakeSlideIds = [
-                                "honorific", "age", "weight", "height", "activities", "goals",
-                                "training-frequency", "training-duration", "training-location", 
-                                "equipment", "experience", "meal-frequency", "allergies", 
-                                "diet-type", "sleep", "injuries", "biggest-challenge", "nutrition"
-                              ];
-                              
-                              if (intakeSlideIds.includes(currentId)) {
-                                const isValid = intakeValidationMap[currentId];
-                                console.log("Validation check for", currentId, ":", isValid);
-                                if (!isValid) {
-                                  console.log("Validation failed, blocking navigation");
-                                  return; // Ne dozvoli napredovanje ako nije validno
-                                }
-                              }
-                              
-                              nextSlide();
-                            }}
-                            disabled={currentId === "contact" && !finalDataSubmitted}
-                            className="w-18 h-18 rounded-full bg-[#1A1A1A]/90 backdrop-blur-md border-2 border-[#1A1A1A] flex items-center justify-center cursor-pointer transition-all duration-300 group-hover:bg-[#1A1A1A] group-hover:border-[#1A1A1A] group-hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed"
-                            aria-label="Next slide"
-                          >
-                            <motion.svg
-                              className="w-9 h-9 text-white"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              whileHover={{ x: 5 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={3}
-                                d="M9 5l7 7-7 7"
-                              />
-                            </motion.svg>
-              </button>
-                        </motion.div>
-                      )}
-                      
-                        <div className="relative z-10 h-full max-w-4xl mx-auto flex flex-col">
-                        {/* Slide Header */}
-                        <div className="flex-shrink-0 mb-6">
-                          <p className="text-xs uppercase tracking-[0.4em] text-[#A9B1B8] mb-3" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
-                            {String(slideOrder.indexOf(slide.id) + 1).padStart(2, "0")}
-                          </p>
-                          <h1 className="text-[36px] font-bold text-[#F4F4F4] mb-4" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
-                            {slide.title}
-                          </h1>
-                          {slide.description && (
-                            <p className="text-base text-[#A9B1B8]" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
-                              {slide.description}
-                            </p>
-                          )}
-            </div>
-
-                          {/* Slide Content - Allow scrolling for meal plan slide and calculator slides */}
-                          <div className={clsx(
-                            "flex-1 flex flex-col",
-                            (currentId === "meals" && (showMealPlan || weeklyMealPlan)) || currentId === "bmr-calc" || currentId === "tdee-calc" || currentId === "target-calc" || currentId === "macros" || currentId === "calculators-intro"
-                              ? "overflow-y-auto min-h-0" 
-                              : "overflow-y-auto min-h-0"
-                          )}>
-                          {slide.render}
-                          </div>
-          </div>
-      </div>
                     </div>
                   )}
                 </motion.div>
@@ -1700,350 +1512,104 @@ const athleteQuotes = [
   { text: "No excuses, only results.", author: "Cristiano Ronaldo" },
 ];
 
-// Intro Slide Component - Split Screen
-function IntroSlideContent({ onNext, nextSlideIndex, userName = "", currentSlide = 1 }: { onNext: (slide: number) => void; nextSlideIndex: number; userName?: string; currentSlide?: number }) {
-  const [currentQuoteIndex, setCurrentQuoteIndex] = useState(-1); // -1 za pozdrav, 0+ za quotes
-  const [isPaused, setIsPaused] = useState(false);
-  const [showLeftArrow, setShowLeftArrow] = useState(false);
-  const [showRightArrow, setShowRightArrow] = useState(false);
-  const [loggedInUserName, setLoggedInUserName] = useState<string>("");
-  
-  // Učitaj username ulogiranog korisnika (korisničko ime, ne ime)
-  useEffect(() => {
-    // Prvo provjeri localStorage (brže)
-    const savedUsername = localStorage.getItem("username");
-    if (savedUsername) {
-      setLoggedInUserName(savedUsername);
-      return;
-    }
+// Intro Slide Component - FULL SCREEN SA ROTIRAJUĆIM PORUKAMA
+function IntroSlideContent({ onNext, nextSlideIndex }: { onNext: (slide: number) => void; nextSlideIndex: number; userName?: string; currentSlide?: number }) {
+  const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
 
-    // Ako nema u localStorage, učitaj iz API-ja
-    const clientId = localStorage.getItem("clientId");
-    if (clientId) {
-      fetch(`/api/client/${clientId}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.ok && data.username) {
-            // Spremi u localStorage za sljedeći put
-            localStorage.setItem("username", data.username);
-            setLoggedInUserName(data.username);
-          } else {
-            // Ako nema username, pokušaj direktno iz user_accounts
-            fetch(`/api/user-account-by-client/${clientId}`)
-              .then((res) => res.json())
-              .then((accountData) => {
-                if (accountData.ok && accountData.username) {
-                  localStorage.setItem("username", accountData.username);
-                  setLoggedInUserName(accountData.username);
-                }
-              })
-              .catch(() => {
-                // Ignoriraj grešku
-              });
-          }
-        })
-        .catch(() => {
-          // Ignoriraj grešku
-        });
-    }
+  // Rotiraj quotes svakih 5 sekundi
+  useEffect(() => {
+    setCurrentQuoteIndex(0);
+    
+    const quoteInterval = setInterval(() => {
+      setCurrentQuoteIndex((prev) => (prev + 1) % athleteQuotes.length);
+    }, 5000);
+
+    return () => {
+      clearInterval(quoteInterval);
+    };
   }, []);
-  
-  // Navigacija funkcije
+
   const handleNext = () => {
-    // Provjeri da li je idući slide honorific i da onboarding nije završen
     const onboardingCompleted = localStorage.getItem("educationalOnboardingCompleted");
     if (nextSlideIndex === slideOrder.indexOf("honorific") && onboardingCompleted !== "true") {
-      // Umjesto prijelaza na honorific, pokaži onboarding
       console.log("IntroSlideContent: Showing educational onboarding before honorific slide");
-      // Ne pozivaj onNext, nego pokaži onboarding preko parenta
-      // Parent će to riješiti kroz nextSlide funkciju
-      onNext(nextSlideIndex);
-      return;
     }
     onNext(nextSlideIndex);
   };
 
-  // Rotacija pozdrava i quotes (prvo pozdrav, zatim quotes)
-  useEffect(() => {
-    // Postavi početno stanje - prikaži pozdrav (isPaused = true znači vidljiv)
-    setIsPaused(true);
-    
-    let timeoutId: NodeJS.Timeout;
-    let intervalId: NodeJS.Timeout;
-    let quoteTimeoutId: NodeJS.Timeout;
-    
-    // Funkcija za promjenu quote-a
-    const changeQuote = (newIndex: number) => {
-      setIsPaused(false); // Zapocni animaciju izlaza
-      quoteTimeoutId = setTimeout(() => {
-        setCurrentQuoteIndex(newIndex);
-        setIsPaused(true); // Prikaži novi quote nakon animacije
-      }, 800); // Čekaj da se animacija izlaza završi
-    };
-    
-    // Nakon 3 sekunde prikaži prvi quote
-    timeoutId = setTimeout(() => {
-      changeQuote(0);
-      
-      // Zatim rotiraj quotes svakih 6 sekundi
-      intervalId = setInterval(() => {
-        setCurrentQuoteIndex((prev) => {
-          const nextIndex = (prev + 1) % athleteQuotes.length;
-          setIsPaused(false); // Zapocni animaciju izlaza
-          setTimeout(() => {
-            setCurrentQuoteIndex(nextIndex);
-            setIsPaused(true); // Prikaži novi quote nakon animacije
-          }, 800);
-          return prev; // Vratimo trenutni dok se animacija ne završi
-        });
-      }, 6000); // Ukupno 6 sekundi (3 sekunde prikaz + ~3 sekunde animacija)
-    }, 3000);
-
-    return () => {
-      clearInterval(intervalId);
-      clearTimeout(timeoutId);
-      clearTimeout(quoteTimeoutId);
-    };
-  }, []); // Samo jednom na mount
-
   return (
-    <div className="h-screen w-screen grid grid-cols-2 gap-0 relative">
-      {/* Navigation Arrow - Left side (nazad na login) */}
-      {currentSlide > 0 && (
-        <motion.div
-          className="absolute left-8 top-1/2 -translate-y-1/2 z-[100] group"
-          initial={{ opacity: 0.7, scale: 1, x: 0 }}
-          animate={{
-            opacity: showLeftArrow ? 1 : 0.7,
-            scale: showLeftArrow ? 1.2 : 1,
-            x: showLeftArrow ? 10 : 0,
-          }}
-          whileHover={{ scale: 1.9, x: 25 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          onMouseEnter={() => setShowLeftArrow(true)}
-          onMouseLeave={() => setShowLeftArrow(false)}
-        >
-          <button
-            onClick={() => {
-              // Idi natrag na login slide (slide 0)
-              onNext(0);
-            }}
-            className="w-18 h-18 rounded-full bg-[#1A1A1A]/90 backdrop-blur-md border-2 border-[#1A1A1A] flex items-center justify-center cursor-pointer transition-all duration-300 group-hover:bg-[#1A1A1A] group-hover:border-[#1A1A1A] group-hover:shadow-2xl"
-            aria-label="Back to login"
-          >
-            <motion.svg
-              className="w-9 h-9 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              whileHover={{ x: -5 }}
-              transition={{ duration: 0.2 }}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={3}
-                d="M15 19l-7-7 7-7"
-              />
-            </motion.svg>
-          </button>
-        </motion.div>
-      )}
-
-      {/* Navigation Arrow - Right side, elite hover effect - Always visible and prominent */}
-      <motion.div
-        className="absolute right-8 top-1/2 -translate-y-1/2 z-[100] group"
-        initial={{ opacity: 0.7, scale: 1, x: 0 }}
-        animate={{ 
-          opacity: showRightArrow ? 1 : 0.7,
-          scale: showRightArrow ? 1.2 : 1,
-          x: showRightArrow ? -10 : 0
+    <div className="absolute inset-0 bg-black">
+      {/* Pozadinska slika - F1 trening/motorsport fitness */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage: "url(https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=1920&h=1080&fit=crop&q=80)",
+          filter: "brightness(0.5) saturate(1.1)",
         }}
-        whileHover={{ scale: 1.9, x: -25 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        onMouseEnter={() => setShowRightArrow(true)}
-        onMouseLeave={() => setShowRightArrow(false)}
-      >
-        <button
-          onClick={handleNext}
-          className="w-18 h-18 rounded-full bg-[#1A1A1A]/90 backdrop-blur-md border-2 border-[#1A1A1A] flex items-center justify-center cursor-pointer transition-all duration-300 group-hover:bg-[#1A1A1A] group-hover:border-[#1A1A1A] group-hover:shadow-2xl"
-          aria-label="Next slide"
-        >
-          <motion.svg
-            className="w-9 h-9 text-white"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            whileHover={{ x: 5 }}
-            transition={{ duration: 0.2 }}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={3}
-              d="M9 5l7 7-7 7"
-            />
-          </motion.svg>
-        </button>
-      </motion.div>
+      />
 
-      {/* LIJEVO - Motivacijski video iz teretane + Naziv aplikacije */}
-      <div className="relative overflow-hidden bg-[#0D0F10] w-full h-full" style={{ minHeight: "100vh" }}>
-        {/* Video pozadina - Motivacijski edit iz teretane */}
-          <motion.div
-          className="absolute inset-0 z-0 w-full h-full"
-            initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          style={{ 
-            width: "100%", 
-            height: "100%",
-            minHeight: "100%"
-          }}
-        >
-          {/* Pozadinska slika */}
-          <div 
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage: "url(https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1920&q=80&auto=format&fit=crop)",
-              filter: "brightness(0.6) contrast(1.1)",
-            }}
-          />
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60" />
+
+      {/* Sadržaj - centriran */}
+      <div className="relative z-10 h-full w-full flex flex-col items-center justify-center px-8">
+        <div className="w-full max-w-2xl text-center">
           
-          {/* CORPEX Overlay - #000000 sa 35-40% opacity */}
-          <div className="absolute inset-0 bg-[rgba(0,0,0,0.375)] z-[2]" />
-          </motion.div>
-        
-        {/* Naziv aplikacije - PUNI KONTRАST */}
-        <div className="absolute inset-0 flex items-center justify-center z-10">
+          {/* Spreman za trening? - uvijek vidljivo */}
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.5, delay: 0.5 }}
-            className="text-8xl font-bold text-white drop-shadow-2xl tracking-tight"
-            style={{
-              textShadow: "0 6px 30px rgba(0,0,0,0.9), 0 4px 15px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)",
-            }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="text-4xl md:text-5xl font-light text-white mb-8 tracking-wide"
           >
-            CORP<span className="text-purple-400">EX</span>
+            Spreman za trening?
           </motion.h1>
-        </div>
-      </div>
 
-      {/* DESNO - Rotirajuća FAQ pitanja */}
-      <div className="relative flex items-center justify-center p-6 overflow-hidden bg-[#0D0F10]">
-        {/* Nike-style Textures and Overlays */}
-        {/* Film Grain Texture */}
-        <div 
-          className="absolute inset-0 z-[5] opacity-[0.15] pointer-events-none"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-            backgroundSize: '200px 200px',
-            mixBlendMode: 'multiply',
-          }}
-        />
-        
-        {/* Paper Texture Overlay */}
-        <div 
-          className="absolute inset-0 z-[6] opacity-[0.08] pointer-events-none"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='grain' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Ccircle cx='25' cy='25' r='1' fill='%23000' opacity='0.1'/%3E%3Ccircle cx='75' cy='75' r='1' fill='%23000' opacity='0.1'/%3E%3Ccircle cx='50' cy='10' r='0.5' fill='%23000' opacity='0.15'/%3E%3Ccircle cx='10' cy='50' r='0.5' fill='%23000' opacity='0.15'/%3E%3Ccircle cx='90' cy='30' r='0.5' fill='%23000' opacity='0.1'/%3E%3Ccircle cx='30' cy='90' r='0.5' fill='%23000' opacity='0.1'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23grain)'/%3E%3C/svg%3E")`,
-            backgroundSize: '100px 100px',
-            mixBlendMode: 'overlay',
-          }}
-        />
-        
-        {/* Vintage Vignette Effect */}
-        <div 
-          className="absolute inset-0 z-[7] pointer-events-none"
-          style={{
-            background: `radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.03) 40%, rgba(0,0,0,0.08) 100%)`,
-          }}
-        />
-        
-        {/* Subtle Scan Lines (like old film) */}
-        <div 
-          className="absolute inset-0 z-[8] opacity-[0.05] pointer-events-none"
-          style={{
-            backgroundImage: `repeating-linear-gradient(
-              0deg,
-              transparent,
-              transparent 2px,
-              rgba(0,0,0,0.03) 2px,
-              rgba(0,0,0,0.03) 4px
-            )`,
-            mixBlendMode: 'multiply',
-          }}
-        />
-        
-        {/* Subtle Noise Overlay */}
-        <div 
-          className="absolute inset-0 z-[9] opacity-[0.12] pointer-events-none"
-          style={{
-            background: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-            backgroundSize: '150px 150px',
-            mixBlendMode: 'multiply',
-          }}
-        />
-        
-        {/* Retro Photo Border Effect */}
-        <div 
-          className="absolute inset-0 z-[10] pointer-events-none"
-          style={{
-            border: '1px solid rgba(0,0,0,0.06)',
-            boxShadow: 'inset 0 0 80px rgba(0,0,0,0.02), inset 0 0 40px rgba(0,0,0,0.03)',
-          }}
-        />
-        
-        {/* Content wrapper - Čisti tekst bez oblačića */}
-        <div className="relative z-[15] w-full h-full flex items-center justify-center px-12">
-        <AnimatePresence mode="wait">
+          {/* Linija */}
           <motion.div
-            key={currentQuoteIndex === -1 ? "greeting" : `quote-${currentQuoteIndex}`}
-            initial={{
-              opacity: 0,
-              scale: 0.8,
-              rotateY: 90,
-              x: 100,
-            }}
-            animate={{
-              opacity: isPaused ? 1 : 0,
-              scale: isPaused ? 1 : 0.8,
-              rotateY: isPaused ? 0 : -90,
-              x: isPaused ? 0 : -100,
-            }}
-            exit={{
-              opacity: 0,
-              scale: 0.8,
-              rotateY: -90,
-              x: -100,
-            }}
-            transition={{
-              duration: 0.8,
-              ease: [0.4, 0, 0.2, 1],
-            }}
-            className="w-full max-w-3xl text-center"
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="w-16 h-[1px] bg-white/30 mx-auto mb-10"
+          />
+
+          {/* Rotirajući citati sportaša */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`quote-${currentQuoteIndex}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.6 }}
+              className="text-center"
+            >
+              <blockquote className="text-xl md:text-2xl font-light text-white/80 leading-relaxed mb-4 italic">
+                "{athleteQuotes[currentQuoteIndex >= 0 ? currentQuoteIndex : 0].text}"
+              </blockquote>
+              <p className="text-sm text-white/50 font-light tracking-wider">
+                — {athleteQuotes[currentQuoteIndex >= 0 ? currentQuoteIndex : 0].author}
+              </p>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Scroll hint */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 2, duration: 0.5 }}
+            className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
           >
-            {currentQuoteIndex === -1 ? (
-              // Pozdrav
-              <div>
-                <h2 className="text-[36px] font-bold text-[#F4F4F4] mb-4 leading-tight" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
-                  Dobar dan{loggedInUserName ? `, ${loggedInUserName}` : ""} 😊
-                </h2>
-              </div>
-            ) : (
-              // Quote sportaša
-              <div>
-                <blockquote className="text-[26px] font-semibold text-[#F4F4F4] leading-relaxed mb-6 italic" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
-                  "{athleteQuotes[currentQuoteIndex].text}"
-                </blockquote>
-                <p className="text-[14px] text-[#A9B1B8] font-light" style={{ fontFamily: "var(--font-inter), sans-serif" }}>
-                  — {athleteQuotes[currentQuoteIndex].author}
-                </p>
-              </div>
-            )}
+            <p className="text-xs text-white/50 tracking-wider">Scrollaj za nastavak</p>
+            <motion.div
+              animate={{ y: [0, 8, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              <svg className="w-5 h-5 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </motion.div>
           </motion.div>
-        </AnimatePresence>
+
         </div>
       </div>
     </div>
@@ -2407,45 +1973,16 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
         "Brzi upitnik koji će mi pomoći da sve prilagodim za tebe. Prođi kroz stranice, odaberi svoje odgovore, i personalizirat ću sve za tebe.",
       render: <IntroSlideContent onNext={setCurrentSlide} nextSlideIndex={2} userName={intakeForm.name || ""} currentSlide={slideOrder.indexOf("intro")} />,
     },
-    // EDUKATIVNI WIZARD - Prije prvog pitanja (honorific - "Kako da te oslovim?")
-    {
-      id: "edu_wizard",
-      title: "Program prehrane",
-      description: "Edukativni sadržaj",
-      render: (
-        <EducationalWizard
-          onComplete={() => {
-            // Nakon završetka wizarda, preusmjeri na sljedeći slide (honorific)
-            const honorificIndex = slideOrder.indexOf("honorific");
-            if (honorificIndex !== -1) {
-              setCurrentSlide(honorificIndex);
-            }
-          }}
-          onBack={() => {
-            // Vrati na prethodni slide (intro)
-            const introIndex = slideOrder.indexOf("intro");
-            if (introIndex !== -1) {
-              setCurrentSlide(introIndex);
-            }
-          }}
-        />
-      ),
-    },
     {
       id: "honorific",
-      title: "Kako da te oslovim?",
-      description: "Odaberi opciju koja ti najbolje odgovara ili odaberi Ostalo.",
+      title: "",
+      description: "",
       render: (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {honorificOptions.map((option) => (
-            <OptionButton
-              key={option.value}
-              label={option.label}
-              active={intakeForm.honorific === option.value}
-              onClick={() => updateIntakeForm("honorific", option.value)}
-            />
-          ))}
-        </div>
+        <HonorificSlide
+          intakeForm={intakeForm}
+          updateIntakeForm={updateIntakeForm}
+          honorificOptions={honorificOptions}
+        />
       ),
     },
     {

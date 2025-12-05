@@ -5,7 +5,6 @@ import { createContext, useContext, useState, ReactNode } from "react";
 export type SlideId = 
   | "login"
   | "intro"
-  | "edu_wizard"
   | "honorific"
   | "age"
   | "weight"

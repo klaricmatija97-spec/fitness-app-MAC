@@ -123,3 +123,4 @@ Nakon svih iteracija, provjerava se:
 
 
 
+

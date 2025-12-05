@@ -22,13 +22,6 @@ interface Slide {
 const slides: Slide[] = [
   {
     id: 1,
-    pattern: "A",
-    title: "Trening nije samo znoj — to je ulaganje u zdravlje.",
-    body: "Većina ljudi misli da moraju 'razvaljivati' svaki trening da bi vidjeli rezultat — ali napredak dolazi iz dosljednosti, a ne ekstremnosti. Trening postaje normalna rutina kao pranje zuba.",
-    subtitle: "Šta želiš prvo poboljšati: energiju, izgled, zdravlje ili disciplinu?",
-  },
-  {
-    id: 2,
     pattern: "B",
     title: "Nećeš se 'nabildati' preko noći.",
     body: "Mišići ne rastu brzo, posebno kod žena. Trening te ne čini 'prevelikom', nego snažnijom, zategnutijom i zdravijom. Dovoljno je 30–45 min pametnog rada.",
@@ -63,17 +56,6 @@ const slides: Slide[] = [
     title: "Poslije 28. godine tijelu treba pomoć da ostane snažno.",
     body: "Prirodni rast i metabolizam usporavaju. Bez treninga snage gubi se mišić, energija i funkcionalnost. Teretana čuva mladost, zdravlje i dugovječnost.",
     subtitle: "Najveća korist treninga nije izgled — nego funkcionalnost i život bez bolova.",
-  },
-  {
-    id: 6,
-    pattern: "B",
-    title: "Prehrana te ne sabotira — sabotira te način pripreme.",
-    body: "Najveća greška: izgladnjivanje tokom dana, pa prejedanje navečer. Prženje, ulja i dodaci često povećaju kalorije više nego sama hrana. Vaga ti pomaže da naučiš prave porcije.",
-    points: [
-      "Izbaci loše namirnice iz kuće",
-      "Whey + voće protiv želje za slatkim",
-      "Jednostavno i održivo pobjeđuje",
-    ],
   },
   {
     id: 7,
