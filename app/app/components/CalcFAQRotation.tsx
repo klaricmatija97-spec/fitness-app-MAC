@@ -96,7 +96,7 @@ export default function CalcFAQRotation() {
       filter: "blur(0px)",
       transition: {
         duration: 0.8,
-        ease: [0.22, 0.61, 0.36, 1]
+        ease: [0.22, 0.61, 0.36, 1] as [number, number, number, number]
       }
     },
     exit: {
@@ -121,7 +121,7 @@ export default function CalcFAQRotation() {
       y: 0,
       transition: {
         duration: 0.6,
-        ease: [0.22, 0.61, 0.36, 1]
+        ease: [0.22, 0.61, 0.36, 1] as [number, number, number, number]
       }
     },
     exit: {

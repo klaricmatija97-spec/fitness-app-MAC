@@ -1226,7 +1226,7 @@ function AppDashboardContent() {
         <div 
           className={clsx(
           "relative",
-            currentId === "intro" || currentId === "login" || currentId === "edu_wizard" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) || ["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros", "contact"].includes(currentId) ? "fixed inset-0 z-30 h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 pb-20 overflow-y-auto min-h-0" : "flex-1 pb-20 overflow-y-auto min-h-0"
+            currentId === "intro" || currentId === "login" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) || ["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros", "contact"].includes(currentId) ? "fixed inset-0 z-30 h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 pb-20 overflow-y-auto min-h-0" : "flex-1 pb-20 overflow-y-auto min-h-0"
           )}
           style={{
             willChange: "transform",
@@ -1268,8 +1268,8 @@ function AppDashboardContent() {
                     "contain-paint"
                   )}
                 >
-                  {currentId === "intro" || currentId === "edu_wizard" || currentId === "honorific" ? (
-                    // Intro, educational wizard, honorific - full screen
+                  {currentId === "intro" || currentId === "honorific" ? (
+                    // Intro, honorific - full screen
                     <div className="h-full w-full relative">
                       {slide.render}
                   </div>
@@ -1371,7 +1371,7 @@ function AppDashboardContent() {
           </AnimatePresence>
           
           {/* Slide Progress Dots - Tamno siva antracit boja */}
-          {currentId !== "intro" && currentId !== "edu_wizard" && (
+          {currentId !== "intro" && (
             <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-1.5 z-20">
               {slideOrder.map((_, idx) => (
                 <motion.div
@@ -1989,7 +1989,7 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
       render: (
         <HonorificSlide
           intakeForm={intakeForm}
-          updateIntakeForm={updateIntakeForm}
+          updateIntakeForm={(field, value) => updateIntakeForm(field as "honorific", value)}
           honorificOptions={honorificOptions}
         />
       ),

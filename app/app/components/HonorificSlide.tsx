@@ -14,8 +14,9 @@ interface HonorificOption {
 
 interface HonorificSlideProps {
   intakeForm: { honorific: string };
-  updateIntakeForm: (field: string, value: string) => void;
-  honorificOptions: HonorificOption[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  updateIntakeForm: (field: string, value: any) => void;
+  honorificOptions: readonly HonorificOption[];
 }
 
 // Rodni simboli za odabir
