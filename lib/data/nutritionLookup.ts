@@ -40,7 +40,7 @@ interface NutritionCache {
 // CACHE DATA
 // ============================================
 
-const cache = nutritionCache as unknown as NutritionCache;
+const cache = nutritionCache as NutritionCache;
 
 // ============================================
 // FUNCTIONS

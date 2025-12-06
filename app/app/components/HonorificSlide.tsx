@@ -14,7 +14,7 @@ interface HonorificOption {
 
 interface HonorificSlideProps {
   intakeForm: { honorific: string };
-  updateIntakeForm: <K extends string>(field: K, value: any) => void;
+  updateIntakeForm: (field: string, value: string) => void;
   honorificOptions: HonorificOption[];
 }
 
