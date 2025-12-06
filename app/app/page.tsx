@@ -262,8 +262,13 @@ function AppDashboardContent() {
   const [userInitials, setUserInitials] = useState<string>("");
   const [bgImageIndex, setBgImageIndex] = useState(0);
   
-  // Pozadinska slika - bez rotacije za performance
-  // (rotacija uklonjena radi boljeg performansa na mobilnim uređajima)
+  // Rotiraj pozadinske slike svakih 8 sekundi
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBgImageIndex((prev) => (prev + 1) % URBAN_SPORTS_IMAGES.length);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
   const [portfolioData, setPortfolioData] = useState<any>(null);
   
   // State za kalkulatore
@@ -1234,11 +1239,20 @@ function AppDashboardContent() {
     };
   }, [currentSlide]);
 
-  // NO ANIMATION - instant slide change for performance
+  // SIMPLE Slide Variants - no lag
   const slideVariants = {
-    enter: { opacity: 1 },
-    center: { opacity: 1 },
-    exit: { opacity: 1 },
+    enter: (direction: number) => ({
+      y: direction > 0 ? "50%" : "-50%",
+      opacity: 0,
+    }),
+    center: {
+      y: 0,
+      opacity: 1,
+    },
+    exit: (direction: number) => ({
+      y: direction < 0 ? "50%" : "-50%",
+      opacity: 0,
+    }),
   };
 
   const slides = useMemo(() => buildSlides({
@@ -1482,7 +1496,10 @@ function AppDashboardContent() {
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  transition={{ duration: 0 }}
+                  transition={{
+                    duration: 0.2,
+                    ease: "easeOut",
+                  }}
                   style={{
                     willChange: "transform, opacity, filter",
                     transformStyle: "preserve-3d",
@@ -1507,14 +1524,18 @@ function AppDashboardContent() {
                   ) : (
                     // Other slides - CALCULATOR STYLE: full screen pozadina + centrirani sadržaj
                     <div className="relative h-full w-full bg-black overflow-hidden">
-                      {/* Statična pozadinska slika - bez rotacije za performance */}
-                      <div 
-                        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                        style={{
-                          backgroundImage: `url(${URBAN_SPORTS_IMAGES[0]})`,
-                          filter: "brightness(0.3) saturate(0.7)",
-                        }}
-                      />
+                      {/* Rotirajuće pozadinske slike - olimpijska dizanja */}
+                      {URBAN_SPORTS_IMAGES.map((img, idx) => (
+                        <div 
+                          key={idx}
+                          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-[2500ms] ease-in-out"
+                          style={{
+                            backgroundImage: `url(${img})`,
+                            filter: "brightness(0.3) saturate(0.7)",
+                            opacity: idx === bgImageIndex ? 1 : 0,
+                          }}
+                        />
+                      ))}
                       
                       {/* Gradient overlays */}
                       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/60" />
@@ -1527,9 +1548,14 @@ function AppDashboardContent() {
                         {/* Centrirani sadržaj - CALCULATOR STYLE */}
                         <div className="w-full max-w-2xl text-center">
                           {/* CORPEX logo mali */}
-                          <p className="text-xs font-light tracking-[0.5em] text-white/40 uppercase mb-8">
+                          <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.1 }}
+                            className="text-xs font-light tracking-[0.5em] text-white/40 uppercase mb-8"
+                          >
                             Corpex
-                          </p>
+                          </motion.p>
                           
                           {/* Broj slajda */}
                           <p className="text-sm font-light tracking-widest text-white/30 mb-4">
