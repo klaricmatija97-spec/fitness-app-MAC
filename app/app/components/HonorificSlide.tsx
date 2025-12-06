@@ -73,6 +73,7 @@ export default function HonorificSlide({
             animate={{ opacity: step >= 2 ? 1 : 0, y: step >= 2 ? 0 : 20 }}
             transition={{ duration: 0.5 }}
             className="flex justify-center gap-12 md:gap-16"
+            data-no-swipe="true"
           >
             {genderSymbols.map((item, i) => (
               <motion.button

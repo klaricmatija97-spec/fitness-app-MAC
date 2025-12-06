@@ -31,7 +31,7 @@ export default function CalculatorScreen({
 }: CalculatorScreenProps) {
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center overflow-hidden bg-black">
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden bg-black" data-no-swipe="true">
       {/* Pozadinska slika - statična, bez rotacije za smooth prijelaze */}
       <div
         className="absolute inset-0 bg-cover bg-center"
@@ -183,6 +183,7 @@ export function CalcInput({ label, value, onChange, type = "text", placeholder, 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
       className="space-y-3"
+      data-no-swipe="true"
     >
       <label className="block text-sm font-light text-white/50 tracking-wider uppercase">{label}</label>
       <div className="relative">
@@ -217,6 +218,7 @@ export function CalcSelect({ label, value, onChange, options }: CalcSelectProps)
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
       className="space-y-3"
+      data-no-swipe="true"
     >
       <label className="block text-sm font-light text-white/50 tracking-wider uppercase">{label}</label>
       <select

@@ -1084,23 +1084,50 @@ function AppDashboardContent() {
   const touchStartTarget = useRef<EventTarget | null>(null);
   
   useEffect(() => {
-    // Provjeri da li je element interaktivan (gumb, input, link, itd.)
+    // Provjeri da li je element interaktivan (gumb, input, link, itd.) ili dio forme/kalkulatora
     const isInteractiveElement = (target: EventTarget | null): boolean => {
       if (!target || !(target instanceof HTMLElement)) return false;
+      
       const tagName = target.tagName.toLowerCase();
-      const interactiveTags = ['button', 'input', 'textarea', 'select', 'a', 'label'];
+      const interactiveTags = ['button', 'input', 'textarea', 'select', 'a', 'label', 'form'];
       if (interactiveTags.includes(tagName)) return true;
+      
       // Provjeri da li ima role button ili je klikabilan
       if (target.getAttribute('role') === 'button') return true;
-      if (target.onclick || target.getAttribute('onclick')) return true;
-      // Provjeri roditelje do 5 razina
+      if (target.getAttribute('role') === 'listbox') return true;
+      if (target.getAttribute('role') === 'option') return true;
+      
+      // Provjeri da li je označeno kao no-swipe zona
+      if (target.getAttribute('data-no-swipe') === 'true') return true;
+      if (target.classList.contains('no-swipe')) return true;
+      
+      // Provjeri klase koje sugeriraju interaktivnost
+      const className = target.className || '';
+      if (typeof className === 'string') {
+        const interactiveClasses = ['input', 'button', 'btn', 'select', 'calc', 'form', 'slider', 'range', 'checkbox', 'radio', 'dropdown'];
+        for (const cls of interactiveClasses) {
+          if (className.toLowerCase().includes(cls)) return true;
+        }
+      }
+      
+      // Provjeri roditelje do 10 razina (povećano za dublje ugnježđene forme)
       let parent = target.parentElement;
       let depth = 0;
-      while (parent && depth < 5) {
+      while (parent && depth < 10) {
         const parentTag = parent.tagName.toLowerCase();
         if (interactiveTags.includes(parentTag)) return true;
         if (parent.getAttribute('role') === 'button') return true;
-        if (parent.onclick || parent.getAttribute('onclick')) return true;
+        if (parent.getAttribute('data-no-swipe') === 'true') return true;
+        if (parent.classList.contains('no-swipe')) return true;
+        
+        // Provjeri klase roditelja
+        const parentClassName = parent.className || '';
+        if (typeof parentClassName === 'string') {
+          if (parentClassName.toLowerCase().includes('calculator')) return true;
+          if (parentClassName.toLowerCase().includes('form')) return true;
+          if (parentClassName.toLowerCase().includes('input')) return true;
+        }
+        
         parent = parent.parentElement;
         depth++;
       }
