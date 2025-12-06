@@ -1149,10 +1149,10 @@ function AppDashboardContent() {
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       const now = Date.now();
-      // Cooldown 600ms između scrollova
-      if (now - lastWheelTime.current < 600) return;
+      // Cooldown 250ms između scrollova - brza reakcija
+      if (now - lastWheelTime.current < 250) return;
       
-      if (Math.abs(e.deltaY) > 30) {
+      if (Math.abs(e.deltaY) > 20) {
         lastWheelTime.current = now;
         if (e.deltaY > 0) {
           // Scroll dolje = sljedeći slajd
@@ -1185,11 +1185,11 @@ function AppDashboardContent() {
     
     const handleTouchEnd = () => {
       const now = Date.now();
-      // Cooldown 300ms između swipeova
-      if (now - lastTouchTime.current < 300) return;
+      // Cooldown 200ms između swipeova - brza reakcija
+      if (now - lastTouchTime.current < 200) return;
       
       const swipeDistance = touchStartY.current - touchEndY.current;
-      const minSwipeDistance = 30; // SAMO 30px za swipe - vrlo osjetljivo
+      const minSwipeDistance = 25; // 25px za swipe - maksimalno osjetljivo
       
       if (Math.abs(swipeDistance) > minSwipeDistance) {
         lastTouchTime.current = now;
@@ -1214,20 +1214,17 @@ function AppDashboardContent() {
     };
   }, [currentSlide]);
 
-  // FAST Slide Variants - brzi prijelazi
+  // SMOOTH SCROLL FEEL - samo fade, bez pomicanja
   const slideVariants = {
-    enter: (direction: number) => ({
-      y: direction > 0 ? "30%" : "-30%",
-      opacity: 0.3,
-    }),
+    enter: {
+      opacity: 0,
+    },
     center: {
-      y: 0,
       opacity: 1,
     },
-    exit: (direction: number) => ({
-      y: direction < 0 ? "30%" : "-30%",
-      opacity: 0.3,
-    }),
+    exit: {
+      opacity: 0,
+    },
   };
 
   const slides = useMemo(() => buildSlides({
@@ -1472,8 +1469,8 @@ function AppDashboardContent() {
                   animate="center"
                   exit="exit"
                   transition={{
-                    duration: 0.15,
-                    ease: "linear",
+                    duration: 0.12,
+                    ease: "easeInOut",
                   }}
                   style={{
                     willChange: "transform, opacity, filter",
