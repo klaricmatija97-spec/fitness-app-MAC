@@ -294,6 +294,90 @@ function AppDashboardContent() {
   const [generatingWeeklyPlan, setGeneratingWeeklyPlan] = useState(false);
   const [weeklyPlanError, setWeeklyPlanError] = useState<string | null>(null);
   
+  // DEMO jelovnik za test verziju
+  const demoWeeklyMealPlan = useMemo(() => ({
+    weekStartDate: new Date().toISOString(),
+    weeklyAverage: {
+      calories: 2150,
+      protein: 145,
+      carbs: 220,
+      fat: 72,
+      deviation: { calories: 3.2, protein: 2.8, carbs: 4.1, fat: 3.5, total: 3.4 }
+    },
+    days: [
+      {
+        date: new Date().toISOString(),
+        total: { calories: 2180, protein: 148, carbs: 225, fat: 70 },
+        meals: {
+          breakfast: { name: "Zobena kaša s bananom i orasima", calories: 450, protein: 15, carbs: 65, fat: 18, ingredients: ["zobene pahuljice", "banana", "orasi", "med", "mlijeko"] },
+          lunch: { name: "Pileća prsa s riže i povrćem", calories: 650, protein: 52, carbs: 60, fat: 18, ingredients: ["pileća prsa", "smeđa riža", "brokula", "mrkva", "maslinovo ulje"] },
+          dinner: { name: "Losos s batatom i špinatom", calories: 580, protein: 45, carbs: 45, fat: 24, ingredients: ["losos", "batat", "špinat", "limun", "maslinovo ulje"] },
+          snack: { name: "Grčki jogurt s bobičastim voćem", calories: 280, protein: 22, carbs: 35, fat: 8, ingredients: ["grčki jogurt", "borovnice", "maline", "med"] }
+        }
+      },
+      {
+        date: new Date(Date.now() + 86400000).toISOString(),
+        total: { calories: 2120, protein: 142, carbs: 218, fat: 74 },
+        meals: {
+          breakfast: { name: "Kajgana s povrćem i tost", calories: 420, protein: 24, carbs: 35, fat: 22, ingredients: ["jaja", "paprika", "rajčica", "integralni kruh"] },
+          lunch: { name: "Tuna salata s kvinojom", calories: 580, protein: 48, carbs: 45, fat: 22, ingredients: ["tuna", "kvinoja", "krastavac", "rajčica", "masline"] },
+          dinner: { name: "Puretina s povrćem na žaru", calories: 520, protein: 48, carbs: 32, fat: 22, ingredients: ["pureća prsa", "tikvice", "patlidžan", "paprika"] },
+          snack: { name: "Smoothie od banane i kikirikija", calories: 320, protein: 18, carbs: 42, fat: 12, ingredients: ["banana", "kikiriki maslac", "mlijeko", "med"] }
+        }
+      },
+      {
+        date: new Date(Date.now() + 172800000).toISOString(),
+        total: { calories: 2200, protein: 150, carbs: 230, fat: 68 },
+        meals: {
+          breakfast: { name: "Smoothie bowl s granolom", calories: 480, protein: 18, carbs: 72, fat: 14, ingredients: ["banana", "bobičasto voće", "granola", "chia sjemenke"] },
+          lunch: { name: "Junetina s krumpirom i salatom", calories: 680, protein: 55, carbs: 58, fat: 24, ingredients: ["juneći file", "mladi krumpir", "zelena salata", "rajčica"] },
+          dinner: { name: "Piletina u curry umaku s rižom", calories: 620, protein: 48, carbs: 65, fat: 18, ingredients: ["pileće meso", "kokosovo mlijeko", "curry", "basmati riža"] },
+          snack: { name: "Cottage sir s voćem", calories: 250, protein: 28, carbs: 22, fat: 6, ingredients: ["cottage sir", "ananas", "breskva"] }
+        }
+      },
+      {
+        date: new Date(Date.now() + 259200000).toISOString(),
+        total: { calories: 2150, protein: 145, carbs: 220, fat: 72 },
+        meals: {
+          breakfast: { name: "Palačinke od zobenih s voćem", calories: 450, protein: 16, carbs: 68, fat: 14, ingredients: ["zobene pahuljice", "jaja", "banana", "jagode"] },
+          lunch: { name: "Rižoto s piletinom i gljivama", calories: 620, protein: 45, carbs: 72, fat: 18, ingredients: ["arborio riža", "pileća prsa", "šampinjoni", "parmezan"] },
+          dinner: { name: "Bijela riba s povrćem na pari", calories: 480, protein: 52, carbs: 28, fat: 18, ingredients: ["oslić", "brokula", "cvjetača", "limun"] },
+          snack: { name: "Proteinski shake", calories: 320, protein: 32, carbs: 28, fat: 8, ingredients: ["whey protein", "banana", "mlijeko"] }
+        }
+      },
+      {
+        date: new Date(Date.now() + 345600000).toISOString(),
+        total: { calories: 2180, protein: 148, carbs: 225, fat: 70 },
+        meals: {
+          breakfast: { name: "Avokado tost s jajima", calories: 480, protein: 22, carbs: 38, fat: 28, ingredients: ["integralni kruh", "avokado", "jaja", "rajčica"] },
+          lunch: { name: "Bowl s piletinom i povrćem", calories: 650, protein: 52, carbs: 62, fat: 20, ingredients: ["pileća prsa", "smeđa riža", "edamame", "avokado", "sezam"] },
+          dinner: { name: "Tjestenina s tunom i povrćem", calories: 580, protein: 42, carbs: 68, fat: 16, ingredients: ["integralna tjestenina", "tuna", "rajčica", "masline"] },
+          snack: { name: "Orašasti mix s tamnom čokoladom", calories: 280, protein: 8, carbs: 22, fat: 20, ingredients: ["bademi", "orasi", "tamna čokolada"] }
+        }
+      },
+      {
+        date: new Date(Date.now() + 432000000).toISOString(),
+        total: { calories: 2100, protein: 140, carbs: 215, fat: 75 },
+        meals: {
+          breakfast: { name: "Smoothie s proteinima", calories: 420, protein: 35, carbs: 48, fat: 12, ingredients: ["whey protein", "banana", "zobene", "maslac od badema"] },
+          lunch: { name: "Biftek s povrćem i krumpirom", calories: 720, protein: 55, carbs: 52, fat: 32, ingredients: ["biftek", "pečeni krumpir", "šparoge", "maslinovo ulje"] },
+          dinner: { name: "Salata s kozicama", calories: 450, protein: 38, carbs: 25, fat: 24, ingredients: ["kozice", "avokado", "rajčica", "rukola", "feta"] },
+          snack: { name: "Voćna salata s jogurtom", calories: 220, protein: 12, carbs: 35, fat: 4, ingredients: ["jabuka", "naranča", "grožđe", "grčki jogurt"] }
+        }
+      },
+      {
+        date: new Date(Date.now() + 518400000).toISOString(),
+        total: { calories: 2200, protein: 150, carbs: 228, fat: 70 },
+        meals: {
+          breakfast: { name: "Fritata s povrćem", calories: 450, protein: 28, carbs: 25, fat: 28, ingredients: ["jaja", "špinat", "paprika", "luk", "sir"] },
+          lunch: { name: "Piletina na žaru s kuskusom", calories: 620, protein: 52, carbs: 58, fat: 18, ingredients: ["pileća prsa", "kuskus", "paprika", "tikvice"] },
+          dinner: { name: "Curry od slanutka s rižom", calories: 580, protein: 22, carbs: 85, fat: 18, ingredients: ["slanutk", "curry pasta", "kokosovo mlijeko", "riža"] },
+          snack: { name: "Hummus s povrćem", calories: 280, protein: 10, carbs: 32, fat: 14, ingredients: ["hummus", "mrkva", "krastavac", "paprika"] }
+        }
+      }
+    ]
+  }), []);
+  
   // Plan treninga
   const [trainingSplit, setTrainingSplit] = useState<TrainingSplit>("push-pull-legs");
   const [trainingFrequency, setTrainingFrequency] = useState<TrainingPlanFrequency>("3-days");
@@ -1008,6 +1092,13 @@ function AppDashboardContent() {
   const currentId = slideOrder[currentSlide];
   const progress = ((currentSlide + 1) / slideOrder.length) * 100;
   const isLastSlide = currentSlide === slideOrder.length - 1;
+  
+  // TEST MODE: Automatski postavi demo jelovnik kada korisnik dođe na meals slide
+  useEffect(() => {
+    if (isTestMode && currentId === "meals" && !weeklyMealPlan) {
+      setWeeklyMealPlan(demoWeeklyMealPlan);
+    }
+  }, [isTestMode, currentId, weeklyMealPlan, demoWeeklyMealPlan]);
   
   // Sync sa contextom za navigaciju u headeru
   const { setSlides: setContextSlides, setCurrentSlide: setContextSlide } = useSlides();
