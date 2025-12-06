@@ -1076,6 +1076,51 @@ function AppDashboardContent() {
     return () => window.removeEventListener('wheel', handleWheel);
   }, [currentSlide]);
 
+  // TOUCH SWIPE - navigacija na mobilnim uređajima
+  const touchStartY = useRef<number>(0);
+  const touchEndY = useRef<number>(0);
+  const lastTouchTime = useRef<number>(0);
+  
+  useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY.current = e.touches[0].clientY;
+    };
+    
+    const handleTouchMove = (e: TouchEvent) => {
+      touchEndY.current = e.touches[0].clientY;
+    };
+    
+    const handleTouchEnd = () => {
+      const now = Date.now();
+      // Cooldown 600ms između swipeova
+      if (now - lastTouchTime.current < 600) return;
+      
+      const swipeDistance = touchStartY.current - touchEndY.current;
+      const minSwipeDistance = 50; // Minimalna udaljenost za swipe
+      
+      if (Math.abs(swipeDistance) > minSwipeDistance) {
+        lastTouchTime.current = now;
+        if (swipeDistance > 0) {
+          // Swipe gore = sljedeći slajd
+          nextSlide();
+        } else {
+          // Swipe dolje = prethodni slajd
+          prevSlide();
+        }
+      }
+    };
+    
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+    
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [currentSlide]);
+
   // SEAMLESS Slide Variants - bez crnih praznina
   const slideVariants = {
     enter: (direction: number) => ({
