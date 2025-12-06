@@ -1214,19 +1214,19 @@ function AppDashboardContent() {
     };
   }, [currentSlide]);
 
-  // SIMPLE Slide Variants - no lag
+  // FAST Slide Variants - brzi prijelazi
   const slideVariants = {
     enter: (direction: number) => ({
-      y: direction > 0 ? "50%" : "-50%",
-      opacity: 0,
+      y: direction > 0 ? "30%" : "-30%",
+      opacity: 0.3,
     }),
     center: {
       y: 0,
       opacity: 1,
     },
     exit: (direction: number) => ({
-      y: direction < 0 ? "50%" : "-50%",
-      opacity: 0,
+      y: direction < 0 ? "30%" : "-30%",
+      opacity: 0.3,
     }),
   };
 
@@ -1472,8 +1472,8 @@ function AppDashboardContent() {
                   animate="center"
                   exit="exit"
                   transition={{
-                    duration: 0.2,
-                    ease: "easeOut",
+                    duration: 0.15,
+                    ease: "linear",
                   }}
                   style={{
                     willChange: "transform, opacity, filter",
@@ -1522,15 +1522,10 @@ function AppDashboardContent() {
                       )}>
                         {/* Centrirani sadržaj - CALCULATOR STYLE */}
                         <div className="w-full max-w-2xl text-center">
-                          {/* CORPEX logo mali */}
-                          <motion.p
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.1 }}
-                            className="text-xs font-light tracking-[0.5em] text-white/40 uppercase mb-8"
-                          >
+                          {/* CORPEX logo mali - bez animacije */}
+                          <p className="text-xs font-light tracking-[0.5em] text-white/40 uppercase mb-8">
                             Corpex
-                          </motion.p>
+                          </p>
                           
                           {/* Broj slajda */}
                           <p className="text-sm font-light tracking-widest text-white/30 mb-4">
@@ -1575,16 +1570,13 @@ function AppDashboardContent() {
           {currentId !== "intro" && (
             <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-1.5 z-20">
               {slideOrder.map((_, idx) => (
-                <motion.div
+                <div
                   key={idx}
-                  className={`h-2 rounded-full transition-all duration-300 ${
+                  className={`h-2 rounded-full transition-all duration-150 ${
                     idx === currentSlide
                       ? "w-7 bg-[#4B0082] shadow-lg"
                       : "w-2 bg-gray-700"
                   }`}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: idx * 0.05 }}
                 />
               ))}
             </div>
