@@ -1081,10 +1081,35 @@ function AppDashboardContent() {
   const touchStartY = useRef<number>(0);
   const touchEndY = useRef<number>(0);
   const lastTouchTime = useRef<number>(0);
+  const touchStartTarget = useRef<EventTarget | null>(null);
   
   useEffect(() => {
+    // Provjeri da li je element interaktivan (gumb, input, link, itd.)
+    const isInteractiveElement = (target: EventTarget | null): boolean => {
+      if (!target || !(target instanceof HTMLElement)) return false;
+      const tagName = target.tagName.toLowerCase();
+      const interactiveTags = ['button', 'input', 'textarea', 'select', 'a', 'label'];
+      if (interactiveTags.includes(tagName)) return true;
+      // Provjeri da li ima role button ili je klikabilan
+      if (target.getAttribute('role') === 'button') return true;
+      if (target.onclick || target.getAttribute('onclick')) return true;
+      // Provjeri roditelje do 5 razina
+      let parent = target.parentElement;
+      let depth = 0;
+      while (parent && depth < 5) {
+        const parentTag = parent.tagName.toLowerCase();
+        if (interactiveTags.includes(parentTag)) return true;
+        if (parent.getAttribute('role') === 'button') return true;
+        if (parent.onclick || parent.getAttribute('onclick')) return true;
+        parent = parent.parentElement;
+        depth++;
+      }
+      return false;
+    };
+    
     const handleTouchStart = (e: TouchEvent) => {
       touchStartY.current = e.touches[0].clientY;
+      touchStartTarget.current = e.target;
     };
     
     const handleTouchMove = (e: TouchEvent) => {
@@ -1092,12 +1117,18 @@ function AppDashboardContent() {
     };
     
     const handleTouchEnd = () => {
+      // Ignoriraj ako je klik na interaktivni element
+      if (isInteractiveElement(touchStartTarget.current)) {
+        touchStartTarget.current = null;
+        return;
+      }
+      
       const now = Date.now();
       // Cooldown 600ms između swipeova
       if (now - lastTouchTime.current < 600) return;
       
       const swipeDistance = touchStartY.current - touchEndY.current;
-      const minSwipeDistance = 50; // Minimalna udaljenost za swipe
+      const minSwipeDistance = 80; // Povećana minimalna udaljenost za swipe (80px)
       
       if (Math.abs(swipeDistance) > minSwipeDistance) {
         lastTouchTime.current = now;
@@ -1109,6 +1140,8 @@ function AppDashboardContent() {
           prevSlide();
         }
       }
+      
+      touchStartTarget.current = null;
     };
     
     window.addEventListener('touchstart', handleTouchStart, { passive: true });
