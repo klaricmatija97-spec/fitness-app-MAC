@@ -250,22 +250,6 @@ function AppDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // PASSWORD PROTECTION
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
-  useEffect(() => {
-    // Provjeri da li je već autentificiran u ovoj sesiji
-    const auth = sessionStorage.getItem("corpex_auth");
-    if (auth === "true") {
-      setIsAuthenticated(true);
-    }
-  }, []);
-  
-  // Ako nije autentificiran, prikaži password gate
-  if (!isAuthenticated) {
-    return <PasswordGate onSuccess={() => setIsAuthenticated(true)} />;
-  }
-  
   // TEST MODE: Dodaj ?test=true na URL da preskočiš login
   const isTestMode = searchParams.get("test") === "true";
   
@@ -1601,6 +1585,40 @@ function MealCardInline({ title, meal }: MealCardInlineProps) {
   );
 }
 
+// Password Protected Wrapper
+function PasswordProtectedApp() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    // Provjeri da li je već autentificiran u ovoj sesiji
+    const auth = sessionStorage.getItem("corpex_auth");
+    if (auth === "true") {
+      setIsAuthenticated(true);
+    }
+    setIsLoading(false);
+  }, []);
+  
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-[#1A1A1A]">
+        <div className="text-center">
+          <h1 className="text-5xl font-bold text-white mb-4 drop-shadow-2xl" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+            CORP<span className="text-purple-400">EX</span>
+          </h1>
+          <p className="text-white/70">Učitavanje...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!isAuthenticated) {
+    return <PasswordGate onSuccess={() => setIsAuthenticated(true)} />;
+  }
+  
+  return <AppDashboardContent />;
+}
+
 export default function AppDashboard() {
   return (
     <Suspense fallback={
@@ -1613,7 +1631,7 @@ export default function AppDashboard() {
         </div>
       </div>
     }>
-      <AppDashboardContent />
+      <PasswordProtectedApp />
     </Suspense>
   );
 }
