@@ -90,3 +90,4 @@ Privatni projekt - sva prava pridržana
 ## 👤 Autor
 
 CORPEX Team
+# Trigger deploy
