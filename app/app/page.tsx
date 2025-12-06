@@ -163,9 +163,105 @@ const URBAN_SPORTS_IMAGES = [
   "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=1920&q=80", // Olympic barbell
 ];
 
+// ============================================
+// PASSWORD PROTECTION SCREEN
+// ============================================
+const PREVIEW_PASSWORD = "corpex2024"; // Lozinka za pristup
+
+function PasswordGate({ onSuccess }: { onSuccess: () => void }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(false);
+  const [shake, setShake] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === PREVIEW_PASSWORD) {
+      sessionStorage.setItem("corpex_auth", "true");
+      onSuccess();
+    } else {
+      setError(true);
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black flex items-center justify-center z-[9999]">
+      {/* Background image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center opacity-30"
+        style={{ backgroundImage: "url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&h=1080&fit=crop&q=80')" }}
+      />
+      
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`relative z-10 bg-zinc-900/90 backdrop-blur-xl p-8 rounded-2xl border border-zinc-700/50 max-w-md w-full mx-4 ${shake ? "animate-shake" : ""}`}
+        style={{ animation: shake ? "shake 0.5s ease-in-out" : "none" }}
+      >
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+            CORP<span className="text-purple-400">EX</span>
+          </h1>
+          <p className="text-zinc-400 text-sm">Preview verzija - zaštićeno lozinkom</p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setError(false); }}
+              placeholder="Unesite lozinku"
+              className={`w-full px-4 py-3 bg-zinc-800/50 border ${error ? "border-red-500" : "border-zinc-600"} rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition-colors`}
+              autoFocus
+            />
+            {error && <p className="text-red-400 text-sm mt-2">Pogrešna lozinka</p>}
+          </div>
+          
+          <button
+            type="submit"
+            className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-xl transition-colors"
+          >
+            Pristupi
+          </button>
+        </form>
+        
+        <p className="text-zinc-500 text-xs text-center mt-6">
+          © 2024 CORPEX • Sva prava pridržana
+        </p>
+      </motion.div>
+      
+      <style jsx>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-10px); }
+          75% { transform: translateX(10px); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 function AppDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  
+  // PASSWORD PROTECTION
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  useEffect(() => {
+    // Provjeri da li je već autentificiran u ovoj sesiji
+    const auth = sessionStorage.getItem("corpex_auth");
+    if (auth === "true") {
+      setIsAuthenticated(true);
+    }
+  }, []);
+  
+  // Ako nije autentificiran, prikaži password gate
+  if (!isAuthenticated) {
+    return <PasswordGate onSuccess={() => setIsAuthenticated(true)} />;
+  }
   
   // TEST MODE: Dodaj ?test=true na URL da preskočiš login
   const isTestMode = searchParams.get("test") === "true";
