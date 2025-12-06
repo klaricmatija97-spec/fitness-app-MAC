@@ -1582,6 +1582,38 @@ function AppDashboardContent() {
               ))}
             </div>
           )}
+          
+          {/* Mobile Navigation Arrows - uvijek vidljivi za mobilne korisnike */}
+          {currentId !== "intro" && currentId !== "login" && (
+            <div className="absolute bottom-20 right-4 flex flex-col gap-2 z-30 md:hidden">
+              {/* Previous */}
+              {currentSlide > 1 && (
+                <button
+                  onClick={prevSlide}
+                  data-no-swipe="true"
+                  className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/70 hover:bg-white/20 hover:text-white transition-all active:scale-95"
+                  aria-label="Prethodni"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                  </svg>
+                </button>
+              )}
+              {/* Next */}
+              {currentSlide < slideOrder.length - 1 && (
+                <button
+                  onClick={nextSlide}
+                  data-no-swipe="true"
+                  className="w-12 h-12 rounded-full bg-[#4B0082]/80 backdrop-blur-sm border border-[#4B0082] flex items-center justify-center text-white hover:bg-[#4B0082] transition-all active:scale-95 shadow-lg"
+                  aria-label="Sljedeći"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
       </div>
@@ -1871,6 +1903,7 @@ function OptionButton({
     <button
       type="button"
       onClick={onClick}
+      data-no-swipe="true"
       className={clsx(
         "rounded-[12px] border-2 px-4 py-3 text-left text-sm font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4B0082]",
         variant === "solid"
