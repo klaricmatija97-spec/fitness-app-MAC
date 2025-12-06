@@ -1078,88 +1078,54 @@ function AppDashboardContent() {
   }, [currentSlide]);
 
   // TOUCH SWIPE - navigacija na mobilnim uređajima
+  // Radi POSVUDA - čak i preko gumba. Razlika je u udaljenosti poteza:
+  // - Mali potez (< 30px) = klik na element
+  // - Veliki potez (> 60px) = swipe za navigaciju
   const touchStartY = useRef<number>(0);
   const touchEndY = useRef<number>(0);
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
   const lastTouchTime = useRef<number>(0);
-  const touchStartTarget = useRef<EventTarget | null>(null);
+  const isSwiping = useRef<boolean>(false);
   
   useEffect(() => {
-    // Provjeri da li je element interaktivan (gumb, input, link, itd.) ili dio forme/kalkulatora
-    const isInteractiveElement = (target: EventTarget | null): boolean => {
-      if (!target || !(target instanceof HTMLElement)) return false;
-      
-      const tagName = target.tagName.toLowerCase();
-      const interactiveTags = ['button', 'input', 'textarea', 'select', 'a', 'label', 'form'];
-      if (interactiveTags.includes(tagName)) return true;
-      
-      // Provjeri da li ima role button ili je klikabilan
-      if (target.getAttribute('role') === 'button') return true;
-      if (target.getAttribute('role') === 'listbox') return true;
-      if (target.getAttribute('role') === 'option') return true;
-      
-      // Provjeri da li je označeno kao no-swipe zona
-      if (target.getAttribute('data-no-swipe') === 'true') return true;
-      if (target.classList.contains('no-swipe')) return true;
-      
-      // Provjeri klase koje sugeriraju interaktivnost
-      const className = target.className || '';
-      if (typeof className === 'string') {
-        const interactiveClasses = ['input', 'button', 'btn', 'select', 'calc', 'form', 'slider', 'range', 'checkbox', 'radio', 'dropdown'];
-        for (const cls of interactiveClasses) {
-          if (className.toLowerCase().includes(cls)) return true;
-        }
-      }
-      
-      // Provjeri roditelje do 10 razina (povećano za dublje ugnježđene forme)
-      let parent = target.parentElement;
-      let depth = 0;
-      while (parent && depth < 10) {
-        const parentTag = parent.tagName.toLowerCase();
-        if (interactiveTags.includes(parentTag)) return true;
-        if (parent.getAttribute('role') === 'button') return true;
-        if (parent.getAttribute('data-no-swipe') === 'true') return true;
-        if (parent.classList.contains('no-swipe')) return true;
-        
-        // Provjeri klase roditelja
-        const parentClassName = parent.className || '';
-        if (typeof parentClassName === 'string') {
-          if (parentClassName.toLowerCase().includes('calculator')) return true;
-          if (parentClassName.toLowerCase().includes('form')) return true;
-          if (parentClassName.toLowerCase().includes('input')) return true;
-        }
-        
-        parent = parent.parentElement;
-        depth++;
-      }
-      return false;
-    };
-    
     const handleTouchStart = (e: TouchEvent) => {
       touchStartY.current = e.touches[0].clientY;
-      touchStartTarget.current = e.target;
+      touchStartX.current = e.touches[0].clientX;
+      touchEndY.current = e.touches[0].clientY;
+      touchEndX.current = e.touches[0].clientX;
+      isSwiping.current = false;
     };
     
     const handleTouchMove = (e: TouchEvent) => {
       touchEndY.current = e.touches[0].clientY;
+      touchEndX.current = e.touches[0].clientX;
+      
+      // Ako se pomakne više od 30px vertikalno, označi kao swipe
+      const verticalDistance = Math.abs(touchStartY.current - touchEndY.current);
+      if (verticalDistance > 30) {
+        isSwiping.current = true;
+      }
     };
     
     const handleTouchEnd = () => {
-      // Ignoriraj ako je klik na interaktivni element
-      if (isInteractiveElement(touchStartTarget.current)) {
-        touchStartTarget.current = null;
-        return;
-      }
-      
       const now = Date.now();
-      // Cooldown 600ms između swipeova
-      if (now - lastTouchTime.current < 600) return;
+      // Cooldown 500ms između swipeova
+      if (now - lastTouchTime.current < 500) return;
       
-      const swipeDistance = touchStartY.current - touchEndY.current;
-      const minSwipeDistance = 80; // Povećana minimalna udaljenost za swipe (80px)
+      const swipeDistanceY = touchStartY.current - touchEndY.current;
+      const swipeDistanceX = Math.abs(touchStartX.current - touchEndX.current);
+      const minSwipeDistance = 60; // Minimalna vertikalna udaljenost za swipe
       
-      if (Math.abs(swipeDistance) > minSwipeDistance) {
+      // Swipe samo ako:
+      // 1. Vertikalni pomak > 60px
+      // 2. Vertikalni pomak > horizontalni (nije horizontalni swipe)
+      // 3. Označeno je kao swiping (pomak > 30px tijekom touch move)
+      if (Math.abs(swipeDistanceY) > minSwipeDistance && 
+          Math.abs(swipeDistanceY) > swipeDistanceX &&
+          isSwiping.current) {
         lastTouchTime.current = now;
-        if (swipeDistance > 0) {
+        if (swipeDistanceY > 0) {
           // Swipe gore = sljedeći slajd
           nextSlide();
         } else {
@@ -1168,7 +1134,7 @@ function AppDashboardContent() {
         }
       }
       
-      touchStartTarget.current = null;
+      isSwiping.current = false;
     };
     
     window.addEventListener('touchstart', handleTouchStart, { passive: true });
