@@ -1020,8 +1020,9 @@ function AppDashboardContent() {
       console.log("nextSlide: moving from", currentSlide, "(", currentId, ") to", newSlide, "(", nextSlideId, ")");
       
       // Provjeri da li je trenutni slide "intro" (drugi slajd, index 1) i da onboarding nije završen
+      // U TEST MODE preskačemo onboarding
       const onboardingCompleted = localStorage.getItem("educationalOnboardingCompleted");
-      if (currentId === "intro" && onboardingCompleted !== "true") {
+      if (!isTestMode && currentId === "intro" && onboardingCompleted !== "true") {
         // Nakon intro slidea, prikaži edukativni onboarding
         console.log("🚀 After intro slide, showing educational onboarding");
         console.log("Setting showEducationalOnboarding to true");
@@ -1317,7 +1318,8 @@ function AppDashboardContent() {
   // Provjeri da li treba prikazati onboarding:
   // Ako je showEducationalOnboarding postavljen na true (iz nextSlide ili useEffect)
   // I ako onboarding nije već završen
-  const shouldShowOnboarding = showEducationalOnboarding && !educationalOnboardingCompleted && onboardingCompleted !== "true";
+  // U TEST MODE preskačemo onboarding
+  const shouldShowOnboarding = !isTestMode && showEducationalOnboarding && !educationalOnboardingCompleted && onboardingCompleted !== "true";
   
   console.log("🔍 Onboarding check:", {
     currentId,
