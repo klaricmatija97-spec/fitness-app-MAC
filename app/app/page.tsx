@@ -1148,10 +1148,10 @@ function AppDashboardContent() {
     };
   }, [currentSlide]);
 
-  // SEAMLESS Slide Variants - GPU accelerated, smooth
+  // SIMPLE Slide Variants - no lag
   const slideVariants = {
     enter: (direction: number) => ({
-      y: direction > 0 ? "100%" : "-100%",
+      y: direction > 0 ? "50%" : "-50%",
       opacity: 0,
     }),
     center: {
@@ -1159,7 +1159,7 @@ function AppDashboardContent() {
       opacity: 1,
     },
     exit: (direction: number) => ({
-      y: direction < 0 ? "100%" : "-100%",
+      y: direction < 0 ? "50%" : "-50%",
       opacity: 0,
     }),
   };
@@ -1406,14 +1406,8 @@ function AppDashboardContent() {
                   animate="center"
                   exit="exit"
                   transition={{
-                    y: { 
-                      type: "tween",
-                      duration: 0.35,
-                      ease: [0.32, 0.72, 0, 1],
-                    },
-                    opacity: {
-                      duration: 0.25,
-                    },
+                    duration: 0.2,
+                    ease: "easeOut",
                   }}
                   style={{
                     willChange: "transform, opacity, filter",
@@ -1473,58 +1467,36 @@ function AppDashboardContent() {
                           </motion.p>
                           
                           {/* Broj slajda */}
-                          <motion.p
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.2 }}
-                            className="text-sm font-light tracking-widest text-white/30 mb-4"
-                          >
+                          <p className="text-sm font-light tracking-widest text-white/30 mb-4">
                             {String(slideOrder.indexOf(slide.id) + 1).padStart(2, "0")} / {slideOrder.length}
-                          </motion.p>
+                          </p>
                           
                           {/* Naslov */}
-                          <motion.h1
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.05, duration: 0.3 }}
+                          <h1
                             className="text-3xl md:text-4xl font-light text-white mb-4 tracking-wide"
                             style={{ fontFamily: "var(--font-inter), sans-serif" }}
                           >
                             {slide.title}
-                          </motion.h1>
+                          </h1>
                           
                           {/* Opis */}
                           {slide.description && (
-                            <motion.p
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ delay: 0.1, duration: 0.2 }}
-                              className="text-base text-white/50 mb-8 font-light max-w-xl mx-auto"
-                            >
+                            <p className="text-base text-white/50 mb-8 font-light max-w-xl mx-auto">
                               {slide.description}
-                            </motion.p>
+                            </p>
                           )}
                           
                           {/* Divider */}
-                          <motion.div
-                            initial={{ scaleX: 0 }}
-                            animate={{ scaleX: 1 }}
-                            transition={{ delay: 0.1, duration: 0.3 }}
-                            className="w-16 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent mx-auto mb-8"
-                          />
+                          <div className="w-16 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent mx-auto mb-8" />
 
                           {/* Sadržaj slajda */}
-                          <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.15, duration: 0.25 }}
-                            className={clsx(
+                          <div className={clsx(
                               "text-left",
                               (currentId === "meals" && (showMealPlan || weeklyMealPlan)) ? "overflow-y-auto max-h-[50vh]" : ""
                             )}
                           >
                             {slide.render}
-                          </motion.div>
+                          </div>
                         </div>
                       </div>
                     </div>
