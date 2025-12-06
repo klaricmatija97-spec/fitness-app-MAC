@@ -1148,11 +1148,11 @@ function AppDashboardContent() {
     };
   }, [currentSlide]);
 
-  // SEAMLESS Slide Variants - bez crnih praznina
+  // SEAMLESS Slide Variants - GPU accelerated, smooth
   const slideVariants = {
     enter: (direction: number) => ({
       y: direction > 0 ? "100%" : "-100%",
-      opacity: 1,
+      opacity: 0,
     }),
     center: {
       y: 0,
@@ -1160,7 +1160,7 @@ function AppDashboardContent() {
     },
     exit: (direction: number) => ({
       y: direction < 0 ? "100%" : "-100%",
-      opacity: 1,
+      opacity: 0,
     }),
   };
 
@@ -1408,8 +1408,11 @@ function AppDashboardContent() {
                   transition={{
                     y: { 
                       type: "tween",
-                      duration: 0.6,
-                      ease: [0.25, 0.1, 0.25, 1],
+                      duration: 0.35,
+                      ease: [0.32, 0.72, 0, 1],
+                    },
+                    opacity: {
+                      duration: 0.25,
                     },
                   }}
                   style={{
@@ -1471,9 +1474,9 @@ function AppDashboardContent() {
                           
                           {/* Broj slajda */}
                           <motion.p
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.2 }}
                             className="text-sm font-light tracking-widest text-white/30 mb-4"
                           >
                             {String(slideOrder.indexOf(slide.id) + 1).padStart(2, "0")} / {slideOrder.length}
@@ -1481,9 +1484,9 @@ function AppDashboardContent() {
                           
                           {/* Naslov */}
                           <motion.h1
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3, duration: 0.6 }}
+                            transition={{ delay: 0.05, duration: 0.3 }}
                             className="text-3xl md:text-4xl font-light text-white mb-4 tracking-wide"
                             style={{ fontFamily: "var(--font-inter), sans-serif" }}
                           >
@@ -1495,7 +1498,7 @@ function AppDashboardContent() {
                             <motion.p
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
-                              transition={{ delay: 0.4 }}
+                              transition={{ delay: 0.1, duration: 0.2 }}
                               className="text-base text-white/50 mb-8 font-light max-w-xl mx-auto"
                             >
                               {slide.description}
@@ -1506,15 +1509,15 @@ function AppDashboardContent() {
                           <motion.div
                             initial={{ scaleX: 0 }}
                             animate={{ scaleX: 1 }}
-                            transition={{ delay: 0.5, duration: 0.6 }}
+                            transition={{ delay: 0.1, duration: 0.3 }}
                             className="w-16 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent mx-auto mb-8"
                           />
 
                           {/* Sadržaj slajda */}
                           <motion.div
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.6 }}
+                            transition={{ delay: 0.15, duration: 0.25 }}
                             className={clsx(
                               "text-left",
                               (currentId === "meals" && (showMealPlan || weeklyMealPlan)) ? "overflow-y-auto max-h-[50vh]" : ""
