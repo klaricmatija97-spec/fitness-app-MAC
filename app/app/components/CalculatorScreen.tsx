@@ -62,8 +62,8 @@ export default function CalculatorScreen({
         </motion.button>
       )}
 
-      {/* Main Content Container */}
-      <div className="relative z-10 w-full max-w-4xl mx-auto px-6 py-8 flex flex-col items-center min-h-screen overflow-y-auto">
+      {/* Main Content Container - sadržaj više gore */}
+      <div className="relative z-10 w-full max-w-4xl mx-auto px-6 pt-6 pb-32 flex flex-col items-center min-h-screen overflow-y-auto">
         
         {/* Header - profinjenije animacije */}
         <motion.div
@@ -252,14 +252,17 @@ export function CalcButton({ children, onClick, variant = "primary", disabled = 
     <motion.button
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3, delay: 0.2 }}
+      transition={{ duration: 0.2 }}
       onClick={onClick}
       disabled={disabled}
-      whileHover={{ opacity: disabled ? 0.5 : 0.8 }}
-      whileTap={{ scale: disabled ? 1 : 0.98 }}
+      data-no-swipe="true"
+      whileTap={{ scale: disabled ? 1 : 0.97 }}
       className={`
-        w-full py-3 font-light tracking-wider text-white/70 hover:text-white transition-all duration-300
-        border-b border-white/20 hover:border-white/40
+        w-full py-5 mt-4 font-medium tracking-wider text-white transition-all duration-200
+        bg-[#4B0082]/80 hover:bg-[#4B0082] rounded-xl
+        border border-[#4B0082] hover:border-purple-400
+        shadow-lg hover:shadow-purple-500/20
+        text-base
         ${disabled ? "opacity-30 cursor-not-allowed" : ""}
         ${className}
       `}
