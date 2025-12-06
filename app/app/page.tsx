@@ -1077,64 +1077,39 @@ function AppDashboardContent() {
     return () => window.removeEventListener('wheel', handleWheel);
   }, [currentSlide]);
 
-  // TOUCH SWIPE - navigacija na mobilnim uređajima
-  // Radi POSVUDA - čak i preko gumba. Razlika je u udaljenosti poteza:
-  // - Mali potez (< 30px) = klik na element
-  // - Veliki potez (> 60px) = swipe za navigaciju
+  // TOUCH SWIPE - navigacija prstom gore/dolje
   const touchStartY = useRef<number>(0);
   const touchEndY = useRef<number>(0);
-  const touchStartX = useRef<number>(0);
-  const touchEndX = useRef<number>(0);
   const lastTouchTime = useRef<number>(0);
-  const isSwiping = useRef<boolean>(false);
   
   useEffect(() => {
     const handleTouchStart = (e: TouchEvent) => {
       touchStartY.current = e.touches[0].clientY;
-      touchStartX.current = e.touches[0].clientX;
       touchEndY.current = e.touches[0].clientY;
-      touchEndX.current = e.touches[0].clientX;
-      isSwiping.current = false;
     };
     
     const handleTouchMove = (e: TouchEvent) => {
       touchEndY.current = e.touches[0].clientY;
-      touchEndX.current = e.touches[0].clientX;
-      
-      // Ako se pomakne više od 30px vertikalno, označi kao swipe
-      const verticalDistance = Math.abs(touchStartY.current - touchEndY.current);
-      if (verticalDistance > 30) {
-        isSwiping.current = true;
-      }
     };
     
     const handleTouchEnd = () => {
       const now = Date.now();
-      // Cooldown 500ms između swipeova
-      if (now - lastTouchTime.current < 500) return;
+      // Cooldown 400ms između swipeova
+      if (now - lastTouchTime.current < 400) return;
       
-      const swipeDistanceY = touchStartY.current - touchEndY.current;
-      const swipeDistanceX = Math.abs(touchStartX.current - touchEndX.current);
-      const minSwipeDistance = 60; // Minimalna vertikalna udaljenost za swipe
+      const swipeDistance = touchStartY.current - touchEndY.current;
+      const minSwipeDistance = 40; // 40px minimalno za swipe
       
-      // Swipe samo ako:
-      // 1. Vertikalni pomak > 60px
-      // 2. Vertikalni pomak > horizontalni (nije horizontalni swipe)
-      // 3. Označeno je kao swiping (pomak > 30px tijekom touch move)
-      if (Math.abs(swipeDistanceY) > minSwipeDistance && 
-          Math.abs(swipeDistanceY) > swipeDistanceX &&
-          isSwiping.current) {
+      if (Math.abs(swipeDistance) > minSwipeDistance) {
         lastTouchTime.current = now;
-        if (swipeDistanceY > 0) {
-          // Swipe gore = sljedeći slajd
+        if (swipeDistance > 0) {
+          // Povuci gore = sljedeći slajd
           nextSlide();
         } else {
-          // Swipe dolje = prethodni slajd
+          // Povuci dolje = prethodni slajd
           prevSlide();
         }
       }
-      
-      isSwiping.current = false;
     };
     
     window.addEventListener('touchstart', handleTouchStart, { passive: true });
@@ -1549,37 +1524,6 @@ function AppDashboardContent() {
             </div>
           )}
           
-          {/* Mobile Navigation Arrows - uvijek vidljivi za mobilne korisnike */}
-          {currentId !== "intro" && currentId !== "login" && (
-            <div className="absolute bottom-20 right-4 flex flex-col gap-2 z-30 md:hidden">
-              {/* Previous */}
-              {currentSlide > 1 && (
-                <button
-                  onClick={prevSlide}
-                  data-no-swipe="true"
-                  className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/70 hover:bg-white/20 hover:text-white transition-all active:scale-95"
-                  aria-label="Prethodni"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                  </svg>
-                </button>
-              )}
-              {/* Next */}
-              {currentSlide < slideOrder.length - 1 && (
-                <button
-                  onClick={nextSlide}
-                  data-no-swipe="true"
-                  className="w-12 h-12 rounded-full bg-[#4B0082]/80 backdrop-blur-sm border border-[#4B0082] flex items-center justify-center text-white hover:bg-[#4B0082] transition-all active:scale-95 shadow-lg"
-                  aria-label="Sljedeći"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-              )}
-            </div>
-          )}
         </div>
 
       </div>
