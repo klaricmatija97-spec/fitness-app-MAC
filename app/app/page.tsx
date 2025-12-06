@@ -166,8 +166,12 @@ const URBAN_SPORTS_IMAGES = [
 function AppDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  
+  // TEST MODE: Dodaj ?test=true na URL da preskočiš login
+  const isTestMode = searchParams.get("test") === "true";
+  
   const [clientData, setClientData] = useState<any>(null);
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [currentSlide, setCurrentSlide] = useState(isTestMode ? 1 : 0); // 1 = intro (skip login)
   const [direction, setDirection] = useState(0); // -1 for left, 1 for right
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
