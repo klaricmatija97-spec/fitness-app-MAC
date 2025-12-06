@@ -1081,11 +1081,30 @@ function AppDashboardContent() {
   const touchStartY = useRef<number>(0);
   const touchEndY = useRef<number>(0);
   const lastTouchTime = useRef<number>(0);
+  const touchStartedOnButton = useRef<boolean>(false);
   
   useEffect(() => {
+    // Provjeri da li je touch počeo na gumbu
+    const isButton = (el: EventTarget | null): boolean => {
+      if (!el || !(el instanceof HTMLElement)) return false;
+      const tag = el.tagName.toLowerCase();
+      if (tag === 'button' || tag === 'a' || tag === 'input' || tag === 'select' || tag === 'textarea') return true;
+      if (el.getAttribute('role') === 'button') return true;
+      // Provjeri roditelje (3 razine)
+      let parent = el.parentElement;
+      for (let i = 0; i < 3 && parent; i++) {
+        const parentTag = parent.tagName.toLowerCase();
+        if (parentTag === 'button' || parentTag === 'a') return true;
+        if (parent.getAttribute('role') === 'button') return true;
+        parent = parent.parentElement;
+      }
+      return false;
+    };
+    
     const handleTouchStart = (e: TouchEvent) => {
       touchStartY.current = e.touches[0].clientY;
       touchEndY.current = e.touches[0].clientY;
+      touchStartedOnButton.current = isButton(e.target);
     };
     
     const handleTouchMove = (e: TouchEvent) => {
@@ -1093,12 +1112,18 @@ function AppDashboardContent() {
     };
     
     const handleTouchEnd = () => {
+      // Ako je touch počeo na gumbu, ignoriraj swipe
+      if (touchStartedOnButton.current) {
+        touchStartedOnButton.current = false;
+        return;
+      }
+      
       const now = Date.now();
       // Cooldown 400ms između swipeova
       if (now - lastTouchTime.current < 400) return;
       
       const swipeDistance = touchStartY.current - touchEndY.current;
-      const minSwipeDistance = 40; // 40px minimalno za swipe
+      const minSwipeDistance = 50; // 50px minimalno za swipe
       
       if (Math.abs(swipeDistance) > minSwipeDistance) {
         lastTouchTime.current = now;
