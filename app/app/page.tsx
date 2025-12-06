@@ -169,12 +169,13 @@ const URBAN_SPORTS_IMAGES = [
 const PREVIEW_PASSWORD = "corpex2024"; // Lozinka za pristup
 
 function PasswordGate({ onSuccess }: { onSuccess: () => void }) {
-  const [password, setPassword] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState(false);
   const [shake, setShake] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const password = inputRef.current?.value || "";
     if (password === PREVIEW_PASSWORD) {
       sessionStorage.setItem("corpex_auth", "true");
       onSuccess();
@@ -209,12 +210,14 @@ function PasswordGate({ onSuccess }: { onSuccess: () => void }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <input
+              ref={inputRef}
               type="password"
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); setError(false); }}
+              name="password"
+              onChange={() => setError(false)}
               placeholder="Unesite lozinku"
               className={`w-full px-4 py-3 bg-zinc-800/50 border ${error ? "border-red-500" : "border-zinc-600"} rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition-colors`}
               autoFocus
+              autoComplete="off"
             />
             {error && <p className="text-red-400 text-sm mt-2">Pogrešna lozinka</p>}
           </div>
