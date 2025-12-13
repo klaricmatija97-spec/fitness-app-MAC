@@ -149,6 +149,10 @@ export async function analyzeNutrition(
     return null;
   }
 
+  // Import rate limiter (lazy import da izbjegnemo circular dependency)
+  const { edamamRateLimiter } = await import("@/lib/utils/edamamRateLimiter");
+
+  return edamamRateLimiter.execute(async () => {
   try {
     const ingredientLines = formatIngredients(ingredients);
     
@@ -205,6 +209,7 @@ export async function analyzeNutrition(
     console.error("❌ Edamam API greška:", error);
     return null;
   }
+  });
 }
 
 /**
@@ -223,6 +228,10 @@ export async function analyzeNutritionFromText(
     return null;
   }
 
+  // Import rate limiter (lazy import da izbjegnemo circular dependency)
+  const { edamamRateLimiter } = await import("@/lib/utils/edamamRateLimiter");
+
+  return edamamRateLimiter.execute(async () => {
   try {
     // Parsiraj tekst u linije
     const lines = ingredientText
@@ -282,6 +291,7 @@ export async function analyzeNutritionFromText(
     console.error("❌ Edamam API greška:", error);
     return null;
   }
+  });
 }
 
 /**

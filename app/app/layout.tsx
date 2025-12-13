@@ -84,18 +84,18 @@ function AppLayoutContent({
   // Provjeri je li na intro slideu
   const isIntroSlide = isAppPage && currentSlide === 0;
 
-  // Dodaj/ukloni slide-based-layout klasu na body ovisno o pathname
-  useEffect(() => {
-    if (isAppPage) {
-      document.body.classList.add('slide-based-layout');
-    } else {
-      document.body.classList.remove('slide-based-layout');
-    }
-    
-    return () => {
-      document.body.classList.remove('slide-based-layout');
-    };
-  }, [isAppPage]);
+  // Uklonjeno: slide-based-layout klasa blokira scroll
+  // useEffect(() => {
+  //   if (isAppPage) {
+  //     document.body.classList.add('slide-based-layout');
+  //   } else {
+  //     document.body.classList.remove('slide-based-layout');
+  //   }
+  //   
+  //   return () => {
+  //     document.body.classList.remove('slide-based-layout');
+  //   };
+  // }, [isAppPage]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -104,7 +104,7 @@ function AppLayoutContent({
         {/* Navigation je sada u app/page.tsx */}
       </nav>
       
-      <main className={isAppPage ? "h-screen overflow-hidden" : "min-h-screen overflow-y-auto"}>{children}</main>
+      <main className={isAppPage ? "min-h-screen overflow-y-auto" : "min-h-screen overflow-y-auto"}>{children}</main>
     </div>
   );
 }

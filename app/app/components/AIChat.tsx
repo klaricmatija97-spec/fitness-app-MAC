@@ -1,12 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+
+interface UsageInfo {
+  requests: number;
+  tokens: number;
+  cost: number;
+  remainingRequests: number;
+  remainingTokens: number;
+  requestPercentage: number;
+  tokenPercentage: number;
+  isNearLimit: boolean;
+  isAtLimit: boolean;
+  dailyRequestLimit: number;
+  dailyTokenLimit: number;
+}
 
 export default function AIChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Array<{ role: "user" | "ai"; content: string }>>([]);
+  const [usage, setUsage] = useState<UsageInfo | null>(null);
+  const [showLimitWarning, setShowLimitWarning] = useState(false);
+
+  // Dohvati trenutnu potrošnju
+  const fetchUsage = async () => {
+    const clientId = localStorage.getItem("clientId");
+    if (!clientId) return;
+
+    try {
+      const response = await fetch("/api/chat/usage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientId }),
+      });
+      const data = await response.json();
+      if (data.ok && data.usage) {
+        setUsage(data.usage);
+        // Prikaži upozorenje ako je blizu limita ili dosegnut limit
+        if (data.usage.isAtLimit) {
+          setShowLimitWarning(true);
+        } else if (data.usage.isNearLimit) {
+          setShowLimitWarning(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching usage:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchUsage();
+      // Osvježi svakih 10 sekundi dok je chat otvoren
+      const interval = setInterval(fetchUsage, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [isOpen]);
 
   const handleSend = async () => {
     if (!message.trim()) return;
@@ -15,7 +66,6 @@ export default function AIChat() {
     setMessage("");
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
 
-    // Simulate AI response (replace with actual API call)
     const clientId = localStorage.getItem("clientId");
     try {
       const response = await fetch("/api/chat", {
@@ -27,11 +77,26 @@ export default function AIChat() {
       
       if (data.ok) {
         setMessages((prev) => [...prev, { role: "ai", content: data.response }]);
+        // Osvježi usage nakon uspješnog zahtjeva
+        await fetchUsage();
+      } else {
+        // Provjeri da li je limit dosegnut
+        if (data.limitExceeded) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "ai",
+              content: `⚠️ ${data.message}\n\nPreostalo zahtjeva: ${data.usage?.remainingRequests || 0}\nPreostalo tokena: ${data.usage?.remainingTokens || 0}\n\nLimit će se resetirati sutra u ponoć.`,
+            },
+          ]);
+          setShowLimitWarning(true);
+          await fetchUsage();
       } else {
         setMessages((prev) => [
           ...prev,
           { role: "ai", content: "Oprosti, imam problema s odgovorom. Pokušaj ponovno." },
         ]);
+        }
       }
     } catch (error) {
       setMessages((prev) => [
@@ -88,7 +153,7 @@ export default function AIChat() {
             >
               {/* Header */}
               <div className="bg-[#1A1A1A] text-white p-6 rounded-t-[24px]">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-3">
                   <div>
                     <h3 className="text-lg font-semibold">AI Asistent</h3>
                     <p className="text-sm text-white/70">Pitaj bilo što</p>
@@ -100,7 +165,82 @@ export default function AIChat() {
                     ×
                   </button>
                 </div>
+                
+                {/* Usage Info */}
+                {usage && (
+                  <div className="mt-3 pt-3 border-t border-white/10">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-white/70">Današnja potrošnja:</span>
+                      <span className={`font-medium ${
+                        usage.isAtLimit 
+                          ? "text-red-400" 
+                          : usage.isNearLimit 
+                          ? "text-yellow-400" 
+                          : "text-white"
+                      }`}>
+                        {usage.requests}/{usage.dailyRequestLimit} zahtjeva
+                      </span>
+                    </div>
+                    {usage.isAtLimit && (
+                      <div className="mt-2 text-xs text-red-400 font-medium">
+                        ⚠️ Dnevni limit je dosegnut! Limit će se resetirati sutra.
+                      </div>
+                    )}
+                    {usage.isNearLimit && !usage.isAtLimit && (
+                      <div className="mt-2 text-xs text-yellow-400">
+                        ⚠️ Blizu si limita ({usage.requestPercentage}% iskorišteno)
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
+
+              {/* Limit Warning Banner */}
+              <AnimatePresence>
+                {showLimitWarning && usage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className={`mx-6 mt-4 p-4 rounded-[16px] ${
+                      usage.isAtLimit
+                        ? "bg-red-50 border border-red-200"
+                        : "bg-yellow-50 border border-yellow-200"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p
+                          className={`text-sm font-medium ${
+                            usage.isAtLimit ? "text-red-800" : "text-yellow-800"
+                          }`}
+                        >
+                          {usage.isAtLimit
+                            ? "⚠️ Dnevni limit je dosegnut!"
+                            : "⚠️ Blizu si dnevnog limita"}
+                        </p>
+                        <p
+                          className={`text-xs mt-1 ${
+                            usage.isAtLimit ? "text-red-600" : "text-yellow-700"
+                          }`}
+                        >
+                          {usage.isAtLimit
+                            ? `Iskorišteno: ${usage.requests}/${usage.dailyRequestLimit} zahtjeva. Limit će se resetirati sutra u ponoć.`
+                            : `Iskorišteno: ${usage.requests}/${usage.dailyRequestLimit} zahtjeva (${usage.requestPercentage}%). Preostalo: ${usage.remainingRequests} zahtjeva.`}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowLimitWarning(false)}
+                        className={`ml-2 text-lg ${
+                          usage.isAtLimit ? "text-red-600" : "text-yellow-600"
+                        } hover:opacity-70`}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -135,12 +275,26 @@ export default function AIChat() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={(e) => e.key === "Enter" && handleSend()}
-                    placeholder="Upiši poruku..."
-                    className="flex-1 rounded-[16px] border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-[#1A1A1A]"
+                    placeholder={
+                      usage?.isAtLimit
+                        ? "Limit dosegnut - pokušaj sutra"
+                        : "Upiši poruku..."
+                    }
+                    disabled={usage?.isAtLimit}
+                    className={`flex-1 rounded-[16px] border px-4 py-3 text-sm focus:outline-none ${
+                      usage?.isAtLimit
+                        ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "border-gray-300 focus:border-[#1A1A1A]"
+                    }`}
                   />
                   <button
                     onClick={handleSend}
-                    className="rounded-[16px] bg-[#1A1A1A] text-white px-6 py-3 text-sm font-medium hover:opacity-90 transition"
+                    disabled={usage?.isAtLimit}
+                    className={`rounded-[16px] px-6 py-3 text-sm font-medium transition ${
+                      usage?.isAtLimit
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "bg-[#1A1A1A] text-white hover:opacity-90"
+                    }`}
                   >
                     Pošalji
                   </button>

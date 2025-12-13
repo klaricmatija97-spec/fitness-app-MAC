@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
     console.log(`   Total meals: ${totalMeals}, Processing: ${mealsToProcess.length}`);
 
     // Obogati svako jelo
+    // Rate limiter će kontrolirati pauze automatski
     const enrichedMeals = [];
     for (const meal of mealsToProcess) {
       try {
@@ -86,9 +87,6 @@ export async function POST(request: NextRequest) {
           nutrition: enriched.edamamNutrition,
           source: enriched.nutritionSource,
         });
-        
-        // Pauza između poziva (500ms)
-        await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
         console.error(`Error enriching ${meal.name}:`, error);
         enrichedMeals.push({

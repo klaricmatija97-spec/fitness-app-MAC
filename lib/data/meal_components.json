@@ -9,7 +9,6 @@
       "id": "breakfast_lose_1",
       "name": "Proteinska kajgana s bjelanjcima i zobenima",
       "description": "Niskokalorični doručak s visokim unosom proteina. Kombinacija jednog cijelog jaja s četiri bjelanjka daje maksimum proteina uz minimalne masti. Zobene na vodi i banana osiguravaju energiju za cijelo jutro.",
-      "image": "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=300&fit=crop",
       "preparationTip": "Jaja i bjelanjke isprži na tavi sa sprej uljem - BEZ dodanog ulja ili maslaca. Zobene kuhaj na vodi.",
       "components": [
         {
@@ -47,7 +46,6 @@
       "id": "breakfast_lose_2",
       "name": "Lagana jaja s bjelanjcima i voćem",
       "description": "Jednostavan proteinski doručak za deficit. Jedno cijelo jaje daje okus, bjelanjci čisti protein bez masti. Uz voće i posni jogurt - savršena kombinacija za skidanje kilaže.",
-      "image": "https://images.unsplash.com/photo-1510693206972-df098062cb71?w=400&h=300&fit=crop",
       "preparationTip": "Pripremi jaja na tavi sa sprej uljem. Jogurt biraj 0% mm. Voće dodaj svježe.",
       "components": [
         {
@@ -84,7 +82,6 @@
       "id": "breakfast_lose_3",
       "name": "Kajgana s bjelanjcima i zrnatim sirom",
       "description": "Proteinska bomba za definiciju! Jaje i bjelanjci pružaju aminokiseline, posni zrnati sir dodaje kazein za dugotrajnu sitost. Idealno za očuvanje mišića tijekom mršavljenja.",
-      "image": "https://images.unsplash.com/photo-1464454709131-ffd692591ee5?w=400&h=300&fit=crop",
       "preparationTip": "Isprži jaja sa sprej uljem. Koristi posni zrnati sir do 5% mm. Bananu nasjeckaj uz obrok.",
       "components": [
         {
@@ -121,7 +118,6 @@
       "id": "breakfast_lose_4",
       "name": "Bjelanjci sa zobenima i wheyem",
       "description": "Ultra-lagani doručak fokusiran na čiste proteine. Bjelanjci bez žutanjka, zobene na vodi i whey isolat daju maksimum proteina s minimalnim mastima i kalorijama.",
-      "image": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=300&fit=crop",
       "preparationTip": "Bjelanjke isprži na tavi sa sprej uljem. Zobene kuhaj na vodi, whey dodaj nakon kuhanja.",
       "components": [
         {
@@ -158,7 +154,6 @@
       "id": "breakfast_maintain_1",
       "name": "Klasična kajgana s tostom",
       "description": "Uravnotežen doručak s cijelim jajima - zlatna sredina. Dva do tri jaja pružaju kompletne proteine i zdrave masti, integralni tost složene ugljikohidrate za energiju.",
-      "image": "https://images.unsplash.com/photo-1510693206972-df098062cb71?w=400&h=300&fit=crop",
       "preparationTip": "Pripremi kajganu na tavi sa malo sprej ulja. Toast prepeci u tosteru. Jaja mogu biti i na oko.",
       "components": [
         {
@@ -190,7 +185,6 @@
       "id": "breakfast_maintain_2",
       "name": "Jaja na oko s grčkim jogurtom",
       "description": "Jednostavan ali kompletan doručak. Cijela jaja osiguravaju kolin i omega-3, grčki jogurt probiotike i dodatne proteine. Idealna kombinacija za održavanje forme.",
-      "image": "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=300&fit=crop",
       "preparationTip": "Jaja pripremi na oko sa malo sprej ulja. Jogurt posluži uz, može i s bananom.",
       "components": [
         {
@@ -227,7 +221,6 @@
       "id": "breakfast_maintain_3",
       "name": "Kajgana sa skyrom i voćem",
       "description": "Kombinacija cijelih jaja i islandskog skyra pruža sve esencijalne aminokiseline. Skyr ima najviše proteina od svih jogurta, jaja dodaju zdrave masti za hormone.",
-      "image": "https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=400&h=300&fit=crop",
       "preparationTip": "Isprži jaja na tavi. Skyr posluži u zdjelici s narezanom bananom i borovnicama.",
       "components": [
         {
@@ -264,7 +257,6 @@
       "id": "breakfast_maintain_4",
       "name": "Omlet sa zobenima",
       "description": "Klasičan fitness doručak - omlet od cijelih jaja uz zobenu kašu. Kompletan nutritivni profil za aktivan dan, savršen balans makronutrijenata.",
-      "image": "https://images.unsplash.com/photo-1495214783159-3503fd1b572d?w=400&h=300&fit=crop",
       "preparationTip": "Pripremi omlet na tavi. Zobene kuhaj u mlijeku ili vodi, ovisno o preferenciji.",
       "components": [
         {
@@ -301,7 +293,6 @@
       "id": "breakfast_gain_1",
       "name": "Bogati doručak sa zobenim i jajima",
       "description": "Uravnotežen doručak s fokusom na UH! Zobene na mlijeku s malo jaja za proteine. Banana i tost dodaju još više ugljikohidrata.",
-      "image": "https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?w=400&h=300&fit=crop",
       "preparationTip": "Kuhaj zobene na mlijeku. Jaja isprži na tavi. Posluži zajedno s bananom i tostom.",
       "components": [
         {
@@ -344,7 +335,6 @@
       "id": "breakfast_gain_2",
       "name": "Bogati omlet s tostom i kikiriki maslacem",
       "description": "Kombinacija jaja, tosta i kikiriki maslaca daje visok unos kalorija i proteina. Idealno za dobivanje mase - lako se jede, a pruža sve potrebno za rast mišića.",
-      "image": "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=400&h=300&fit=crop",
       "preparationTip": "Isprži jaja kao omlet ili kajganu. Tost namazi kikiriki maslacem. Bananu pojedi uz obrok.",
       "components": [
         {
@@ -381,7 +371,6 @@
       "id": "breakfast_gain_3",
       "name": "Omlet s mlijekom i zobenima",
       "description": "Kompletan doručak za ozbiljno dobivanje mišića. Omlet s više jaja, zobene na mlijeku i shake - sve što trebaš za jutarnju anaboličku eksploziju.",
-      "image": "https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=400&h=300&fit=crop",
       "preparationTip": "Pripremi omlet od svih jaja. Zobene kuhaj na punomasnom mlijeku. Može i proteinski shake uz obrok.",
       "components": [
         {
@@ -423,7 +412,6 @@
       "id": "breakfast_gain_4",
       "name": "Jaja sa salamom, sirom i tostom",
       "description": "Klasičan 'bulking' doručak! Jaja na oko ili kajgana sa salamom i sirom na tostu. Visoke kalorije, visoki proteini - sve što treba za rast.",
-      "image": "https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=400&h=300&fit=crop",
       "preparationTip": "Isprži jaja, posloži na tost sa salamom i sirom. Može i kao sendvič za veći obrok.",
       "components": [
         {
@@ -460,7 +448,6 @@
       "id": "breakfast_gain_5",
       "name": "Mega zobena kaša s bananom i medom",
       "description": "Ugljikohidratna bomba za energiju! Velika porcija zobenih na mlijeku s bananom, medom i malo orašastih plodova. Idealno za jutarnji trening.",
-      "image": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=300&fit=crop",
       "preparationTip": "Kuhaj zobene na mlijeku 5-7 min. Dodaj narezanu bananu, med i bademe na vrh.",
       "components": [
         {
@@ -497,7 +484,6 @@
       "id": "breakfast_gain_6",
       "name": "Tost sendvič s kikirikijem i bananom",
       "description": "Brzi, kalorijski gusti doručak. Puno tosta s kikiriki maslacem i bananom daje ogromnu količinu ugljikohidrata i kalorija bez previše proteina.",
-      "image": "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=400&h=300&fit=crop",
       "preparationTip": "Prepeci tost, namazi kikiriki maslac i posloži narezanu bananu. Može se jesti kao sendvič.",
       "components": [
         {
@@ -529,7 +515,6 @@
       "id": "breakfast_gain_7",
       "name": "Proteinska zobena kaša s voćem",
       "description": "Uravnotežen doručak s fokusom na ugljikohidrate. Zobene kuhane na mlijeku s wheyem za proteine i puno voća za vitamine i dodatne UH.",
-      "image": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=300&fit=crop",
       "preparationTip": "Kuhaj zobene na mlijeku, umiješaj whey nakon kuhanja. Dodaj svježe voće na vrh.",
       "components": [
         {
@@ -571,7 +556,6 @@
       "id": "breakfast_gain_8",
       "name": "Granola s jogurtom i medom",
       "description": "Ultra-UH doručak! Granola s jogurtom, medom i sušenim voćem. Energetska bomba bez mesa.",
-      "image": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=300&fit=crop",
       "preparationTip": "Pomiješaj granolu s jogurtom, prelij medom i dodaj grožđice.",
       "components": [
         {
@@ -613,7 +597,6 @@
       "id": "breakfast_gain_9",
       "name": "Palačinke s medom i voćem",
       "description": "Slatki doručak pun ugljikohidrata! Palačinke (zobeno brašno) s medom i svježim voćem.",
-      "image": "https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=400&h=300&fit=crop",
       "preparationTip": "Napravi palačinke od zobenog brašna, jaja i mlijeka. Posluži s medom i voćem.",
       "components": [
         {
@@ -660,7 +643,6 @@
       "id": "breakfast_gain_10",
       "name": "Kroasan s džemom i sokom",
       "description": "Brzi kalorijski doručak! Kroasani s džemom i sokom od naranče. Čisti ugljikohidrati za energiju.",
-      "image": "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&h=300&fit=crop",
       "preparationTip": "Prepeci kroasane, namazi džemom. Posluži sa svježim sokom.",
       "components": [
         {
@@ -697,7 +679,6 @@
       "id": "breakfast_gain_11",
       "name": "Zobene s tostom i voćem",
       "description": "Energetski doručak - zobene na mlijeku, hrskavi tost s medom i svježe voće.",
-      "image": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=300&fit=crop",
       "preparationTip": "Zobene kuhaj na mlijeku. Tost prepeci i namazi medom. Voće posluži svježe.",
       "components": [
         {
@@ -749,7 +730,6 @@
       "id": "breakfast_gain_12",
       "name": "Musli bowl s voćem i medom",
       "description": "Energetski doručak! Granola, jogurt, više vrsta voća i med - raznolikost u jednoj zdjelici.",
-      "image": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=300&fit=crop",
       "preparationTip": "U zdjelicu stavi granolu, prelij jogurtom, dodaj voće i med.",
       "components": [
         {
@@ -801,7 +781,6 @@
       "id": "breakfast_lose_5",
       "name": "Shakshuka s bjelanjcima",
       "description": "Mediteranski doručak bogat proteinima. Bjelanjci u umaku od rajčice i paprike s kuminom i paprikom. Niskokalorično a zasitno.",
-      "image": "https://images.unsplash.com/photo-1590412200988-a436970781fa?w=400&h=300&fit=crop",
       "preparationTip": "Na malo maslinovog ulja prodinstaj luk 3 min, dodaj papriku i češnjak još 2 min. Ulij pelate, začini kuminom i ljutom paprikom, kuhaj 10 min. Žlicom napravi udubine, ulij bjelanjke, poklopljeno kuhaj 5-7 min dok bjelanjci ne stegnu. Pospi peršinom.",
       "components": [
         {
@@ -838,7 +817,6 @@
       "id": "breakfast_lose_6",
       "name": "Proteinski smoothie bowl",
       "description": "Kremasti smoothie bowl s grčkim jogurtom i proteinom. Borovnice pružaju antioksidanse, chia sjemenke vlakna. Savršen za vruće dane.",
-      "image": "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=400&h=300&fit=crop",
       "preparationTip": "U blender stavi smrznute borovnice i grčki jogurt. Dodaj protein prah, miksaj 30 sek dok ne postane gusto. Prebaci u zdjelu, posloži svježe borovnice, chia sjemenke i prelij medom.",
       "components": [
         {
@@ -880,7 +858,6 @@
       "id": "breakfast_lose_7",
       "name": "Omlet s tikvicama i feta sirom",
       "description": "Lagani mediteranski omlet. Tikvice dodaju volumen bez kalorija, feta intenzivan okus. Savršen za ljeto.",
-      "image": "https://images.unsplash.com/photo-1510693206972-df098062cb71?w=400&h=300&fit=crop",
       "preparationTip": "Tikvicu naribaj, posoli, ostavi 5 min pa iscijedi. Umuti jaja i bjelanjak. Na malo ulja pirjaj tikvicu 2-3 min. Ulij jaja, na sredinu stavi fetu. Kad rubovi stegnu, preklopi na pola, peci još 1 min.",
       "components": [
         {
@@ -917,7 +894,6 @@
       "id": "breakfast_new_1",
       "name": "Avokado tost s jajima",
       "description": "Trendy doručak bogat zdravim mastima. Kremasti avokado s jajima na tostiranom integralnom kruhu. Omega masne kiseline za mozak.",
-      "image": "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=400&h=300&fit=crop",
       "preparationTip": "Kruh toastiraj. Avokado izgnječi, dodaj limunov sok, sol i papar. Namazi na tost. Jaja isprži na oko 3 min. Stavi na tost, pospi chili pahuljicama.",
       "components": [
         {
@@ -949,7 +925,6 @@
       "id": "breakfast_new_2",
       "name": "Overnight oats s bademima",
       "description": "Pripremi večer prije, ujutro samo uzmi iz frižidera. Zobene upiju mlijeko i jogurt, postaju kremaste. Bademi dodaju hrskavost i proteine.",
-      "image": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=300&fit=crop",
       "preparationTip": "U staklenku stavi zobene, mlijeko i jogurt. Promiješaj, zatvori, ostavi u hladnjaku preko noći (min 6 sati). Ujutro dodaj nasjeckane bademe, prelij medom, pospi cimetom.",
       "components": [
         {
@@ -991,7 +966,6 @@
       "id": "breakfast_new_3",
       "name": "Palačinke od banane i jaja",
       "description": "Zdrave palačinke bez brašna! Samo banana i jaja - jednostavno i ukusno. Cimet pojačava okus, med daje prirodnu slatkoću.",
-      "image": "https://images.unsplash.com/photo-1506084868230-bb9d95c24759?w=400&h=300&fit=crop",
       "preparationTip": "Bananu izgnječi vilicom do kaše. Dodaj jaja i cimet, dobro promiješaj. Na lagano nauljenu tavu stavljaj male palačinke. Peci 2 min dok ne porumene, okreni, peci još 1 min. Posluži s medom i voćem.",
       "components": [
         {
@@ -1028,7 +1002,6 @@
       "id": "breakfast_gain_13",
       "name": "Proteinska zobena kaša s kikiriki maslacem",
       "description": "Kalorijski gust doručak za masu. Zobene s mlijekom, protein prah i kikiriki maslac daju preko 600 kcal. Banana dodaje ugljikohidrate.",
-      "image": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=300&fit=crop",
       "preparationTip": "Mlijeko zagrijavaj, dodaj zobene, kuhaj 5 min uz miješanje. Skini s vatre, ostavi 2 min. Umiješaj protein prah. Prebaci u zdjelu, dodaj kikiriki maslac i nasjeckanu bananu, prelij medom.",
       "components": [
         {
@@ -1075,7 +1048,6 @@
       "id": "breakfast_gain_14",
       "name": "Sendvič s jajima i slaninom",
       "description": "Klasični američki doručak sendvič. Hrskava slanina, kremasta jaja na oko i topljeni sir između prepečenog kruha. Puno proteina i kalorija.",
-      "image": "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400&h=300&fit=crop",
       "preparationTip": "Slaninu peci na suhoj tavi dok ne postane hrskava. U istoj tavi isprži jaja na oko. Kruh toastiraj, namazi maslac. Posloži: kruh, sir, jaja, slanina, sir, kruh. Prižmi sendvič 1 min sa svake strane.",
       "components": [
         {
@@ -1117,7 +1089,6 @@
       "id": "breakfast_gain_15",
       "name": "Smoothie za masu",
       "description": "Tekuće kalorije - najlakši način za unos u bulk fazi. Mlijeko, banana, zobene, protein i maslac od badema. Preko 700 kcal u čaši.",
-      "image": "https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=400&h=300&fit=crop",
       "preparationTip": "U blender ulij mlijeko, dodaj narezanu bananu, zobene, protein prah i maslac od badema. Ulij med. Miksaj 60 sek na visokoj brzini. Dodaj mlijeka ako je pregusto.",
       "components": [
         {
@@ -1164,7 +1135,6 @@
       "id": "breakfast_gain_16",
       "name": "Burrito s jajima i grahom",
       "description": "Meksički doručak pun proteina i ugljikohidrata. Kajgana, crni grah i avokado u velikoj tortilji. Salsa daje začin.",
-      "image": "https://images.unsplash.com/photo-1584031379040-e7b5d7d47ed4?w=400&h=300&fit=crop",
       "preparationTip": "Grah ocijedi i zagrijavaj s kuminom. Jaja umuti i isprži kao kajganu. Tortilju zagrijavaj 30 sek. Na tortilju posloži kajganu, grah, salsu, avokado i sir. Zarolaj: savij strane pa rolaj prema gore. Po želji zapeci na tavi 1 min sa svake strane.",
       "components": [
         {
@@ -1213,7 +1183,6 @@
       "id": "lunch_lose_1",
       "name": "Piletina iz air fryera s kuhanim krumpirom",
       "description": "Savršen obrok za definiciju - visok volumen, niske kalorije. Pileća prsa pripremljena u air fryeru bez ulja zadržavaju sočnost. Kuhani krumpir ima niži glikemijski indeks od pečenog i daje dugotrajnu sitost.",
-      "image": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=300&fit=crop",
       "preparationTip": "Piletinu začini solju i paprom, peci u air fryeru 18-20 min na 200°C. Krumpir kuhaj u slanoj vodi dok ne omekša.",
       "components": [
         {
@@ -1250,7 +1219,6 @@
       "id": "lunch_lose_2",
       "name": "Juneća pljeskavica s pire krumpirom",
       "description": "Posna junetina bogata željezom i cinkom. Pljeskavica od junećeg buta s minimalnim dodacima (sol + krušne mrvice) daje maksimum proteina. Pire krumpir bez maslaca je lagan ali zasitan.",
-      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop",
       "preparationTip": "Na 500g junećeg buta dodaj sol i 2 žlice krušnih mrvica. Oblikuj pljeskavice i peci u air fryeru 12-15 min. Pire radi s malo mlijeka, bez maslaca.",
       "components": [
         {
@@ -1287,7 +1255,6 @@
       "id": "lunch_lose_3",
       "name": "Tuna salata s kuhanim krumpirom",
       "description": "Lagana ali proteinski bogata opcija. Tuna u salamuri (ne ulju!) pruža čiste proteine bez dodatnih masti. Kuhani krumpir i svježe povrće daju volumen za sitost.",
-      "image": "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop",
       "preparationTip": "Koristi tunu u salamuri, dobro iscijedi tekućinu. Krumpir kuhaj u kori za više nutrijenata.",
       "components": [
         {
@@ -1329,7 +1296,6 @@
       "id": "lunch_lose_4",
       "name": "Piletina s rižom i kuhanim povrćem",
       "description": "Klasičan bodybuilding obrok za definiciju. Piletina iz air fryera s rižom i povrćem kuhano na pari - jednostavno, čisto i učinkovito za gubitak masti uz očuvanje mišića.",
-      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
       "preparationTip": "Rižu kuhaj bez ulja i maslaca. Povrće pripremi na pari ili kuhanjem. Piletinu peci u air fryeru.",
       "components": [
         {
@@ -1366,7 +1332,6 @@
       "id": "lunch_lose_5",
       "name": "Pureća prsa s kuhanim krumpirom i salatom",
       "description": "Ultra-protein obrok s posnom puretinom. Pureća prsa imaju još manje masti od pilećih, a bogata su selenom i B vitaminima. Idealno za maksimalni protein uz minimalne kalorije.",
-      "image": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=300&fit=crop",
       "preparationTip": "Pureća prsa peci u air fryeru 20-22 min na 190°C. Krumpir kuhaj u slanoj vodi. Salatu začini limunovim sokom.",
       "components": [
         {
@@ -1403,7 +1368,6 @@
       "id": "lunch_lose_6",
       "name": "Losos iz air fryera s batatom i brokulom",
       "description": "Omega-3 bogat obrok s proteinima iz lososa. Batat ima niži glikemijski indeks od krumpira i bogat je vitaminom A. Brokula dodaje vlakna i antioksidanse.",
-      "image": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=300&fit=crop",
       "preparationTip": "Lososa peci u air fryeru 12-15 min. Batat kuhaj ili peci. Brokulu kuhaj na pari 5-6 min.",
       "components": [
         {
@@ -1435,7 +1399,6 @@
       "id": "lunch_lose_7",
       "name": "Juneća prsa s rižom i povrćem",
       "description": "Bogat izvor željeza i cinka iz posne junetine. Juneća prsa su među najposnijim dijelovima, a riža i povrće osiguravaju kompletan obrok za definiciju.",
-      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop",
       "preparationTip": "Juneća prsa peci na tavi sa sprej uljem ili u air fryeru. Rižu kuhaj bez masnoće.",
       "components": [
         {
@@ -1472,7 +1435,6 @@
       "id": "lunch_lose_8",
       "name": "Piletina sa zrnatim sirom i kuhanim povrćem",
       "description": "Dvostruki protein iz piletine i posnog zrnatog sira. Ovaj obrok pruža preko 60g proteina uz minimalne masti - savršeno za održavanje mišića u deficitu.",
-      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
       "preparationTip": "Piletinu pripremi u air fryeru. Zrnati sir posluži sa strane. Povrće kuhaj na pari.",
       "components": [
         {
@@ -1509,7 +1471,6 @@
       "id": "lunch_lose_9",
       "name": "Tuna steak s krumpirom i špinatom",
       "description": "Premium proteinski obrok sa svježom tunom. Tuna steak ima još više proteina od konzervirane i pruža omega-3 masne kiseline. Špinat dodaje željezo i folate.",
-      "image": "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop",
       "preparationTip": "Tuna steak peci na tavi 2-3 min sa svake strane (medium rare). Špinat kratko blanširaj.",
       "components": [
         {
@@ -1541,7 +1502,6 @@
       "id": "lunch_lose_11",
       "name": "Pileća prsa s pire krumpirom",
       "description": "Klasičan comfort food za deficit! Sočna pileća prsa iz air fryera s kremastim pire krumpirom bez maslaca. Visok protein, umjereni UH.",
-      "image": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=300&fit=crop",
       "preparationTip": "Pileća prsa peci u air fryeru 18-20 min. Krumpir skuhaj i izgnječi s malo mlijeka (bez maslaca). Posluži s povrćem.",
       "components": [
         {
@@ -1578,7 +1538,6 @@
       "id": "lunch_lose_12",
       "name": "Junetina s kuhanim krumpirom i mrkvom",
       "description": "Tradicionalni ručak s posnom junetinom. Kuhani krumpir i mrkva daju volumen i vitamine bez puno kalorija. Bogat željezom i cinkom.",
-      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop",
       "preparationTip": "Junetinu peci u air fryeru ili na tavi. Krumpir i mrkvu kuhaj zajedno u slanoj vodi.",
       "components": [
         {
@@ -1615,7 +1574,6 @@
       "id": "lunch_lose_13",
       "name": "Tuna sa zapečenim grahom",
       "description": "Mediteranski obrok bogat proteinima i vlaknima. Tuna pruža omega-3, a grah složene ugljikohidrate i biljne proteine. Sito i hranjivo!",
-      "image": "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop",
       "preparationTip": "Grah (konzervirani) zapeci s malo rajčice i začina 15 min na 180°C. Tunu iscijedi i posluži preko graha.",
       "components": [
         {
@@ -1652,7 +1610,6 @@
       "id": "lunch_lose_14",
       "name": "Piletina s grah salatom",
       "description": "Hladni proteinski obrok idealan za meal prep. Piletina s grahom, kukuruzom i povrćem - kompletan obrok u jednoj zdjeli.",
-      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
       "preparationTip": "Piletinu ispeci i ohadi, izreži na kockice. Pomiješaj s grahom, kukuruzom i povrćem. Začini limunom.",
       "components": [
         {
@@ -1694,7 +1651,6 @@
       "id": "lunch_lose_15",
       "name": "Juneći gulaš s krumpirom (light verzija)",
       "description": "Light verzija klasičnog gulaša! Posna junetina s krumpirom i paprikom, bez dodanog ulja. Bogato željezom i vitaminom C.",
-      "image": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop",
       "preparationTip": "Junetinu nasjeckaj i pirjaj s paprikom i rajčicom bez ulja. Dodaj krumpir i kuhaj dok ne omekša.",
       "components": [
         {
@@ -1731,7 +1687,6 @@
       "id": "lunch_lose_16",
       "name": "Pureća prsa s pire krumpirom i graškom",
       "description": "Ultra-posna puretina s kremastim pireom i graškom. Više proteina od piletine, manje masti. Idealno za definiciju.",
-      "image": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=300&fit=crop",
       "preparationTip": "Pureća prsa peci u air fryeru 22 min. Pire napravi s malo mlijeka. Grašak kuhaj 5 min.",
       "components": [
         {
@@ -1763,7 +1718,6 @@
       "id": "lunch_lose_17",
       "name": "Losos s grahom i špinatom",
       "description": "Omega-3 bogat obrok s biljnim proteinima iz graha. Losos i grah zajedno pružaju preko 50g proteina. Špinat dodaje željezo.",
-      "image": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=300&fit=crop",
       "preparationTip": "Lososa peci u air fryeru 12-14 min. Grah zagrij s malo češnjaka. Špinat blanširaj.",
       "components": [
         {
@@ -1795,7 +1749,6 @@
       "id": "lunch_lose_18",
       "name": "Piletina na žaru s mladim krumpirom",
       "description": "Roštilj stil piletina s mladim krumpirom! Jednostavno, ukusno i bogato proteinima. Salata dodaje svježinu.",
-      "image": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400&h=300&fit=crop",
       "preparationTip": "Piletinu začini i peci na roštilju ili tavi 6-7 min sa svake strane. Mladi krumpir kuhaj u kori.",
       "components": [
         {
@@ -1832,7 +1785,6 @@
       "id": "lunch_maintain_1",
       "name": "Pileća prsa s krumpirom iz pećnice",
       "description": "Uravnotežen obrok s umjerenim kalorijama. Krumpir iz pećnice daje bolji okus od kuhanog, a piletina osigurava kvalitetne proteine. Salata dodaje vlakna i vitamine.",
-      "image": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400&h=300&fit=crop",
       "preparationTip": "Krumpir izreži na kockice, poprskaj sprej uljem i peci na 200°C 25-30 min. Piletinu pripremi u air fryeru ili na tavi.",
       "components": [
         {
@@ -1868,7 +1820,6 @@
       "id": "lunch_maintain_2",
       "name": "Junetina s rižom i salatom",
       "description": "Bogat izvor željeza i cinka iz junetine uz složene ugljikohidrate iz riže. Idealan za održavanje mišićne mase i energije tijekom dana.",
-      "image": "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&h=300&fit=crop",
       "preparationTip": "Junetinu pripremi na tavi sa sprej uljem ili u air fryeru. Rižu kuhaj standardno, može i s malo soli.",
       "components": [
         {
@@ -1904,7 +1855,6 @@
       "id": "lunch_maintain_3",
       "name": "Tjestenina s tunom i povrćem",
       "description": "Mediteranski inspiriran obrok s omega-3 masnim kiselinama iz tune. Tjestenina pruža energiju, a svježe povrće vitamine i vlakna za probavu.",
-      "image": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop",
       "preparationTip": "Tjesteninu kuhaj al dente. Tunu iscijedi i pomiješaj s tjesteninom. Povrće dodaj svježe.",
       "components": [
         {
@@ -1945,7 +1895,6 @@
       "id": "lunch_gain_1",
       "name": "Bogata tjestenina s tunom i vrhnjem",
       "description": "Kalorijski gust obrok za masu! Tjestenina s tunom, vrhnjem za kuhanje, maslinama i jajima pruža savršenu kombinaciju proteina, ugljikohidrata i masti za rast mišića.",
-      "image": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop",
       "preparationTip": "Kuhaj tjesteninu, dodaj tunu i vrhnje. Jaja kuhaj 8-10 min za tvrdo kuhana. Sve pomiješaj, dodaj masline i povrće.",
       "components": [
         {
@@ -1992,7 +1941,6 @@
       "id": "lunch_gain_2",
       "name": "Krumpir iz pećnice s junetinom",
       "description": "Moćan obrok za izgradnju mišića. Junetina pruža kreatin i željezo, a pečeni krumpir složene ugljikohidrate. Salata dodaje vlakna bez značajnog povećanja kalorija.",
-      "image": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop",
       "preparationTip": "Krumpir izreži na veće komade, poprskaj uljem i peci 30-35 min. Junetinu pripremi na roštilju ili air fryeru.",
       "components": [
         {
@@ -2029,7 +1977,6 @@
       "id": "lunch_gain_3",
       "name": "Losos s krumpirom i avokadom",
       "description": "Premium obrok bogat omega-3 masnim kiselinama i zdravim mastima. Losos i avokado pružaju kalorije iz kvalitetnih izvora, dok krumpir daje potrebne ugljikohidrate za rast.",
-      "image": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=300&fit=crop",
       "preparationTip": "Lososa peci u pećnici ili air fryeru 15-18 min. Krumpir može biti kuhani ili pečeni. Avokado posluži svjež.",
       "components": [
         {
@@ -2066,7 +2013,6 @@
       "id": "lunch_gain_4",
       "name": "Kremasta tjestenina s piletinom i vrhnjem",
       "description": "Kalorijski bogata tjestenina! Malo piletine, puno tjestenine s kremastim umakom od vrhnja za kuhanje. Savršen omjer UH i proteina.",
-      "image": "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=400&h=300&fit=crop",
       "preparationTip": "Piletinu izreži na kockice i isprži. Dodaj vrhnje za kuhanje, začini i pomiješaj s tjesteninom.",
       "components": [
         {
@@ -2103,7 +2049,6 @@
       "id": "lunch_gain_4b",
       "name": "Pesto tjestenina s piletinom",
       "description": "Talijanski klasik! Velika porcija tjestenine s pesto umakom i malo piletine. Fokus na ugljikohidrate uz proteine iz pesta i piletine.",
-      "image": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop",
       "preparationTip": "Kuhaj tjesteninu al dente. Piletinu isprži na tavi. Pomiješaj sve s pesto umakom (može i gotovi).",
       "components": [
         {
@@ -2140,7 +2085,6 @@
       "id": "lunch_gain_4c",
       "name": "Tjestenina alfredo s malo piletine",
       "description": "Kremasta alfredo tjestenina! Bogat umak od vrhnja i parmezana s velikom porcijom tjestenine i samo malo piletine.",
-      "image": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop",
       "preparationTip": "Pripremi alfredo umak od vrhnja, maslaca i parmezana. Pomiješaj s tjesteninom i piletinom.",
       "components": [
         {
@@ -2182,7 +2126,6 @@
       "id": "lunch_gain_5",
       "name": "Tortilje s piletinom",
       "description": "Zdrava alternativa klasičnom wrapu. Wholegrain tortilja s piletinom, povrćem i laganim jogurt umakom. Kalorijski gusta opcija za masu s odličnim omjerom makroa.",
-      "image": "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=300&fit=crop",
       "preparationTip": "Piletinu pripremi na tavi i nasjeckaj. Tortilju zagrijaj, dodaj piletinu, povrće i jogurt umak. Zavij i posluži.",
       "components": [
         {
@@ -2225,7 +2168,6 @@
       "id": "lunch_maintain_4",
       "name": "Tortilje s tunom",
       "description": "Lagana i brza opcija s omega-3 masnim kiselinama. Tuna u salamuri, svježe povrće i lagani umak u wholegrain tortilji. Idealno za ručak na putu.",
-      "image": "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=300&fit=crop",
       "preparationTip": "Tunu iscijedi i pomiješaj s jogurt umakom. Dodaj povrće u tortilju i zavij.",
       "components": [
         {
@@ -2268,7 +2210,6 @@
       "id": "lunch_gain_6",
       "name": "Mega tjestenina s umakom od rajčice",
       "description": "Ugljikohidratna bomba! Velika porcija tjestenine s domaćim umakom od rajčice i malo sira. Manje proteina, više energije iz UH.",
-      "image": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop",
       "preparationTip": "Kuhaj tjesteninu al dente. Umak od rajčice pripremi s malo maslinovog ulja i začinima.",
       "components": [
         {
@@ -2305,7 +2246,6 @@
       "id": "lunch_gain_7",
       "name": "Riža s povrćem i jajima",
       "description": "Azijski inspiriran obrok bogat ugljikohidratima. Puno riže s povrćem i samo malo jaja za okus. Savršen za punjenje glikogena.",
-      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
       "preparationTip": "Rižu kuhaj standardno. Na tavi isprži povrće, dodaj rižu i jaja, miješaj dok jaja ne budu kuhana.",
       "components": [
         {
@@ -2347,7 +2287,6 @@
       "id": "lunch_gain_8",
       "name": "Pire krumpir s malo piletine i povrćem",
       "description": "UH fokus! Pire krumpir s piletinom, povrćem i kruhom. Raznolik obrok.",
-      "image": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400&h=300&fit=crop",
       "preparationTip": "Krumpir kuhaj i izgnječi s mlijekom. Piletinu isprži na tavi.",
       "components": [
         {
@@ -2394,7 +2333,6 @@
       "id": "lunch_gain_10",
       "name": "Vegetarijanska tjestenina arabiata",
       "description": "100% vegetarijanski obrok! Ogromna porcija tjestenine s ljutim umakom od rajčice. Čisti UH.",
-      "image": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop",
       "preparationTip": "Kuhaj tjesteninu. Umak pripremi od rajčice s češnjakom i ljutom paprikom.",
       "components": [
         {
@@ -2431,7 +2369,6 @@
       "id": "lunch_gain_11",
       "name": "Riža s povrćem i sirom",
       "description": "Vegetarijanski obrok bogat UH! Riža s povrćem, sirom i kruhom.",
-      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
       "preparationTip": "Kuhaj rižu. Povrće isprži na tavi i pomiješaj s rižom. Dodaj ribani sir.",
       "components": [
         {
@@ -2478,7 +2415,6 @@
       "id": "lunch_gain_12",
       "name": "Pečeni batat sa zrnatim sirom i voćem",
       "description": "Slatki krumpir sa zrnatim sirom, voćem i medom. Raznolik UH obrok.",
-      "image": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400&h=300&fit=crop",
       "preparationTip": "Batat izreži i peci 35-40 min na 200°C. Posluži sa zrnatim sirom i voćem.",
       "components": [
         {
@@ -2520,7 +2456,6 @@
       "id": "lunch_gain_13",
       "name": "Krumpir pire s povrćem",
       "description": "Čisti UH obrok! Kremasti pire krumpir s povrćem. Bez mesa, puno energije.",
-      "image": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400&h=300&fit=crop",
       "preparationTip": "Krumpir kuhaj i izgnječi s mlijekom i maslacem. Povrće kuhaj na pari.",
       "components": [
         {
@@ -2567,7 +2502,6 @@
       "id": "lunch_gain_15",
       "name": "Riža s grahom i kukuruzom",
       "description": "Meksički stil! Riža s grahom, kukuruzom i povrćem. Više izvora UH i vlakana.",
-      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
       "preparationTip": "Kuhaj rižu. Zagrij grah i kukuruz. Pomiješaj sve s povrćem.",
       "components": [
         {
@@ -2614,7 +2548,6 @@
       "id": "lunch_gain_17",
       "name": "Sendvič combo s voćem",
       "description": "Praktičan obrok! Veliki sendvič s voćem i sokom. Više izvora UH bez mesa.",
-      "image": "https://images.unsplash.com/photo-1528207776546-365bb710ee93?w=400&h=300&fit=crop",
       "preparationTip": "Napravi sendvič sa sirom i povrćem. Posluži s voćem i sokom.",
       "components": [
         {
@@ -2661,7 +2594,6 @@
       "id": "lunch_new_1",
       "name": "Piletina u zelenom curry umaku",
       "description": "Azijski low-cal obrok. Piletina u light kokosovom mlijeku s curry pastom i povrćem. Začin pojačava metabolizam.",
-      "image": "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=400&h=300&fit=crop",
       "preparationTip": "Piletinu nasjeckaj na trakice, propeci u woku 5 min, izvadi. U isti wok dodaj curry pastu, prži 1 min. Ulij light kokosovo mlijeko, dodaj papriku i tikvicu, kuhaj 5 min. Vrati piletinu, dodaj špinat dok ne uvene. Posluži preko riže.",
       "components": [
         {
@@ -2708,7 +2640,6 @@
       "id": "lunch_new_2",
       "name": "Salata s tunjevinom i jajetom",
       "description": "Mediteranska proteinska salata. Tuna iz konzerve, tvrdo kuhana jaja, masline i svježe povrće. Jednostavno i zasitno.",
-      "image": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop",
       "preparationTip": "Jaja tvrdo kuhaj 10 min, ohladi, oguli. Zelenu salatu operi, osuši, natrgaj. Rajčice prepolovi. Tunu ocijedi i razdvoji vilicom. Sve posloži u zdjelu, prelij uljem i limunom.",
       "components": [
         {
@@ -2755,7 +2686,6 @@
       "id": "lunch_new_3",
       "name": "Tikvice punjene mljevenom puretinom",
       "description": "Niskokalorične punjene tikvice. Mljevena puretina s rajčicom i začinima. Malo ugljikohidrata, puno proteina.",
-      "image": "https://images.unsplash.com/photo-1571945192246-b9f1b6a7a0bc?w=400&h=300&fit=crop",
       "preparationTip": "Tikvice prepolovi, žlicom izvadi meso. Prodinstaj luk i češnjak, dodaj puretinu 5 min. Dodaj pelate i meso tikvice, kuhaj 5 min. Napuni tikvice, pospi parmezanom. Peci 200°C, 25 min.",
       "components": [
         {
@@ -2797,7 +2727,6 @@
       "id": "lunch_new_4",
       "name": "Juha od piletine i povrća",
       "description": "Topla, zasitna juha niska kalorijama. Pileći temeljac s komadicima mesa i povrćem. Idealno za zimske dane.",
-      "image": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=300&fit=crop",
       "preparationTip": "Piletinu kuhaj u 1L vode s lukom i lovorom 20 min. Izvadi, procijedi temeljac. Dodaj narezano povrće (mrkva, celer, krumpir), kuhaj 15 min. Piletinu nasjeckaj, vrati u juhu. Pospi peršinom.",
       "components": [
         {
@@ -2839,7 +2768,6 @@
       "id": "lunch_maintain_10",
       "name": "Buddha bowl s tofuom",
       "description": "Vegetarijanski bowl pun hranjivih tvari. Tofu, kvinoja, edamame i avokado. Kompletni proteini iz biljnih izvora.",
-      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop",
       "preparationTip": "Kvinoju isperi i kuhaj 15 min. Tofu nasjeckaj, mariniraj u soja sosu, propeci 5 min. Edamame kuhaj 3 min. Avokado i kupus nasjeckaj. U zdjelu posloži sve u sekcijama, pospi sezamom.",
       "components": [
         {
@@ -2886,7 +2814,6 @@
       "id": "lunch_maintain_11",
       "name": "Piletina s batatom i brokulom",
       "description": "Klasičan fitness obrok. Pečena pileća prsa s batatom (slatki krumpir) i brokulom. Uravnoteženi makrosi.",
-      "image": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=300&fit=crop",
       "preparationTip": "Batat nasjeckaj na kockice, promiješaj s uljem i ružmarinom, peci 200°C 20 min. Piletinu začini, peci na tavi 6-7 min sa svake strane. Brokulu kuhaj na pari 5 min, propržI s češnjakom.",
       "components": [
         {
@@ -2923,7 +2850,6 @@
       "id": "lunch_maintain_12",
       "name": "Wrap s puretinom i humusom",
       "description": "Praktičan obrok za van. Pureća prsa s humusom i svježim povrćem u integralnoj tortilji.",
-      "image": "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=400&h=300&fit=crop",
       "preparationTip": "Tortilju zagrijavaj na tavi. Namazi humus po cijeloj površini. Posloži puretinu, rajčicu, krastavac i salatu. Zarolaj čvrsto, prereži dijagonalno.",
       "components": [
         {
@@ -2970,7 +2896,6 @@
       "id": "lunch_gain_18",
       "name": "Govedina s rižom i povrćem stir-fry",
       "description": "Azijski wok obrok bogat proteinima i ugljikohidratima. Govedina s rižom i hrskavim povrćem u soja umaku.",
-      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
       "preparationTip": "Rižu skuhaj. Govedinu nasjeckaj tanko, mariniraj u soji. U woku na jakoj vatri brzo prži meso 2-3 min, izvadi. Dodaj povrće, prži 3-4 min. Vrati meso, dodaj češnjak i đumbir. Posluži preko riže.",
       "components": [
         {
@@ -3017,7 +2942,6 @@
       "id": "lunch_gain_19",
       "name": "Piletina Alfredo s tjesteninom",
       "description": "Kremasta tjestenina za masu. Fettuccine u bijelom umaku s pilećim prsima i parmezanom. Kalorijski gust obrok.",
-      "image": "https://images.unsplash.com/photo-1645112411341-6c4fd023714a?w=400&h=300&fit=crop",
       "preparationTip": "Tjesteninu kuhaj al dente, sačuvaj 100ml vode. Piletinu propeci 6 min. U tavi otopi maslac, prodinstaj češnjak. Ulij vrhnje, kuhaj 2 min. Dodaj parmezan. Umiješaj tjesteninu i piletinu. Pospi peršinom.",
       "components": [
         {
@@ -3059,7 +2983,6 @@
       "id": "lunch_gain_20",
       "name": "Burrito bowl s govedinom",
       "description": "Meksički bowl pun kalorija. Mljevena govedina, riža, grah, kukuruz i guacamole. Kompletan obrok u zdjeli.",
-      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop",
       "preparationTip": "Rižu skuhaj s malo limuna. Govedinu prži 7 min s kuminom i čilijem. Grah i kukuruz zagrijavaj. U zdjelu stavi rižu, posloži meso, grah-kukuruz, salsu, sir i kiselo vrhnje.",
       "components": [
         {
@@ -3111,7 +3034,6 @@
       "id": "lunch_trad_1",
       "name": "Kuhani grah sa zeljem i kobasicom",
       "description": "Tradicionalno hrvatsko jelo. Bijeli grah s kiselim kupusom i domaćom kobasicom. Bogat proteinima i vlaknima, idealno za zimu.",
-      "image": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=300&fit=crop",
       "preparationTip": "Grah namači preko noći, kuhaj 40-50 min dok ne omekša. Kobasicu nasjeckaj na kolutiće, propeci 3 min, izvadi. Prodinstaj luk i češnjak. U grah dodaj povrće, isprani kupus i kobasicu. Kuhaj 15 min, začini lovorom i paprom.",
       "components": [
         {
@@ -3154,7 +3076,6 @@
       "id": "lunch_trad_2",
       "name": "Varivo od graha i zelja",
       "description": "Posna verzija tradicionalnog graha. Bez mesa, samo bijeli grah, kiseli kupus i povrće. Bogat biljnim proteinima.",
-      "image": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=300&fit=crop",
       "preparationTip": "Grah namači preko noći, kuhaj u svježoj vodi 45 min. Na malo ulja prodinstaj luk, mrkvu i celer 5 min. Dodaj povrće u grah, pa isprani kiseli kupus. Kuhaj 20 min. Začini lovorom, soli i paprom. Ostavi 10 min prije posluživanja.",
       "components": [
         {
@@ -3202,7 +3123,6 @@
       "id": "lunch_trad_3",
       "name": "Maneštra",
       "description": "Istarska gusta juha/varivo. Grah, krumpir, kukuruzna krupica i sezonsko povrće. Kalorijski gust, zasitan obrok.",
-      "image": "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=300&fit=crop",
       "preparationTip": "Grah namači preko noći, kuhaj 30 min. Krumpir nasjeckaj na kockice, dodaj u grah s mrkvu i celerom. Kuhaj 15 min. Dodaj kukuruznu krupicu uz stalno miješanje da ne budu grudice. Kuhaj još 10 min. Dodaj blitvu zadnjih 5 min. Začini lovorom, maslinovim uljem i paprom.",
       "components": [
         {
@@ -3250,7 +3170,6 @@
       "id": "lunch_trad_4",
       "name": "Rižot od povrća s piletinom",
       "description": "Hrvatska verzija rižota. Riža arborio s pilećim prsima i sezonskim povrćem. Kremasto i zasitno, puno proteina.",
-      "image": "https://images.unsplash.com/photo-1516714435131-44d6b64dc6a2?w=400&h=300&fit=crop",
       "preparationTip": "Pileći temeljac drži toplim. Piletinu propeci, nasjeckaj, stavi sa strane. Na maslacu prodinstaj luk, dodaj rižu, prži 1 min. Postupno dodaj temeljac uz stalno miješanje. Nakon 10 min dodaj mrkvu, nakon 5 min grašak i piletinu. Umiješaj parmezan.",
       "components": [
         {
@@ -3305,7 +3224,6 @@
       "id": "dinner_lose_1",
       "name": "Tuna s rižinim kreklerima i kuhanim povrćem",
       "description": "Lagana večera idealna za deficit. Tuna pruža proteine i omega-3, rižini krekersi lagane ugljikohidrate, a kuhano povrće volumen za sitost bez kalorija. Grčki jogurt opcionalno za dodatne proteine.",
-      "image": "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=400&h=300&fit=crop",
       "preparationTip": "Tunu iscijedi iz konzerve. Povrće kuhaj na pari ili u vodi. Posluži sve na velikom tanjuru za vizualni efekt sitosti.",
       "components": [
         {
@@ -3343,7 +3261,6 @@
       "id": "dinner_lose_2",
       "name": "Grčki jogurt s proteinima i voćem",
       "description": "Niskokalorična večera bogata kazeinom za noćnu regeneraciju. Probiotici iz jogurta podržavaju probavu, a borovnice pružaju antioksidanse. Idealno za kasnu večeru.",
-      "image": "https://images.unsplash.com/photo-1505253758473-96b7015fcd40?w=400&h=300&fit=crop",
       "preparationTip": "Koristi grčki jogurt mm. Whey pomiješaj dok ne postane kremast. Voće dodaj svježe na vrh.",
       "components": [
         {
@@ -3381,7 +3298,6 @@
       "id": "dinner_lose_3",
       "name": "Piletina iz air fryera sa salatom",
       "description": "Čista, proteinska večera bez nepotrebnih ugljikohidrata. Piletina iz air fryera je sočna bez dodanog ulja, a obilna salata daje volumen. Idealno za večer u deficitu.",
-      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop",
       "preparationTip": "Piletinu začini i peci u air fryeru. Salatu pripremi sa sokom limuna umjesto ulja za dressing.",
       "components": [
         {
@@ -3419,7 +3335,6 @@
       "id": "dinner_lose_4",
       "name": "Pureća prsa s kuhanim povrćem",
       "description": "Ultra-lagana proteinska večera s posnom puretinom. Bez ugljikohidrata navečer za bolju definiciju. Povrće daje volumen bez kalorija.",
-      "image": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=300&fit=crop",
       "preparationTip": "Puretinu peci u air fryeru 20 min. Povrće kuhaj na pari. Začini limunom i začinskim biljem.",
       "components": [
         {
@@ -3456,7 +3371,6 @@
       "id": "dinner_lose_5",
       "name": "Losos s kuhanim krumpirom i salatom",
       "description": "Omega-3 bogata večera za oporavak mišića. Losos podržava metabolizam i hormonalnu funkciju tijekom deficita. Kuhani krumpir je lak za probavu navečer.",
-      "image": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=300&fit=crop",
       "preparationTip": "Lososa peci u air fryeru 12-14 min. Krumpir kuhaj do mekoće. Salatu posluži svježu.",
       "components": [
         {
@@ -3493,7 +3407,6 @@
       "id": "dinner_lose_6",
       "name": "Juneći odrezak s brokulom i rajčicama",
       "description": "Bogat izvor željeza i B12 vitamina za noćnu regeneraciju. Juneći odrezak pruža kreatin i kvalitetne proteine, a brokula i rajčice vitamine bez značajnih kalorija.",
-      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop",
       "preparationTip": "Juneći odrezak peci na tavi sa sprej uljem 3-4 min sa svake strane. Brokulu kuhaj na pari.",
       "components": [
         {
@@ -3525,7 +3438,6 @@
       "id": "dinner_lose_7",
       "name": "Piletina sa zrnatim sirom i špinatom",
       "description": "Dvostruki protein za noćnu sintezu mišića. Kazein iz zrnatog sira pruža sporu apsorpciju proteina tijekom sna, a piletina kompletne aminokiseline.",
-      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
       "preparationTip": "Piletinu pripremi u air fryeru. Zrnati sir posluži hladan. Špinat blanširaj 1-2 min.",
       "components": [
         {
@@ -3557,7 +3469,6 @@
       "id": "dinner_lose_8",
       "name": "Tuna salata s kuhanim jajima",
       "description": "Lagana proteinska večera bez ugljikohidrata. Tuna i jaja zajedno pružaju preko 50g proteina. Salata daje volumen i vlakna za sitost.",
-      "image": "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop",
       "preparationTip": "Jaja kuhaj 10 min za tvrdo kuhana. Tunu iscijedi. Sve pomiješaj sa salatom.",
       "components": [
         {
@@ -3594,7 +3505,6 @@
       "id": "dinner_lose_9",
       "name": "Pureća salama s grčkim jogurtom i povrćem",
       "description": "Brza proteinska večera kada nemaš vremena za kuhanje. Pureća salama s jogurtom i svježim povrćem - praktično i ukusno za deficit.",
-      "image": "https://images.unsplash.com/photo-1505253758473-96b7015fcd40?w=400&h=300&fit=crop",
       "preparationTip": "Salamu nasjeckaj i posluži s jogurtom kao dip. Povrće izreži na štapiće.",
       "components": [
         {
@@ -3631,7 +3541,6 @@
       "id": "dinner_lose_10",
       "name": "Piletina s pire krumpirom i graškom",
       "description": "Comfort food večera za deficit. Sočna piletina s kremastim pireom i slatkim graškom. Visok protein, umjerene kalorije.",
-      "image": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=300&fit=crop",
       "preparationTip": "Piletinu peci u air fryeru. Pire napravi s malo mlijeka bez maslaca. Grašak kuhaj 5 min.",
       "components": [
         {
@@ -3668,7 +3577,6 @@
       "id": "dinner_lose_11",
       "name": "Junetina s kuhanim povrćem",
       "description": "Tradicionalna večera s posnom junetinom i kuhanim povrćem. Bogata željezom i vitaminima. Bez ugljikohidrata za večer.",
-      "image": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop",
       "preparationTip": "Junetinu peci na tavi ili u air fryeru. Povrće kuhaj na pari da zadrži hranjive tvari.",
       "components": [
         {
@@ -3705,7 +3613,6 @@
       "id": "dinner_lose_12",
       "name": "Tuna s grahom i rajčicama",
       "description": "Mediteranska večera s tunom i grahom. Omega-3 masne kiseline i biljni proteini za noćnu regeneraciju.",
-      "image": "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=300&fit=crop",
       "preparationTip": "Tunu iscijedi. Grah zagrij s rajčicama i češnjakom. Pomiješaj sve zajedno.",
       "components": [
         {
@@ -3742,7 +3649,6 @@
       "id": "dinner_lose_13",
       "name": "Pureća prsa s mladim krumpirom",
       "description": "Ultra-posna puretina s mladim krumpirom. Više proteina od piletine, manje masti. Salata dodaje volumen.",
-      "image": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400&h=300&fit=crop",
       "preparationTip": "Pureća prsa peci u air fryeru 20-22 min. Mladi krumpir kuhaj u kori sa solju.",
       "components": [
         {
@@ -3779,7 +3685,6 @@
       "id": "dinner_lose_14",
       "name": "Losos s kuhanim krumpirom i brokulom",
       "description": "Omega-3 bogata večera s lososom. Kuhani krumpir je lak za probavu navečer, brokula dodaje vlakna i vitamine.",
-      "image": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=300&fit=crop",
       "preparationTip": "Lososa peci u air fryeru 12-14 min. Krumpir i brokulu kuhaj odvojeno.",
       "components": [
         {
@@ -3811,7 +3716,6 @@
       "id": "dinner_lose_15",
       "name": "Piletina s grah salatom",
       "description": "Hladna proteinska večera - idealna za vruće dane. Piletina s grahom i povrćem u jednoj zdjeli.",
-      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
       "preparationTip": "Piletinu ispeci i ohladi. Pomiješaj s grahom, kukuruzom i povrćem. Začini limunom.",
       "components": [
         {
@@ -3853,7 +3757,6 @@
       "id": "dinner_maintain_1",
       "name": "Junetina s kuhanim krumpirom i salatom",
       "description": "Uravnotežena večera s kvalitetnim proteinima iz junetine i umjerenim ugljikohidratima. Kuhani krumpir je lako probavljiv, a salata dodaje svježinu i vitamine.",
-      "image": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=300&fit=crop",
       "preparationTip": "Junetinu pripremi na tavi sa sprej uljem ili u pećnici. Krumpir kuhaj u slanoj vodi.",
       "components": [
         {
@@ -3889,7 +3792,6 @@
       "id": "dinner_maintain_2",
       "name": "Losos s povrćem i rižom",
       "description": "Mediteranska večera bogata omega-3 masnim kiselinama. Losos podržava zdravlje srca i mozga, riža daje energiju, a povrće vitamine i vlakna.",
-      "image": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop",
       "preparationTip": "Lososa peci u pećnici ili air fryeru 15 min. Povrće kuhaj na pari ili roštilja za zadržavanje nutrijenata.",
       "components": [
         {
@@ -3926,7 +3828,6 @@
       "id": "dinner_gain_1",
       "name": "Losos s tostom i salatom",
       "description": "Kalorijski bogata večera s omega-3 mastima za hormonalnu podršku i rast mišića. Tost dodaje ugljikohidrate, a avokado zdrave masti za anabolizam tijekom sna.",
-      "image": "https://images.unsplash.com/photo-1580476262798-bddd9f4b7369?w=400&h=300&fit=crop",
       "preparationTip": "Lososa peci u pećnici. Tost prepeci i posluži s avokadom i salatom.",
       "components": [
         {
@@ -3964,7 +3865,6 @@
       "id": "dinner_gain_2",
       "name": "Ostatak tjestenine s tunom",
       "description": "Praktična večera od ostataka ručka - tjestenina s tunom i povrćem. Kalorijski gusta opcija za nadopunu dnevnog unosa prije spavanja.",
-      "image": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop",
       "preparationTip": "Podgrijaj tjesteninu na tavi s malo vode da ne bude suha. Dodaj svježe povrće za teksturu.",
       "components": [
         {
@@ -4001,7 +3901,6 @@
       "id": "dinner_gain_3",
       "name": "Junetina s krumpirom i salatom",
       "description": "Moćna večera za maksimalnu regeneraciju. Junetina pruža kreatin i cink za testosterone, krumpir glikogen za mišiće, a salata vitamine za oporavak.",
-      "image": "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&h=300&fit=crop",
       "preparationTip": "Junetinu pripremi na roštilju ili u pećnici. Krumpir može biti pečeni ili pire s malo mlijeka.",
       "components": [
         {
@@ -4039,7 +3938,6 @@
       "id": "dinner_gain_4",
       "name": "Pizza alternativa",
       "description": "Zdrava verzija pizze za bodybuildere. Tijesto od skyra, jaja i brašna, gore rajčice, pileća salama, ribana mozzarella i masline. Kalorijski gusta opcija koja zadovoljava želju za pizzom.",
-      "image": "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400&h=300&fit=crop",
       "preparationTip": "Pomiješaj skyr, jaja i brašno za tijesto. Peci 10-12 min, dodaj preljev i peci još 8-10 min.",
       "components": [
         {
@@ -4087,7 +3985,6 @@
       "id": "dinner_gain_5",
       "name": "Riža s malo lososa",
       "description": "Ugljikohidratni fokus za večeru! Velika porcija riže s manjom količinom lososa za omega-3 i proteine.",
-      "image": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop",
       "preparationTip": "Kuhaj veliku porciju riže. Lososa peci 12-15 min i raskomadaj preko riže.",
       "components": [
         {
@@ -4124,7 +4021,6 @@
       "id": "dinner_gain_6",
       "name": "Pečeni krumpir sa zrnatim sirom",
       "description": "Jednostavna, ugljikohidratna večera. Puno pečenog krumpira s laganim zrnatim sirom za protein. Savršeno za punjenje glikogena.",
-      "image": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400&h=300&fit=crop",
       "preparationTip": "Krumpir izreži na kriške, poprskaj uljem i peci 30-35 min na 200°C.",
       "components": [
         {
@@ -4161,7 +4057,6 @@
       "id": "dinner_gain_7",
       "name": "Tjestenina carbonara light",
       "description": "Lakša verzija klasika! Velika porcija tjestenine s jajima i malo sira. Manje proteina, više UH.",
-      "image": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop",
       "preparationTip": "Kuhaj tjesteninu. U zdjelici umuti jaja i sir. Pomiješaj vruću tjesteninu s jajima off heat.",
       "components": [
         {
@@ -4198,7 +4093,6 @@
       "id": "dinner_gain_8",
       "name": "Pesto tjestenina s tunom",
       "description": "Mediteranski klasik! Velika porcija tjestenine s pesto umakom i malo tune za omega-3. Fokus na UH.",
-      "image": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop",
       "preparationTip": "Kuhaj tjesteninu. Pomiješaj s pesto umakom i tunom iz konzerve.",
       "components": [
         {
@@ -4235,7 +4129,6 @@
       "id": "dinner_gain_9",
       "name": "Kremasta riža s piletinom",
       "description": "Rižoto inspiracija! Kremasta riža s vrhnjem za kuhanje i malo piletine. Puno UH, umjereni proteini.",
-      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
       "preparationTip": "Kuhaj rižu. Piletinu isprži i nasjeckaj. Pomiješaj sve s vrhnjem za kuhanje.",
       "components": [
         {
@@ -4272,7 +4165,6 @@
       "id": "dinner_gain_10",
       "name": "Gnocchi s vrhnjem i piletinom",
       "description": "Talijanski njoki! Krumpirovi njoki s kremastim umakom i malo piletine. Ugljikohidratna bomba!",
-      "image": "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop",
       "preparationTip": "Njoke kuhaj po uputama. Piletinu isprži, dodaj vrhnje i začine. Pomiješaj s njokima.",
       "components": [
         {
@@ -4309,7 +4201,6 @@
       "id": "dinner_gain_11",
       "name": "Krumpir pire s umakom i povrćem",
       "description": "Comfort food! Pire krumpir s malo mesa u umaku od vrhnja, povrće i kruh.",
-      "image": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400&h=300&fit=crop",
       "preparationTip": "Krumpir kuhaj i izgnječi s mlijekom. Meso isprži i pomiješaj s vrhnjem.",
       "components": [
         {
@@ -4356,7 +4247,6 @@
       "id": "dinner_gain_13",
       "name": "Riža s povrćem na azijski način",
       "description": "Vegetarijanski prženi riža! S povrćem, sojinim umakom i proljetnim rolama.",
-      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
       "preparationTip": "Rižu kuhaj dan prije za bolju teksturu. Isprži s povrćem i sojinim umakom.",
       "components": [
         {
@@ -4408,7 +4298,6 @@
       "id": "dinner_gain_14",
       "name": "Pečeni krumpir sa sirom i vrhnjem",
       "description": "Loaded potato! Pečeni krumpir s kiselim vrhnjem, sirom i povrćem.",
-      "image": "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400&h=300&fit=crop",
       "preparationTip": "Peci krumpir 50-60 min. Prereži i dodaj vrhnje, sir i povrće.",
       "components": [
         {
@@ -4455,7 +4344,6 @@
       "id": "dinner_gain_16",
       "name": "Rižoto s grahom i kukuruzom",
       "description": "Meksički stil! Riža s grahom, kukuruzom i tortiljom. Raznolikost UH izvora.",
-      "image": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400&h=300&fit=crop",
       "preparationTip": "Kuhaj rižu. Dodaj grah i kukuruz. Posluži s tortiljom.",
       "components": [
         {
@@ -4502,7 +4390,6 @@
       "id": "dinner_gain_17",
       "name": "Palačinke večera",
       "description": "Slatka večera! Palačinke s voćem i medom. Više vrsta UH u jednom obroku.",
-      "image": "https://images.unsplash.com/photo-1506084868230-bb9d95c24759?w=400&h=300&fit=crop",
       "preparationTip": "Ispeci palačinke. Posluži s voćem, jogurtom i medom.",
       "components": [
         {
@@ -4549,7 +4436,6 @@
       "id": "dinner_new_1",
       "name": "Pečeni brancin s mladim krumpirom",
       "description": "Mediteranska riba bogata omega-3 mastima. Brancin pečen s limunom i začinskim biljem. Nizak unos kalorija, visoka nutritivna vrijednost.",
-      "image": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=300&fit=crop",
       "preparationTip": "Krumpir opere, prepolovi, kuhaj 10 min. Brancina očisti, napravI zareze, utrljaj sol. U trbuh stavi limun, ružmarin i češnjak. U pleh stavi krumpir s uljem, položi ribu. Peci 200°C 20-25 min. Špinat kratko prodinstaj, posluži uz ribu.",
       "components": [
         {
@@ -4591,7 +4477,6 @@
       "id": "dinner_new_2",
       "name": "Pureća prsa s gljivama i pireom",
       "description": "Posna puretina s niskom masnoćom. Gljive dodaju mesonosnost bez kalorija. Lagani pire od krumpira za sitost.",
-      "image": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=300&fit=crop",
       "preparationTip": "Krumpir kuhaj 20 min, ocijedi, izgnječi s toplim mlijekom. Pureća prsa začini, peci 5-6 min sa svake strane. Gljive nasjeckaj, propržI na istoj tavi. Dodaj češnjak i timijan, ulij 50ml vode za umak. Posluži s pireom.",
       "components": [
         {
@@ -4628,7 +4513,6 @@
       "id": "dinner_new_3",
       "name": "Salata s piletinom i avokadom",
       "description": "Lagana večera idealna za deficit. Pileća prsa na žaru s avokadom i svježim povrćem. Zdrave masti iz avokada.",
-      "image": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop",
       "preparationTip": "Piletinu začini, peči na roštilju ili tavi 6-7 min sa strane. Odmori 5 min, nasjeckaj. Salatu natrgaj, dodaj rajčice i krastavac. Avokado nasjeckaj. Rasporedi sve u zdjeli, prelij uljem i limunom.",
       "components": [
         {
@@ -4675,7 +4559,6 @@
       "id": "dinner_new_4",
       "name": "Oslić u foliji s povrćem",
       "description": "Riba pečena u foliji zadržava sve sokove i okuse. Oslić s krumpirom i povrćem - kompletan lagani obrok.",
-      "image": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=300&fit=crop",
       "preparationTip": "Krumpir nasjeckaj tanko, stavi na foliju kao bazu. Povrće nasjeckaj, posloži na krumpir. Položi oslić filet, začini, dodaj limun. Prelij vinom, zatvori foliju. Peci 200°C 25 min. Otvori, pospi peršinom.",
       "components": [
         {
@@ -4717,7 +4600,6 @@
       "id": "dinner_maintain_8",
       "name": "Losos s kvinojom i šparogama",
       "description": "Premium obrok bogat omega-3. Losos je jedan od najboljih izvora zdravih masti. Kvinoja pruža kompletne proteine, šparoge vlakna.",
-      "image": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400&h=300&fit=crop",
       "preparationTip": "Kvinoju isperi i kuhaj 15 min. Lososa začini, peci kožom dolje 4 min, okreni, peci još 3 min. Šparogama odlomi drvenaste krajeve, blanširaj 2 min, propržI na tavi s uljem. Posluži zajedno, iscijedi limun, pospi koparom.",
       "components": [
         {
@@ -4759,7 +4641,6 @@
       "id": "dinner_maintain_9",
       "name": "Piletina s mediteranskim povrćem",
       "description": "Pečena piletina s mediteranskim povrćem i krumpirom. Sve se peče zajedno u pećnici - jednostavno i ukusno.",
-      "image": "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=400&h=300&fit=crop",
       "preparationTip": "Povrće i krumpir nasjeckaj na jednake kockice, stavi u pleh s uljem i začinima. Peci 200°C 20 min, promiješaj. Piletinu začini, položi na povrće. Peci još 20-25 min. Provjeri je li meso gotovo.",
       "components": [
         {
@@ -4806,7 +4687,6 @@
       "id": "dinner_maintain_10",
       "name": "Pečena orada s batatom",
       "description": "Mediteranska riba s batatom. Orada je niskokaloična riba bogatog okusa. Batat pruža složene ugljikohidrate.",
-      "image": "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=300&fit=crop",
       "preparationTip": "Batat nasjeckaj na kockice, stavi u pleh s polovicom ulja, peci 15 min. Oradu očisti, zarezi, utrljaj sol. U trbuh stavi ružmarin i limun. Položi na batat, okruži rajčicama. Peci 200°C 20-25 min.",
       "components": [
         {
@@ -4843,7 +4723,6 @@
       "id": "dinner_gain_18",
       "name": "Biftek s pireom i gljivama",
       "description": "Klasičan steak obrok. Biftek s gljivama u umaku i kremastim pireom. Visoko proteinski i kalorijski gust.",
-      "image": "https://images.unsplash.com/photo-1600891964092-4316c288032e?w=400&h=300&fit=crop",
       "preparationTip": "Biftek izvadi 30 min prije. Krumpir kuhaj 20 min, izgnječi s maslacem i mlijekom. Biftek osoli, popapri, peci na jakoj vatri 3-4 min sa strane (medium rare). Odmori 5 min. Na istoj tavi propržI gljive.",
       "components": [
         {
@@ -4885,7 +4764,6 @@
       "id": "dinner_gain_19",
       "name": "Lazanje s govedinom",
       "description": "Klasične talijanske lazanje. Slojevi tjestenine, bolognese umaka od govedine, bešamela i sira. Kalorijska bomba.",
-      "image": "https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=400&h=300&fit=crop",
       "preparationTip": "Prodinstaj luk, dodaj meso, prži 7 min. Dodaj pelate, origano, lovor, kuhaj 15 min. U posudu stavi sloj umaka, listovi, meso, bešamel - ponovi. Završi bešamelom i parmezanom. Peci 180°C 30 min pod folijom, 15 min bez.",
       "components": [
         {
@@ -4927,7 +4805,6 @@
       "id": "dinner_gain_20",
       "name": "Piletina s tjesteninom i pestom",
       "description": "Brza i ukusna tjestenina za masu. Piletina s pestom, cherry rajčicama i parmezanom. Preko 700 kcal.",
-      "image": "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=300&fit=crop",
       "preparationTip": "Tjesteninu kuhaj al dente, sačuvaj vode. Piletinu nasjeckaj, propeci 6 min. Rajčice prepolovi, kratko propržI. U zdjelu stavi tjesteninu, dodaj pesto i malo vode. Umiješaj piletinu i rajčice. Pospi parmezanom i pinijama.",
       "components": [
         {
@@ -4974,7 +4851,6 @@
       "id": "dinner_trad_1",
       "name": "Pašticada s njokima",
       "description": "Dalmatinsko svečano jelo. Govedina pirjana u aromatičnom umaku od vina, suhe šljive i začina. Tradicionalno se služi s njokima ili njukima. Dugo pirjanje čini meso iznimno mekkim.",
-      "image": "https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=300&fit=crop",
       "preparationTip": "Govedinu nafilaj češnjakom i slaninom, marinira 24h u vinu s lovorom. Prodinstaj luk i korjenasto povrće 10 min. Dodaj meso, podlij marinadu, kuhaj poklopljeno na tihoj vatri 3-4 sata. Dodaj suhe šljive i rajčicu zadnji sat. Umak pasira. Njoke kuhaj u slanoj vodi. Posluži meso narezano s njokima i umakom.",
       "components": [
         {
@@ -5021,7 +4897,6 @@
       "id": "dinner_trad_2",
       "name": "Gulaš s krumpirom",
       "description": "Kontinentalna klasika. Govedina pirjana s lukom i paprikom u gustom umaku. Krumpir upija sve okuse umaka. Zdrava verzija bez previše masti.",
-      "image": "https://images.unsplash.com/photo-1534939561126-855b8675edd7?w=400&h=300&fit=crop",
       "preparationTip": "Na malo ulja prodinstaj puno luka (200g) dok ne postane staklast - to je baza okusa. Dodaj govedinu narezanu na kocke, pirjaj 10 min. Dodaj papriku, čili, kumin. Podlij vodom da prekrije meso. Kuhaj poklopljeno 1.5-2 sata dok meso ne omekša. Krumpir nasjeckaj, dodaj zadnjih 30 min. Posluži s kruhom.",
       "components": [
         {
@@ -5064,7 +4939,6 @@
       "id": "dinner_trad_3",
       "name": "Saft od junetine s rižom",
       "description": "Tradicionalni pirjani saft. Junetina polako pirjana s lukom i rajčicom daje bogat umak. Posluži se s bijelom rižom koja upija sve sokove. Zdrava priprema bez pohanja.",
-      "image": "https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=300&fit=crop",
       "preparationTip": "Junetinu nasjeckaj na kocke, posoli. Na malo ulja prodinstaj luk i češnjak 5 min. Dodaj meso, pirjaj dok ne promijeni boju. Dodaj rajčicu, papriku, lovor. Podlij vodom, kuhaj poklopljeno na tihoj vatri 2 sata. Rižu skuhaj. Posluži meso s umakom preko riže.",
       "components": [
         {
@@ -5107,7 +4981,6 @@
       "id": "dinner_trad_4",
       "name": "Piletina tikka masala s rižom",
       "description": "Indijski klasik za ljubitelje začinjene hrane. Piletina u kremastom umaku od rajčice i jogurta sa začinima. Rižom basmati upijate umak.",
-      "image": "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&h=300&fit=crop",
       "preparationTip": "Piletinu nasjeckaj, mariniraj u jogurtu i pola tikka paste 30 min. Propeci piletinu 5 min. Zasebno prodinstaj luk, dodaj ostatak paste 1 min. Ulij pasiranu rajčicu, kuhaj 5 min. Dodaj piletinu, kuhaj još 5 min. Posluži preko basmati riže s korihjandrom.",
       "components": [
         {
@@ -5151,7 +5024,6 @@
       "id": "snack_lose_1",
       "name": "Whey shake na vodi",
       "description": "Najčišći proteinski obrok - samo whey i voda. Minimalne kalorije, maksimum proteina za očuvanje mišića u deficitu. Brza apsorpcija, idealno između obroka.",
-      "image": "https://images.unsplash.com/photo-1594498653385-d5172c532c00?w=400&h=300&fit=crop",
       "preparationTip": "Promiješaj whey s hladnom vodom u shaker boci. Za bolji okus dodaj led.",
       "components": [
         {
@@ -5173,7 +5045,6 @@
       "id": "snack_lose_2",
       "name": "Pileća salama s krekerima i posnim sirom",
       "description": "Slana, proteinska užina bez puno kalorija. Pileća salama i posni sir pružaju proteine, a krekersi zadovoljavaju želju za hrskavim. Jogurt dodaje probiotike.",
-      "image": "https://images.unsplash.com/photo-1628191139360-4083564d03fd?w=400&h=300&fit=crop",
       "preparationTip": "Biraj pileću salamu s niskim udjelom masti. Posni sir može biti zrnati sir ili bilo koji do 10% mm.",
       "components": [
         {
@@ -5210,7 +5081,6 @@
       "id": "snack_lose_3",
       "name": "Skyr s bananom",
       "description": "Jednostavna ali zasitna užina. Skyr ima najviše proteina od svih jogurta (11g/100g) s minimalnom masnoćom. Banana dodaje kalij i prirodnu energiju.",
-      "image": "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=300&fit=crop",
       "preparationTip": "Koristi čisti skyr bez dodanih šećera. Bananu nasjeckaj i umiješaj.",
       "components": [
         {
@@ -5238,7 +5108,6 @@
       "id": "snack_lose_4",
       "name": "Zrnati sir s rajčicama",
       "description": "Proteinska bomba s minimalnim kalorijama. Zrnati sir pruža kazein za dugotrajnu sitost, a rajčice dodaju svježinu i likopen.",
-      "image": "https://images.unsplash.com/photo-1464454709131-ffd692591ee5?w=400&h=300&fit=crop",
       "preparationTip": "Koristi posni zrnati sir. Rajčice nasjeckaj i pomiješaj sa sirom. Začini paprom.",
       "components": [
         {
@@ -5265,7 +5134,6 @@
       "id": "snack_lose_5",
       "name": "Pureća prsa s krastavcima i krekerima",
       "description": "Ukusna proteinska užina! Pureća prsa pružaju čisti protein, krastavci osvježavaju, krekeri daju hrskavost, a sirni namaz kremastost.",
-      "image": "https://images.unsplash.com/photo-1628191139360-4083564d03fd?w=400&h=300&fit=crop",
       "preparationTip": "Namazi krekere sirnim namazom, posloži pureća prsa i krastavce na vrh. Može se jesti kao mini sendviči.",
       "components": [
         {
@@ -5302,7 +5170,6 @@
       "id": "snack_lose_6",
       "name": "Tuna s rižinim krekerima",
       "description": "Omega-3 bogata užina s hrskavim krekerima. Tuna u salamuri pruža proteine bez masti, a krekersi minimalne ugljikohidrate za teksturu.",
-      "image": "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=400&h=300&fit=crop",
       "preparationTip": "Tunu dobro iscijedi. Posluži na rižinim krekerima kao mini sendviče.",
       "components": [
         {
@@ -5329,7 +5196,6 @@
       "id": "snack_lose_8",
       "name": "Whey s grčkim jogurtom",
       "description": "Dvostruki protein shake - whey za brzu apsorpciju, jogurt za kazein. Kremasta tekstura s minimalnim kalorijama i maksimumom proteina.",
-      "image": "https://images.unsplash.com/photo-1594498653385-d5172c532c00?w=400&h=300&fit=crop",
       "preparationTip": "Whey umiješaj u grčki jogurt dok ne postane kremasto. Može biti i smoothie s ledom.",
       "components": [
         {
@@ -5356,7 +5222,6 @@
       "id": "snack_maintain_1",
       "name": "Grčki jogurt s voćem i bademima",
       "description": "Uravnotežena užina s proteinima, ugljikohidratima i zdravim mastima. Grčki jogurt pruža kazein, voće vitamine, a bademi energiju i vitamin E.",
-      "image": "https://images.unsplash.com/photo-1505253758473-96b7015fcd40?w=400&h=300&fit=crop",
       "preparationTip": "Koristi grčki jogurt 2% za bolji okus. Bademe možeš prepržiti za hrskavost.",
       "components": [
         {
@@ -5392,7 +5257,6 @@
       "id": "snack_maintain_2",
       "name": "Proteinski shake",
       "description": "Klasičan proteinski shake s mlijekom za uravnotežen unos nutrijenata. Banana dodaje ugljikohidrate i kremastost. Idealan između obroka.",
-      "image": "https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=400&h=300&fit=crop",
       "preparationTip": "Miksaj u blenderu za glatku teksturu. Može i samo promućkati u shaker boci.",
       "components": [
         {
@@ -5424,7 +5288,6 @@
       "id": "snack_gain_1",
       "name": "Mass gainer shake",
       "description": "Kalorijski bogat shake za unos dodatnih kalorija. Mlijeko, whey, banana, kikiriki maslac i zobene stvaraju kremasti shake s preko 600 kcal. Idealan kada je teško jesti dovoljno.",
-      "image": "https://images.unsplash.com/photo-1638176066666-ffb2f013c7dd?w=400&h=300&fit=crop",
       "preparationTip": "Sve miksaj u blenderu 30-60 sekundi. Zobene se potpuno razgrade i neće se osjećati. Pij polako.",
       "components": [
         {
@@ -5466,7 +5329,6 @@
       "id": "snack_gain_2",
       "name": "Skyr s proteinima, voćem i bademima",
       "description": "Kremasta, slatka užina bogata proteinima i kalorijama. Skyr i whey osiguravaju aminokiseline, voće ugljikohidrate, a bademi zdrave masti i dodatne kalorije.",
-      "image": "https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=400&h=300&fit=crop",
       "preparationTip": "Umiješaj whey u skyr dok ne postane kremast. Voće i bademe posloži na vrh.",
       "components": [
         {
@@ -5508,7 +5370,6 @@
       "id": "snack_gain_3",
       "name": "Kikiriki maslac s tostom i bananom",
       "description": "Brza, kalorijski gusta užina. Kikiriki maslac pruža 25g proteina na 100g plus zdrave masti. Tost i banana dodaju ugljikohidrate za energiju.",
-      "image": "https://images.unsplash.com/photo-1558745087-0cc0a3339c87?w=400&h=300&fit=crop",
       "preparationTip": "Tost prepeci i namazi kikiriki maslacem dok je topao. Bananu nasjeckaj na vrh ili jedi uz.",
       "components": [
         {
@@ -5540,7 +5401,6 @@
       "id": "snack_gain_4",
       "name": "Grčki jogurt shake s voćem",
       "description": "Kremasti shake alternativa klasičnom protein shakeu. Grčki jogurt dodaje probiotike i teksturu, a voće vitamine i ugljikohidrate. Idealan za popodnevnu užinu.",
-      "image": "https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=400&h=300&fit=crop",
       "preparationTip": "Miksaj sve u blenderu. Dodaj led za hladniju verziju. Može se piti ili jesti žlicom kao bowl.",
       "components": [
         {
@@ -5578,7 +5438,6 @@
       "id": "snack_gain_5",
       "name": "Zdravi proteinski muffini",
       "description": "Praktična užina koja se može pripremiti unaprijed. Zobeno brašno, whey, banana ili skyr, jaja i malo kokosovog ulja stvaraju kremaste muffine bogate proteinima. Idealan za brzu užinu.",
-      "image": "https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=400&h=300&fit=crop",
       "preparationTip": "Pomiješaj sve sastojke, peci u kalupima za muffine 20-25 min na 180°C. Može se zamrznuti i podgrijati po potrebi.",
       "components": [
         {
@@ -5621,7 +5480,6 @@
       "id": "snack_gain_6",
       "name": "Banana bread u sportskoj verziji",
       "description": "Zdrava verzija klasičnog banana breada. Zobeno ili integralno brašno, zrele banane, malo ulja i po želji whey. Kalorijski gusta opcija koja zadovoljava želju za slatkim.",
-      "image": "https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=400&h=300&fit=crop",
       "preparationTip": "Zgnječi zrele banane, pomiješaj s brašnom, jajima i wheyem. Peci 40-45 min na 175°C. Može se zamrznuti u kriške.",
       "components": [
         {
@@ -5664,7 +5522,6 @@
       "id": "snack_gain_7",
       "name": "Zobena kaša s bananom (brza)",
       "description": "Brza ugljikohidratna užina! Instant zobene s bananom i mlijekom. Savršeno za brzi boost energije.",
-      "image": "https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=400&h=300&fit=crop",
       "preparationTip": "Prelij zobene vrućim mlijekom, dodaj narezanu bananu. Gotovo za 3 minute.",
       "components": [
         {
@@ -5696,7 +5553,6 @@
       "id": "snack_gain_8",
       "name": "Voćni smoothie s zobenim",
       "description": "Kalorijski gust smoothie s puno voća i zobenih. Manje proteina, više ugljikohidrata za energiju.",
-      "image": "https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=400&h=300&fit=crop",
       "preparationTip": "Miksaj sve u blenderu 30-60 sekundi dok ne bude glatko.",
       "components": [
         {
@@ -5733,7 +5589,6 @@
       "id": "snack_gain_9",
       "name": "Rižini krekersi s avokadom",
       "description": "Lagana ali kalorijski gusta užina. Rižini krekersi s kremastim avokadom pružaju UH i zdrave masti.",
-      "image": "https://images.unsplash.com/photo-1628191139360-4083564d03fd?w=400&h=300&fit=crop",
       "preparationTip": "Izgnječi avokado i posoli. Namazi na rižine krekerse.",
       "components": [
         {
@@ -5760,7 +5615,6 @@
       "id": "snack_gain_10",
       "name": "Sendvič s kikirikijem i džemom",
       "description": "Klasični PB&J! Puno tosta s kikiriki maslacem i džemom. Ogromna količina ugljikohidrata i kalorija.",
-      "image": "https://images.unsplash.com/photo-1558745087-0cc0a3339c87?w=400&h=300&fit=crop",
       "preparationTip": "Prepeci tost, namazi jednu stranu kikirikijem, drugu džemom. Složi sendvič.",
       "components": [
         {
@@ -5792,7 +5646,6 @@
       "id": "snack_new_1",
       "name": "Štapići od krastavca s humusom",
       "description": "Hrskava i osvježavajuća užina. Krastavac je 95% vode, humus pruža proteine i vlakna iz slanutka. Minimalne kalorije.",
-      "image": "https://images.unsplash.com/photo-1628191139360-4083564d03fd?w=400&h=300&fit=crop",
       "preparationTip": "Krastavac operi, nasjeckaj na štapiće. Lagano posoli, ostavi 5 min, ocijedi. Humus stavi u zdjelicu, pospi paprikom. Umači štapiće.",
       "components": [
         {
@@ -5819,7 +5672,6 @@
       "id": "snack_new_2",
       "name": "Skyr s borovnicama",
       "description": "Islandski mliječni proizvod s najviše proteina. Skyr 0% mm s borovnicama i sjemenkama bundeve. Nizak šećer, visoki proteini.",
-      "image": "https://images.unsplash.com/photo-1505253758473-96b7015fcd40?w=400&h=300&fit=crop",
       "preparationTip": "Skyr stavi u zdjelu. Operi borovnice i rasporedi na vrh. Prelij medom, pospi sjemenkama. Posluži hladno.",
       "components": [
         {
@@ -5856,7 +5708,6 @@
       "id": "snack_lose_9",
       "name": "Zrnati sir s paprikom",
       "description": "Slana proteinska užina. Zrnati sir s hrskavom paprikom i vlascem. Puno proteina, malo kalorija.",
-      "image": "https://images.unsplash.com/photo-1628191139360-4083564d03fd?w=400&h=300&fit=crop",
       "preparationTip": "Papriku operi, nasjeckaj na kockice. Zrnati sir stavi u zdjelu, dodaj papriku. Pospi nasjeckanim vlascem, lagano posoli i popapri. Promiješaj.",
       "components": [
         {
@@ -5888,7 +5739,6 @@
       "id": "snack_maintain_6",
       "name": "Jabuka s maslacem od badema",
       "description": "Klasična kombinacija jabuke i orašastog maslaca. Jabuka pruža vlakna i vitamine, maslac od badema zdrave masti i proteine.",
-      "image": "https://images.unsplash.com/photo-1568702846914-96b305d2uj8f?w=400&h=300&fit=crop",
       "preparationTip": "Jabuku operi, nasjeckaj na kriške. Maslac od badema stavi u zdjelicu. Pospi cimetom. Umači kriške ili namazi maslac direktno.",
       "components": [
         {
@@ -5915,7 +5765,6 @@
       "id": "snack_maintain_7",
       "name": "Mix orašastih plodova",
       "description": "Klasični trail mix. Bademi, orasi, lješnjaci, sušene brusnice i tamna čokolada. Energetski gust, idealan za aktivne dane.",
-      "image": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=300&fit=crop",
       "preparationTip": "Bademe i lješnjake lagano tostraj na suhoj tavi. Ohladi. Pomiješaj s orasima, brusnicama i nasjeckanom čokoladom. Čuvaj u zatvorenoj posudi.",
       "components": [
         {
@@ -5957,7 +5806,6 @@
       "id": "snack_gain_11",
       "name": "Proteinski shake s bananom",
       "description": "Klasičan mass gainer shake. Mlijeko, protein prah, banana, zobene i kikiriki maslac. Preko 500 kcal u čaši.",
-      "image": "https://images.unsplash.com/photo-1594498653385-d5172c532c00?w=400&h=300&fit=crop",
       "preparationTip": "U blender ulij mlijeko, dodaj protein prah, oguljenu bananu, zobene i kikiriki maslac. Miksaj 45 sek. Posluži odmah.",
       "components": [
         {
@@ -5999,7 +5847,6 @@
       "id": "snack_gain_12",
       "name": "Rižini kolačići s kikiriki maslacem i bananom",
       "description": "Brza kalorična užina. Rižini kolačići namzani kikiriki maslacem, prekriveni bananom i prelijeveni medom.",
-      "image": "https://images.unsplash.com/photo-1558745087-0cc0a3339c87?w=400&h=300&fit=crop",
       "preparationTip": "Rižine kolačiće položi na tanjur. Namazi kikiriki maslac. Bananu nasjeckaj na kolutiće, posloži na maslac. Prelij medom.",
       "components": [
         {
@@ -6036,7 +5883,6 @@
       "id": "snack_healthy_brownie",
       "name": "Zdravi proteinski brownie",
       "description": "Sportski alternativni slatkiš bez brašna i šećera! Banane daju prirodnu slatkoću, jaja i grčki jogurt osiguravaju proteine, a kakao onaj pravi čokoladni okus. Savršen za post-trening ili zdravu poslasticu.",
-      "image": "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400&h=300&fit=crop",
       "preparationTip": "Zgnječi 4 banane u zdjeli. Dodaj 5 jaja i dobro umuti. Umiješaj 2 šalice grčkog jogurta, pola žlice kakao praha i 2 žlice meda. Sve dobro promiješaj. Izlij u kalup obložen papirom za pečenje. Peci na 250°C oko 20 minuta. Ostavi da se ohladi prije rezanja.",
       "components": [
         {
@@ -6082,7 +5928,6 @@
       "id": "snack_healthy_cheesecake",
       "name": "Zdravi proteinski cheesecake",
       "description": "Kremasti cheesecake bez šećera i klasičnog brašna! Grčki jogurt i whey protein daju kremoznost i proteine, banane prirodnu slatkoću, a svježe borovnice osvježavajući završetak. Fitness verzija omiljenog deserta!",
-      "image": "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=400&h=300&fit=crop",
       "preparationTip": "Zgnječi 3 banane. Dodaj 3 jaja i dobro umuti. Umiješaj 3 šalice grčkog jogurta, 1 mjericu whey proteina od vanilije, prašak za pecivo i 2 žlice zobenog brašna. Sve promiješaj do glatke smjese. Izlij u kalup obložen papirom za pečenje. Na vrh pospi svježe borovnice ili višnje. Peci na 250°C oko 20 minuta. Ostavi da se ohladi prije rezanja.",
       "components": [
         {

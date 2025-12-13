@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef, Suspense } from "react";
+import { useCallback, useEffect, useState, useMemo, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import clsx from "clsx";
@@ -22,6 +22,9 @@ import MealPlanWelcomeScreen from "./components/MealPlanWelcomeScreen";
 import CalculatorScreen, { CalcCard, CalcInput, CalcSelect, CalcButton, CalcResult, CalcInfoCard } from "./components/CalculatorScreen";
 import CalcFAQRotation from "./components/CalcFAQRotation";
 import HonorificSlide from "./components/HonorificSlide";
+import ScrollSection from "./components/ScrollSection";
+import FadeInSection from "./components/FadeInSection";
+import RevealSection, { useRevealObserver } from "./components/RevealSection";
 
 // ============================================
 // DEBUG TEST FLAG (samo za development)
@@ -253,6 +256,9 @@ function AppDashboardContent() {
   // TEST MODE: Dodaj ?test=true na URL da preskočiš login
   const isTestMode = searchParams.get("test") === "true";
   
+  // Initialize reveal observer for all .reveal elements
+  useRevealObserver();
+  
   const [clientData, setClientData] = useState<any>(null);
   const [currentSlide, setCurrentSlide] = useState(isTestMode ? 1 : 0); // 1 = intro (skip login)
   const [direction, setDirection] = useState(0); // -1 for left, 1 for right
@@ -261,6 +267,24 @@ function AppDashboardContent() {
   const [showPortfolio, setShowPortfolio] = useState(false);
   const [userInitials, setUserInitials] = useState<string>("");
   const [bgImageIndex, setBgImageIndex] = useState(0);
+  const NAVIGATION_LOCK_DURATION_MS = 400;
+  const navigationLockRef = useRef(false);
+  const navigationLockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const attemptNavigation = useCallback((callback: () => void) => {
+    if (navigationLockRef.current) {
+      return;
+    }
+    navigationLockRef.current = true;
+    callback();
+    if (navigationLockTimerRef.current) {
+      clearTimeout(navigationLockTimerRef.current);
+    }
+    navigationLockTimerRef.current = setTimeout(() => {
+      navigationLockRef.current = false;
+      navigationLockTimerRef.current = null;
+    }, NAVIGATION_LOCK_DURATION_MS);
+  }, []);
   
   // Rotiraj pozadinske slike svakih 8 sekundi
   useEffect(() => {
@@ -270,6 +294,14 @@ function AppDashboardContent() {
     return () => clearInterval(interval);
   }, []);
   const [portfolioData, setPortfolioData] = useState<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (navigationLockTimerRef.current) {
+        clearTimeout(navigationLockTimerRef.current);
+      }
+    };
+  }, []);
   
   // State za kalkulatore
   const [showBMRCalc, setShowBMRCalc] = useState(false);
@@ -1144,75 +1176,7 @@ function AppDashboardContent() {
     }
   };
 
-  // SCROLL MIŠEM - navigacija kroz slajdove
-  const lastWheelTime = useRef<number>(0);
-  useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      const now = Date.now();
-      // Cooldown 250ms između scrollova - brza reakcija
-      if (now - lastWheelTime.current < 250) return;
-      
-      if (Math.abs(e.deltaY) > 20) {
-        lastWheelTime.current = now;
-        if (e.deltaY > 0) {
-          // Scroll dolje = sljedeći slajd
-          nextSlide();
-        } else {
-          // Scroll gore = prethodni slajd
-          prevSlide();
-        }
-      }
-    };
-    
-    window.addEventListener('wheel', handleWheel, { passive: true });
-    return () => window.removeEventListener('wheel', handleWheel);
-  }, [currentSlide]);
-
-  // TOUCH SWIPE - jednostavna navigacija prstom
-  const touchStartY = useRef<number>(0);
-  const touchEndY = useRef<number>(0);
-  const lastTouchTime = useRef<number>(0);
-  
-  useEffect(() => {
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY.current = e.touches[0].clientY;
-      touchEndY.current = e.touches[0].clientY;
-    };
-    
-    const handleTouchMove = (e: TouchEvent) => {
-      touchEndY.current = e.touches[0].clientY;
-    };
-    
-    const handleTouchEnd = () => {
-      const now = Date.now();
-      // Cooldown 200ms između swipeova - brza reakcija
-      if (now - lastTouchTime.current < 200) return;
-      
-      const swipeDistance = touchStartY.current - touchEndY.current;
-      const minSwipeDistance = 25; // 25px za swipe - maksimalno osjetljivo
-      
-      if (Math.abs(swipeDistance) > minSwipeDistance) {
-        lastTouchTime.current = now;
-        if (swipeDistance > 0) {
-          // Povuci gore = sljedeći slajd
-          nextSlide();
-        } else {
-          // Povuci dolje = prethodni slajd
-          prevSlide();
-        }
-      }
-    };
-    
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: true });
-    window.addEventListener('touchend', handleTouchEnd, { passive: true });
-    
-    return () => {
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [currentSlide]);
+  // Scroll navigation removed - using native vertical scroll instead
 
   // SMOOTH SCROLL FEEL - samo fade, bez pomicanja
   const slideVariants = {
@@ -1431,156 +1395,48 @@ function AppDashboardContent() {
   }
 
   return (
-    <main className={clsx(
-      "relative bg-[#0D0F10] flex flex-col",
-                    currentId === "intro" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) || ["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros", "contact"].includes(currentId) ? "h-screen w-screen fixed inset-0 overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "min-h-screen w-screen overflow-y-auto" : "min-h-screen w-screen overflow-y-auto"
-    )}>
-      {/* AI Chat Bubble - Persistent on all slides */}
+    <main className="relative bg-[#0D0F10] min-h-screen overflow-y-auto">
+      {/* AI Chat Bubble - Persistent on all sections */}
       <AIChat />
 
-      {/* Main Layout - 100vh, no scroll */}
-      <div className={clsx(
-        "flex flex-col min-h-0",
-        currentId === "intro" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) || ["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros", "contact"].includes(currentId) ? "h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 overflow-y-auto" : "flex-1 overflow-y-auto"
-      )}>
-        {/* Header uklonjen - clean full screen design */}
-
-        {/* Slide Content - 100vh minus header/footer - Performance Optimized */}
-        <div 
-          className={clsx(
-          "relative",
-            currentId === "intro" || currentId === "login" || (currentId === "meals" && !showMealPlan && !weeklyMealPlan) || ["calculators-intro", "bmr-calc", "tdee-calc", "target-calc", "macros", "contact"].includes(currentId) ? "fixed inset-0 z-30 h-screen w-screen overflow-hidden" : currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "flex-1 pb-20 overflow-y-auto min-h-0" : "flex-1 pb-20 overflow-y-auto min-h-0"
-          )}
-          style={{
-            willChange: "transform",
-            transform: "translateZ(0)",
-            contain: "layout paint",
-          }}
-        >
-          <AnimatePresence mode="sync" custom={direction} initial={false}>
-            {slides
-              .filter((slide) => slide.id === currentId)
-              .map((slide) => (
-                <motion.div
-                  key={`${slide.id}-${currentSlide}`}
-                  custom={direction}
-                  variants={slideVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={{
-                    duration: 0.12,
-                    ease: "easeInOut",
-                  }}
-                  style={{
-                    willChange: "transform, opacity, filter",
-                    transformStyle: "preserve-3d",
-                    backfaceVisibility: "hidden",
-                    WebkitBackfaceVisibility: "hidden",
-                  }}
-                            className={clsx(
-                    "absolute inset-0 flex flex-col",
-                    currentId === "intro" ? "h-full" : "",
-                    currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "overflow-y-auto min-h-0" : "",
-                    // Performance optimizations
-                    "transform-gpu",
-                    "contain-layout",
-                    "contain-paint"
-                  )}
-                >
-                  {currentId === "intro" || currentId === "honorific" ? (
-                    // Intro, honorific - full screen
-                    <div className="h-full w-full relative">
-                      {slide.render}
+      {/* Vertical Scroll Layout - All sections rendered (skip login) */}
+      <div className="w-full">
+        {slides
+          .filter((slide) => slide.id !== "login") // Preskoči login slide
+          .map((slide, index) => {
+            const slideIndex = slideOrder.indexOf(slide.id);
+            const isIntro = slide.id === "intro";
+            const isHonorific = slide.id === "honorific";
+            const bgImage = URBAN_SPORTS_IMAGES[bgImageIndex % URBAN_SPORTS_IMAGES.length];
+            
+            // For intro and honorific, render directly without ScrollSection wrapper
+            if (isIntro || isHonorific) {
+              return (
+                <section key={slide.id} id={slide.id} className="relative w-full min-h-screen" style={{ position: 'relative' }}>
+                  <div className="w-full min-h-screen relative">
+                    {slide.render}
                   </div>
-                  ) : (
-                    // Other slides - CALCULATOR STYLE: full screen pozadina + centrirani sadržaj
-                    <div className="relative h-full w-full bg-black overflow-hidden">
-                      {/* Rotirajuće pozadinske slike - olimpijska dizanja */}
-                      {URBAN_SPORTS_IMAGES.map((img, idx) => (
-                        <div 
-                          key={idx}
-                          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-[2500ms] ease-in-out"
-                          style={{
-                            backgroundImage: `url(${img})`,
-                            filter: "brightness(0.3) saturate(0.7)",
-                            opacity: idx === bgImageIndex ? 1 : 0,
-                          }}
-                        />
-                      ))}
-                      
-                      {/* Gradient overlays */}
-                      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/60" />
-
-                      {/* Sadržaj - centriran */}
-                      <div className={clsx(
-                        "relative z-10 h-full w-full flex flex-col items-center justify-center px-8 py-12",
-                        currentId === "meals" && (showMealPlan || weeklyMealPlan) ? "overflow-y-auto" : ""
-                      )}>
-                        {/* Centrirani sadržaj - CALCULATOR STYLE */}
-                        <div className="w-full max-w-2xl text-center">
-                          {/* CORPEX logo mali - bez animacije */}
-                          <p className="text-xs font-light tracking-[0.5em] text-white/40 uppercase mb-8">
-                            Corpex
-                          </p>
-                          
-                          {/* Broj slajda */}
-                          <p className="text-sm font-light tracking-widest text-white/30 mb-4">
-                            {String(slideOrder.indexOf(slide.id) + 1).padStart(2, "0")} / {slideOrder.length}
-                          </p>
-                          
-                          {/* Naslov */}
-                          <h1
-                            className="text-3xl md:text-4xl font-light text-white mb-4 tracking-wide"
-                            style={{ fontFamily: "var(--font-inter), sans-serif" }}
-                          >
-                            {slide.title}
-                          </h1>
-                          
-                          {/* Opis */}
-                          {slide.description && (
-                            <p className="text-base text-white/50 mb-8 font-light max-w-xl mx-auto">
-                              {slide.description}
-                            </p>
-                          )}
-                          
-                          {/* Divider */}
-                          <div className="w-16 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent mx-auto mb-8" />
-
-                          {/* Sadržaj slajda */}
-                          <div className={clsx(
-                              "text-left",
-                              (currentId === "meals" && (showMealPlan || weeklyMealPlan)) ? "overflow-y-auto max-h-[50vh]" : ""
-                            )}
-                          >
-                            {slide.render}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-          </AnimatePresence>
-          
-          {/* Slide Progress Dots - Tamno siva antracit boja */}
-          {currentId !== "intro" && (
-            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-1.5 z-20">
-              {slideOrder.map((_, idx) => (
-                <div
-                  key={idx}
-                  className={`h-2 rounded-full transition-all duration-150 ${
-                    idx === currentSlide
-                      ? "w-7 bg-[#4B0082] shadow-lg"
-                      : "w-2 bg-gray-700"
-                  }`}
-                />
-              ))}
-            </div>
-          )}
-          
-        </div>
-
+                </section>
+              );
+            }
+            
+            return (
+              <ScrollSection
+                key={slide.id}
+                id={slide.id}
+                backgroundImage={bgImage}
+                isFullScreen={false}
+                showLogo={true}
+                showNumber={true}
+                number={slideIndex + 1}
+                total={slideOrder.length - 1} // -1 jer preskačemo login
+                title={slide.title}
+                description={slide.description}
+              >
+                {slide.render}
+              </ScrollSection>
+            );
+          })}
       </div>
 
       {/* Portfolio Modal */}
@@ -1689,38 +1545,41 @@ function MealCardInline({ title, meal }: MealCardInlineProps) {
   );
 }
 
-// Password Protected Wrapper
+// Password Protected Wrapper - DISABLED za pristup bez prijave
 function PasswordProtectedApp() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  useEffect(() => {
-    // Provjeri da li je već autentificiran u ovoj sesiji
-    const auth = sessionStorage.getItem("corpex_auth");
-    if (auth === "true") {
-      setIsAuthenticated(true);
-    }
-    setIsLoading(false);
-  }, []);
-  
-  if (isLoading) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center bg-[#1A1A1A]">
-        <div className="text-center">
-          <h1 className="text-5xl font-bold text-white mb-4 drop-shadow-2xl" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-            CORP<span className="text-purple-400">EX</span>
-          </h1>
-          <p className="text-white/70">Učitavanje...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  if (!isAuthenticated) {
-    return <PasswordGate onSuccess={() => setIsAuthenticated(true)} />;
-  }
-  
+  // Omogući pristup bez password gate-a
   return <AppDashboardContent />;
+  
+  // Originalni kod (zakomentiran):
+  // const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // const [isLoading, setIsLoading] = useState(true);
+  // 
+  // useEffect(() => {
+  //   const auth = sessionStorage.getItem("corpex_auth");
+  //   if (auth === "true") {
+  //     setIsAuthenticated(true);
+  //   }
+  //   setIsLoading(false);
+  // }, []);
+  // 
+  // if (isLoading) {
+  //   return (
+  //     <div className="flex h-screen w-screen items-center justify-center bg-[#1A1A1A]">
+  //       <div className="text-center">
+  //         <h1 className="text-5xl font-bold text-white mb-4 drop-shadow-2xl" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+  //           CORP<span className="text-purple-400">EX</span>
+  //         </h1>
+  //         <p className="text-white/70">Učitavanje...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+  // 
+  // if (!isAuthenticated) {
+  //   return <PasswordGate onSuccess={() => setIsAuthenticated(true)} />;
+  // }
+  // 
+  // return <AppDashboardContent />;
 }
 
 export default function AppDashboard() {
@@ -1780,10 +1639,10 @@ function IntroSlideContent({ onNext, nextSlideIndex }: { onNext: (slide: number)
   };
 
   return (
-    <div className="absolute inset-0 bg-black">
+    <div className="relative w-full min-h-screen bg-black">
       {/* Pozadinska slika - F1 trening/motorsport fitness */}
       <div
-        className="absolute inset-0 bg-cover bg-center"
+        className="fixed inset-0 bg-cover bg-center"
         style={{
           backgroundImage: "url(https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=1920&h=1080&fit=crop&q=80)",
           filter: "brightness(0.3) saturate(0.8)",
@@ -1791,10 +1650,10 @@ function IntroSlideContent({ onNext, nextSlideIndex }: { onNext: (slide: number)
       />
 
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60" />
+      <div className="fixed inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60" />
 
       {/* Sadržaj - centriran */}
-      <div className="relative z-10 h-full w-full flex flex-col items-center justify-center px-8">
+      <div className="relative z-10 min-h-screen w-full flex flex-col items-center justify-center px-8 py-20">
         {/* CORPEX logo - gore */}
         <motion.p
           initial={{ opacity: 0 }}
@@ -2226,44 +2085,34 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
       description: "",
       render: (
         <div className="w-full max-w-lg mx-auto">
-          {/* Pitanje */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-2xl md:text-3xl font-light text-white text-center mb-12"
-          >
-            Koliko imaš godina?
-          </motion.p>
-          
-          {/* Opcije - vertikalni popis */}
-          <div className="space-y-1">
-            {ageOptions.map((option, index) => (
-              <motion.button
-                key={option.value}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: 0.1 + index * 0.05 }}
-                onClick={() => updateIntakeForm("ageRange", option.value)}
-                className={clsx(
-                  "w-full py-4 text-left transition-all duration-300 border-b border-white/15 group",
-                  intakeForm.ageRange === option.value
-                    ? "text-white"
-                    : "text-white/60 hover:text-white/80"
-                )}
-              >
-                <span className="flex items-center justify-between">
-                  <span className="text-xl font-light tracking-wide">{option.label}</span>
-                  {intakeForm.ageRange === option.value && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="w-2 h-2 rounded-full bg-white"
-                    />
+          <div className="card">
+            {/* Pitanje */}
+            <p className="text-2xl md:text-3xl font-light text-white text-center mb-12 reveal">
+              Koliko imaš godina?
+            </p>
+            
+            {/* Opcije - vertikalni popis */}
+            <div className="space-y-1">
+              {ageOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => updateIntakeForm("ageRange", option.value)}
+                  className={clsx(
+                    "option w-full py-4 text-left transition-all duration-300 border-b border-white/15 group",
+                    intakeForm.ageRange === option.value
+                      ? "text-white selected"
+                      : "text-white/60 hover:text-white/80"
                   )}
-                </span>
-              </motion.button>
-            ))}
+                >
+                  <span className="flex items-center justify-between">
+                    <span className="text-xl font-light tracking-wide">{option.label}</span>
+                    {intakeForm.ageRange === option.value && (
+                      <span className="w-2 h-2 rounded-full bg-white" />
+                    )}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       ),

@@ -10,3 +10,68 @@
   transform: translateY(0);
 }
 
+/* Reveal animation - modern reveal-on-scroll */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 280ms cubic-bezier(0.2, 0.8, 0.2, 1),
+              transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Card overlay for readability */
+.card {
+  border-radius: 18px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  /* Fallback for browsers that don't support backdrop-filter */
+  background: rgba(0, 0, 0, 0.6);
+}
+
+@supports (backdrop-filter: blur(10px)) {
+  .card {
+    background: rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Background gradient overlay for text contrast */
+.bg-gradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Option button with stagger animation */
+.option {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 280ms cubic-bezier(0.2, 0.8, 0.2, 1),
+              transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.option.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Option pressed/selected states */
+.option:active {
+  transform: scale(0.98);
+}
+
+.option.selected {
+  border-color: rgba(75, 0, 130, 0.8);
+  background: rgba(75, 0, 130, 0.2);
+}
+

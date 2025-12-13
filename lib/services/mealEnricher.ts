@@ -176,15 +176,17 @@ export async function enrichMeal(meal: MealData): Promise<EnrichedMeal> {
 }
 
 /**
- * Obogati više jela s Edamam podacima (s pauzom između poziva)
+ * Obogati više jela s Edamam podacima
+ * Rate limiter će automatski kontrolirati pauze između poziva
  */
 export async function enrichMeals(
   meals: MealData[], 
-  delayMs: number = 500
+  delayMs: number = 0 // Ne koristi se više - rate limiter kontrolira
 ): Promise<EnrichedMeal[]> {
   const enrichedMeals: EnrichedMeal[] = [];
   
   console.log(`\n🚀 Počinjem obogaćivanje ${meals.length} jela...`);
+  console.log(`   Rate limiter će kontrolirati pozive (max 45/min)`);
   
   for (let i = 0; i < meals.length; i++) {
     const meal = meals[i];
@@ -193,10 +195,8 @@ export async function enrichMeals(
     const enriched = await enrichMeal(meal);
     enrichedMeals.push(enriched);
     
-    // Pauza između poziva da ne preopteretimo API
-    if (i < meals.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, delayMs));
-    }
+    // Rate limiter će automatski kontrolirati pauze
+    // Ne treba ručna pauza
   }
   
   const successCount = enrichedMeals.filter(m => m.nutritionSource === 'edamam').length;

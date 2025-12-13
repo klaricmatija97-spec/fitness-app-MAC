@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
 :root {
   /* CORPEX Design System - Premium Fitness Dark Theme */
   

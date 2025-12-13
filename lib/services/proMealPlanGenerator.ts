@@ -55,6 +55,7 @@ import { getUserData, updateUserCalculations } from "../data/userData";
 import { loadUserCalculations, type UserCalculations as LoadedCalculations } from "../utils/loadCalculations";
 import { translateFoodName } from "../utils/foodTranslations";
 import { mealComponents, type MealComponentsConfig, type GoalType, getMealsForGoal, getDisplayName } from "../data/meal_components";
+import { analyzeNutritionFromText } from "../services/edamamService";
 import type {
   Recipe,
   Food,
@@ -1676,6 +1677,12 @@ function buildCompositeMealForSlot(
   // Spremi komponente u name kao dodatni string za parsiranje u UI
   const componentsString = componentDetails.map(c => c.displayText).join(", ");
 
+  // Spremi komponente u meta za validaciju s Edamam
+  const mealComponents = componentDetails.map(c => ({
+    food: c.food.name,
+    grams: c.grams
+  }));
+
   return {
     id: `composite-${slotKey}-${selectedMeal.name}`,
     type: "recipe" as const,
@@ -1694,7 +1701,8 @@ function buildCompositeMealForSlot(
       healthScore: null, 
       tags: ["composite"],
       goalTags: [],
-      dietTags: []
+      dietTags: [],
+      components: mealComponents // Dodaj komponente za validaciju
     },
     score: 0.8,
     scoreBreakdown: {
@@ -1716,22 +1724,164 @@ function buildCompositeMealForSlot(
 }
 
 /**
- * Kreiraj MealCandidate iz namirnice
+ * Validiraj jelo s Edamam API-om i koristi točnije podatke
+ * Koristi se za SVA jela da osigura točnost
  */
-function createMealCandidateFromFood(
+async function validateAndCorrectMealWithEdamam(
+  meal: ScoredMeal
+): Promise<ScoredMeal> {
+  if (!process.env.EDAMAM_APP_ID || !process.env.EDAMAM_APP_KEY) {
+    return meal; // Ako nema credentials, vrati original
+  }
+  
+  // Formiraj tekst sastojaka - koristi componentDetails ako postoji, inače meta.components
+  let ingredientText = "";
+  
+  // Provjeri componentDetails (za composite meals)
+  if ((meal as any).componentDetails && (meal as any).componentDetails.length > 0) {
+    ingredientText = (meal as any).componentDetails.map((c: any) => 
+      `${c.grams}g ${c.foodName}`
+    ).join(", ");
+  } 
+  // Provjeri meta.components (ako postoji)
+  else if (meal.meta?.components && Array.isArray(meal.meta.components) && meal.meta.components.length > 0) {
+    ingredientText = meal.meta.components.map((c: any) => 
+      `${c.grams}g ${c.food}`
+    ).join(", ");
+  }
+  // Ako nema komponenti, vrati original
+  else {
+    return meal;
+  }
+  
+  try {
+    // Dohvati Edamam podatke
+    const edamamData = await analyzeNutritionFromText(
+      ingredientText,
+      meal.name
+    );
+    
+    if (edamamData) {
+      // Usporedi s izračunatim vrijednostima
+      const deviation = {
+        calories: Math.abs(meal.calories - edamamData.calories),
+        protein: Math.abs(meal.protein - edamamData.protein),
+        carbs: Math.abs(meal.carbs - edamamData.carbs),
+        fat: Math.abs(meal.fat - edamamData.fat),
+      };
+      
+      // Ako je razlika > 5%, koristi Edamam podatke (točniji)
+      const calorieDeviationPercent = meal.calories > 0 
+        ? (deviation.calories / meal.calories) * 100 
+        : 0;
+      
+      if (calorieDeviationPercent > 5 || 
+          (meal.protein > 0 && deviation.protein > meal.protein * 0.05) ||
+          (meal.carbs > 0 && deviation.carbs > meal.carbs * 0.05) ||
+          (meal.fat > 0 && deviation.fat > meal.fat * 0.05)) {
+        
+        console.log(`✅ Edamam korekcija za ${meal.name}:`);
+        console.log(`   USDA: ${meal.calories.toFixed(0)} kcal | Edamam: ${edamamData.calories.toFixed(0)} kcal`);
+        console.log(`   Razlika: ${deviation.calories.toFixed(0)} kcal (${calorieDeviationPercent.toFixed(1)}%)`);
+        
+        // Koristi Edamam podatke (točniji)
+        meal.calories = Math.round(edamamData.calories);
+        meal.protein = Math.round(edamamData.protein * 10) / 10;
+        meal.carbs = Math.round(edamamData.carbs * 10) / 10;
+        meal.fat = Math.round(edamamData.fat * 10) / 10;
+      }
+    }
+  } catch (error) {
+    console.warn(`⚠️ Edamam validacija neuspješna za ${meal.name}:`, error);
+    // Vrati original ako validacija ne uspije
+  }
+  
+  return meal;
+}
+
+/**
+ * Dohvati makronutrijente za namirnicu s Edamam fallback-om
+ * Koristi se SAMO kada USDA/Supabase nema podatke
+ */
+async function getFoodMacrosWithEdamamFallback(
+  food: Food
+): Promise<{ calories: number; protein: number; carbs: number; fats: number } | null> {
+  // Prvo provjeri da li namirnica već ima podatke
+  if (food.calories_per_100g && food.calories_per_100g > 0) {
+    return {
+      calories: food.calories_per_100g,
+      protein: food.protein_per_100g || 0,
+      carbs: food.carbs_per_100g || 0,
+      fats: food.fat_per_100g || 0,
+    };
+  }
+  
+  // Ako ima USDA FDC ID, pokušaj dohvatiti iz CSV-a
+  if (food.usda_fdc_id) {
+    try {
+      const usdaData = await getFoodMacros(food.usda_fdc_id);
+      if (usdaData && usdaData.calories > 0) {
+        return usdaData;
+      }
+    } catch (error) {
+      // Nastavi na Edamam fallback
+    }
+  }
+  
+  // Fallback na Edamam SAMO ako nema podataka i ako su credentials postavljeni
+  if (process.env.EDAMAM_APP_ID && process.env.EDAMAM_APP_KEY) {
+    try {
+      console.log(`🔍 USDA nema podatke za ${food.name}, pokušavam Edamam fallback...`);
+      const edamamData = await analyzeNutritionFromText(`100g ${food.name}`);
+      if (edamamData && edamamData.calories > 0) {
+        console.log(`✅ Edamam pronašao podatke za ${food.name}: ${edamamData.calories} kcal`);
+        return {
+          calories: edamamData.calories,
+          protein: edamamData.protein,
+          carbs: edamamData.carbs,
+          fats: edamamData.fat,
+        };
+      }
+    } catch (error) {
+      console.warn(`⚠️ Edamam fallback neuspješan za ${food.name}:`, error);
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Kreiraj MealCandidate iz namirnice
+ * NE MIJENJA POSTOJEĆU LOGIKU - samo dodaje Edamam fallback ako nema podataka
+ */
+async function createMealCandidateFromFood(
   food: Food,
   quantity: number,
   targetCalories?: number
-): MealCandidate {
+): Promise<MealCandidate> {
   // Provjeri da li namirnica ima valjane vrijednosti
-  if (!food.calories_per_100g || food.calories_per_100g <= 0) {
-    // Ako nema kalorija, postavi default vrijednosti ili koristi minimalne
+  let caloriesPer100g = food.calories_per_100g || 0;
+  let proteinPer100g = food.protein_per_100g || 0;
+  let carbsPer100g = food.carbs_per_100g || 0;
+  let fatPer100g = food.fat_per_100g || 0;
+  
+  // Ako nema podataka, pokušaj Edamam fallback
+  if (!caloriesPer100g || caloriesPer100g <= 0) {
+    const edamamMacros = await getFoodMacrosWithEdamamFallback(food);
+    if (edamamMacros) {
+      caloriesPer100g = edamamMacros.calories;
+      proteinPer100g = edamamMacros.protein;
+      carbsPer100g = edamamMacros.carbs;
+      fatPer100g = edamamMacros.fats;
+    } else {
+      // Ako ni Edamam nema podatke, koristi default (kao prije)
     console.warn(`⚠️ Namirnica ${food.name} nema kalorija, koristim minimalne vrijednosti`);
+      caloriesPer100g = 0;
+    }
   }
   
-  // Ako je naveden targetCalories, prilagodi quantity
-  if (targetCalories && targetCalories > 0 && food.calories_per_100g > 0) {
-    const caloriesPer100g = food.calories_per_100g;
+  // Ako je naveden targetCalories, prilagodi quantity (ISTA LOGIKA KAO PRIJE)
+  if (targetCalories && targetCalories > 0 && caloriesPer100g > 0) {
     if (caloriesPer100g > 0) {
       quantity = Math.round((targetCalories / caloriesPer100g) * 100 * 10) / 10;
     }
@@ -1741,14 +1891,15 @@ function createMealCandidateFromFood(
   // Prevedi naziv namirnice na hrvatski
   const translatedName = translateFoodName(food.name);
   
+  // Vrati MealCandidate (ISTA STRUKTURA KAO PRIJE)
   return {
     id: food.id,
     type: "food",
     name: translatedName,
-    calories: Math.round(food.calories_per_100g * ratio * 10) / 10,
-    protein: Math.round(food.protein_per_100g * ratio * 10) / 10,
-    carbs: Math.round(food.carbs_per_100g * ratio * 10) / 10,
-    fat: Math.round(food.fat_per_100g * ratio * 10) / 10,
+    calories: Math.round(caloriesPer100g * ratio * 10) / 10,
+    protein: Math.round(proteinPer100g * ratio * 10) / 10,
+    carbs: Math.round(carbsPer100g * ratio * 10) / 10,
+    fat: Math.round(fatPer100g * ratio * 10) / 10,
     meta: {
       food,
       quantity,
@@ -2022,7 +2173,7 @@ export async function generateProDailyMealPlan(
         
         for (const food of validFoods.slice(0, foodsToAdd)) {
           candidates.push(
-            createMealCandidateFromFood(food, food.default_serving_size_g || 100, slot.targetCalories)
+            await createMealCandidateFromFood(food, food.default_serving_size_g || 100, slot.targetCalories)
           );
         }
       }
@@ -2060,7 +2211,10 @@ export async function generateProDailyMealPlan(
       console.log(`      Score: ${bestScore} (calorie: ${scoreBreakdown.calorieMatch.toFixed(2)}, macro: ${scoreBreakdown.macroMatch.toFixed(2)}, health: ${scoreBreakdown.healthBonus.toFixed(2)}, variety: ${(1 - scoreBreakdown.varietyPenalty).toFixed(2)})`);
       console.log(`      Makroi: ${selectedMeal.calories.toFixed(0)} kcal, P: ${selectedMeal.protein.toFixed(1)}g, C: ${selectedMeal.carbs.toFixed(1)}g, F: ${selectedMeal.fat.toFixed(1)}g`);
 
-      selectedMeals.push(selectedMeal);
+      // Validiraj jelo s Edamam API-om za točnije podatke
+      const validatedMeal = await validateAndCorrectMealWithEdamam(selectedMeal);
+      
+      selectedMeals.push(validatedMeal);
 
       // Ažuriraj dailyContext (za variety penalty u sljedećim obrocima)
       if (selectedMeal.type === "recipe") {
@@ -2488,7 +2642,9 @@ export async function generateWeeklyProMealPlan(
           );
           
           if (composite) {
-            dayMeals[slot] = composite;
+            // Validiraj jelo s Edamam API-om za točnije podatke
+            const validatedComposite = await validateAndCorrectMealWithEdamam(composite);
+            dayMeals[slot] = validatedComposite;
             
             // Ažuriraj praćenje prethodnih obroka
             const definitions = MEAL_COMPONENTS[slotKeyForTracking];
@@ -2744,7 +2900,7 @@ async function generateProDailyMealPlanWithWeeklyContext(
       
       for (const food of validFoods.slice(0, foodsToAdd)) {
         candidates.push(
-          createMealCandidateFromFood(food, food.default_serving_size_g || 100, slot.targetCalories)
+          await createMealCandidateFromFood(food, food.default_serving_size_g || 100, slot.targetCalories)
         );
       }
     }

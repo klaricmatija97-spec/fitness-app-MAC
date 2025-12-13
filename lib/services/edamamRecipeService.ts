@@ -183,6 +183,10 @@ export async function searchRecipes(options: RecipeSearchOptions): Promise<Simpl
     return [];
   }
 
+  // Import rate limiter (lazy import da izbjegnemo circular dependency)
+  const { edamamRateLimiter } = await import("@/lib/utils/edamamRateLimiter");
+
+  return edamamRateLimiter.execute(async () => {
   try {
     // Build query params
     const params = new URLSearchParams({
@@ -265,6 +269,7 @@ export async function searchRecipes(options: RecipeSearchOptions): Promise<Simpl
     console.error("❌ Recipe Search greška:", error);
     return [];
   }
+  });
 }
 
 /**
