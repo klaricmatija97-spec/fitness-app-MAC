@@ -3,10 +3,13 @@ import { Animated, View, StyleSheet } from "react-native";
 import WelcomeScreen from "./src/screens/WelcomeScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import OnboardingScreen from "./src/screens/OnboardingScreen";
+import GoalSelectionScreen, { GoalType } from "./src/screens/GoalSelectionScreen";
+import { goalStorage } from "./src/services/storage";
 
 export default function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showGoalSelection, setShowGoalSelection] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   const handleGetStarted = () => {
@@ -35,12 +38,41 @@ export default function App() {
 
   const handleOnboardingComplete = () => {
     console.log("Onboarding complete!");
-    // TODO: Navigate to main app
+    // Prikaži ekran za odabir cilja
     setShowOnboarding(false);
+    setShowGoalSelection(true);
+  };
+
+  const handleGoalSelected = async (selectedGoal: GoalType) => {
+    console.log("Goal selected:", selectedGoal);
+    // Spremi odabrani cilj
+    await goalStorage.saveGoal(selectedGoal);
+    // TODO: Navigate to main app
+    setShowGoalSelection(false);
+  };
+
+  const handleBackToOnboarding = () => {
+    setShowGoalSelection(false);
+    setShowOnboarding(true);
+  };
+
+  const handleBackToLogin = () => {
+    setShowOnboarding(false);
+    setShowLogin(true);
+  };
+
+  const handleBackToWelcome = () => {
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 400,
+      useNativeDriver: true,
+    }).start(() => {
+      setShowLogin(false);
+    });
   };
 
   // Ako još nije login, prikaži welcome s animacijom
-  if (!showLogin && !showOnboarding) {
+  if (!showLogin && !showOnboarding && !showGoalSelection) {
     return (
       <Animated.View
         style={[
@@ -66,9 +98,14 @@ export default function App() {
     );
   }
 
+  // Ekran za odabir cilja nakon onboarding poruka
+  if (showGoalSelection) {
+    return <GoalSelectionScreen onComplete={handleGoalSelected} onBack={handleBackToOnboarding} />;
+  }
+
   // Onboarding ekran nakon login-a
   if (showOnboarding) {
-    return <OnboardingScreen onComplete={handleOnboardingComplete} />;
+    return <OnboardingScreen onComplete={handleOnboardingComplete} onBack={handleBackToLogin} />;
   }
 
   // Login ekran s fade-in animacijom
@@ -89,7 +126,7 @@ export default function App() {
         },
       ]}
     >
-      <LoginScreen onLoginSuccess={handleLoginSuccess} onSkipLogin={handleSkipLogin} />
+      <LoginScreen onLoginSuccess={handleLoginSuccess} onSkipLogin={handleSkipLogin} onBack={handleBackToWelcome} />
     </Animated.View>
   );
 }

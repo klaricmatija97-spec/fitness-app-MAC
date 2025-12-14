@@ -13,6 +13,7 @@ import {
   Animated,
   Platform,
   PanResponder,
+  Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -25,29 +26,50 @@ const backgroundImages = [
 ];
 
 const messages = [
-  'Mnogi se boje da će se odlaskom u teretanu "nabildati".\n\nTo se ne događa preko noći.\n\nMišići se grade postupno, uz vrijeme, trud i kontinuitet.',
-  'Ako ne dobivaš na težini, razlog je jednostavan.\n\nNe unosiš dovoljno kalorija.\n\nBez dovoljno energije tijelo nema od čega graditi masu.',
-  'Ako ne gubiš kilograme, najčešće nisi u kalorijskom deficitu.\n\nZa skidanje masnog tkiva važno je birati hranu većeg volumena, a manje kalorija.\n\nTakva hrana stvara osjećaj sitosti i olakšava kontrolu unosa.',
-  'Za bolje rezultate izbjegavaj:\n\nšećer, pekarske proizvode, zaslađene sokove i alkohol.\n\nOve namirnice lako povećavaju kalorijski unos bez osjećaja sitosti.',
-  'Dosljednost je važnija od savršenstva.\n\nKada se pravilna prehrana i trening spoje,\n\nrezultati dolaze — postupno, ali sigurno.',
-  'Nedostatak vremena čest je izgovor, ali rijetko stvarni problem.\n\nTri treninga tjedno po 45 minuta dovoljna su za napredak.\n\nS vremenom trening postaje navika.',
-  'Teretana nije rezervirana za bodybuildere.\n\nTo je prostor za zdravlje, snagu, kondiciju i bolju kvalitetu života.',
+  {
+    headline: 'Mnogi se boje da će se "nabildati"?',
+    explanation: 'To se ne događa preko noći. Mišići se grade postupno, uz vrijeme, trud i kontinuitet.',
+  },
+  {
+    headline: 'Ne dobivaš na težini?',
+    explanation: 'Ne unosiš dovoljno kalorija. Bez dovoljno energije tijelo nema od čega graditi masu.',
+  },
+  {
+    headline: 'Ne gubiš kilograme?',
+    explanation: 'Najčešće nisi u kalorijskom deficitu. Važno je birati hranu većeg volumena, a manje kalorija. Takva hrana stvara osjećaj sitosti i olakšava kontrolu unosa.',
+  },
+  {
+    headline: 'Izbjegavaj ove namirnice:',
+    explanation: 'Šećer, pekarske proizvode, zaslađene sokove i alkohol. Ove namirnice lako povećavaju kalorijski unos bez osjećaja sitosti.',
+  },
+  {
+    headline: 'Dosljednost je važnija od savršenstva.',
+    explanation: 'Kada se pravilna prehrana i trening spoje, rezultati dolaze — postupno, ali sigurno.',
+  },
+  {
+    headline: 'Nedostatak vremena je izgovor?',
+    explanation: 'Tri treninga tjedno po 45 minuta dovoljna su za napredak. S vremenom trening postaje navika.',
+  },
+  {
+    headline: 'Teretana nije samo za bodybuildere.',
+    explanation: 'To je prostor za zdravlje, snagu, kondiciju i bolju kvalitetu života.',
+  },
 ];
 
 interface OnboardingScreenProps {
   onComplete: () => void;
+  onBack?: () => void;
 }
 
-export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
+export default function OnboardingScreen({ onComplete, onBack }: OnboardingScreenProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentBgImage, setCurrentBgImage] = useState(0);
   const currentIndexRef = useRef(0);
   const isAnimating = useRef(false);
   
-  // Animacije
+  // Animacije - gesture-driven
   const messageOpacity = useRef(new Animated.Value(1)).current;
   const messageTranslateY = useRef(new Animated.Value(0)).current;
-  const buttonOpacity = useRef(new Animated.Value(0)).current;
 
   // Sync ref s state
   useEffect(() => {
@@ -62,42 +84,33 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     return () => clearInterval(interval);
   }, []);
 
-  // Prikaži CTA gumb na zadnjoj poruci
-  useEffect(() => {
-    if (currentIndex === messages.length - 1) {
-      Animated.timing(buttonOpacity, {
-        toValue: 1,
-        duration: 400,
-        delay: 300,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      buttonOpacity.setValue(0);
+  // Funkcija za završetak onboardinga s animacijom
+  const handleCompleteWithAnimation = () => {
+    if (isAnimating.current) {
+      return;
     }
-  }, [currentIndex]);
-
-  // Swipe gesture handler
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => !isAnimating.current,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        if (isAnimating.current) return false;
-        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx) && Math.abs(gestureState.dy) > 10;
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (isAnimating.current) return;
-        const idx = currentIndexRef.current;
-        // Swipe prema gore - sljedeća poruka
-        if (gestureState.dy < -50 && idx < messages.length - 1) {
-          goToNext();
-        }
-        // Swipe prema dolje - prethodna poruka
-        else if (gestureState.dy > 50 && idx > 0) {
-          goToPrevious();
-        }
-      },
-    })
-  ).current;
+    
+    isAnimating.current = true;
+    
+    // Animacija fade out prije prelaska na sljedeći ekran
+    Animated.parallel([
+      Animated.timing(messageOpacity, {
+        toValue: 0,
+        duration: 300,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(messageTranslateY, {
+        toValue: -30,
+        duration: 300,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      isAnimating.current = false;
+      onComplete();
+    });
+  };
 
   const goToNext = () => {
     const idx = currentIndexRef.current;
@@ -113,16 +126,18 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     isAnimating.current = true;
     const nextIndex = idx + 1;
     
-    // Fade out trenutne poruke
+    // Blaža animacija - manji pomak, kraće trajanje, glatki easing
     Animated.parallel([
       Animated.timing(messageOpacity, {
         toValue: 0,
         duration: 300,
+        easing: Easing.out(Easing.ease),
         useNativeDriver: true,
       }),
       Animated.timing(messageTranslateY, {
-        toValue: -20,
+        toValue: -30,
         duration: 300,
+        easing: Easing.out(Easing.ease),
         useNativeDriver: true,
       }),
     ]).start((finished) => {
@@ -131,84 +146,194 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         return;
       }
       
-      // Promijeni poruku - koristi callback da se osigura ažuriranje
-      setCurrentIndex((prev) => {
-        currentIndexRef.current = nextIndex;
-        return nextIndex;
-      });
-      // Reset animacije za novu poruku
-      messageTranslateY.setValue(20);
-      // Fade in nove poruke
+      // Promijeni poruku odmah - bez čekanja
+      setCurrentIndex(nextIndex);
+      currentIndexRef.current = nextIndex;
+      
+      // Reset animacije za novu poruku - pomak dolje
+      messageTranslateY.setValue(30);
+      messageOpacity.setValue(0);
+      
+      // Blaža animacija - fade in i pomak dolje
       Animated.parallel([
         Animated.timing(messageOpacity, {
           toValue: 1,
-          duration: 400,
+          duration: 300,
+          easing: Easing.out(Easing.ease),
           useNativeDriver: true,
         }),
         Animated.timing(messageTranslateY, {
           toValue: 0,
-          duration: 400,
+          duration: 300,
+          easing: Easing.out(Easing.ease),
           useNativeDriver: true,
         }),
       ]).start(() => {
         isAnimating.current = false;
       });
     });
-    
-    // Fallback - resetiraj animaciju ako se zaglavi
-    setTimeout(() => {
-      if (isAnimating.current) {
-        console.warn('Animation timeout, resetting');
-        isAnimating.current = false;
-        messageOpacity.setValue(1);
-        messageTranslateY.setValue(0);
-      }
-    }, 1000);
   };
+
+  // Swipe gesture handler - gesture-driven animacije
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => !isAnimating.current,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        if (isAnimating.current) return false;
+        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx) && Math.abs(gestureState.dy) > 5;
+      },
+      onPanResponderGrant: () => {
+        // Zaustavi sve aktivne animacije
+        messageOpacity.stopAnimation();
+        messageTranslateY.stopAnimation();
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (isAnimating.current) return;
+        
+        const idx = currentIndexRef.current;
+        const { dy } = gestureState;
+        
+        // Ograniči pomak na razumnu vrijednost (30px za blažu animaciju)
+        const clampedDy = Math.max(-30, Math.min(30, dy));
+        
+        // Ažuriraj animacije u realnom vremenu - blaže vrijednosti
+        if (dy < 0) {
+          // Swipe prema gore - priprema za sljedeću poruku ili završetak onboardinga
+          const progress = Math.min(1, Math.abs(dy) / 30);
+          messageOpacity.setValue(1 - progress);
+          messageTranslateY.setValue(-clampedDy);
+        } else if (dy > 0) {
+          // Swipe prema dolje - priprema za povratak na login (fade out, pomak dolje)
+          const progress = Math.min(1, Math.abs(dy) / 30);
+          messageOpacity.setValue(1 - progress);
+          messageTranslateY.setValue(clampedDy);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (isAnimating.current) return;
+        
+        const idx = currentIndexRef.current;
+        const { dy, vy } = gestureState;
+        
+        // Provjeri brzinu i pomak za odluku o navigaciji
+        const threshold = 50;
+        const velocityThreshold = 0.5;
+        
+        // Swipe prema gore - sljedeća poruka ili završetak onboardinga
+        if (dy < -threshold || vy < -velocityThreshold) {
+          if (idx < messages.length - 1) {
+            goToNext();
+          } else {
+            // Na zadnjoj poruci, swipe gore završava onboarding s animacijom
+            handleCompleteWithAnimation();
+          }
+        }
+        // Swipe prema dolje - direktno povratak na login (bez prelistavanja poruka)
+        else if ((dy > threshold || vy > velocityThreshold)) {
+          // Na bilo kojoj poruci, swipe dolje vraća direktno na login
+          if (isAnimating.current) return;
+          
+          isAnimating.current = true;
+          
+          // Ista animacija kao za naprijed - fade out i pomak dolje
+          Animated.parallel([
+            Animated.timing(messageOpacity, {
+              toValue: 0,
+              duration: 300,
+              easing: Easing.out(Easing.ease),
+              useNativeDriver: true,
+            }),
+            Animated.timing(messageTranslateY, {
+              toValue: 30,
+              duration: 300,
+              easing: Easing.out(Easing.ease),
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            isAnimating.current = false;
+            onBack?.();
+          });
+        } else {
+          // Vrati na početnu poziciju ako nije dovoljno pomaknuto - blaža animacija
+          Animated.parallel([
+            Animated.timing(messageOpacity, {
+              toValue: 1,
+              duration: 300,
+              easing: Easing.out(Easing.ease),
+              useNativeDriver: true,
+            }),
+            Animated.timing(messageTranslateY, {
+              toValue: 0,
+              duration: 300,
+              easing: Easing.out(Easing.ease),
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }
+      },
+    })
+  ).current;
 
   const goToPrevious = () => {
     const idx = currentIndexRef.current;
-    if (idx > 0 && !isAnimating.current) {
-      isAnimating.current = true;
-      const prevIndex = idx - 1;
+    
+    if (idx <= 0) {
+      return;
+    }
+    
+    if (isAnimating.current) {
+      return;
+    }
+    
+    isAnimating.current = true;
+    const prevIndex = idx - 1;
+    
+    // Ista animacija kao goToNext - fade out i pomak dolje
+    Animated.parallel([
+      Animated.timing(messageOpacity, {
+        toValue: 0,
+        duration: 300,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(messageTranslateY, {
+        toValue: 30,
+        duration: 300,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]).start((finished) => {
+      if (!finished) {
+        isAnimating.current = false;
+        return;
+      }
       
-      // Fade out trenutne poruke
-      Animated.parallel([
-        Animated.timing(messageOpacity, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(messageTranslateY, {
-          toValue: 20,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-      // Promijeni poruku - koristi callback da se osigura ažuriranje
-      setCurrentIndex((prev) => {
-        currentIndexRef.current = prevIndex;
-        return prevIndex;
-      });
-      // Reset animacije za novu poruku
-      messageTranslateY.setValue(-20);
-      // Fade in nove poruke
+      // Promijeni poruku odmah - bez čekanja
+      setCurrentIndex(prevIndex);
+      currentIndexRef.current = prevIndex;
+      
+      // Reset animacije za novu poruku - pomak gore (suprotno od goToNext)
+      messageTranslateY.setValue(-30);
+      messageOpacity.setValue(0);
+      
+      // Ista animacija kao goToNext - fade in i pomak gore
       Animated.parallel([
         Animated.timing(messageOpacity, {
           toValue: 1,
-          duration: 400,
+          duration: 300,
+          easing: Easing.out(Easing.ease),
           useNativeDriver: true,
         }),
         Animated.timing(messageTranslateY, {
           toValue: 0,
-          duration: 400,
+          duration: 300,
+          easing: Easing.out(Easing.ease),
           useNativeDriver: true,
         }),
       ]).start(() => {
         isAnimating.current = false;
       });
-      });
-    }
+    });
   };
 
   const handleNext = () => {
@@ -220,7 +345,8 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     if (idx < messages.length - 1) {
       goToNext();
     } else {
-      onComplete();
+      // Na zadnjoj poruci, swipe ili tap završava onboarding s animacijom
+      handleCompleteWithAnimation();
     }
   };
 
@@ -251,9 +377,9 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         ))}
       </View>
 
-      {/* Tamni gradient overlay */}
+      {/* Tamni gradient overlay - poboljšana čitljivost */}
       <LinearGradient
-        colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.8)']}
+        colors={['rgba(0,0,0,0.75)', 'rgba(0,0,0,0.65)', 'rgba(0,0,0,0.85)']}
         style={styles.gradient}
       />
 
@@ -267,23 +393,13 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
             activeOpacity={0.9}
           >
             <Animated.View style={[styles.messageWrapper, messageAnimatedStyle]}>
-              <Text style={styles.messageText}>{messages[currentIndex]}</Text>
+              <Text style={styles.headlineText}>{messages[currentIndex].headline}</Text>
+              <View style={styles.spacing} />
+              <Text style={styles.explanationText}>{messages[currentIndex].explanation}</Text>
             </Animated.View>
           </TouchableOpacity>
         </View>
 
-        {/* CTA gumb - samo na zadnjoj poruci */}
-        {currentIndex === messages.length - 1 && (
-          <Animated.View style={[styles.buttonContainer, { opacity: buttonOpacity }]}>
-            <TouchableOpacity
-              style={styles.ctaButton}
-              onPress={onComplete}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.ctaButtonText}>Nastavi</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        )}
       </View>
 
       {/* Bottom decoration line */}
@@ -338,13 +454,25 @@ const styles = StyleSheet.create({
     maxWidth: 600,
     alignItems: 'center',
   },
-  messageText: {
-    fontSize: 20,
-    fontWeight: '300',
+  headlineText: {
+    fontSize: 32,
+    fontWeight: '700',
     color: '#fff',
     textAlign: 'center',
-    lineHeight: 32,
+    lineHeight: 40,
     letterSpacing: 0.5,
+    fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
+  },
+  spacing: {
+    height: 32, // Prazan prostor između headlinea i objašnjenja
+  },
+  explanationText: {
+    fontSize: 18,
+    fontWeight: '400',
+    color: 'rgba(255,255,255,0.9)',
+    textAlign: 'center',
+    lineHeight: 28,
+    letterSpacing: 0.2,
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
   },
   buttonContainer: {

@@ -10,6 +10,7 @@ const STORAGE_KEYS = {
   CLIENT_ID: 'clientId',
   USERNAME: 'username',
   USER_DATA: 'userData',
+  SELECTED_GOAL: 'selectedGoal',
 } as const;
 
 /**
@@ -46,6 +47,23 @@ export const authStorage = {
       STORAGE_KEYS.CLIENT_ID,
       STORAGE_KEYS.USERNAME,
     ]);
+  },
+};
+
+/**
+ * Goal storage
+ */
+export const goalStorage = {
+  async saveGoal(goal: string) {
+    await AsyncStorage.setItem(STORAGE_KEYS.SELECTED_GOAL, goal);
+  },
+
+  async getGoal(): Promise<string | null> {
+    return await AsyncStorage.getItem(STORAGE_KEYS.SELECTED_GOAL);
+  },
+
+  async clearGoal() {
+    await AsyncStorage.removeItem(STORAGE_KEYS.SELECTED_GOAL);
   },
 };
 

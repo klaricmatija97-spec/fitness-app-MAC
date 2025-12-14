@@ -3,7 +3,7 @@
  * Rotirajuće pozadinske slike, dark mode, login i registracija
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import {
   Image,
   ScrollView,
   Animated,
+  PanResponder,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -30,9 +31,10 @@ const backgroundImages = [
 interface LoginScreenProps {
   onLoginSuccess?: () => void;
   onSkipLogin?: () => void;
+  onBack?: () => void;
 }
 
-export default function LoginScreen({ onLoginSuccess, onSkipLogin }: LoginScreenProps) {
+export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack }: LoginScreenProps) {
   const [currentBgImage, setCurrentBgImage] = useState(0);
   const [isLoginMode, setIsLoginMode] = useState(true);
   
@@ -57,6 +59,24 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin }: LoginScreen
   const titleOpacity = React.useRef(new Animated.Value(0)).current;
   const formOpacity = React.useRef(new Animated.Value(0)).current;
   const backgroundOpacity = React.useRef(new Animated.Value(0)).current;
+
+  // PanResponder za swipe-down navigaciju (samo kada nije scroll)
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Aktiviraj samo ako je swipe-down i nije scroll
+        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx) && 
+               Math.abs(gestureState.dy) > 10 &&
+               gestureState.dy > 0; // Samo swipe down
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > 80 && onBack) { // Swipe down
+          onBack();
+        }
+      },
+    })
+  ).current;
 
   // Rotiraj pozadinske slike svakih 8 sekundi
   useEffect(() => {
@@ -191,6 +211,7 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin }: LoginScreen
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      {...panResponder.panHandlers}
     >
       {/* Rotirajuće pozadinske slike - sinkronizirano s animacijom */}
       <Animated.View 
