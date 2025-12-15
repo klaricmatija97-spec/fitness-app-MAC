@@ -28,23 +28,35 @@ const backgroundImages = [
 const messages = [
   {
     headline: 'Mnogi se boje da će se "nabildati"?',
-    explanation: 'To se ne događa preko noći. Mišići se grade postupno, uz vrijeme, trud i kontinuitet.',
+    explanation: 'Mnogi se boje prevelikog mišićnog rasta.\n\nVažno je znati da se to ne događa preko noći, i nije nešto od čega treba strahovati.\n\nMišićna masa se razvija postupno, uz vrijeme, dosljedan trening, kvalitetnu prehranu te dovoljno odmora i discipline.',
+    images: [
+      'https://unsplash.com/photos/L3QG_OBluT0/download?force=true&w=1200', // Statua - Hercules (https://unsplash.com/photos/naked-man-statue-L3QG_OBluT0)
+      'https://unsplash.com/photos/UP-Tj0bQARQ/download?force=true&w=1200', // Žena s kovrčavom kosom (https://unsplash.com/photos/a-black-and-white-photo-of-a-woman-with-curly-hair-UP-Tj0bQARQ)
+    ],
   },
   {
     headline: 'Ne dobivaš na težini?',
-    explanation: 'Ne unosiš dovoljno kalorija. Bez dovoljno energije tijelo nema od čega graditi masu.',
+    explanation: 'Najčešći razlog je nedovoljan unos kalorija.\n\nBez dovoljno energije tijelo nema od čega graditi mišićnu masu.\n\nZa napredak je važno:\n• unositi dovoljno kalorija i hranjivih tvari\n• jesti više ugljikohidrata kroz redovite obroke\n• birati energetski bogatiju pripremu hrane\n• jesti redovito, ne samo kada si gladan — već i kada si sit\n• uključiti kratki kardio koji može pomoći potaknuti apetit\n\nDosljedan unos hrane tijekom dana jednako je važan kao i trening.',
+    images: [
+      'https://unsplash.com/photos/iPPEshWJpn8/download?force=true&w=1200', // Muškarac uživa u tanjuru paste (https://unsplash.com/photos/man-enjoys-a-plate-of-delicious-pasta-iPPEshWJpn8)
+      'https://unsplash.com/photos/1V2NHwCcuk0/download?force=true&w=1200', // Žena jede rezance iz ružičaste zdjele (https://unsplash.com/photos/woman-eating-noodles-from-a-pink-bowl-1V2NHwCcuk0)
+    ],
   },
   {
     headline: 'Ne gubiš kilograme?',
-    explanation: 'Najčešće nisi u kalorijskom deficitu. Važno je birati hranu većeg volumena, a manje kalorija. Takva hrana stvara osjećaj sitosti i olakšava kontrolu unosa.',
+    explanation: 'Nisi u kalorijskom deficitu. Važno je birati hranu većeg volumena, a manje kalorija. Takva hrana stvara osjećaj sitosti i olakšava kontrolu unosa.\n\nPrimjer: Krumpir vs. Riža\n• Krumpir (100g): ~77 kalorija, veći volumen\n• Riža (100g): ~130 kalorija, manji volumen\n\nKrumpir ima manje kalorija po gramu, ali zauzima više prostora, što daje osjećaj sitosti. Riža ima više kalorija u manjem volumenu, pa je lakše pojesti više kalorija bez osjećaja sitosti.',
+      images: [
+        'https://unsplash.com/photos/fp1x-X7DwDs/download?force=true&w=1200', // Krumpir - ruke koje drže svježe iskopani krumpir (https://unsplash.com/photos/bunch-of-potatoes-fp1x-X7DwDs)
+        'https://unsplash.com/photos/f9my1cgdwu4/download?force=true&w=1200', // Riža - kupa kuhane riže s parom (https://unsplash.com/photos/cooked-rice-f9my1cgdwu4)
+      ],
   },
   {
     headline: 'Izbjegavaj ove namirnice:',
-    explanation: 'Šećer, pekarske proizvode, zaslađene sokove i alkohol. Ove namirnice lako povećavaju kalorijski unos bez osjećaja sitosti.',
-  },
-  {
-    headline: 'Dosljednost je važnija od savršenstva.',
-    explanation: 'Kada se pravilna prehrana i trening spoje, rezultati dolaze — postupno, ali sigurno.',
+    explanation: 'Šećer, masnu i prerađenu hranu, pekarske proizvode, zaslađene sokove, alkohol, konzerviranu hranu, fast food i junk food.\n\nOve namirnice lako povećavaju kalorijski unos, ali pritom slabo zasićuju i često narušavaju osjećaj kontrole nad prehranom. Redovita konzumacija može usporiti napredak i otežati postizanje ciljeva.\n\nPotrebu za takvom hranom bolje je zadovoljiti kroz planirani "cheat meal" jednom tjedno, kao nagradu za trud i dosljednost. Takav pristup donosi veće zadovoljstvo nego svakodnevna konzumacija i pomaže dugoročno zadržati balans u prehrani.',
+    images: [
+      'https://unsplash.com/photos/jxMURaM7icw/download?force=true&w=1200', // Osoba u crnoj košulji s burgerom (https://unsplash.com/photos/person-in-black-button-up-shirt-with-burger-jxMURaM7icw)
+      'https://unsplash.com/photos/QvRttnSKBRA/download?force=true&w=1200', // Dvije žene sjede za stolom s tanjurima hrane (https://unsplash.com/photos/two-women-sitting-at-a-table-with-plates-of-food-QvRttnSKBRA)
+    ],
   },
   {
     headline: 'Nedostatak vremena je izgovor?',
@@ -66,6 +78,7 @@ export default function OnboardingScreen({ onComplete, onBack }: OnboardingScree
   const [currentBgImage, setCurrentBgImage] = useState(0);
   const currentIndexRef = useRef(0);
   const isAnimating = useRef(false);
+  const imageOpacities = useRef<Animated.Value[]>([]);
   
   // Animacije - gesture-driven
   const messageOpacity = useRef(new Animated.Value(1)).current;
@@ -74,15 +87,72 @@ export default function OnboardingScreen({ onComplete, onBack }: OnboardingScree
   // Sync ref s state
   useEffect(() => {
     currentIndexRef.current = currentIndex;
+    setCurrentBgImage(0); // Reset na prvu sliku kada se promijeni slide
   }, [currentIndex]);
 
   // Rotiraj pozadinske slike svakih 8 sekundi
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentBgImage((prev) => (prev + 1) % backgroundImages.length);
-    }, 8000);
-    return () => clearInterval(interval);
-  }, []);
+    const currentMessage = messages[currentIndex];
+    const hasMultipleImages = currentMessage.images && currentMessage.images.length > 0;
+    const imagesToShow = hasMultipleImages ? currentMessage.images : backgroundImages;
+    
+    // Inicijaliziraj animacije za slike ako ne postoje
+    if (imageOpacities.current.length !== imagesToShow.length) {
+      imageOpacities.current = imagesToShow.map((_, idx) => 
+        new Animated.Value(idx === 0 ? 1 : 0)
+      );
+    }
+    
+    if (hasMultipleImages) {
+      // Za poruku s više slika, rotiraj svakih 4 sekunde s fade animacijom
+      const interval = setInterval(() => {
+        const nextIndex = (currentBgImage + 1) % currentMessage.images.length;
+        
+        // Fade out trenutne slike
+        Animated.timing(imageOpacities.current[currentBgImage], {
+          toValue: 0,
+          duration: 800,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }).start();
+        
+        // Fade in nove slike
+        Animated.timing(imageOpacities.current[nextIndex], {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }).start();
+        
+        setCurrentBgImage(nextIndex);
+      }, 4000);
+      return () => clearInterval(interval);
+    } else {
+      // Za ostale poruke, rotiraj pozadinske slike svakih 8 sekundi
+      const interval = setInterval(() => {
+        const nextIndex = (currentBgImage + 1) % backgroundImages.length;
+        
+        // Fade out trenutne slike
+        Animated.timing(imageOpacities.current[currentBgImage], {
+          toValue: 0,
+          duration: 800,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }).start();
+        
+        // Fade in nove slike
+        Animated.timing(imageOpacities.current[nextIndex], {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }).start();
+        
+        setCurrentBgImage(nextIndex);
+      }, 8000);
+      return () => clearInterval(interval);
+    }
+  }, [currentIndex, currentBgImage]);
 
   // Funkcija za završetak onboardinga s animacijom
   const handleCompleteWithAnimation = () => {
@@ -359,22 +429,44 @@ export default function OnboardingScreen({ onComplete, onBack }: OnboardingScree
     <View style={styles.container} {...panResponder.panHandlers}>
       {/* Rotirajuće pozadinske slike */}
       <View style={styles.backgroundContainer}>
-        {backgroundImages.map((img, idx) => (
-          <View
-            key={idx}
-            style={[
-              styles.backgroundImage,
-              { opacity: idx === currentBgImage ? 1 : 0 },
-            ]}
-          >
-            <Image
-              source={{ uri: img }}
-              style={styles.image}
-              resizeMode="cover"
-            />
-            <View style={styles.imageOverlay} />
-          </View>
-        ))}
+        {(() => {
+          const currentMessage = messages[currentIndex];
+          const imagesToShow = currentMessage.images && currentMessage.images.length > 0 
+            ? currentMessage.images 
+            : backgroundImages;
+          
+          // Inicijaliziraj animacije ako ne postoje
+          if (imageOpacities.current.length !== imagesToShow.length) {
+            imageOpacities.current = imagesToShow.map((_, idx) => 
+              new Animated.Value(idx === 0 ? 1 : 0)
+            );
+          }
+          
+          return imagesToShow.map((img, idx) => (
+            <Animated.View
+              key={idx}
+              style={[
+                styles.backgroundImage,
+                { 
+                  opacity: imageOpacities.current[idx] || new Animated.Value(idx === 0 ? 1 : 0),
+                },
+              ]}
+            >
+              <Image
+                source={{ uri: img }}
+                style={styles.image}
+                resizeMode="cover"
+                onError={(error) => {
+                  console.log('Image load error:', error.nativeEvent.error, 'URL:', img);
+                }}
+                onLoad={() => {
+                  console.log('Image loaded successfully:', img);
+                }}
+              />
+              <View style={styles.imageOverlay} />
+            </Animated.View>
+          ));
+        })()}
       </View>
 
       {/* Tamni gradient overlay - poboljšana čitljivost */}
