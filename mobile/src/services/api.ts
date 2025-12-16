@@ -10,9 +10,10 @@
 // Za production, koristi environment varijablu ili postavi pravi URL
 const getApiBaseUrl = () => {
   if (__DEV__) {
-    // Development - koristi localhost ili LAN IP
-    // Možeš koristiti: 'http://192.168.x.x:3000' za LAN pristup
-    return 'http://localhost:3000';
+    // Development - koristi LAN IP za pristup s mobilnog uređaja
+    // Zamijeni sa svojom LAN IP adresom ako je drugačija
+    const LAN_IP = '192.168.1.19'; // Promijeni ovo ako je potrebno
+    return `http://${LAN_IP}:3000`;
   }
   // Production - TODO: Postavi pravi URL
   return process.env.EXPO_PUBLIC_API_URL || 'https://your-production-url.com';
@@ -173,25 +174,102 @@ export async function getCalculations(clientId: string, token: string) {
 }
 
 /**
- * Generate meal plan
+ * Generate weekly meal plan
+ * Supports both authenticated (with userId) and unauthenticated (with direct calculations) modes
  */
-export async function generateMealPlan(clientId: string, token: string) {
+export async function generateWeeklyMealPlan(
+  clientId: string | null,
+  token: string | null,
+  directCalculations?: {
+    targetCalories: number;
+    targetProtein: number;
+    targetCarbs: number;
+    targetFat: number;
+    goalType: 'lose' | 'maintain' | 'gain';
+    bmr?: number;
+    tdee?: number;
+    preferences?: {
+      allergies?: string;
+      foodPreferences?: string;
+      avoidIngredients?: string;
+      trainingFrequency?: string;
+    };
+  }
+) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/meal-plan/generate`, {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const body: any = {};
+    
+    if (clientId && !directCalculations) {
+      // Authenticated mode - use userId
+      body.userId = clientId;
+    } else if (directCalculations) {
+      // Unauthenticated mode - use direct calculations
+      body.calculations = directCalculations;
+      console.log('📤 Sending direct calculations:', directCalculations);
+    } else {
+      throw new Error('Either clientId or directCalculations must be provided');
+    }
+
+    const requestUrl = `${API_BASE_URL}/api/meal-plan/pro/weekly`;
+    console.log('📤 API Request:', {
+      url: requestUrl,
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ clientId }),
+      body: JSON.stringify(body),
+      headers,
     });
 
+    let response: Response;
+    try {
+      response = await fetch(requestUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      });
+    } catch (fetchError) {
+      console.error('❌ Network Error:', fetchError);
+      throw new Error(`Network error: ${fetchError instanceof Error ? fetchError.message : 'Unable to connect to server. Make sure Next.js server is running on port 3000.'}`);
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ API Error Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+      });
+      throw new Error(`API error: ${response.status} - ${errorText}`);
+    }
+
     const data = await response.json();
+    console.log('📥 API Response:', data);
+    
+    if (!data.ok) {
+      throw new Error(data.message || 'Greška pri generiranju plana');
+    }
+    
     return data;
   } catch (error) {
-    console.error('Generate meal plan error:', error);
-    return null;
+    console.error('Generate weekly meal plan error:', error);
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : 'Greška pri generiranju plana',
+    };
   }
+}
+
+/**
+ * Generate meal plan (legacy - kept for backwards compatibility)
+ */
+export async function generateMealPlan(clientId: string, token: string) {
+  return generateWeeklyMealPlan(clientId, token);
 }
 
 /**

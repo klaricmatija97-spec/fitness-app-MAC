@@ -1401,7 +1401,7 @@ function AppDashboardContent() {
 
       {/* Vertical Scroll Layout - All sections rendered (skip login) */}
       <div className="w-full">
-        {slides
+            {slides
           .filter((slide) => slide.id !== "login") // Preskoči login slide
           .map((slide, index) => {
             const slideIndex = slideOrder.indexOf(slide.id);
@@ -1414,7 +1414,7 @@ function AppDashboardContent() {
               return (
                 <section key={slide.id} id={slide.id} className="relative w-full min-h-screen" style={{ position: 'relative' }}>
                   <div className="w-full min-h-screen relative">
-                    {slide.render}
+                      {slide.render}
                   </div>
                 </section>
               );
@@ -1432,8 +1432,8 @@ function AppDashboardContent() {
                 total={slideOrder.length - 1} // -1 jer preskačemo login
                 title={slide.title}
                 description={slide.description}
-              >
-                {slide.render}
+                          >
+                            {slide.render}
               </ScrollSection>
             );
           })}
@@ -2086,32 +2086,32 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
       render: (
         <div className="w-full max-w-lg mx-auto">
           <div className="card">
-            {/* Pitanje */}
+          {/* Pitanje */}
             <p className="text-2xl md:text-3xl font-light text-white text-center mb-12 reveal">
-              Koliko imaš godina?
+            Koliko imaš godina?
             </p>
-            
-            {/* Opcije - vertikalni popis */}
-            <div className="space-y-1">
+          
+          {/* Opcije - vertikalni popis */}
+          <div className="space-y-1">
               {ageOptions.map((option) => (
                 <button
-                  key={option.value}
-                  onClick={() => updateIntakeForm("ageRange", option.value)}
-                  className={clsx(
+                key={option.value}
+                onClick={() => updateIntakeForm("ageRange", option.value)}
+                className={clsx(
                     "option w-full py-4 text-left transition-all duration-300 border-b border-white/15 group",
-                    intakeForm.ageRange === option.value
+                  intakeForm.ageRange === option.value
                       ? "text-white selected"
-                      : "text-white/60 hover:text-white/80"
-                  )}
-                >
-                  <span className="flex items-center justify-between">
-                    <span className="text-xl font-light tracking-wide">{option.label}</span>
-                    {intakeForm.ageRange === option.value && (
+                    : "text-white/60 hover:text-white/80"
+                )}
+              >
+                <span className="flex items-center justify-between">
+                  <span className="text-xl font-light tracking-wide">{option.label}</span>
+                  {intakeForm.ageRange === option.value && (
                       <span className="w-2 h-2 rounded-full bg-white" />
-                    )}
-                  </span>
+                  )}
+                </span>
                 </button>
-              ))}
+            ))}
             </div>
           </div>
         </div>

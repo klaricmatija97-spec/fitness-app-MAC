@@ -149,8 +149,17 @@ export async function analyzeNutrition(
     return null;
   }
 
-  // Import rate limiter (lazy import da izbjegnemo circular dependency)
+  // Import rate limiter i cost controller (lazy import da izbjegnemo circular dependency)
   const { edamamRateLimiter } = await import("@/lib/utils/edamamRateLimiter");
+  const { edamamCostController } = await import("@/lib/utils/edamamCostController");
+
+  // Provjeri da li možemo napraviti poziv bez prekoračenja troškova
+  const costCheck = edamamCostController.canMakeRequest();
+  if (!costCheck.allowed) {
+    console.warn(`⚠️ Edamam poziv blokiran: ${costCheck.reason}`);
+    console.warn(`   Trenutni trošak: ${costCheck.currentCost.toFixed(2)}€`);
+    return null; // Vrati null umjesto bacanja greške
+  }
 
   return edamamRateLimiter.execute(async () => {
   try {
@@ -203,6 +212,15 @@ export async function analyzeNutrition(
 
     console.log(`✅ Edamam rezultat: ${nutrition.calories} kcal, P: ${nutrition.protein}g, C: ${nutrition.carbs}g, F: ${nutrition.fat}g`);
 
+    // Registriraj poziv i ažuriraj troškove
+    edamamCostController.recordRequest();
+    
+    // Logiraj trenutni status svakih 100 poziva
+    const status = edamamCostController.getStatus();
+    if (status.totalRequests % 100 === 0) {
+      console.log(`📊 Edamam status: ${status.totalRequests} poziva, ${status.currentCost.toFixed(2)}€/${status.maxMonthlyCost}€`);
+    }
+
     return nutrition;
 
   } catch (error) {
@@ -228,8 +246,17 @@ export async function analyzeNutritionFromText(
     return null;
   }
 
-  // Import rate limiter (lazy import da izbjegnemo circular dependency)
+  // Import rate limiter i cost controller (lazy import da izbjegnemo circular dependency)
   const { edamamRateLimiter } = await import("@/lib/utils/edamamRateLimiter");
+  const { edamamCostController } = await import("@/lib/utils/edamamCostController");
+
+  // Provjeri da li možemo napraviti poziv bez prekoračenja troškova
+  const costCheck = edamamCostController.canMakeRequest();
+  if (!costCheck.allowed) {
+    console.warn(`⚠️ Edamam poziv blokiran: ${costCheck.reason}`);
+    console.warn(`   Trenutni trošak: ${costCheck.currentCost.toFixed(2)}€`);
+    return null; // Vrati null umjesto bacanja greške
+  }
 
   return edamamRateLimiter.execute(async () => {
   try {
@@ -284,6 +311,15 @@ export async function analyzeNutritionFromText(
     };
 
     console.log(`✅ Edamam rezultat: ${nutrition.calories} kcal, P: ${nutrition.protein}g, C: ${nutrition.carbs}g, F: ${nutrition.fat}g`);
+
+    // Registriraj poziv i ažuriraj troškove
+    edamamCostController.recordRequest();
+    
+    // Logiraj trenutni status svakih 100 poziva
+    const status = edamamCostController.getStatus();
+    if (status.totalRequests % 100 === 0) {
+      console.log(`📊 Edamam status: ${status.totalRequests} poziva, ${status.currentCost.toFixed(2)}€/${status.maxMonthlyCost}€`);
+    }
 
     return nutrition;
 

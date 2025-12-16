@@ -8,37 +8,50 @@
  */
 
 import { NextResponse } from "next/server";
-import { generateWeeklyMealPlan, saveWeeklyPlanToSupabase } from "@/lib/services/weeklyMealPlanGenerator";
+import { generateWeeklyMealPlan, generateWeeklyMealPlanWithCalculations, saveWeeklyPlanToSupabase } from "@/lib/services/weeklyMealPlanGenerator";
 
 export async function POST(request: Request) {
   try {
-    // Dohvati userId
+    // Dohvati userId ili direktne kalkulacije
     const url = new URL(request.url);
     const queryUserId = url.searchParams.get("userId");
 
-    let userId: string;
+    const body = await request.json().catch(() => ({}));
+    
+    let userId: string | undefined;
+    let directCalculations: any | undefined;
 
     if (queryUserId) {
       userId = queryUserId;
-    } else {
-      const body = await request.json().catch(() => ({}));
+    } else if (body.userId) {
       userId = body.userId;
+    } else if (body.calculations) {
+      // Direct calculations mode (no login required)
+      directCalculations = body.calculations;
     }
 
-    if (!userId) {
+    if (!userId && !directCalculations) {
       return NextResponse.json(
-        { ok: false, message: "userId je obavezan" },
+        { ok: false, message: "userId ili calculations su obavezni" },
         { status: 400 }
       );
     }
 
     console.log(`\n========================================`);
     console.log(`🚀 NOVI TJEDNI GENERATOR - START`);
-    console.log(`📋 User ID: ${userId}`);
+    if (userId) {
+      console.log(`📋 User ID: ${userId}`);
+    } else {
+      console.log(`📋 Direct calculations mode`);
+      console.log(`   Calories: ${directCalculations.targetCalories}`);
+      console.log(`   Macros: P:${directCalculations.targetProtein}g C:${directCalculations.targetCarbs}g F:${directCalculations.targetFat}g`);
+    }
     console.log(`========================================\n`);
 
     // Generiraj tjedni plan
-    const weeklyPlan = await generateWeeklyMealPlan(userId);
+    const weeklyPlan = userId 
+      ? await generateWeeklyMealPlan(userId)
+      : await generateWeeklyMealPlanWithCalculations(directCalculations);
 
     // Pokušaj spremiti u bazu (ne baci grešku ako ne uspije)
     const saveResult = await saveWeeklyPlanToSupabase(weeklyPlan);

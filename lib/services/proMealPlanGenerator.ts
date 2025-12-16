@@ -1309,7 +1309,7 @@ function isValidLunchDinnerTemplate(
 /**
  * Build composite meal for a slot from meal_components.json using quality selection
  */
-function buildCompositeMealForSlot(
+async function buildCompositeMealForSlot(
   slot: MealSlotType,
   allFoods: Food[],
   usedToday: Set<string>,
@@ -1321,7 +1321,7 @@ function buildCompositeMealForSlot(
   previousDayMeal: MealOption | null = null,
   excludedMealNames: Set<string> = new Set(), // Dodaj parametar za isključene obroke
   userGoal: GoalType = "maintain" // Cilj korisnika (lose/maintain/gain)
-): ScoredMeal | null {
+): Promise<ScoredMeal | null> {
   // extraSnack koristi snack šablone
   const slotKey = slot === "extraSnack" ? "snack" : (slot as "breakfast" | "lunch" | "dinner" | "snack");
   
@@ -1589,58 +1589,140 @@ function buildCompositeMealForSlot(
   // Provjeri da li su sve namirnice dostupne i izračunaj makroe
   let calories = 0, protein = 0, carbs = 0, fat = 0;
   let missing = false;
-  const componentDetails: Array<{ food: Food; grams: number; units?: number; displayText: string }> = [];
+  let componentDetails: Array<{ food: Food; grams: number; units?: number; displayText: string }> = [];
   const missingFoods: string[] = [];
 
-  for (const c of selectedMeal.components) {
-    // Preskoči vodu
-    if (c.food.toLowerCase().includes('water') || c.food.toLowerCase().includes('voda')) {
-      continue;
-    }
-    
-    const food = findFoodByName(allFoods, c.food);
-    if (!food) { 
-      console.warn(`⚠️ Namirnica "${c.food}" nije pronađena u bazi za template "${selectedMeal.name}"`);
-      missingFoods.push(c.food);
-      missing = true; 
-      // Ako nedostaje bilo koja komponenta, template nije validan - preskoči ga
-      break;
+  // EDAMAM-ONLY MODE: Koristi Edamam API za izračun makronutrijenata
+  const USE_EDAMAM_ONLY = process.env.USE_EDAMAM_ONLY === 'true' || true; // Default: true (Edamam-only)
+
+  if (USE_EDAMAM_ONLY) {
+    // Koristi Edamam API za izračun makronutrijenata
+    const ingredientComponents = selectedMeal.components
+      .filter(c => !c.food.toLowerCase().includes('water') && !c.food.toLowerCase().includes('voda'))
+      .map(c => {
+        const food = findFoodByName(allFoods, c.food);
+        if (!food) return null;
+        
+        // Provjeri da li je namirnica već korištena
+        if (usedToday.has(food.id)) {
+          return null;
+        }
+
+        let actualGrams = c.grams;
+        let units: number | undefined;
+        
+        // Ako je jaja i ima units property, koristi units
+        if (c.food.toLowerCase().includes('egg') && (food as any).units && (food as any).gramsPerUnit) {
+          const gramsPerUnit = (food as any).gramsPerUnit || 60;
+          units = Math.round(c.grams / gramsPerUnit);
+          actualGrams = units * gramsPerUnit;
+        }
+
+        return {
+          food,
+          grams: actualGrams,
+          units,
+          foodName: translateFoodName(food.name),
+        };
+      })
+      .filter((c): c is NonNullable<typeof c> => c !== null);
+
+    if (ingredientComponents.length === 0) {
+      console.warn(`⚠️ Nema valjanih komponenti za ${selectedMeal.name}`);
+      return null;
     }
 
-    // Provjeri da li je namirnica već korištena (osim ako je to dozvoljeno)
-    if (usedToday.has(food.id)) {
-      console.warn(`⚠️ Namirnica "${c.food}" već korištena danas, preskačem obrok`);
+    // Formiraj tekst sastojaka za Edamam
+    const ingredientText = ingredientComponents
+      .map(c => `${c.grams}g ${c.foodName}`)
+      .join(", ");
+
+    // Dohvati podatke iz Edamam API-ja
+    try {
+      const edamamData = await analyzeNutritionFromText(ingredientText, selectedMeal.name);
+
+      if (!edamamData) {
+        console.warn(`⚠️ Edamam API nije vratio podatke za ${selectedMeal.name}, koristim USDA fallback`);
+        // Fallback na USDA ako Edamam ne radi
+        missing = true;
+      } else {
+        // Koristi Edamam podatke
+        calories = edamamData.calories;
+        protein = edamamData.protein;
+        carbs = edamamData.carbs;
+        fat = edamamData.fat;
+
+        // Kreiraj component details
+        componentDetails = ingredientComponents.map(c => ({
+          food: c.food,
+          grams: c.grams,
+          units: c.units,
+          displayText: c.units 
+            ? `${c.foodName} (${c.units} kom ≈ ${c.grams}g)`
+            : `${c.foodName} (${c.grams}g)`,
+        }));
+
+        // Označi namirnice kao korištene
+        ingredientComponents.forEach(c => usedToday.add(c.food.id));
+
+        console.log(`✅ Edamam-only: ${selectedMeal.name} - ${calories.toFixed(0)} kcal, P: ${protein.toFixed(1)}g, C: ${carbs.toFixed(1)}g, F: ${fat.toFixed(1)}g`);
+      }
+    } catch (error) {
+      console.warn(`⚠️ Edamam API greška za ${selectedMeal.name}, koristim USDA fallback:`, error);
       missing = true;
-      break;
     }
+  } else {
+    // USDA MODE (stari način) - koristi se samo ako je USE_EDAMAM_ONLY=false
+    for (const c of selectedMeal.components) {
+      // Preskoči vodu
+      if (c.food.toLowerCase().includes('water') || c.food.toLowerCase().includes('voda')) {
+        continue;
+      }
+      
+      const food = findFoodByName(allFoods, c.food);
+      if (!food) { 
+        console.warn(`⚠️ Namirnica "${c.food}" nije pronađena u bazi za template "${selectedMeal.name}"`);
+        missingFoods.push(c.food);
+        missing = true; 
+        // Ako nedostaje bilo koja komponenta, template nije validan - preskoči ga
+        break;
+      }
 
-    // Izračunaj makroe - koristi units/gramsPerUnit ako postoji (npr. za jaja)
-    let actualGrams = c.grams;
-    let units: number | undefined;
-    let displayText = '';
-    
-    // Ako je jaja i ima units property, koristi units
-    if (c.food.toLowerCase().includes('egg') && (food as any).units && (food as any).gramsPerUnit) {
-      const gramsPerUnit = (food as any).gramsPerUnit || 60; // default 60g po jajetu
-      units = Math.round(c.grams / gramsPerUnit);
-      actualGrams = units * gramsPerUnit;
-      const foodName = translateFoodName(food.name);
-      displayText = `${foodName} (${units} kom ≈ ${actualGrams}g)`;
-    } else {
-      // Normalno s gramima
-      actualGrams = c.grams;
-      const foodName = translateFoodName(food.name);
-      displayText = `${foodName} (${actualGrams}g)`;
+      // Provjeri da li je namirnica već korištena (osim ako je to dozvoljeno)
+      if (usedToday.has(food.id)) {
+        console.warn(`⚠️ Namirnica "${c.food}" već korištena danas, preskačem obrok`);
+        missing = true;
+        break;
+      }
+
+      // Izračunaj makroe - koristi units/gramsPerUnit ako postoji (npr. za jaja)
+      let actualGrams = c.grams;
+      let units: number | undefined;
+      let displayText = '';
+      
+      // Ako je jaja i ima units property, koristi units
+      if (c.food.toLowerCase().includes('egg') && (food as any).units && (food as any).gramsPerUnit) {
+        const gramsPerUnit = (food as any).gramsPerUnit || 60; // default 60g po jajetu
+        units = Math.round(c.grams / gramsPerUnit);
+        actualGrams = units * gramsPerUnit;
+        const foodName = translateFoodName(food.name);
+        displayText = `${foodName} (${units} kom ≈ ${actualGrams}g)`;
+      } else {
+        // Normalno s gramima
+        actualGrams = c.grams;
+        const foodName = translateFoodName(food.name);
+        displayText = `${foodName} (${actualGrams}g)`;
+      }
+
+      const ratio = actualGrams / 100;
+      calories += (food.calories_per_100g || 0) * ratio;
+      protein += (food.protein_per_100g || 0) * ratio;
+      carbs += (food.carbs_per_100g || 0) * ratio;
+      fat += (food.fat_per_100g || 0) * ratio;
+
+      componentDetails.push({ food, grams: actualGrams, units, displayText });
+      usedToday.add(food.id);
     }
-
-    const ratio = actualGrams / 100;
-    calories += (food.calories_per_100g || 0) * ratio;
-    protein += (food.protein_per_100g || 0) * ratio;
-    carbs += (food.carbs_per_100g || 0) * ratio;
-    fat += (food.fat_per_100g || 0) * ratio;
-
-    componentDetails.push({ food, grams: actualGrams, units, displayText });
-    usedToday.add(food.id);
   }
 
   // Ako nedostaje BILO KOJA komponenta, preskoči template i pokušaj s drugim
@@ -1652,7 +1734,7 @@ function buildCompositeMealForSlot(
     
     // Ako nismo iscrpili sve opcije, pokušaj ponovno
     if (newExcluded.size < definitions.length) {
-      return buildCompositeMealForSlot(
+      return await buildCompositeMealForSlot(
         slot, allFoods, usedToday, slotTargetCalories, 
         previousMeal, previousMeals, minIngredients, usedMealsThisWeek, previousDayMeal, newExcluded, userGoal
       );
@@ -1683,10 +1765,11 @@ function buildCompositeMealForSlot(
     grams: c.grams
   }));
 
-  return {
+  // Kreiraj osnovno jelo sa USDA podacima
+  const baseMeal = {
     id: `composite-${slotKey}-${selectedMeal.name}`,
     type: "recipe" as const,
-    name: selectedMeal.name, // Koristi samo meal.name
+    name: selectedMeal.name,
     calories: Math.round(calories * factor * 10) / 10,
     protein: Math.round(protein * factor * 10) / 10,
     carbs: Math.round(carbs * factor * 10) / 10,
@@ -1702,7 +1785,7 @@ function buildCompositeMealForSlot(
       tags: ["composite"],
       goalTags: [],
       dietTags: [],
-      components: mealComponents // Dodaj komponente za validaciju
+      components: mealComponents
     },
     score: 0.8,
     scoreBreakdown: {
@@ -1712,20 +1795,27 @@ function buildCompositeMealForSlot(
       varietyPenalty: 0,
       total: 0.8
     },
-    // Dodaj komponente kao dodatno polje (ne u meta)
     componentsString: componentsString,
     componentDetails: componentDetails.map(c => ({
       foodName: translateFoodName(c.food.name),
-      grams: c.grams,
+      grams: c.grams * factor, // Prilagodi gramaže faktorom
       units: c.units,
       displayText: c.displayText
     }))
   } as ScoredMeal & { componentsString?: string; componentDetails?: Array<{ foodName: string; grams: number; units?: number; displayText: string }> };
+
+  // Vrati osnovno jelo - Edamam validacija će se pozvati nakon kreiranja
+  return baseMeal;
 }
 
 /**
  * Validiraj jelo s Edamam API-om i koristi točnije podatke
  * Koristi se za SVA jela da osigura točnost
+ */
+/**
+ * Validiraj jelo s Edamam API-om i koristi točnije podatke
+ * Koristi se za SVA jela da osigura točnost
+ * NOVO: Prilagođava gramaže namirnica prema Edamam podacima za maksimalnu točnost
  */
 async function validateAndCorrectMealWithEdamam(
   meal: ScoredMeal
@@ -1736,16 +1826,25 @@ async function validateAndCorrectMealWithEdamam(
   
   // Formiraj tekst sastojaka - koristi componentDetails ako postoji, inače meta.components
   let ingredientText = "";
+  let originalGrams: Array<{ foodName: string; grams: number }> = [];
   
   // Provjeri componentDetails (za composite meals)
   if ((meal as any).componentDetails && (meal as any).componentDetails.length > 0) {
-    ingredientText = (meal as any).componentDetails.map((c: any) => 
+    originalGrams = (meal as any).componentDetails.map((c: any) => ({
+      foodName: c.foodName,
+      grams: c.grams
+    }));
+    ingredientText = originalGrams.map((c: any) => 
       `${c.grams}g ${c.foodName}`
     ).join(", ");
   } 
   // Provjeri meta.components (ako postoji)
-  else if (meal.meta?.components && Array.isArray(meal.meta.components) && meal.meta.components.length > 0) {
-    ingredientText = meal.meta.components.map((c: any) => 
+  else if ((meal.meta as any)?.components && Array.isArray((meal.meta as any).components) && (meal.meta as any).components.length > 0) {
+    originalGrams = (meal.meta as any).components.map((c: any) => ({
+      foodName: c.food,
+      grams: c.grams
+    }));
+    ingredientText = originalGrams.map((c: any) => 
       `${c.grams}g ${c.food}`
     ).join(", ");
   }
@@ -1755,7 +1854,7 @@ async function validateAndCorrectMealWithEdamam(
   }
   
   try {
-    // Dohvati Edamam podatke
+    // Dohvati Edamam podatke za trenutne gramaže
     const edamamData = await analyzeNutritionFromText(
       ingredientText,
       meal.name
@@ -1770,21 +1869,65 @@ async function validateAndCorrectMealWithEdamam(
         fat: Math.abs(meal.fat - edamamData.fat),
       };
       
-      // Ako je razlika > 5%, koristi Edamam podatke (točniji)
+      // Ako je razlika > 3%, koristi Edamam podatke i prilagodi gramaže
       const calorieDeviationPercent = meal.calories > 0 
         ? (deviation.calories / meal.calories) * 100 
         : 0;
       
-      if (calorieDeviationPercent > 5 || 
-          (meal.protein > 0 && deviation.protein > meal.protein * 0.05) ||
-          (meal.carbs > 0 && deviation.carbs > meal.carbs * 0.05) ||
-          (meal.fat > 0 && deviation.fat > meal.fat * 0.05)) {
+      const proteinDeviationPercent = meal.protein > 0 
+        ? (deviation.protein / meal.protein) * 100 
+        : 0;
+      
+      const carbsDeviationPercent = meal.carbs > 0 
+        ? (deviation.carbs / meal.carbs) * 100 
+        : 0;
+      
+      const fatDeviationPercent = meal.fat > 0 
+        ? (deviation.fat / meal.fat) * 100 
+        : 0;
+      
+      // Koristi Edamam ako je bilo koja devijacija > 3%
+      if (calorieDeviationPercent > 3 || 
+          proteinDeviationPercent > 3 ||
+          carbsDeviationPercent > 3 ||
+          fatDeviationPercent > 3) {
         
         console.log(`✅ Edamam korekcija za ${meal.name}:`);
         console.log(`   USDA: ${meal.calories.toFixed(0)} kcal | Edamam: ${edamamData.calories.toFixed(0)} kcal`);
         console.log(`   Razlika: ${deviation.calories.toFixed(0)} kcal (${calorieDeviationPercent.toFixed(1)}%)`);
         
+        // Izračunaj faktor skaliranja prema Edamam podacima
+        // Koristi kalorije kao glavni pokazatelj
+        const calorieScale = meal.calories > 0 && edamamData.calories > 0
+          ? meal.calories / edamamData.calories
+          : 1;
+        
+        // Prilagodi gramaže prema Edamam podacima
+        if ((meal as any).componentDetails && (meal as any).componentDetails.length > 0) {
+          (meal as any).componentDetails = (meal as any).componentDetails.map((c: any) => ({
+            ...c,
+            grams: Math.round(c.grams * calorieScale * 10) / 10, // Prilagodi gramaže
+            displayText: `${c.foodName} (${Math.round(c.grams * calorieScale * 10) / 10}g)`
+          }));
+        }
+        
+        // Ažuriraj meta.components
+        if ((meal.meta as any)?.components) {
+          (meal.meta as any).components = (meal.meta as any).components.map((c: any) => ({
+            ...c,
+            grams: Math.round(c.grams * calorieScale * 10) / 10
+          }));
+        }
+        
         // Koristi Edamam podatke (točniji)
+        meal.calories = Math.round(edamamData.calories * calorieScale);
+        meal.protein = Math.round(edamamData.protein * calorieScale * 10) / 10;
+        meal.carbs = Math.round(edamamData.carbs * calorieScale * 10) / 10;
+        meal.fat = Math.round(edamamData.fat * calorieScale * 10) / 10;
+        
+        console.log(`   ✅ Ažurirano: ${meal.calories.toFixed(0)} kcal, P: ${meal.protein.toFixed(1)}g, C: ${meal.carbs.toFixed(1)}g, F: ${meal.fat.toFixed(1)}g`);
+      } else {
+        // Ako je razlika < 3%, samo koristi Edamam podatke bez skaliranja gramaža
         meal.calories = Math.round(edamamData.calories);
         meal.protein = Math.round(edamamData.protein * 10) / 10;
         meal.carbs = Math.round(edamamData.carbs * 10) / 10;
@@ -2408,6 +2551,13 @@ export type WeeklyPlan = {
       total: number;
     };
   };
+  userTargets?: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    goal: string;
+  };
 };
 
 /**
@@ -2419,6 +2569,25 @@ export interface WeeklyPlanOptions {
   targetProtein: number;
   targetCarbs: number;
   targetFat: number;
+}
+
+/**
+ * Direktne kalkulacije za generiranje plana bez userId
+ */
+export interface DirectCalculations {
+  targetCalories: number;
+  targetProtein: number;
+  targetCarbs: number;
+  targetFat: number;
+  goalType: "lose" | "maintain" | "gain";
+  bmr?: number;
+  tdee?: number;
+  preferences?: {
+    allergies?: string;
+    foodPreferences?: string;
+    avoidIngredients?: string;
+    trainingFrequency?: string;
+  };
 }
 
 /**
@@ -2481,8 +2650,6 @@ export async function generateWeeklyProMealPlan(
 
     console.log(`✅ Kalkulacije pronađene: ${calculations.target_calories} kcal, P: ${calculations.protein_grams}g, C: ${calculations.carbs_grams}g, F: ${calculations.fats_grams}g`);
 
-    console.log(`✅ Kalkulacije pronađene: ${calculations.target_calories} kcal, P: ${calculations.protein_grams}g, C: ${calculations.carbs_grams}g, F: ${calculations.fats_grams}g`);
-
     // 2. Dohvati korisničke preference
     let preferences = await getClientPreferences(userId);
     
@@ -2504,18 +2671,6 @@ export async function generateWeeklyProMealPlan(
     }
     const maxSameRecipePerWeek = preferences.max_same_recipe_per_week || 2;
 
-    // 3. Postavi week start date (ponedjeljak)
-    const today = new Date();
-    const dayOfWeek = today.getDay(); // 0 = nedjelja, 1 = ponedjeljak, ...
-    const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const weekStart = new Date(today);
-    weekStart.setDate(today.getDate() + daysToMonday);
-    weekStart.setHours(0, 0, 0, 0);
-    const weekStartDate = weekStart.toISOString().split("T")[0];
-
-    // 4. Mapa za praćenje ponavljanja recepata u tjednu
-    const recipeUsageCount = new Map<string, number>(); // recipeId -> count
-
     // 5. Odredi mealsPerDay iz opcija ili default 5
     const mealsPerDay = options?.mealsPerDay || 5;
     const targetCalories = options?.targetCalories || calculations.target_calories;
@@ -2523,20 +2678,158 @@ export async function generateWeeklyProMealPlan(
     const targetCarbs = options?.targetCarbs || calculations.carbs_grams;
     const targetFat = options?.targetFat || calculations.fats_grams;
 
-    // Odredi cilj korisnika za filtriranje obroka
+    // Convert preferences to internal format
+    const internalPreferences = {
+      allergies: Array.isArray(preferences.allergies) ? preferences.allergies.join(", ") : (preferences.allergies || ""),
+      dietary_restrictions: Array.isArray(preferences.dietary_restrictions) ? preferences.dietary_restrictions.join(", ") : (preferences.dietary_restrictions || ""),
+      disliked_foods: Array.isArray(preferences.disliked_foods) ? preferences.disliked_foods.join(", ") : (preferences.disliked_foods || ""),
+      max_same_recipe_per_week: maxSameRecipePerWeek,
+    };
+
+    // Call internal function
+    return generateWeeklyProMealPlanInternal(
+      {
+        target_calories: targetCalories,
+        protein_grams: targetProtein,
+        carbs_grams: targetCarbs,
+        fats_grams: targetFat,
+        goal_type: calculations.goal_type || "maintain",
+        bmr: calculations.bmr || 0,
+        tdee: calculations.tdee || 0,
+      },
+      internalPreferences,
+      mealsPerDay,
+      userId
+    );
+  } catch (error) {
+    console.error("Error generating weekly PRO meal plan:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generiše PRO tjedni plan prehrane s direktnim kalkulacijama (bez userId)
+ * 
+ * @param directCalculations - Direktne kalkulacije i preference
+ * @returns Promise<WeeklyPlan> - PRO tjedni plan prehrane
+ */
+export async function generateWeeklyProMealPlanWithCalculations(
+  directCalculations: DirectCalculations
+): Promise<WeeklyPlan> {
+  console.log("🚀 Pokretanje PRO generiranja tjednog plana prehrane (direct calculations mode)...");
+  console.log(`✅ Kalkulacije: ${directCalculations.targetCalories} kcal, P: ${directCalculations.targetProtein}g, C: ${directCalculations.targetCarbs}g, F: ${directCalculations.targetFat}g`);
+  console.log(`🎯 Cilj: ${directCalculations.goalType}`);
+  
+  // Validacija
+  if (
+    directCalculations.targetCalories <= 0 ||
+    directCalculations.targetProtein <= 0 ||
+    directCalculations.targetCarbs <= 0 ||
+    directCalculations.targetFat <= 0
+  ) {
+    throw new Error(`Nevaljane kalkulacije: ${directCalculations.targetCalories} kcal, P: ${directCalculations.targetProtein}g, C: ${directCalculations.targetCarbs}g, F: ${directCalculations.targetFat}g`);
+  }
+
+  // Parse preferences
+  let preferences = {
+    allergies: directCalculations.preferences?.allergies || "",
+    dietary_restrictions: directCalculations.preferences?.foodPreferences || "",
+    disliked_foods: directCalculations.preferences?.avoidIngredients || "",
+    max_same_recipe_per_week: 2,
+  };
+
+  // Parse meal frequency from training frequency
+  let mealsPerDay = 5; // default
+  if (directCalculations.preferences?.trainingFrequency) {
+    const freq = directCalculations.preferences.trainingFrequency.toLowerCase();
+    if (freq.includes("3") || freq.includes("tri")) mealsPerDay = 3;
+    else if (freq.includes("6") || freq.includes("šest")) mealsPerDay = 6;
+    else if (freq.includes("5") || freq.includes("pet")) mealsPerDay = 5;
+  }
+
+  // GAIN mode automatski koristi 6 obroka
+  if (directCalculations.goalType === "gain" && mealsPerDay === 5) {
+    mealsPerDay = 6;
+    console.log(`🍽️ GAIN MODE: Automatski povećan broj obroka na 6`);
+  }
+
+  // Call internal function with calculated values
+  return generateWeeklyProMealPlanInternal(
+    {
+      target_calories: directCalculations.targetCalories,
+      protein_grams: directCalculations.targetProtein,
+      carbs_grams: directCalculations.targetCarbs,
+      fats_grams: directCalculations.targetFat,
+      goal_type: directCalculations.goalType,
+      bmr: directCalculations.bmr || 0,
+      tdee: directCalculations.tdee || 0,
+    },
+    preferences,
+    mealsPerDay,
+    "guest" // guest userId for direct calculations
+  );
+}
+
+/**
+ * Interna funkcija za generiranje PRO tjednog plana (refaktorizirana iz generateWeeklyProMealPlan)
+ */
+async function generateWeeklyProMealPlanInternal(
+  calculations: {
+    target_calories: number;
+    protein_grams: number;
+    carbs_grams: number;
+    fats_grams: number;
+    goal_type: "lose" | "maintain" | "gain";
+    bmr?: number;
+    tdee?: number;
+  },
+  preferences: {
+    allergies: string;
+    dietary_restrictions: string;
+    disliked_foods: string;
+    max_same_recipe_per_week?: number;
+  },
+  mealsPerDay: number,
+  userId: string
+): Promise<WeeklyPlan> {
+  try {
+    // 0. Inicijaliziraj CSV podatke
+    try {
+      await initializeCSVData();
+      console.log("✅ CSV podaci inicijalizirani");
+    } catch (csvError) {
+      console.warn("⚠️ Greška pri inicijalizaciji CSV podataka, nastavljam sa Supabase:", csvError);
+    }
+
+    const maxSameRecipePerWeek = preferences.max_same_recipe_per_week || 2;
+    const targetCalories = calculations.target_calories;
+    const targetProtein = calculations.protein_grams;
+    const targetCarbs = calculations.carbs_grams;
+    const targetFat = calculations.fats_grams;
     const userGoal: GoalType = calculations.goal_type || "maintain";
 
     console.log(`📊 Generiranje plana sa ${mealsPerDay} obroka dnevno`);
     console.log(`📊 Target: ${targetCalories} kcal, P: ${targetProtein}g, C: ${targetCarbs}g, F: ${targetFat}g`);
     console.log(`🎯 Cilj korisnika: ${userGoal}`);
 
-    // 6. Dohvati sve namirnice (foods) jednom za sve dane
+    // Postavi week start date (ponedjeljak)
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() + daysToMonday);
+    weekStart.setHours(0, 0, 0, 0);
+    const weekStartDate = weekStart.toISOString().split("T")[0];
+
+    // Mapa za praćenje ponavljanja recepata u tjednu
+    const recipeUsageCount = new Map<string, number>();
+
+    // Dohvati sve namirnice (foods) jednom za sve dane
     console.log("📋 Dohvaćanje svih namirnica...");
     let allFoods: Food[] = [];
     try {
-      // Pokušaj učitati iz CSV-a
       await initializeCSVData();
-      const csvFoods = await getAllFoodsWithMacros(10000); // Dohvati do 10000 namirnica
+      const csvFoods = await getAllFoodsWithMacros(10000);
       allFoods = csvFoods.map((csvFood) => ({
         id: `csv-${csvFood.fdc_id}`,
         name: csvFood.description,
@@ -2552,10 +2845,9 @@ export async function generateWeeklyProMealPlan(
         default_serving_size_g: 100,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        mealSlot: undefined, // CSV namirnice nemaju mealSlot, ali će biti filtrirane po slotu
+        mealSlot: undefined,
       })) as Food[];
       
-      // Filtrirati namirnice sa 0 kalorija ili nedostajućim vrijednostima
       allFoods = allFoods.filter(f => 
         f.calories_per_100g > 0 && 
         f.protein_per_100g >= 0 && 
@@ -2570,7 +2862,6 @@ export async function generateWeeklyProMealPlan(
       console.log(`✅ Dohvaćeno ${allFoods.length} valjanih namirnica iz CSV-a`);
     } catch (csvError) {
       console.warn("⚠️ Greška pri dohvatu CSV podataka, koristim Supabase:", csvError);
-      // Fallback na Supabase
       const { data: supabaseFoods, error: supabaseError } = await supabase
         .from("foods")
         .select("*")
@@ -2587,14 +2878,13 @@ export async function generateWeeklyProMealPlan(
       }
     }
 
-    // 7. Generiraj plan za svaki dan (7 dana) koristeći novu logiku
+    // Generiraj plan za svaki dan (7 dana)
     console.log("📅 Počinjem generiranje plana za 7 dana...");
     const slots = getSlotsForMealsPerDay(mealsPerDay);
     const days: WeeklyDay[] = [];
     
-    // Praćenje korištenih obroka kroz tjedan (da se ne ponavljaju dva dana zaredom)
-    const usedMealsThisWeek: Map<string, Set<string>> = new Map(); // slot -> Set<mealName>
-    const previousDayMeals: Map<string, MealOption | null> = new Map(); // slot -> previous day meal
+    const usedMealsThisWeek: Map<string, Set<string>> = new Map();
+    const previousDayMeals: Map<string, MealOption | null> = new Map();
 
     for (let i = 0; i < 7; i++) {
       const currentDate = new Date(weekStart);
@@ -2604,30 +2894,24 @@ export async function generateWeeklyProMealPlan(
       console.log(`📅 Generiranje plana za dan ${i + 1}/7 (${dateStr})...`);
 
       try {
-        const usedToday = new Set<string>(); // Set za praćenje korištenih namirnica taj dan
+        const usedToday = new Set<string>();
         const dayMeals: Record<string, ScoredMeal> = {};
         
-        // Praćenje prethodnih obroka za kvalitetan odabir
         const previousMealsInDay: MealOption[] = [];
         let previousMealOption: MealOption | null = null;
 
-        // Generiraj obrok za svaki slot
         for (const slot of slots) {
-          // Izračunaj target kalorije za slot (jednostavna distribucija)
           const slotTargetCalories = targetCalories / mealsPerDay;
-
-          // Odredi minimalan broj sastojaka po slotu
-          let minIngredients = 2; // default za snack
+          let minIngredients = 2;
           if (slot === "breakfast" || slot === "lunch" || slot === "dinner") {
-            minIngredients = 3; // glavni obroci moraju imati min 3 sastojka
+            minIngredients = 3;
           }
 
-          // PRIORITET: Koristi SAMO composite meal iz meal_components.json
           const slotKeyForTracking = slot === "extraSnack" ? "snack" : (slot as "breakfast" | "lunch" | "dinner" | "snack");
           const previousDayMealForSlot = previousDayMeals.get(slot) || null;
           const usedMealsForSlot = usedMealsThisWeek.get(slotKeyForTracking) || new Set<string>();
           
-          const composite = buildCompositeMealForSlot(
+          const composite = await buildCompositeMealForSlot(
             slot, 
             allFoods, 
             usedToday, 
@@ -2637,50 +2921,39 @@ export async function generateWeeklyProMealPlan(
             minIngredients,
             usedMealsForSlot,
             previousDayMealForSlot,
-            new Set(), // excludedMealNames
+            new Set(),
             userGoal
           );
           
           if (composite) {
-            // Validiraj jelo s Edamam API-om za točnije podatke
             const validatedComposite = await validateAndCorrectMealWithEdamam(composite);
             dayMeals[slot] = validatedComposite;
             
-            // Ažuriraj praćenje prethodnih obroka
             const definitions = MEAL_COMPONENTS[slotKeyForTracking];
             if (definitions) {
-              // Pronađi originalni naziv obroka (bez gramaža)
               const originalName = composite.name.split(" - ")[0];
               const matchedMeal = definitions.find(d => d.name === originalName);
               if (matchedMeal) {
                 const mealOption = convertToMealOption(matchedMeal);
                 previousMealsInDay.push(mealOption);
                 previousMealOption = mealOption;
-                
-                // Spremi za sljedeći dan
                 previousDayMeals.set(slot, mealOption);
                 usedMealsForSlot.add(mealOption.name);
                 usedMealsThisWeek.set(slotKeyForTracking, usedMealsForSlot);
               }
             }
             
-            console.log(`   ✅ ${MEAL_SLOT_LABELS[slot]}: ${composite.name} (composite, ${minIngredients}+ sastojaka)`);
+            console.log(`   ✅ ${MEAL_SLOT_LABELS[slot]}: ${composite.name}`);
             continue;
           }
 
-          // NIKADA ne koristi single ingredient foods - samo composite meals iz meal_components.json
-          // NIKADA ne koristi fallback - ako nema composite meal, preskoči slot
           if (!composite) {
-            console.error(`❌ Nema dostupnih composite meals za ${slot} u meal_components.json, preskačem...`);
-            // NE baci grešku - samo preskoči slot i nastavi dalje
+            console.error(`❌ Nema dostupnih composite meals za ${slot}, preskačem...`);
             continue;
           }
         }
 
-        // Zbroji makroe iz svih obroka
         const total = sumMealMacros(dayMeals);
-
-        // Izračunaj devijaciju
         const target = {
           calories: targetCalories,
           protein: targetProtein,
@@ -2689,7 +2962,6 @@ export async function generateWeeklyProMealPlan(
         };
         const deviation = calculateDailyDeviation(target, total);
 
-        // Kreiraj WeeklyDay format
         const weeklyDay: WeeklyDay = {
           date: dateStr,
           meals: {
@@ -2714,7 +2986,7 @@ export async function generateWeeklyProMealPlan(
       }
     }
 
-    // 6. Izračunaj weekly average (prosjek makroa po danu)
+    // Izračunaj weekly average
     const totalDays = days.length;
     const weeklyAverage = {
       calories: Math.round((days.reduce((sum, day) => sum + day.total.calories, 0) / totalDays) * 10) / 10,
@@ -2730,7 +3002,6 @@ export async function generateWeeklyProMealPlan(
       },
     };
 
-    // 7. Izračunaj deviation weeklyAverage-a u odnosu na target makroe
     const targetDeviation = calculateDailyDeviation(
       {
         calories: calculations.target_calories,
@@ -2749,24 +3020,22 @@ export async function generateWeeklyProMealPlan(
         ...weeklyAverage,
         deviation: targetDeviation,
       },
+      userTargets: {
+        calories: calculations.target_calories,
+        protein: calculations.protein_grams,
+        carbs: calculations.carbs_grams,
+        fat: calculations.fats_grams,
+        goal: calculations.goal_type || "maintain",
+      },
     };
 
     console.log("\n✅ PRO tjedni plan generiran!\n");
     console.log("📊 Tjedni rezime:");
-    console.log(
-      `   Prosječne kalorije: ${weeklyAverage.calories.toFixed(0)} / ${calculations.target_calories.toFixed(0)} (dev: ${targetDeviation.calories}%)`
-    );
-    console.log(
-      `   Prosječni proteini: ${weeklyAverage.protein.toFixed(1)}g / ${calculations.protein_grams.toFixed(1)}g (dev: ${targetDeviation.protein}%)`
-    );
-    console.log(
-      `   Prosječni ugljikohidrati: ${weeklyAverage.carbs.toFixed(1)}g / ${calculations.carbs_grams.toFixed(1)}g (dev: ${targetDeviation.carbs}%)`
-    );
-    console.log(
-      `   Prosječne masti: ${weeklyAverage.fat.toFixed(1)}g / ${calculations.fats_grams.toFixed(1)}g (dev: ${targetDeviation.fat}%)`
-    );
+    console.log(`   Prosječne kalorije: ${weeklyAverage.calories.toFixed(0)} / ${calculations.target_calories.toFixed(0)} (dev: ${targetDeviation.calories}%)`);
+    console.log(`   Prosječni proteini: ${weeklyAverage.protein.toFixed(1)}g / ${calculations.protein_grams.toFixed(1)}g (dev: ${targetDeviation.protein}%)`);
+    console.log(`   Prosječni ugljikohidrati: ${weeklyAverage.carbs.toFixed(1)}g / ${calculations.carbs_grams.toFixed(1)}g (dev: ${targetDeviation.carbs}%)`);
+    console.log(`   Prosječne masti: ${weeklyAverage.fat.toFixed(1)}g / ${calculations.fats_grams.toFixed(1)}g (dev: ${targetDeviation.fat}%)`);
     console.log(`\n   📉 Prosječno ukupno odstupanje: ${targetDeviation.total}% (niže = bolje)`);
-    console.log(`   📊 Recepti korišteni: ${recipeUsageCount.size} različitih (max ${maxSameRecipePerWeek}x po receptu)`);
     console.log("\n");
 
     return weeklyPlan;
@@ -3062,6 +3331,7 @@ export default {
   generateProDailyMealPlan,
   saveProMealPlanToSupabase,
   generateWeeklyProMealPlan,
+  generateWeeklyProMealPlanWithCalculations,
   saveWeeklyProMealPlanToSupabase,
 };
 

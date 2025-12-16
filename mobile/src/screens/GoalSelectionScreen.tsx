@@ -13,6 +13,7 @@ import {
   Animated,
   Platform,
   PanResponder,
+  ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -166,35 +167,50 @@ export default function GoalSelectionScreen({ onComplete, onBack }: GoalSelectio
 
         {/* Kartice s ciljevima */}
         <Animated.View style={[styles.cardsContainer, { opacity: cardsOpacity }]}>
-          {goals.map((goal) => {
-            const isSelected = selectedGoal === goal.id;
-            return (
-              <TouchableOpacity
-                key={goal.id}
-                style={[
-                  styles.goalCard,
-                  isSelected && styles.goalCardSelected,
-                ]}
-                onPress={() => handleGoalSelect(goal.id)}
-                activeOpacity={0.8}
-              >
-                <View style={styles.goalCardContent}>
-                  <Text style={[styles.goalTitle, isSelected && styles.goalTitleSelected]}>
-                    {goal.title}
-                  </Text>
-                  <View style={styles.goalDescriptionSpacing} />
-                  <Text style={[styles.goalDescription, isSelected && styles.goalDescriptionSelected]}>
-                    {goal.description}
-                  </Text>
-                </View>
-                {isSelected && (
-                  <View style={styles.checkIndicator}>
-                    <Text style={styles.checkText}>✓</Text>
+          <ScrollView 
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollViewContent}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
+            {goals.map((goal) => {
+              const isSelected = selectedGoal === goal.id;
+              return (
+                <TouchableOpacity
+                  key={goal.id}
+                  style={[
+                    styles.goalCard,
+                    isSelected && styles.goalCardSelected,
+                  ]}
+                  onPress={() => handleGoalSelect(goal.id)}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.goalCardContent}>
+                    <Text 
+                      style={[styles.goalTitle, isSelected && styles.goalTitleSelected]}
+                      numberOfLines={2}
+                      adjustsFontSizeToFit={true}
+                      minimumFontScale={0.85}
+                    >
+                      {goal.title}
+                    </Text>
+                    <View style={styles.goalDescriptionSpacing} />
+                    <Text 
+                      style={[styles.goalDescription, isSelected && styles.goalDescriptionSelected]}
+                      numberOfLines={2}
+                    >
+                      {goal.description}
+                    </Text>
                   </View>
-                )}
-              </TouchableOpacity>
-            );
-          })}
+                  {isSelected && (
+                    <View style={styles.checkIndicator}>
+                      <Text style={styles.checkText}>✓</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         </Animated.View>
 
         {/* CTA gumb - prikaži uvijek, ali deaktiviran dok nije odabran cilj */}
@@ -248,53 +264,65 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingHorizontal: 32,
+    paddingTop: 120,
     paddingBottom: 40,
     zIndex: 10,
     justifyContent: 'flex-start',
   },
   questionContainer: {
-    marginBottom: 32,
+    marginBottom: 48,
     alignItems: 'center',
   },
   questionText: {
-    fontSize: 24,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.95)',
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#fff',
     textAlign: 'center',
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
   },
   cardsContainer: {
     flex: 1,
-    gap: 20,
     marginBottom: 32,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    gap: 12,
+    paddingVertical: 0,
+    justifyContent: 'flex-start',
   },
   goalCard: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 16,
-    padding: 28,
-    minHeight: 100,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    borderColor: 'transparent',
+    borderRadius: 0,
+    padding: 20,
+    minHeight: 80,
     justifyContent: 'center',
     flexShrink: 1,
     position: 'relative',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.15)',
   },
   goalCardSelected: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderColor: 'rgba(255,255,255,0.6)',
-    borderWidth: 2,
+    backgroundColor: 'transparent',
+    borderColor: 'transparent',
+    borderWidth: 0,
+    borderBottomColor: 'rgba(255,255,255,0.4)',
+    borderBottomWidth: 2,
   },
   goalCardContent: {
     flex: 1,
   },
   goalTitle: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.85)',
+    color: 'rgba(255,255,255,0.9)',
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
     lineHeight: 26,
   },
@@ -303,34 +331,34 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   goalDescriptionSpacing: {
-    height: 12,
+    height: 6,
   },
   goalDescription: {
     fontSize: 15,
     fontWeight: '400',
-    color: 'rgba(255,255,255,0.6)',
+    color: 'rgba(255,255,255,0.65)',
     lineHeight: 22,
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
   },
   goalDescriptionSelected: {
-    color: 'rgba(255,255,255,0.85)',
+    color: 'rgba(255,255,255,0.9)',
   },
   checkIndicator: {
     position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.4)',
+    top: 20,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
   },
@@ -339,14 +367,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ctaButton: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.15)',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.5)',
-    paddingVertical: 18,
-    paddingHorizontal: 48,
+    borderColor: 'rgba(255,255,255,0.4)',
+    paddingVertical: 16,
+    paddingHorizontal: 56,
     alignItems: 'center',
-    minWidth: 200,
-    borderRadius: 10,
+    minWidth: 220,
+    borderRadius: 12,
   },
   ctaButtonDisabled: {
     backgroundColor: 'rgba(255,255,255,0.08)',
