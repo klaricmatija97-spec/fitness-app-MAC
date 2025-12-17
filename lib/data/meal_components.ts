@@ -12,6 +12,7 @@ export type CompositeMealDefinition = {
   id?: string;
   name: string;
   description?: string;
+  preparationTip?: string;
   components: ComponentDefinition[];
   tags?: string[];
   suitableFor?: GoalType[];

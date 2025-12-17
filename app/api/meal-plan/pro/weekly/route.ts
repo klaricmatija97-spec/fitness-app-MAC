@@ -49,18 +49,40 @@ export async function POST(request: Request) {
       try {
         weeklyPlan = await generateWeeklyProMealPlanWithCalculations(validatedData.calculations!);
         console.log(`[meal-plan/pro/weekly] Plan uspješno generiran`);
+        
+        // DEBUG: Logiraj strukturu plana
+        console.log(`[meal-plan/pro/weekly] Plan struktura:`, {
+          hasDays: !!weeklyPlan.days,
+          daysLength: weeklyPlan.days?.length,
+          firstDay: weeklyPlan.days?.[0],
+          firstDayMeals: weeklyPlan.days?.[0]?.meals,
+          firstDayMealsKeys: weeklyPlan.days?.[0]?.meals ? Object.keys(weeklyPlan.days[0].meals) : [],
+          firstDayBreakfast: weeklyPlan.days?.[0]?.meals?.breakfast,
+          firstDayBreakfastName: weeklyPlan.days?.[0]?.meals?.breakfast?.name,
+          firstDayBreakfastCalories: weeklyPlan.days?.[0]?.meals?.breakfast?.calories,
+        });
       } catch (genError) {
         console.error(`[meal-plan/pro/weekly] Greška pri generiranju plana:`, genError);
         throw genError;
       }
 
       // Vrati finalni plan (bez spremanja u bazu za guest korisnike)
-      return NextResponse.json({
+      const response = {
         ok: true,
         message: "PRO tjedni plan prehrane je uspješno generiran",
         plan: weeklyPlan,
         weeklyAverage: weeklyPlan.weeklyAverage,
+      };
+      
+      // DEBUG: Logiraj što se vraća
+      console.log(`[meal-plan/pro/weekly] Vraćam response:`, {
+        ok: response.ok,
+        planHasDays: !!response.plan?.days,
+        planDaysLength: response.plan?.days?.length,
+        firstDayMeals: response.plan?.days?.[0]?.meals,
       });
+      
+      return NextResponse.json(response);
     }
 
     // Authenticated mode - use userId

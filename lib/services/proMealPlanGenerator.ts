@@ -56,6 +56,7 @@ import { loadUserCalculations, type UserCalculations as LoadedCalculations } fro
 import { translateFoodName } from "../utils/foodTranslations";
 import { mealComponents, type MealComponentsConfig, type GoalType, getMealsForGoal, getDisplayName } from "../data/meal_components";
 import { analyzeNutritionFromText } from "../services/edamamService";
+import { findNamirnica, calculateMacrosForGrams, type Namirnica } from "../data/foods-database";
 import type {
   Recipe,
   Food,
@@ -65,6 +66,23 @@ import type {
 } from "../db/models";
 
 const supabase = createServiceClient();
+
+// ============================================
+// EDAMAM FALLBACK CONFIGURATION
+// ============================================
+
+// Feature flag: Opcijski Edamam fallback za sumnjive USDA rezultate
+const USE_EDAMAM_FALLBACK = process.env.USE_EDAMAM_FALLBACK === 'true'; // Default: false
+
+// Cache za Edamam rezultate (in-memory Map)
+// Key: normalized ingredient name (lowercase, trimmed)
+// Value: NutritionResult per 100g
+const edamamCache = new Map<string, { calories: number; protein: number; carbs: number; fat: number }>();
+
+// Concurrency limiter za Edamam API pozive
+let edamamActiveRequests = 0;
+const EDAMAM_MAX_CONCURRENT = 3;
+const EDAMAM_TIMEOUT_MS = 5000; // 5 sekundi
 
 // ============================================
 // TYPES & INTERFACES
@@ -88,6 +106,170 @@ type ComponentDefinition = MealComponent;
 type CompositeMealDefinition = MealOption;
 
 const MEAL_COMPONENTS = mealComponents;
+
+// ============================================
+// PORTION LIMITS (kao web generator)
+// ============================================
+
+// LOSE MODE: Više proteina, manje UH i masti
+const PORTION_LIMITS_LOSE: Record<string, { min: number; max: number }> = {
+  "chicken_breast": { min: 100, max: 250 },
+  "turkey_breast": { min: 100, max: 250 },
+  "beef_lean": { min: 80, max: 200 },
+  "beef": { min: 80, max: 200 },
+  "salmon": { min: 80, max: 200 },
+  "tuna_canned": { min: 80, max: 180 },
+  "tuna": { min: 80, max: 180 },
+  "egg_whole": { min: 50, max: 200 },
+  "egg": { min: 50, max: 200 },
+  "egg_white": { min: 50, max: 250 },
+  "whey": { min: 25, max: 50 },
+  "skyr": { min: 100, max: 250 },
+  "oats": { min: 30, max: 80 },
+  "rice_cooked": { min: 80, max: 200 },
+  "rice": { min: 80, max: 200 },
+  "pasta_cooked": { min: 80, max: 200 },
+  "pasta": { min: 80, max: 200 },
+  "potatoes": { min: 100, max: 250 },
+  "sweet_potato": { min: 80, max: 200 },
+  "bread": { min: 30, max: 80 },
+  "toast": { min: 30, max: 80 },
+  "banana": { min: 60, max: 120 },
+  "granola": { min: 30, max: 60 },
+  "avocado": { min: 30, max: 80 },
+  "peanut_butter": { min: 10, max: 25 },
+  "peanut butter": { min: 10, max: 25 },
+  "olive_oil": { min: 5, max: 15 },
+  "almonds": { min: 10, max: 25 },
+  "butter": { min: 5, max: 15 },
+  "butter light": { min: 5, max: 15 },
+  "sour_cream": { min: 15, max: 50 },
+  "sour cream": { min: 15, max: 50 },
+  "greek_yogurt": { min: 100, max: 300 },
+  "cottage_cheese": { min: 80, max: 250 },
+  "milk": { min: 100, max: 300 },
+  "apple": { min: 80, max: 150 },
+  "blueberries": { min: 50, max: 100 },
+  "default": { min: 30, max: 200 },
+};
+
+// MAINTAIN MODE: Uravnoteženo
+const PORTION_LIMITS_MAINTAIN: Record<string, { min: number; max: number }> = {
+  "chicken_breast": { min: 80, max: 200 },
+  "turkey_breast": { min: 80, max: 200 },
+  "beef_lean": { min: 80, max: 180 },
+  "beef": { min: 80, max: 180 },
+  "salmon": { min: 80, max: 180 },
+  "tuna_canned": { min: 60, max: 150 },
+  "tuna": { min: 60, max: 150 },
+  "egg_whole": { min: 50, max: 180 },
+  "egg": { min: 50, max: 180 },
+  "egg_white": { min: 30, max: 200 },
+  "whey": { min: 20, max: 40 },
+  "skyr": { min: 80, max: 200 },
+  "oats": { min: 40, max: 120 },
+  "rice_cooked": { min: 100, max: 300 },
+  "rice": { min: 100, max: 300 },
+  "pasta_cooked": { min: 100, max: 300 },
+  "pasta": { min: 100, max: 300 },
+  "potatoes": { min: 100, max: 350 },
+  "sweet_potato": { min: 100, max: 300 },
+  "bread": { min: 40, max: 120 },
+  "toast": { min: 40, max: 120 },
+  "banana": { min: 80, max: 150 },
+  "granola": { min: 40, max: 100 },
+  "avocado": { min: 40, max: 120 },
+  "peanut_butter": { min: 15, max: 40 },
+  "peanut butter": { min: 15, max: 40 },
+  "olive_oil": { min: 5, max: 25 },
+  "almonds": { min: 15, max: 40 },
+  "butter": { min: 5, max: 25 },
+  "butter light": { min: 5, max: 25 },
+  "sour_cream": { min: 20, max: 80 },
+  "sour cream": { min: 20, max: 80 },
+  "greek_yogurt": { min: 100, max: 250 },
+  "cottage_cheese": { min: 80, max: 200 },
+  "milk": { min: 100, max: 350 },
+  "apple": { min: 80, max: 180 },
+  "blueberries": { min: 50, max: 120 },
+  "default": { min: 30, max: 250 },
+};
+
+// GAIN MODE: Više UH, manje proteina
+const PORTION_LIMITS_GAIN: Record<string, { min: number; max: number }> = {
+  "chicken_breast": { min: 50, max: 150 },
+  "turkey_breast": { min: 50, max: 150 },
+  "beef_lean": { min: 50, max: 150 },
+  "beef": { min: 50, max: 150 },
+  "salmon": { min: 50, max: 150 },
+  "tuna_canned": { min: 50, max: 120 },
+  "tuna": { min: 50, max: 120 },
+  "egg_whole": { min: 30, max: 150 },
+  "egg": { min: 30, max: 150 },
+  "egg_white": { min: 20, max: 150 },
+  "whey": { min: 15, max: 35 },
+  "skyr": { min: 50, max: 150 },
+  "oats": { min: 60, max: 150 },
+  "rice_cooked": { min: 150, max: 400 },
+  "rice": { min: 150, max: 400 },
+  "pasta_cooked": { min: 150, max: 400 },
+  "pasta": { min: 150, max: 400 },
+  "potatoes": { min: 150, max: 500 },
+  "sweet_potato": { min: 150, max: 400 },
+  "bread": { min: 60, max: 200 },
+  "toast": { min: 60, max: 150 },
+  "banana": { min: 100, max: 200 },
+  "granola": { min: 60, max: 120 },
+  "avocado": { min: 40, max: 120 },
+  "peanut_butter": { min: 15, max: 50 },
+  "peanut butter": { min: 15, max: 50 },
+  "olive_oil": { min: 10, max: 30 },
+  "almonds": { min: 15, max: 40 },
+  "butter": { min: 10, max: 30 },
+  "butter light": { min: 10, max: 30 },
+  "sour_cream": { min: 30, max: 100 },
+  "sour cream": { min: 30, max: 100 },
+  "greek_yogurt": { min: 80, max: 200 },
+  "cottage_cheese": { min: 50, max: 150 },
+  "milk": { min: 150, max: 450 },
+  "apple": { min: 100, max: 200 },
+  "blueberries": { min: 50, max: 150 },
+  "default": { min: 40, max: 350 },
+};
+
+function getPortionLimitsForGoal(goalType: "lose" | "maintain" | "gain"): Record<string, { min: number; max: number }> {
+  switch (goalType) {
+    case "lose": return PORTION_LIMITS_LOSE;
+    case "gain": return PORTION_LIMITS_GAIN;
+    default: return PORTION_LIMITS_MAINTAIN;
+  }
+}
+
+function getPortionLimits(foodKey: string, goalType?: "lose" | "maintain" | "gain"): { min: number; max: number } {
+  const limits = getPortionLimitsForGoal(goalType || "maintain");
+  const namirnica = findNamirnica(foodKey);
+  
+  if (!namirnica) {
+    return limits["default"];
+  }
+  
+  const byId = limits[namirnica.id];
+  if (byId) return byId;
+  
+  const byName = limits[namirnica.name.toLowerCase()];
+  if (byName) return byName;
+  
+  const byNameEn = limits[namirnica.nameEn.toLowerCase()];
+  if (byNameEn) return byNameEn;
+  
+  return limits["default"];
+}
+
+function clampToPortionLimits(foodKey: string, grams: number, goalType?: "lose" | "maintain" | "gain"): number {
+  const limits = getPortionLimits(foodKey, goalType);
+  const clamped = Math.max(limits.min, Math.min(limits.max, Math.round(grams / 5) * 5));
+  return clamped;
+}
 
 // Strong matching map: foodKey → USDA description aliases
 const foodAliases: Record<string, string[]> = {
@@ -439,6 +621,264 @@ function sumMealMacros(meals: Record<string, ScoredMeal | undefined>): {
   });
 
   return { calories, protein, carbs, fat };
+}
+
+/**
+ * Generira fallback obrok ako sve ne uspije
+ * Koristi jela iz meal_components.json (kao web generator)
+ */
+async function generateFallbackMeal(
+  slot: MealSlotType,
+  targetCalories: number,
+  allFoods: Food[],
+  usedToday: Set<string>,
+  userGoal: GoalType = "maintain"
+): Promise<ScoredMeal> {
+  const slotKey = slot === "extraSnack" ? "snack" : (slot as "breakfast" | "lunch" | "dinner" | "snack");
+  
+  // Koristi jela iz meal_components.json (kao web generator)
+  let definitions = getMealsForGoal(slotKey, userGoal);
+  if (!definitions || definitions.length === 0) {
+    // Ako nema obroka za cilj, koristi sve obroke
+    console.warn(`⚠️ Nema obroka za cilj "${userGoal}" za ${slotKey}, koristim sve obroke`);
+    definitions = MEAL_COMPONENTS[slotKey] || [];
+  }
+  
+  if (definitions.length === 0) {
+    // Ako i dalje nema, pokušaj s drugim slotom ili koristi sva jela
+    console.error(`❌ Nema definicija za slot ${slotKey} u meal_components.json, pokušavam s alternativnim slotom...`);
+    // Za snack, pokušaj koristiti bilo koje dostupno jelo
+    if (slotKey === "snack") {
+      // Pokušaj pronaći jela iz drugih slotova koji bi mogli biti snack
+      const allMeals = [
+        ...(MEAL_COMPONENTS.breakfast || []),
+        ...(MEAL_COMPONENTS.lunch || []),
+        ...(MEAL_COMPONENTS.dinner || []),
+        ...(MEAL_COMPONENTS.snack || [])
+      ];
+      if (allMeals.length > 0) {
+        definitions = allMeals.slice(0, 10); // Koristi prvih 10 jela
+        console.warn(`⚠️ Koristim alternativna jela za snack: ${definitions.length} jela`);
+      } else {
+        throw new Error(`Nema dostupnih jela u meal_components.json za slot ${slotKey}`);
+      }
+    } else {
+      throw new Error(`Nema definicija za slot ${slotKey} u meal_components.json`);
+    }
+  }
+  
+  // Odaberi nasumično jelo iz definicija
+  const randomIndex = Math.floor(Math.random() * definitions.length);
+  const selectedMeal = definitions[randomIndex];
+  
+  // Konvertiraj u MealOption format
+  const mealOption = convertToMealOption(selectedMeal);
+  
+  // Izgradi obrok iz komponenti (koristi istu logiku kao buildCompositeMealForSlot)
+  const componentDetails: Array<{ food: Food; grams: number; units?: number; displayText: string }> = [];
+  let calories = 0, protein = 0, carbs = 0, fat = 0;
+  let missing = false;
+  const missingFoods: string[] = [];
+  
+  for (const component of mealOption.components) {
+    const food = findFoodByName(allFoods, component.food);
+    
+    if (!food) {
+      missing = true;
+      missingFoods.push(component.food);
+      continue;
+    }
+    
+    const grams = component.grams;
+    const ratio = grams / 100;
+    
+    calories += (food.calories_per_100g || 0) * ratio;
+    protein += (food.protein_per_100g || 0) * ratio;
+    carbs += (food.carbs_per_100g || 0) * ratio;
+    fat += (food.fat_per_100g || 0) * ratio;
+    
+    // Pronađi displayName iz originalne definicije
+    const originalComponent = selectedMeal.components.find(c => c.food === component.food);
+    const displayName = originalComponent?.displayName || getCroatianFoodName(component.food);
+    const units = grams >= 50 ? Math.round(grams / 50) : undefined;
+    const displayText = units ? `${units}x ${displayName}` : `${grams}g ${displayName}`;
+    
+    componentDetails.push({ food, grams, units, displayText });
+    usedToday.add(food.id);
+  }
+  
+  // Ako nedostaju komponente, pokušaj s drugim jelom
+  if (missing && missingFoods.length > 0) {
+    console.warn(`⚠️ Fallback obrok "${selectedMeal.name}" ima nedostajuće komponente: ${missingFoods.join(", ")}, pokušavam s drugim jelom...`);
+    
+    // Pokušaj s drugim jelom (isključi trenutno)
+    const excluded = new Set([selectedMeal.name]);
+    const remainingMeals = definitions.filter(m => m.name !== selectedMeal.name);
+    
+    if (remainingMeals.length > 0) {
+      const nextMeal = remainingMeals[Math.floor(Math.random() * remainingMeals.length)];
+      const nextMealOption = convertToMealOption(nextMeal);
+      
+      // Pokušaj ponovno s novim jelom
+      return await generateFallbackMealFromMealOption(nextMealOption, targetCalories, allFoods, usedToday, slotKey);
+    }
+  }
+  
+  if (calories <= 0) {
+    throw new Error(`Fallback obrok "${selectedMeal.name}" ima 0 kalorija`);
+  }
+  
+  // Prilagodi kalorije prema targetu
+  let factor = targetCalories > 0 ? targetCalories / calories : 1;
+  factor = Math.max(0.7, Math.min(1.3, factor));
+  
+  // Prilagodi gramaže faktorom
+  const adjustedComponentDetails = componentDetails.map(c => ({
+    ...c,
+    grams: Math.round(c.grams * factor * 10) / 10
+  }));
+  
+  // Preračunaj makroe s faktorom
+  calories = Math.round(calories * factor * 10) / 10;
+  protein = Math.round(protein * factor * 10) / 10;
+  carbs = Math.round(carbs * factor * 10) / 10;
+  fat = Math.round(fat * factor * 10) / 10;
+  
+  const componentsString = adjustedComponentDetails.map(c => c.displayText).join(", ");
+  
+  return {
+    id: `fallback-${slotKey}-${selectedMeal.id}`,
+    type: "recipe" as const,
+    name: selectedMeal.name, // Koristi hrvatski naziv iz meal_components.json
+    calories: Math.round(calories),
+    protein: Math.round(protein * 10) / 10,
+    carbs: Math.round(carbs * 10) / 10,
+    fat: Math.round(fat * 10) / 10,
+    meta: {
+      recipe: undefined,
+      food: undefined,
+      quantity: undefined,
+      cuisine: null,
+      prepTime: null,
+      difficulty: null,
+      healthScore: null,
+      tags: ["fallback", ...(selectedMeal.tags || [])],
+      goalTags: [],
+      dietTags: [],
+      description: selectedMeal.description,
+      preparationTip: selectedMeal.preparationTip,
+    },
+    score: 0.5,
+    description: selectedMeal.description,
+    preparationTip: selectedMeal.preparationTip,
+    scoreBreakdown: {
+      calorieMatch: 0.5,
+      macroMatch: 0.5,
+      healthBonus: 0,
+      varietyPenalty: 0,
+      total: 0.5
+    },
+    componentsString,
+    componentDetails: adjustedComponentDetails.map(c => ({
+      foodName: translateFoodName(c.food.name),
+      grams: c.grams,
+      units: c.units,
+      displayText: c.displayText
+    }))
+  } as ScoredMeal & { componentsString?: string; componentDetails?: Array<{ foodName: string; grams: number; units?: number; displayText: string }> };
+}
+
+/**
+ * Helper funkcija za generiranje fallback obroka iz MealOption
+ */
+async function generateFallbackMealFromMealOption(
+  mealOption: MealOption,
+  targetCalories: number,
+  allFoods: Food[],
+  usedToday: Set<string>,
+  slotKey: string
+): Promise<ScoredMeal> {
+  const componentDetails: Array<{ food: Food; grams: number; units?: number; displayText: string }> = [];
+  let calories = 0, protein = 0, carbs = 0, fat = 0;
+  
+  for (const component of mealOption.components) {
+    const food = findFoodByName(allFoods, component.food);
+    
+    if (!food) continue;
+    
+    const grams = component.grams;
+    const ratio = grams / 100;
+    
+    calories += (food.calories_per_100g || 0) * ratio;
+    protein += (food.protein_per_100g || 0) * ratio;
+    carbs += (food.carbs_per_100g || 0) * ratio;
+    fat += (food.fat_per_100g || 0) * ratio;
+    
+    // Koristi hrvatski naziv namirnice
+    const displayName = getCroatianFoodName(component.food);
+    const units = grams >= 50 ? Math.round(grams / 50) : undefined;
+    const displayText = units ? `${units}x ${displayName}` : `${grams}g ${displayName}`;
+    
+    componentDetails.push({ food, grams, units, displayText });
+    usedToday.add(food.id);
+  }
+  
+  if (calories <= 0) {
+    throw new Error(`Fallback obrok ima 0 kalorija`);
+  }
+  
+  // Prilagodi kalorije prema targetu
+  let factor = targetCalories > 0 ? targetCalories / calories : 1;
+  factor = Math.max(0.7, Math.min(1.3, factor));
+  
+  const adjustedComponentDetails = componentDetails.map(c => ({
+    ...c,
+    grams: Math.round(c.grams * factor * 10) / 10
+  }));
+  
+  calories = Math.round(calories * factor * 10) / 10;
+  protein = Math.round(protein * factor * 10) / 10;
+  carbs = Math.round(carbs * factor * 10) / 10;
+  fat = Math.round(fat * factor * 10) / 10;
+  
+  const componentsString = adjustedComponentDetails.map(c => c.displayText).join(", ");
+  
+  return {
+    id: `fallback-${slotKey}-${mealOption.name}`,
+    type: "recipe" as const,
+    name: mealOption.name,
+    calories: Math.round(calories),
+    protein: Math.round(protein * 10) / 10,
+    carbs: Math.round(carbs * 10) / 10,
+    fat: Math.round(fat * 10) / 10,
+    meta: {
+      recipe: undefined,
+      food: undefined,
+      quantity: undefined,
+      cuisine: null,
+      prepTime: null,
+      difficulty: null,
+      healthScore: null,
+      tags: ["fallback"],
+      goalTags: [],
+      dietTags: []
+    },
+    score: 0.5,
+    scoreBreakdown: {
+      calorieMatch: 0.5,
+      macroMatch: 0.5,
+      healthBonus: 0,
+      varietyPenalty: 0,
+      total: 0.5
+    },
+    componentsString,
+    componentDetails: adjustedComponentDetails.map(c => ({
+      foodName: translateFoodName(c.food.name),
+      grams: c.grams,
+      units: c.units,
+      displayText: c.displayText
+    }))
+  } as ScoredMeal & { componentsString?: string; componentDetails?: Array<{ foodName: string; grams: number; units?: number; displayText: string }> };
 }
 
 interface ClientCalculations {
@@ -1207,6 +1647,32 @@ function convertToMealOption(def: CompositeMealDefinition): MealOption {
   };
 }
 
+/**
+ * Provjeri da li obrok sadrži izbjegavane namirnice (kao web generator)
+ */
+function hasAvoidedIngredient(meal: MealOption, avoidIngredients: string[]): boolean {
+  if (avoidIngredients.length === 0) return false;
+
+  const mealIngredients = meal.components.map(c => c.food.toLowerCase());
+  const avoidLower = avoidIngredients.map(a => a.toLowerCase());
+
+  return mealIngredients.some(ing => {
+    return avoidLower.some(avoid => ing.includes(avoid) || avoid.includes(ing));
+  });
+}
+
+/**
+ * Provjeri da li obrok sadrži preferirane namirnice (kao web generator)
+ */
+function hasPreferredIngredient(meal: MealOption, preferredIngredients: string[]): boolean {
+  if (preferredIngredients.length === 0) return false;
+
+  const mealIngredients = meal.components.map(c => c.food.toLowerCase()).join(" ");
+  const prefLower = preferredIngredients.map(p => p.toLowerCase());
+
+  return prefLower.some(pref => mealIngredients.includes(pref));
+}
+
 // BLACKLIST namirnica koje se NIKAD ne smiju pojaviti u snack-u
 const SNACK_BLACKLIST = [
   'tomato', 'rajčica', 'cucumber', 'krastavac', 'lettuce', 'salata', 
@@ -1307,7 +1773,8 @@ function isValidLunchDinnerTemplate(
 }
 
 /**
- * Build composite meal for a slot from meal_components.json using quality selection
+ * Build composite meal for a slot from meal_components.json
+ * Koristi ISTU jednostavnu logiku kao web generator - samo alergije su hard constraint
  */
 async function buildCompositeMealForSlot(
   slot: MealSlotType,
@@ -1319,272 +1786,110 @@ async function buildCompositeMealForSlot(
   minIngredients: number = 2,
   usedMealsThisWeek: Set<string> | null = null,
   previousDayMeal: MealOption | null = null,
-  excludedMealNames: Set<string> = new Set(), // Dodaj parametar za isključene obroke
-  userGoal: GoalType = "maintain" // Cilj korisnika (lose/maintain/gain)
+  excludedMealNames: Set<string> = new Set(),
+  userGoal: GoalType = "maintain",
+  preferences?: {
+    avoidIngredients?: string[];
+    preferredIngredients?: string[];
+  }
 ): Promise<ScoredMeal | null> {
   // extraSnack koristi snack šablone
   const slotKey = slot === "extraSnack" ? "snack" : (slot as "breakfast" | "lunch" | "dinner" | "snack");
   
-  // Filtriraj obroke prema cilju korisnika
+  // Filtriraj obroke prema cilju korisnika (kao web generator)
   let definitions = getMealsForGoal(slotKey, userGoal);
   if (!definitions || definitions.length === 0) {
     // Ako nema obroka za cilj, koristi sve obroke
     console.warn(`⚠️ Nema obroka za cilj "${userGoal}" za ${slotKey}, koristim sve obroke`);
     definitions = MEAL_COMPONENTS[slotKey] || [];
     if (definitions.length === 0) {
-    console.error(`❌ Nema definicija za slot ${slotKey} u meal_components.json`);
-    return null;
+      console.error(`❌ Nema definicija za slot ${slotKey} u meal_components.json`);
+      return null;
     }
   }
 
   // Konvertiraj u MealOption format i filtriraj isključene obroke
-  let mealOptions: MealOption[] = definitions
+  let availableMeals: MealOption[] = definitions
     .map(convertToMealOption)
     .filter(opt => !excludedMealNames.has(opt.name));
 
-  // NOVO: Filtriraj obroke koji imaju iste GLAVNE namirnice kao prethodni obroci danas
-  // Glavne namirnice su: proteini (jaja, jogurt, piletina, tuna, itd.) i ugljikohidrati (riža, tjestenina, kruh)
-  const mainIngredientKeywords = [
-    'egg', 'jaja', 'yogurt', 'jogurt', 'chicken', 'piletina', 'tuna', 'salmon', 'losos',
-    'beef', 'junetina', 'turkey', 'puretina', 'cottage', 'skyr', 'whey', 'protein',
-    'rice', 'riža', 'pasta', 'tjestenina', 'bread', 'kruh', 'toast', 'oats', 'zobene',
-    'banana', 'avocado', 'avokado', 'greek yogurt', 'grčki jogurt'
-  ];
-  
-  // NOVO: Stilovi jela koji se ne smiju ponavljati u istom danu
-  const mealStyleKeywords: Record<string, string[]> = {
-    'rižot': ['rižot', 'risotto'],
-    'gulaš': ['gulaš', 'goulash'],
-    'varivo': ['varivo', 'stew'],
-    'salata': ['salata', 'salad'],
-    'smoothie': ['smoothie', 'shake'],
-    'bowl': ['bowl', 'zdjela'],
-    'wrap': ['wrap', 'tortilla'],
-    'sendvič': ['sendvič', 'sandwich', 'toast'],
-    'juha': ['juha', 'soup'],
-    'tjestenina': ['tjestenina', 'pasta', 'špageti', 'spaghetti'],
-    'burger': ['burger', 'hamburger'],
-    'pizza': ['pizza'],
-    'palačinke': ['palačinke', 'pancake'],
-    'omlette': ['omlet', 'omelette', 'fritata'],
-    'pečeno': ['pečen', 'roasted', 'baked'],
-  };
-  
-  // NOVO: Proteini koji se NE SMIJU kombinirati u istom danu (previše slični)
-  const conflictingProteins: [string[], string[]][] = [
-    [['chicken', 'piletina', 'pileć'], ['turkey', 'puretina', 'pureć']], // Piletina i puretina
-  ];
-  
-  // Izvuci glavne namirnice iz prethodnih obroka danas
-  const usedMainIngredientsToday = new Set<string>();
-  for (const prevMeal of previousMeals) {
-    for (const comp of prevMeal.components) {
-      const foodLower = comp.food.toLowerCase();
-      for (const keyword of mainIngredientKeywords) {
-        if (foodLower.includes(keyword)) {
-          usedMainIngredientsToday.add(keyword);
-        }
-      }
-    }
-  }
-  
-  // Filtriraj obroke koji koriste iste glavne namirnice
-  if (usedMainIngredientsToday.size > 0) {
-    const beforeFilter = mealOptions.length;
-    mealOptions = mealOptions.filter(option => {
-      for (const comp of option.components) {
-        const foodLower = comp.food.toLowerCase();
-        for (const usedIngredient of usedMainIngredientsToday) {
-          if (foodLower.includes(usedIngredient)) {
-            // Ova namirnica je već korištena danas - isključi ovaj obrok
-            return false;
-          }
-        }
-      }
-      return true;
-    });
-    
-    // Ako smo previše suzili izbor, popusti pravilo (ali logiraj upozorenje)
-    if (mealOptions.length === 0) {
-      console.warn(`⚠️ Svi obroci za ${slot} imaju namirnice koje su već korištene danas, popuštam pravilo...`);
-      mealOptions = definitions.map(convertToMealOption).filter(opt => !excludedMealNames.has(opt.name));
-    } else if (mealOptions.length < beforeFilter) {
-      console.log(`   🔄 Filtrirano ${beforeFilter - mealOptions.length} obroka zbog ponavljanja namirnica (ostalo: ${mealOptions.length})`);
-    }
-  }
-  
-  // NOVO: Filtriraj obroke istog STILA (npr. dva rižota u istom danu)
-  const usedMealStyles = new Set<string>();
-  for (const prevMeal of previousMeals) {
-    const mealNameLower = prevMeal.name.toLowerCase();
-    for (const [style, keywords] of Object.entries(mealStyleKeywords)) {
-      for (const keyword of keywords) {
-        if (mealNameLower.includes(keyword)) {
-          usedMealStyles.add(style);
-          break;
-        }
-      }
-    }
-  }
-  
-  // Filtriraj obroke koji su istog stila kao prethodni obroci danas
-  if (usedMealStyles.size > 0) {
-    const beforeStyleFilter = mealOptions.length;
-    mealOptions = mealOptions.filter(option => {
-      const optionNameLower = option.name.toLowerCase();
-      for (const usedStyle of usedMealStyles) {
-        const styleKeywords = mealStyleKeywords[usedStyle];
-        if (styleKeywords) {
-          for (const keyword of styleKeywords) {
-            if (optionNameLower.includes(keyword)) {
-              // Ovaj obrok je istog stila kao neki prethodni - isključi ga
-              return false;
-            }
-          }
-        }
-      }
-      return true;
-    });
-    
-    // Ako smo previše suzili izbor, popusti pravilo
-    if (mealOptions.length === 0) {
-      console.warn(`⚠️ Svi obroci za ${slot} su istog stila kao prethodni obroci danas, popuštam pravilo...`);
-      // Vrati opcije samo bez ponavljanja namirnica
-      mealOptions = definitions.map(convertToMealOption).filter(opt => {
-        if (excludedMealNames.has(opt.name)) return false;
-        // Zadrži filtriranje namirnica
-        for (const comp of opt.components) {
-          const foodLower = comp.food.toLowerCase();
-          for (const usedIngredient of usedMainIngredientsToday) {
-            if (foodLower.includes(usedIngredient)) return false;
-          }
-        }
-        return true;
-      });
-      // Ako i dalje nema, vrati sve
-      if (mealOptions.length === 0) {
-        mealOptions = definitions.map(convertToMealOption).filter(opt => !excludedMealNames.has(opt.name));
-      }
-    } else if (mealOptions.length < beforeStyleFilter) {
-      console.log(`   🎨 Filtrirano ${beforeStyleFilter - mealOptions.length} obroka zbog istog stila (ostalo: ${mealOptions.length})`);
-    }
-  }
-  
-  // NOVO: Filtriraj obroke s konfliktnim proteinima (npr. piletina i puretina ne smiju biti u istom danu)
-  // Pronađi koje proteine smo već koristili danas
-  const usedProteinGroups = new Set<number>();
-  for (const prevMeal of previousMeals) {
-    for (const comp of prevMeal.components) {
-      const foodLower = comp.food.toLowerCase();
-      conflictingProteins.forEach((pair, index) => {
-        const [group1, group2] = pair;
-        if (group1.some(keyword => foodLower.includes(keyword))) {
-          usedProteinGroups.add(index * 2); // Označava prvu grupu para
-        }
-        if (group2.some(keyword => foodLower.includes(keyword))) {
-          usedProteinGroups.add(index * 2 + 1); // Označava drugu grupu para
-        }
-      });
-    }
-  }
-  
-  // Filtriraj obroke koji bi stvorili konflikt proteina
-  if (usedProteinGroups.size > 0) {
-    const beforeProteinFilter = mealOptions.length;
-    mealOptions = mealOptions.filter(option => {
-      for (const comp of option.components) {
-        const foodLower = comp.food.toLowerCase();
-        for (let i = 0; i < conflictingProteins.length; i++) {
-          const [group1, group2] = conflictingProteins[i];
-          // Ako je korištena grupa 1, ne dozvoli grupu 2
-          if (usedProteinGroups.has(i * 2) && group2.some(keyword => foodLower.includes(keyword))) {
-            return false;
-          }
-          // Ako je korištena grupa 2, ne dozvoli grupu 1
-          if (usedProteinGroups.has(i * 2 + 1) && group1.some(keyword => foodLower.includes(keyword))) {
-            return false;
-          }
-        }
-      }
-      return true;
-    });
-    
-    if (mealOptions.length === 0) {
-      console.warn(`⚠️ Svi obroci za ${slot} imaju konfliktne proteine, popuštam pravilo...`);
-      mealOptions = definitions.map(convertToMealOption).filter(opt => !excludedMealNames.has(opt.name));
-    } else if (mealOptions.length < beforeProteinFilter) {
-      console.log(`   🍗 Filtrirano ${beforeProteinFilter - mealOptions.length} obroka zbog konfliktnih proteina (ostalo: ${mealOptions.length})`);
-    }
+  // JEDINA HARD CONSTRAINT: alergije i "ne želim" (kao web generator)
+  const avoidIngredients = preferences?.avoidIngredients || [];
+  if (avoidIngredients.length > 0) {
+    availableMeals = availableMeals.filter(meal => !hasAvoidedIngredient(meal, avoidIngredients));
   }
 
-  // VALIDACIJA: Za snack, filtriraj template-e koji ne zadovoljavaju uvjete
-  if (slot === "snack" || slot === "extraSnack") {
-    mealOptions = mealOptions.filter(option => {
-      const validation = isValidSnackTemplate(option, allFoods);
-      if (!validation.valid) {
-        console.log(`⚠️ Snack template "${option.name}" ne zadovoljava uvjete (kcal: ${validation.calories.toFixed(0)}, protein: ${validation.protein.toFixed(1)}g, sports: ${validation.hasSportsIngredient})`);
-      }
-      return validation.valid;
-    });
-  }
-
-  // VALIDACIJA: Za lunch/dinner, provjeri da nije samo povrće
-  if (slot === "lunch" || slot === "dinner") {
-    mealOptions = mealOptions.filter(option => {
-      const validation = isValidLunchDinnerTemplate(option, allFoods);
-      if (!validation.valid) {
-        console.log(`⚠️ Lunch/Dinner template "${option.name}" ima premalo kalorija iz ne-povrća (${validation.calories.toFixed(0)} kcal)`);
-      }
-      return validation.valid;
-    });
-  }
-
-  // Filtriraj obroke koji su već korišteni u prethodnom danu (da se ne ponavljaju dva dana zaredom)
-  if (previousDayMeal) {
-    mealOptions = mealOptions.filter(option => option.name !== previousDayMeal.name);
-  }
-
-  // Filtriraj obroke koji su već korišteni ovaj tjedan (za raznolikost)
-  if (usedMealsThisWeek && usedMealsThisWeek.size > 0) {
-    mealOptions = mealOptions.filter(option => !usedMealsThisWeek.has(option.name));
-  }
-
-  // Ako smo se previše suzili, popusti pravilo za tjedan (ali ne za prethodni dan)
-  if (mealOptions.length === 0 && previousDayMeal) {
-    mealOptions = definitions.map(convertToMealOption).filter(option => option.name !== previousDayMeal.name);
-    
-    // Ponovno validiraj
-    if (slot === "snack" || slot === "extraSnack") {
-      mealOptions = mealOptions.filter(option => isValidSnackTemplate(option, allFoods).valid);
-    }
-    if (slot === "lunch" || slot === "dinner") {
-      mealOptions = mealOptions.filter(option => isValidLunchDinnerTemplate(option, allFoods).valid);
-    }
-  }
-
-  // Ako i dalje nema opcija nakon validacije, popusti validaciju (ali zadrži blacklist)
-  if (mealOptions.length === 0 && (slot === "snack" || slot === "extraSnack")) {
-    console.warn(`⚠️ Nema valjanih snack template-a, pokušavam s popuštenom validacijom...`);
-    mealOptions = definitions.map(convertToMealOption).filter(option => {
-      // Zadrži blacklist provjeru
-      const hasBlacklisted = option.components.some(c => {
-        const foodLower = c.food.toLowerCase();
-        return SNACK_BLACKLIST.some(blacklisted => foodLower.includes(blacklisted));
-      });
-      if (hasBlacklisted) return false;
-      
-      // Popusti validaciju - samo provjeri da ima sportski sastojak i dovoljno kalorija
-      const validation = isValidSnackTemplate(option, allFoods);
-      return validation.calories >= 80 && validation.hasSportsIngredient;
-    });
-  }
-
-  // Koristi pickNextMeal za kvalitetan odabir
-  const selectedMeal = pickNextMeal(mealOptions, previousMeal, previousMeals, minIngredients);
-  if (!selectedMeal) {
-    console.error(`❌ Nema dostupnih meal opcija za ${slot} nakon svih validacija`);
+  // Ako nema jela nakon filtriranja alergija, vrati null (ali logiraj detalje)
+  if (availableMeals.length === 0) {
+    console.error(`❌ Nema jela za ${slot} nakon filtriranja alergija`);
+    console.error(`   Ukupno definicija: ${definitions.length}`);
+    console.error(`   Isključeni obroci: ${excludedMealNames.size}`);
+    console.error(`   Alergije: ${avoidIngredients.join(', ') || 'nema'}`);
     return null;
   }
+  
+  // console.log(`✅ Pronađeno ${availableMeals.length} dostupnih jela za ${slot} (od ${definitions.length} ukupno)`); // Onemogućeno za brzinu
+
+  // MEAL VARIETY: Jelo se ne smije ponoviti unutar 7 dana (kao web generator)
+  // Koristi meal ID iz definitions (ako postoji) ili meal name
+  const usedMealIds = new Set<string>();
+  const usedMealNamesToday = new Set<string>();
+  const usedMealNamesThisWeek = usedMealsThisWeek || new Set<string>();
+  
+  // Popuni usedMealIds i usedMealNamesToday iz previousMeals
+  for (const prevMeal of previousMeals) {
+    const mealDef = definitions.find(d => d.name === prevMeal.name);
+    if (mealDef?.id) {
+      usedMealIds.add(mealDef.id);
+    }
+    usedMealNamesToday.add(prevMeal.name.toLowerCase());
+  }
+  
+  let preferredMeals = availableMeals.filter(meal => {
+    const mealDef = definitions.find(d => d.name === meal.name);
+    const mealId = mealDef?.id || meal.name;
+    return !usedMealIds.has(mealId) && 
+           !usedMealNamesToday.has(meal.name.toLowerCase()) &&
+           !usedMealNamesThisWeek.has(meal.name.toLowerCase());
+  });
+
+  // Ako nema novih jela nakon variety filtra, dozvoli ponavljanje (ali ne isti ID)
+  if (preferredMeals.length === 0) {
+    preferredMeals = availableMeals.filter(meal => {
+      const mealDef = definitions.find(d => d.name === meal.name);
+      const mealId = mealDef?.id || meal.name;
+      return !usedMealIds.has(mealId) &&
+             !usedMealNamesToday.has(meal.name.toLowerCase());
+    });
+  }
+
+  // Ako i dalje nema, koristi sva dostupna jela (osim alergija) - kao web generator
+  if (preferredMeals.length === 0) {
+    preferredMeals = availableMeals;
+  }
+
+  // Preferiraj obroke s preferiranim namirnicama (weighted selection - 70% šansa, kao web generator)
+  const preferredIngredients = preferences?.preferredIngredients || [];
+  let finalMealOptions: MealOption[];
+  if (preferredIngredients.length > 0) {
+    const mealsWithPrefs = preferredMeals.filter(meal => hasPreferredIngredient(meal, preferredIngredients));
+    if (mealsWithPrefs.length > 0 && Math.random() < 0.7) {
+      finalMealOptions = mealsWithPrefs;
+    } else {
+      finalMealOptions = preferredMeals;
+    }
+  } else {
+    finalMealOptions = preferredMeals;
+  }
+
+  // Nasumično odaberi iz dostupnih jela (kao web generator)
+  if (finalMealOptions.length === 0) {
+    console.error(`❌ Nema dostupnih jela za ${slot} nakon svih filtera`);
+    return null;
+  }
+  
+  const randomIndex = Math.floor(Math.random() * finalMealOptions.length);
+  const selectedMeal = finalMealOptions[randomIndex];
 
   // Provjeri da li su sve namirnice dostupne i izračunaj makroe
   let calories = 0, protein = 0, carbs = 0, fat = 0;
@@ -1593,7 +1898,9 @@ async function buildCompositeMealForSlot(
   const missingFoods: string[] = [];
 
   // EDAMAM-ONLY MODE: Koristi Edamam API za izračun makronutrijenata
-  const USE_EDAMAM_ONLY = process.env.USE_EDAMAM_ONLY === 'true' || true; // Default: true (Edamam-only)
+  // ONEMOGUĆENO za brzinu - koristi samo USDA podatke (kao web generator)
+  // Web generator koristi samo USDA podatke bez Edamam API poziva
+  const USE_EDAMAM_ONLY = false; // Default: false (koristi USDA podatke, brže)
 
   if (USE_EDAMAM_ONLY) {
     // Koristi Edamam API za izračun makronutrijenata
@@ -1672,16 +1979,17 @@ async function buildCompositeMealForSlot(
       missing = true;
     }
   } else {
-    // USDA MODE (stari način) - koristi se samo ako je USE_EDAMAM_ONLY=false
+    // USDA MODE - koristi foods-database.ts (kao web generator)
     for (const c of selectedMeal.components) {
       // Preskoči vodu
       if (c.food.toLowerCase().includes('water') || c.food.toLowerCase().includes('voda')) {
         continue;
       }
       
-      const food = findFoodByName(allFoods, c.food);
-      if (!food) { 
-        console.warn(`⚠️ Namirnica "${c.food}" nije pronađena u bazi za template "${selectedMeal.name}"`);
+      // Koristi findNamirnica iz foods-database.ts (kao web generator)
+      const namirnica = findNamirnica(c.food);
+      if (!namirnica) { 
+        console.warn(`⚠️ Namirnica "${c.food}" nije pronađena u foods-database.ts za template "${selectedMeal.name}"`);
         missingFoods.push(c.food);
         missing = true; 
         // Ako nedostaje bilo koja komponenta, template nije validan - preskoči ga
@@ -1689,39 +1997,66 @@ async function buildCompositeMealForSlot(
       }
 
       // Provjeri da li je namirnica već korištena (osim ako je to dozvoljeno)
-      if (usedToday.has(food.id)) {
+      // Koristi namirnica.id umjesto food.id
+      if (usedToday.has(namirnica.id)) {
         console.warn(`⚠️ Namirnica "${c.food}" već korištena danas, preskačem obrok`);
         missing = true;
         break;
       }
 
-      // Izračunaj makroe - koristi units/gramsPerUnit ako postoji (npr. za jaja)
+      // Izračunaj makroe - koristi clampToPortionLimits i calculateMacrosForGrams (kao web generator)
       let actualGrams = c.grams;
       let units: number | undefined;
       let displayText = '';
       
-      // Ako je jaja i ima units property, koristi units
-      if (c.food.toLowerCase().includes('egg') && (food as any).units && (food as any).gramsPerUnit) {
-        const gramsPerUnit = (food as any).gramsPerUnit || 60; // default 60g po jajetu
+      // Ako je jaja, koristi units
+      if (c.food.toLowerCase().includes('egg')) {
+        const gramsPerUnit = 60; // default 60g po jajetu
         units = Math.round(c.grams / gramsPerUnit);
         actualGrams = units * gramsPerUnit;
-        const foodName = translateFoodName(food.name);
+        const foodName = namirnica.name; // Koristi hrvatski naziv iz foods-database
         displayText = `${foodName} (${units} kom ≈ ${actualGrams}g)`;
       } else {
-        // Normalno s gramima
-        actualGrams = c.grams;
-        const foodName = translateFoodName(food.name);
+        // Normalno s gramima - koristi clampToPortionLimits (kao web generator)
+        actualGrams = clampToPortionLimits(c.food, c.grams, userGoal);
+        const foodName = namirnica.name; // Koristi hrvatski naziv iz foods-database
         displayText = `${foodName} (${actualGrams}g)`;
       }
 
-      const ratio = actualGrams / 100;
-      calories += (food.calories_per_100g || 0) * ratio;
-      protein += (food.protein_per_100g || 0) * ratio;
-      carbs += (food.carbs_per_100g || 0) * ratio;
-      fat += (food.fat_per_100g || 0) * ratio;
+      // Koristi calculateMacrosForGramsWithFallback (s opcijskim Edamam fallback-om)
+      const macros = await calculateMacrosForGramsWithFallback(namirnica, actualGrams, c.food);
+      
+      calories += macros.calories;
+      protein += macros.protein;
+      carbs += macros.carbs;
+      fat += macros.fat;
 
-      componentDetails.push({ food, grams: actualGrams, units, displayText });
-      usedToday.add(food.id);
+      // Spremi Food objekt za kompatibilnost (koristi namirnica podatke)
+      const foodForDetails: Food = {
+        id: namirnica.id,
+        name: namirnica.name,
+        calories_per_100g: namirnica.caloriesPer100g,
+        protein_per_100g: namirnica.proteinPer100g,
+        carbs_per_100g: namirnica.carbsPer100g,
+        fat_per_100g: namirnica.fatsPer100g,
+        category: namirnica.category === 'protein' ? 'meso' : 
+                  namirnica.category === 'carb' ? 'žitarice' :
+                  namirnica.category === 'fat' ? 'masti' :
+                  namirnica.category === 'vegetable' ? 'povrće' :
+                  namirnica.category === 'fruit' ? 'voće' :
+                  namirnica.category === 'dairy' ? 'mliječni proizvodi' : 'ostalo',
+        tags: [],
+        allergens: null,
+        usda_fdc_id: null,
+        is_usda: false,
+        default_serving_size_g: 100,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        mealSlot: undefined,
+      };
+
+      componentDetails.push({ food: foodForDetails, grams: actualGrams, units, displayText });
+      usedToday.add(namirnica.id);
     }
   }
 
@@ -1736,7 +2071,7 @@ async function buildCompositeMealForSlot(
     if (newExcluded.size < definitions.length) {
       return await buildCompositeMealForSlot(
         slot, allFoods, usedToday, slotTargetCalories, 
-        previousMeal, previousMeals, minIngredients, usedMealsThisWeek, previousDayMeal, newExcluded, userGoal
+        previousMeal, previousMeals, minIngredients, usedMealsThisWeek, previousDayMeal, newExcluded, userGoal, preferences
       );
     }
     // Ako smo iscrpili sve opcije, vrati null (NE baci exception)
@@ -1744,14 +2079,48 @@ async function buildCompositeMealForSlot(
     return null;
   }
 
-  if (calories <= 0) {
+  // Izračunaj kalorije iz makroa (kao web generator: P×4 + UH×4 + M×9)
+  const calculatedCalories = Math.round(protein * 4 + carbs * 4 + fat * 9);
+  if (calculatedCalories <= 0) {
     console.error(`❌ Template "${selectedMeal.name}" ima 0 kalorija nakon izračuna`);
     return null;
   }
+  
+  // Koristi izračunate kalorije (kao web generator)
+  calories = calculatedCalories;
 
-  // Prilagodi kalorije prema targetu (ali zadrži originalne grams vrijednosti)
+  // Prilagodi kalorije prema targetu (kao web generator - koristi istu logiku)
   let factor = slotTargetCalories > 0 ? slotTargetCalories / calories : 1;
   factor = Math.max(0.7, Math.min(1.3, factor));
+  
+  // Prilagodi gramaže faktorom i ponovno izračunaj makroe (kao web generator)
+  let adjustedCalories = 0, adjustedProtein = 0, adjustedCarbs = 0, adjustedFat = 0;
+  const adjustedComponentDetails = await Promise.all(componentDetails.map(async c => {
+    const adjustedGrams = clampToPortionLimits(c.food.name, c.grams * factor, userGoal);
+    const namirnica = findNamirnica(c.food.name);
+    if (!namirnica) return c;
+    
+    const macros = await calculateMacrosForGramsWithFallback(namirnica, adjustedGrams, c.food.name);
+    adjustedCalories += macros.calories;
+    adjustedProtein += macros.protein;
+    adjustedCarbs += macros.carbs;
+    adjustedFat += macros.fat;
+    
+    return {
+      ...c,
+      grams: adjustedGrams,
+      displayText: c.units 
+        ? `${namirnica.name} (${c.units} kom ≈ ${adjustedGrams}g)`
+        : `${namirnica.name} (${adjustedGrams}g)`,
+    };
+  }));
+  
+  // Koristi prilagođene vrijednosti
+  calories = Math.round(adjustedCalories);
+  protein = Math.round(adjustedProtein * 10) / 10;
+  carbs = Math.round(adjustedCarbs * 10) / 10;
+  fat = Math.round(adjustedFat * 10) / 10;
+  componentDetails = adjustedComponentDetails;
 
   // Kreiraj detaljan naziv s gramažama za svaku namirnicu (bez vode)
   const componentsWithGrams = componentDetails.map(c => c.displayText).join(", ");
@@ -1765,6 +2134,9 @@ async function buildCompositeMealForSlot(
     grams: c.grams
   }));
 
+  // Pronađi originalnu definiciju jela iz meal_components.json za description i preparationTip
+  const originalDefinition = definitions.find(d => d.name === selectedMeal.name);
+  
   // Kreiraj osnovno jelo sa USDA podacima
   const baseMeal = {
     id: `composite-${slotKey}-${selectedMeal.name}`,
@@ -1782,10 +2154,13 @@ async function buildCompositeMealForSlot(
       prepTime: null, 
       difficulty: null, 
       healthScore: null, 
-      tags: ["composite"],
-      goalTags: [],
+      tags: originalDefinition?.tags || ["composite"],
+      goalTags: originalDefinition?.tags?.filter(t => ["lose", "maintain", "gain"].includes(t)) || [],
       dietTags: [],
-      components: mealComponents
+      components: mealComponents,
+      // Dodaj description i preparationTip iz originalne definicije
+      description: originalDefinition?.description,
+      preparationTip: originalDefinition?.preparationTip,
     },
     score: 0.8,
     scoreBreakdown: {
@@ -1801,8 +2176,16 @@ async function buildCompositeMealForSlot(
       grams: c.grams * factor, // Prilagodi gramaže faktorom
       units: c.units,
       displayText: c.displayText
-    }))
-  } as ScoredMeal & { componentsString?: string; componentDetails?: Array<{ foodName: string; grams: number; units?: number; displayText: string }> };
+    })),
+    // Dodaj description i preparationTip direktno na jelo (za mobilnu aplikaciju)
+    description: originalDefinition?.description,
+    preparationTip: originalDefinition?.preparationTip,
+  } as ScoredMeal & { 
+    componentsString?: string; 
+    componentDetails?: Array<{ foodName: string; grams: number; units?: number; displayText: string }>;
+    description?: string;
+    preparationTip?: string;
+  };
 
   // Vrati osnovno jelo - Edamam validacija će se pozvati nakon kreiranja
   return baseMeal;
@@ -2165,6 +2548,223 @@ function calculateMealScore(
 }
 
 /**
+ * Helper funkcija za izračun string similarity (Levenshtein distance normalizirana)
+ */
+function stringSimilarity(str1: string, str2: string): number {
+  const s1 = str1.toLowerCase().trim();
+  const s2 = str2.toLowerCase().trim();
+  
+  if (s1 === s2) return 1.0;
+  if (s1.length === 0 || s2.length === 0) return 0.0;
+  
+  // Jednostavna provjera: ako je jedan string substring drugog
+  if (s1.includes(s2) || s2.includes(s1)) return 0.7;
+  
+  // Levenshtein distance
+  const matrix: number[][] = [];
+  for (let i = 0; i <= s2.length; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= s1.length; j++) {
+    matrix[0][j] = j;
+  }
+  for (let i = 1; i <= s2.length; i++) {
+    for (let j = 1; j <= s1.length; j++) {
+      if (s2.charAt(i - 1) === s1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+  const distance = matrix[s2.length][s1.length];
+  const maxLen = Math.max(s1.length, s2.length);
+  return 1 - distance / maxLen;
+}
+
+/**
+ * Provjeri da li je USDA rezultat sumnjiv i treba li Edamam fallback
+ */
+function isSuspiciousUSDAResult(
+  ingredientName: string,
+  usdaResult: { calories: number; protein: number; carbs: number; fat: number } | null,
+  expectedName?: string
+): boolean {
+  // Ako nema rezultata, sumnjiv
+  if (!usdaResult) return true;
+  
+  // Provjeri kalorije po 100g
+  const caloriesPer100g = (usdaResult.calories / 100) * 100; // Pretpostavljamo da je rezultat za 100g
+  if (caloriesPer100g <= 0 || caloriesPer100g > 900) {
+    return true; // Sumnjiv: kalorije izvan normalnog raspona
+  }
+  
+  // Provjeri string similarity ako je očekivani naziv dan
+  if (expectedName) {
+    const similarity = stringSimilarity(ingredientName, expectedName);
+    if (similarity < 0.55) {
+      return true; // Sumnjiv: niska sličnost naziva
+    }
+  }
+  
+  // Provjeri očekivane makroe za poznate namirnice
+  const nameLower = ingredientName.toLowerCase();
+  
+  // Riža bi trebala imati više UH
+  if (nameLower.includes('rice') || nameLower.includes('riža') || nameLower.includes('riz')) {
+    const carbsRatio = usdaResult.carbs / (usdaResult.protein + usdaResult.carbs + usdaResult.fat);
+    if (carbsRatio < 0.5) {
+      return true; // Sumnjiv: riža ima premalo UH
+    }
+  }
+  
+  // Sir bi trebao imati više masti
+  if (nameLower.includes('cheese') || nameLower.includes('sir')) {
+    const fatRatio = usdaResult.fat / (usdaResult.protein + usdaResult.carbs + usdaResult.fat);
+    if (fatRatio < 0.2) {
+      return true; // Sumnjiv: sir ima premalo masti
+    }
+  }
+  
+  // Ulje bi trebalo imati skoro sve masti
+  if (nameLower.includes('oil') || nameLower.includes('ulje')) {
+    const fatRatio = usdaResult.fat / (usdaResult.protein + usdaResult.carbs + usdaResult.fat);
+    if (fatRatio < 0.9) {
+      return true; // Sumnjiv: ulje ima premalo masti
+    }
+  }
+  
+  return false; // Nije sumnjiv
+}
+
+/**
+ * Opcijski Edamam fallback za sumnjive USDA rezultate
+ * Poziva Edamam samo ako je USDA rezultat sumnjiv
+ */
+async function maybeResolveWithEdamam(
+  ingredientName: string,
+  grams: number,
+  usdaResult: { calories: number; protein: number; carbs: number; fat: number } | null,
+  expectedName?: string
+): Promise<{ calories: number; protein: number; carbs: number; fat: number } | null> {
+  // Ako je fallback onemogućen, vrati USDA rezultat
+  if (!USE_EDAMAM_FALLBACK) {
+    return usdaResult;
+  }
+  
+  // Provjeri da li je rezultat sumnjiv
+  if (!isSuspiciousUSDAResult(ingredientName, usdaResult, expectedName)) {
+    return usdaResult; // Nije sumnjiv, koristi USDA
+  }
+  
+  // Provjeri cache
+  const cacheKey = ingredientName.toLowerCase().trim();
+  const cached = edamamCache.get(cacheKey);
+  if (cached) {
+    // Skaliraj na grams
+    const ratio = grams / 100;
+    return {
+      calories: Math.round(cached.calories * ratio),
+      protein: Math.round(cached.protein * ratio * 10) / 10,
+      carbs: Math.round(cached.carbs * ratio * 10) / 10,
+      fat: Math.round(cached.fat * ratio * 10) / 10,
+    };
+  }
+  
+  // Provjeri concurrency limit
+  if (edamamActiveRequests >= EDAMAM_MAX_CONCURRENT) {
+    console.warn(`⚠️ Edamam concurrency limit dosegnut, koristim USDA rezultat za ${ingredientName}`);
+    return usdaResult;
+  }
+  
+  // Provjeri da li su credentials postavljeni
+  if (!process.env.EDAMAM_APP_ID || !process.env.EDAMAM_APP_KEY) {
+    return usdaResult;
+  }
+  
+  // Pozovi Edamam s timeout-om
+  edamamActiveRequests++;
+  try {
+    const timeoutPromise = new Promise<null>((resolve) => {
+      setTimeout(() => resolve(null), EDAMAM_TIMEOUT_MS);
+    });
+    
+    const edamamPromise = analyzeNutritionFromText(`100g ${ingredientName}`, ingredientName);
+    
+    const result = await Promise.race([edamamPromise, timeoutPromise]);
+    
+    if (result) {
+      // Spremi u cache (per 100g)
+      const per100g = {
+        calories: result.calories,
+        protein: result.protein,
+        carbs: result.carbs,
+        fat: result.fat,
+      };
+      edamamCache.set(cacheKey, per100g);
+      
+      // Skaliraj na grams
+      const ratio = grams / 100;
+      return {
+        calories: Math.round(result.calories * ratio),
+        protein: Math.round(result.protein * ratio * 10) / 10,
+        carbs: Math.round(result.carbs * ratio * 10) / 10,
+        fat: Math.round(result.fat * ratio * 10) / 10,
+      };
+    } else {
+      // Timeout ili greška
+      console.warn(`⚠️ Edamam timeout/greška za ${ingredientName}, koristim USDA rezultat`);
+      return usdaResult;
+    }
+  } catch (error) {
+    console.warn(`⚠️ Edamam greška za ${ingredientName}:`, error);
+    return usdaResult;
+  } finally {
+    edamamActiveRequests--;
+  }
+}
+
+/**
+ * Wrapper funkcija za calculateMacrosForGrams s opcijskim Edamam fallback-om
+ */
+async function calculateMacrosForGramsWithFallback(
+  namirnica: Namirnica | null,
+  grams: number,
+  ingredientName?: string
+): Promise<{ calories: number; protein: number; carbs: number; fat: number }> {
+  // Ako nema namirnice, vrati 0
+  if (!namirnica) {
+    const zeroResult = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    if (USE_EDAMAM_FALLBACK && ingredientName) {
+      const edamamResult = await maybeResolveWithEdamam(ingredientName, grams, null);
+      return edamamResult || zeroResult;
+    }
+    return zeroResult;
+  }
+  
+  // Izračunaj USDA rezultat
+  const usdaResult = calculateMacrosForGrams(namirnica, grams);
+  
+  // Ako je fallback uključen, provjeri da li treba Edamam
+  if (USE_EDAMAM_FALLBACK) {
+    const ingredientNameToUse = ingredientName || namirnica.name || namirnica.nameEn;
+    const edamamResult = await maybeResolveWithEdamam(
+      ingredientNameToUse,
+      grams,
+      usdaResult,
+      namirnica.nameEn
+    );
+    return edamamResult || usdaResult;
+  }
+  
+  return usdaResult;
+}
+
+/**
  * Izračunaj dnevno odstupanje od target makroa
  * Koristi poboljšanu funkciju calculateDailyDeviationDetailed
  */
@@ -2179,6 +2779,172 @@ function calculateDailyDeviation(
   total: number;
 } {
   return calculateDailyDeviationDetailed(target, actual);
+}
+
+/**
+ * Iterativno skaliraj sve obroke dok makroi nisu unutar ±2% (kao web generator)
+ * CALORIE_TOLERANCE = 20 kcal, MACRO_TOLERANCE = 0.02 (2%)
+ */
+function scaleAllMealsToTarget(
+  meals: Record<string, any>,
+  targetCalories: number,
+  targetProtein: number,
+  targetCarbs: number,
+  targetFat: number,
+  goalType: "lose" | "maintain" | "gain"
+): Record<string, any> {
+  const MAX_ITERATIONS = 150;
+  const CALORIE_TOLERANCE = 20; // ±20 kcal
+  const MACRO_TOLERANCE = 0.02; // ±2%
+  
+  let currentMeals = { ...meals };
+
+  for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
+    // Izračunaj trenutne totale (zbroji makroe, zatim izračunaj kalorije)
+    const macroTotals = Object.values(currentMeals).reduce(
+      (totals, meal) => ({
+        protein: totals.protein + meal.totals.protein,
+        carbs: totals.carbs + meal.totals.carbs,
+        fat: totals.fat + meal.totals.fat,
+      }),
+      { protein: 0, carbs: 0, fat: 0 }
+    );
+    
+    const protein = Math.round(macroTotals.protein * 10) / 10;
+    const carbs = Math.round(macroTotals.carbs * 10) / 10;
+    const fat = Math.round(macroTotals.fat * 10) / 10;
+    const calories = Math.round(protein * 4 + carbs * 4 + fat * 9);
+    
+    const currentTotals = { calories, protein, carbs, fat };
+
+    if (currentTotals.calories === 0) return currentMeals;
+
+    // Provjeri odstupanja
+    const calDiff = Math.abs(currentTotals.calories - targetCalories);
+    const proteinDev = Math.abs(currentTotals.protein - targetProtein) / targetProtein;
+    const carbsDev = Math.abs(currentTotals.carbs - targetCarbs) / targetCarbs;
+    const fatDev = Math.abs(currentTotals.fat - targetFat) / targetFat;
+    const maxMacroDev = Math.max(proteinDev, carbsDev, fatDev);
+
+    // Provjeri da li je sve unutar tolerancije
+    const caloriesOK = calDiff <= CALORIE_TOLERANCE;
+    const macrosOK = maxMacroDev <= MACRO_TOLERANCE;
+
+    if (caloriesOK && macrosOK) {
+      return currentMeals;
+    }
+
+    // Izračunaj faktore skaliranja
+    const proteinFactor = targetProtein / currentTotals.protein;
+    const carbsFactor = targetCarbs / currentTotals.carbs;
+    const fatFactor = targetFat / currentTotals.fat;
+    
+    // Kombiniraj faktore OVISNO O CILJU (kao web generator)
+    let combinedFactor: number;
+    if (goalType === "gain") {
+      combinedFactor = carbsFactor * 0.55 + proteinFactor * 0.30 + fatFactor * 0.15;
+    } else if (goalType === "lose") {
+      combinedFactor = proteinFactor * 0.50 + carbsFactor * 0.30 + fatFactor * 0.20;
+    } else {
+      combinedFactor = proteinFactor * 0.35 + carbsFactor * 0.35 + fatFactor * 0.30;
+    }
+
+    // Za lose: kalorije ≤ target
+    if (goalType === "lose" && currentTotals.calories > targetCalories) {
+      combinedFactor = Math.min(combinedFactor, targetCalories / currentTotals.calories);
+    }
+
+    // Za gain: kalorije ≥ target
+    if (goalType === "gain" && currentTotals.calories < targetCalories) {
+      combinedFactor = Math.max(combinedFactor, targetCalories / currentTotals.calories);
+    }
+    
+    // Za maintain: kalorije ≈ target (osiguraj da se postigne target)
+    if (goalType === "maintain") {
+      const calFactor = targetCalories / currentTotals.calories;
+      // Ako je odstupanje veliko, koristi kalorijski faktor kao osnovu
+      if (calDiff > 100) {
+        combinedFactor = calFactor * 0.7 + combinedFactor * 0.3; // Kombiniraj faktore
+      }
+    }
+
+    // INTELIGENTNO SKALIRANJE PO KATEGORIJAMA (kao web generator)
+    // Ako je odstupanje veliko (>300 kcal), koristi agresivnije skaliranje
+    const isLargeDeviation = calDiff > 300;
+    const proteinScale = isLargeDeviation 
+      ? Math.max(0.3, Math.min(2.0, proteinFactor))  // Agresivnije za velika odstupanja
+      : Math.max(0.5, Math.min(1.5, proteinFactor));
+    const carbsScale = isLargeDeviation
+      ? Math.max(0.4, Math.min(2.0, carbsFactor))    // Agresivnije za velika odstupanja
+      : Math.max(0.7, Math.min(1.6, carbsFactor));
+    const fatScale = isLargeDeviation
+      ? Math.max(0.3, Math.min(2.0, fatFactor))     // Agresivnije za velika odstupanja
+      : Math.max(0.5, Math.min(1.5, fatFactor));
+
+    // Skaliraj sve obroke
+    const scaledMeals: Record<string, any> = {};
+
+    for (const [mealType, meal] of Object.entries(currentMeals)) {
+      const scaledComponents = meal.components.map((comp: any) => {
+        const foodKey = comp.food || comp.name || '';
+        const namirnica = findNamirnica(foodKey);
+        if (!namirnica) return comp;
+
+        // Odredi kategoriju i primijeni odgovarajući faktor
+        let scaleFactor = 1.0;
+        const category = namirnica.category;
+        
+        if (category === 'protein') {
+          scaleFactor = proteinScale;
+        } else if (category === 'carb') {
+          scaleFactor = carbsScale;
+        } else if (category === 'fat') {
+          scaleFactor = fatScale;
+        } else {
+          scaleFactor = Math.max(0.6, Math.min(1.6, combinedFactor));
+        }
+
+        const newGrams = clampToPortionLimits(foodKey, comp.grams * scaleFactor, goalType);
+        const macros = calculateMacrosForGrams(namirnica, newGrams);
+
+        return {
+          ...comp,
+          food: foodKey,
+          grams: newGrams,
+          calories: Math.round(macros.calories),
+          protein: Math.round(macros.protein * 10) / 10,
+          carbs: Math.round(macros.carbs * 10) / 10,
+          fat: Math.round(macros.fat * 10) / 10,
+        };
+      });
+
+      const scaledTotals = scaledComponents.reduce(
+        (totals: any, comp: any) => ({
+          protein: totals.protein + comp.protein,
+          carbs: totals.carbs + comp.carbs,
+          fat: totals.fat + comp.fat,
+        }),
+        { protein: 0, carbs: 0, fat: 0 }
+      );
+      
+      const totalCalories = Math.round(scaledTotals.protein * 4 + scaledTotals.carbs * 4 + scaledTotals.fat * 9);
+
+      scaledMeals[mealType] = {
+        ...meal,
+        components: scaledComponents,
+        totals: {
+          calories: totalCalories,
+          protein: Math.round(scaledTotals.protein * 10) / 10,
+          carbs: Math.round(scaledTotals.carbs * 10) / 10,
+          fat: Math.round(scaledTotals.fat * 10) / 10,
+        },
+      };
+    }
+
+    currentMeals = scaledMeals;
+  }
+
+  return currentMeals;
 }
 
 // ============================================
@@ -2354,10 +3120,9 @@ export async function generateProDailyMealPlan(
       console.log(`      Score: ${bestScore} (calorie: ${scoreBreakdown.calorieMatch.toFixed(2)}, macro: ${scoreBreakdown.macroMatch.toFixed(2)}, health: ${scoreBreakdown.healthBonus.toFixed(2)}, variety: ${(1 - scoreBreakdown.varietyPenalty).toFixed(2)})`);
       console.log(`      Makroi: ${selectedMeal.calories.toFixed(0)} kcal, P: ${selectedMeal.protein.toFixed(1)}g, C: ${selectedMeal.carbs.toFixed(1)}g, F: ${selectedMeal.fat.toFixed(1)}g`);
 
-      // Validiraj jelo s Edamam API-om za točnije podatke
-      const validatedMeal = await validateAndCorrectMealWithEdamam(selectedMeal);
-      
-      selectedMeals.push(validatedMeal);
+      // Onemogućeno Edamam validaciju za brzinu (kao web generator)
+      // const validatedMeal = await validateAndCorrectMealWithEdamam(selectedMeal);
+      selectedMeals.push(selectedMeal); // Koristi direktno bez Edamam validacije
 
       // Ažuriraj dailyContext (za variety penalty u sljedećim obrocima)
       if (selectedMeal.type === "recipe") {
@@ -2738,14 +3503,11 @@ export async function generateWeeklyProMealPlanWithCalculations(
     max_same_recipe_per_week: 2,
   };
 
-  // Parse meal frequency from training frequency
-  let mealsPerDay = 5; // default
-  if (directCalculations.preferences?.trainingFrequency) {
-    const freq = directCalculations.preferences.trainingFrequency.toLowerCase();
-    if (freq.includes("3") || freq.includes("tri")) mealsPerDay = 3;
-    else if (freq.includes("6") || freq.includes("šest")) mealsPerDay = 6;
-    else if (freq.includes("5") || freq.includes("pet")) mealsPerDay = 5;
-  }
+  // Default: 5 obroka dnevno (kao web generator)
+  // NAPOMENA: trainingFrequency se NE koristi za određivanje broja obroka
+  // jer može značiti "3 puta tjedno" (trening), a ne "3 obroka dnevno"
+  // Koristimo fiksno 5 obroka kao default (kao web generator)
+  let mealsPerDay = 5;
 
   // GAIN mode automatski koristi 6 obroka
   if (directCalculations.goalType === "gain" && mealsPerDay === 5) {
@@ -2793,10 +3555,9 @@ async function generateWeeklyProMealPlanInternal(
   userId: string
 ): Promise<WeeklyPlan> {
   try {
-    // 0. Inicijaliziraj CSV podatke
+    // 0. Inicijaliziraj CSV podatke SAMO JEDNOM (optimizacija za brzinu)
     try {
       await initializeCSVData();
-      console.log("✅ CSV podaci inicijalizirani");
     } catch (csvError) {
       console.warn("⚠️ Greška pri inicijalizaciji CSV podataka, nastavljam sa Supabase:", csvError);
     }
@@ -2807,10 +3568,6 @@ async function generateWeeklyProMealPlanInternal(
     const targetCarbs = calculations.carbs_grams;
     const targetFat = calculations.fats_grams;
     const userGoal: GoalType = calculations.goal_type || "maintain";
-
-    console.log(`📊 Generiranje plana sa ${mealsPerDay} obroka dnevno`);
-    console.log(`📊 Target: ${targetCalories} kcal, P: ${targetProtein}g, C: ${targetCarbs}g, F: ${targetFat}g`);
-    console.log(`🎯 Cilj korisnika: ${userGoal}`);
 
     // Postavi week start date (ponedjeljak)
     const today = new Date();
@@ -2824,11 +3581,9 @@ async function generateWeeklyProMealPlanInternal(
     // Mapa za praćenje ponavljanja recepata u tjednu
     const recipeUsageCount = new Map<string, number>();
 
-    // Dohvati sve namirnice (foods) jednom za sve dane
-    console.log("📋 Dohvaćanje svih namirnica...");
+    // Dohvati sve namirnice (foods) jednom za sve dane (CSV već inicijaliziran)
     let allFoods: Food[] = [];
     try {
-      await initializeCSVData();
       const csvFoods = await getAllFoodsWithMacros(10000);
       allFoods = csvFoods.map((csvFood) => ({
         id: `csv-${csvFood.fdc_id}`,
@@ -2859,7 +3614,7 @@ async function generateWeeklyProMealPlanInternal(
         !isNaN(f.fat_per_100g)
       );
       
-      console.log(`✅ Dohvaćeno ${allFoods.length} valjanih namirnica iz CSV-a`);
+      // console.log(`✅ Dohvaćeno ${allFoods.length} valjanih namirnica iz CSV-a`); // Onemogućeno za brzinu
     } catch (csvError) {
       console.warn("⚠️ Greška pri dohvatu CSV podataka, koristim Supabase:", csvError);
       const { data: supabaseFoods, error: supabaseError } = await supabase
@@ -2891,7 +3646,7 @@ async function generateWeeklyProMealPlanInternal(
       currentDate.setDate(weekStart.getDate() + i);
       const dateStr = currentDate.toISOString().split("T")[0];
 
-      console.log(`📅 Generiranje plana za dan ${i + 1}/7 (${dateStr})...`);
+      // console.log(`📅 Generiranje plana za dan ${i + 1}/7 (${dateStr})...`); // Onemogućeno za brzinu
 
       try {
         const usedToday = new Set<string>();
@@ -2911,23 +3666,90 @@ async function generateWeeklyProMealPlanInternal(
           const previousDayMealForSlot = previousDayMeals.get(slot) || null;
           const usedMealsForSlot = usedMealsThisWeek.get(slotKeyForTracking) || new Set<string>();
           
-          const composite = await buildCompositeMealForSlot(
-            slot, 
-            allFoods, 
-            usedToday, 
-            slotTargetCalories,
-            previousMealOption,
-            previousMealsInDay,
-            minIngredients,
-            usedMealsForSlot,
-            previousDayMealForSlot,
-            new Set(),
-            userGoal
-          );
+          // Retry logika - pokušaj generirati obrok sve dok ne uspije
+          let composite: ScoredMeal | null = null;
+          let retryCount = 0;
+          const maxRetries = 2; // Smanjeno s 5 na 2 za brzinu
+          let excludedMealNames = new Set<string>();
+          let currentPreviousDayMeal = previousDayMealForSlot;
+          let currentUsedMealsForSlot = new Set(usedMealsForSlot);
+          let currentMinIngredients = minIngredients;
+          
+          // Parsiraj preferences u format koji web generator koristi
+          const parsedPreferences = {
+            avoidIngredients: preferences.disliked_foods 
+              ? preferences.disliked_foods.split(/[,;]/).map(s => s.trim()).filter(Boolean)
+              : [],
+            preferredIngredients: preferences.dietary_restrictions
+              ? preferences.dietary_restrictions.split(/[,;]/).map(s => s.trim()).filter(Boolean)
+              : []
+          };
+          
+          while (!composite && retryCount < maxRetries) {
+            composite = await buildCompositeMealForSlot(
+              slot, 
+              allFoods, 
+              usedToday, 
+              slotTargetCalories,
+              previousMealOption,
+              previousMealsInDay,
+              currentMinIngredients,
+              currentUsedMealsForSlot,
+              currentPreviousDayMeal,
+              excludedMealNames,
+              userGoal,
+              parsedPreferences
+            );
+            
+            if (!composite) {
+              retryCount++;
+              console.warn(`⚠️ Pokušaj ${retryCount}/${maxRetries} za ${slot} nije uspio, pokušavam ponovno s manje restriktivnim filterima...`);
+              
+              // Ukloni neke filtere za retry
+              if (retryCount >= 2) {
+                // Nakon 2 pokušaja, ignoriraj previousDayMeal
+                currentPreviousDayMeal = null;
+              }
+              if (retryCount >= 3) {
+                // Nakon 3 pokušaja, ignoriraj usedMealsThisWeek
+                currentUsedMealsForSlot = new Set();
+              }
+              if (retryCount >= 4) {
+                // Nakon 4 pokušaja, smanji minIngredients
+                currentMinIngredients = Math.max(1, currentMinIngredients - 1);
+              }
+            }
+          }
+          
+          // Ako i dalje nema obroka, generiraj fallback obrok
+          if (!composite) {
+            console.error(`❌ Nema dostupnih composite meals za ${slot} nakon ${maxRetries} pokušaja, generiram fallback obrok iz meal_components.json...`);
+            try {
+              composite = await generateFallbackMeal(slot, slotTargetCalories, allFoods, usedToday, userGoal);
+            } catch (fallbackError) {
+              console.error(`❌ Fallback funkcija nije uspjela za ${slot}:`, fallbackError);
+              // Ako i fallback ne uspije, pokušaj s najjednostavnijim obrokom
+              console.warn(`⚠️ Pokušavam s najjednostavnijim obrokom za ${slot}...`);
+              // Koristi prvo dostupno jelo iz meal_components.json bez validacije
+              const slotKeyForFallback = slot === "extraSnack" ? "snack" : (slot as "breakfast" | "lunch" | "dinner" | "snack");
+              const allDefinitions = MEAL_COMPONENTS[slotKeyForFallback] || [];
+              if (allDefinitions.length > 0) {
+                const simplestMeal = allDefinitions[0];
+                composite = await generateFallbackMealFromMealOption(
+                  convertToMealOption(simplestMeal),
+                  slotTargetCalories,
+                  allFoods,
+                  usedToday,
+                  slotKeyForFallback
+                );
+              }
+            }
+          }
           
           if (composite) {
-            const validatedComposite = await validateAndCorrectMealWithEdamam(composite);
-            dayMeals[slot] = validatedComposite;
+            // Onemogućeno Edamam validaciju za brzinu (kao web generator)
+            // const validatedComposite = await validateAndCorrectMealWithEdamam(composite);
+            dayMeals[slot] = composite; // Koristi direktno bez Edamam validacije
             
             const definitions = MEAL_COMPONENTS[slotKeyForTracking];
             if (definitions) {
@@ -2943,42 +3765,222 @@ async function generateWeeklyProMealPlanInternal(
               }
             }
             
-            console.log(`   ✅ ${MEAL_SLOT_LABELS[slot]}: ${composite.name}`);
-            continue;
-          }
-
-          if (!composite) {
-            console.error(`❌ Nema dostupnih composite meals za ${slot}, preskačem...`);
-            continue;
+            // console.log(`   ✅ ${MEAL_SLOT_LABELS[slot]}: ${composite.name}`); // Onemogućeno za brzinu
+          } else {
+            throw new Error(`Nije moguće generirati obrok za ${slot} ni nakon ${maxRetries} pokušaja i fallback-a`);
           }
         }
 
-        const total = sumMealMacros(dayMeals);
+        // Provjeri da li su svi obroci generirani - koristi stvarne slotove koji su generirani
+        const missingMeals = slots.filter(slot => !dayMeals[slot]);
+        
+        if (missingMeals.length > 0) {
+          console.error(`❌ Dan ${i + 1}/7 (${dateStr}): Nedostaju obroci: ${missingMeals.join(', ')}`);
+          console.error(`   Generirani obroci:`, Object.keys(dayMeals));
+          console.error(`   Očekivani slotovi:`, slots);
+          throw new Error(`Nedostaju obroci za dan ${i + 1}/7: ${missingMeals.join(', ')}`);
+        }
+        
+        // ITERATIVNO SKALIRANJE - kao web generator (preciznost ±2%)
+        // Konvertiraj ScoredMeal u GeneratedMeal format za skaliranje
+        const mealsForScaling: Record<string, any> = {};
+        for (const slot of slots) {
+          const meal = dayMeals[slot];
+          if (!meal) continue;
+          
+          // Konvertiraj u GeneratedMeal format
+          const components = (meal as any).componentDetails?.map((c: any) => ({
+            name: c.foodName || c.name || '',
+            food: c.food?.name || '',
+            grams: c.grams || 0,
+            calories: 0,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+          })) || [];
+          
+          // Izračunaj makroe za komponente
+          const mealComponents = components.map((comp: any) => {
+            const namirnica = findNamirnica(comp.food);
+            if (!namirnica) return comp;
+            const macros = calculateMacrosForGrams(namirnica, comp.grams);
+            return {
+              ...comp,
+              calories: macros.calories,
+              protein: macros.protein,
+              carbs: macros.carbs,
+              fat: macros.fat,
+            };
+          });
+          
+          const mealTotals = mealComponents.reduce(
+            (totals: any, comp: any) => ({
+              protein: totals.protein + comp.protein,
+              carbs: totals.carbs + comp.carbs,
+              fat: totals.fat + comp.fat,
+            }),
+            { protein: 0, carbs: 0, fat: 0 }
+          );
+          
+          const totalCalories = Math.round(mealTotals.protein * 4 + mealTotals.carbs * 4 + mealTotals.fat * 9);
+          
+          mealsForScaling[slot] = {
+            id: meal.id,
+            name: meal.name,
+            description: (meal as any).description || (meal as any).meta?.description,
+            preparationTip: (meal as any).preparationTip || (meal as any).meta?.preparationTip,
+            components: mealComponents,
+            totals: {
+              calories: totalCalories,
+              protein: Math.round(mealTotals.protein * 10) / 10,
+              carbs: Math.round(mealTotals.carbs * 10) / 10,
+              fat: Math.round(mealTotals.fat * 10) / 10,
+            },
+          };
+        }
+        
+        // Primijeni iterativno skaliranje (kao web generator)
+        const scaledMeals = scaleAllMealsToTarget(
+          mealsForScaling,
+          targetCalories,
+          targetProtein,
+          targetCarbs,
+          targetFat,
+          userGoal
+        );
+        
+        // Konvertiraj natrag u ScoredMeal format
+        const scaledDayMeals: Record<string, ScoredMeal> = {};
+        for (const slot of slots) {
+          const scaledMeal = scaledMeals[slot];
+          if (!scaledMeal) continue;
+          
+          const originalMeal = dayMeals[slot];
+          if (!originalMeal) continue;
+          
+          // Ažuriraj makroe i komponente
+          const originalComponentDetails = (originalMeal as any).componentDetails || [];
+          const updatedMeal: any = {
+            ...originalMeal,
+            calories: scaledMeal.totals.calories,
+            protein: scaledMeal.totals.protein,
+            carbs: scaledMeal.totals.carbs,
+            fat: scaledMeal.totals.fat,
+            description: scaledMeal.description,
+            preparationTip: scaledMeal.preparationTip,
+            componentDetails: scaledMeal.components.map((comp: any) => {
+              const originalComp = originalComponentDetails.find((c: any) => 
+                (c.foodName || c.name) === comp.name || Math.abs((c.grams || 0) - comp.grams) < 5
+              );
+              return {
+                food: originalComp?.food || { id: '', name: comp.food } as Food,
+                grams: comp.grams,
+                units: originalComp?.units,
+                displayText: `${comp.name} (${comp.grams}g)`,
+                foodName: comp.name,
+              };
+            }),
+          };
+          scaledDayMeals[slot] = updatedMeal as ScoredMeal;
+        }
+        
+        const total = sumMealMacros(scaledDayMeals);
         const target = {
           calories: targetCalories,
           protein: targetProtein,
           carbs: targetCarbs,
           fat: targetFat,
         };
+        
+        // DODATNA PROVJERA: Ako je odstupanje preveliko, primijeni dodatno skaliranje
+        const calDiff = Math.abs(total.calories - targetCalories);
+        if (calDiff > 50) { // Ako je razlika veća od 50 kcal, primijeni dodatno skaliranje
+          // Koristi faktor skaliranja koji osigurava da se postigne target
+          const scaleFactor = targetCalories / total.calories;
+          
+          // Ograniči faktor da ne bude previše ekstreman
+          // Ako je potrebno povećati kalorije (scaleFactor > 1), dozvoli veći faktor
+          // Ako je potrebno smanjiti kalorije (scaleFactor < 1), ograniči smanjenje
+          const limitedFactor = scaleFactor > 1
+            ? Math.max(1.0, Math.min(1.4, scaleFactor))  // Povećanje: 1.0x - 1.4x
+            : Math.max(0.85, Math.min(1.0, scaleFactor)); // Smanjenje: 0.85x - 1.0x
+          
+          const additionalScaledMeals: Record<string, ScoredMeal> = {};
+          
+          for (const slot of slots) {
+            const meal = scaledDayMeals[slot];
+            if (!meal) continue;
+            
+            const originalComponentDetails = (meal as any).componentDetails || [];
+            const additionalScaledComponents = originalComponentDetails.map((comp: any) => {
+              const foodKey = comp.foodName || comp.name || '';
+              const namirnica = findNamirnica(foodKey);
+              if (!namirnica) return comp;
+              
+              const newGrams = clampToPortionLimits(foodKey, comp.grams * limitedFactor, userGoal);
+              const macros = calculateMacrosForGrams(namirnica, newGrams);
+              
+              return {
+                ...comp,
+                grams: newGrams,
+                displayText: `${comp.foodName || comp.name} (${newGrams}g)`,
+              };
+            });
+            
+            const additionalTotals = additionalScaledComponents.reduce(
+              (totals: any, comp: any) => {
+                const foodKey = comp.foodName || comp.name || '';
+                const namirnica = findNamirnica(foodKey);
+                if (!namirnica) return totals;
+                const macros = calculateMacrosForGrams(namirnica, comp.grams);
+                return {
+                  protein: totals.protein + macros.protein,
+                  carbs: totals.carbs + macros.carbs,
+                  fat: totals.fat + macros.fat,
+                };
+              },
+              { protein: 0, carbs: 0, fat: 0 }
+            );
+            
+            const additionalCalories = Math.round(additionalTotals.protein * 4 + additionalTotals.carbs * 4 + additionalTotals.fat * 9);
+            
+            additionalScaledMeals[slot] = {
+              ...meal,
+              calories: additionalCalories,
+              protein: Math.round(additionalTotals.protein * 10) / 10,
+              carbs: Math.round(additionalTotals.carbs * 10) / 10,
+              fat: Math.round(additionalTotals.fat * 10) / 10,
+              componentDetails: additionalScaledComponents,
+            } as ScoredMeal;
+          }
+          
+          // Ažuriraj scaledDayMeals s dodatno skaliranim vrijednostima
+          Object.assign(scaledDayMeals, additionalScaledMeals);
+          
+          // Ponovno izračunaj total
+          const recalculatedTotal = sumMealMacros(scaledDayMeals);
+          Object.assign(total, recalculatedTotal);
+        }
+        
         const deviation = calculateDailyDeviation(target, total);
 
         const weeklyDay: WeeklyDay = {
           date: dateStr,
           meals: {
-            breakfast: dayMeals.breakfast!,
-            lunch: dayMeals.lunch!,
-            dinner: dayMeals.dinner!,
-            snack: dayMeals.snack ?? dayMeals.extraSnack!,
-            extraSnack: dayMeals.extraSnack,
+            breakfast: scaledDayMeals.breakfast!,
+            lunch: scaledDayMeals.lunch!,
+            dinner: scaledDayMeals.dinner!,
+            snack: scaledDayMeals.snack ?? scaledDayMeals.extraSnack!,
+            extraSnack: scaledDayMeals.extraSnack,
           },
           total: {
             ...total,
             deviation,
           },
         };
-
+        
         days.push(weeklyDay);
-        console.log(`✅ Dan ${i + 1}/7 generiran: ${total.calories.toFixed(0)} kcal (dev: ${deviation.total}%)`);
+        // console.log(`✅ Dan ${i + 1}/7 generiran: ${total.calories.toFixed(0)} kcal (dev: ${deviation.total}%)`); // Onemogućeno za brzinu
       } catch (dayError) {
         console.error(`❌ Greška pri generiranju plana za dan ${i + 1}/7 (${dateStr}):`, dayError);
         const errorMessage = dayError instanceof Error ? dayError.message : 'Nepoznata greška';
