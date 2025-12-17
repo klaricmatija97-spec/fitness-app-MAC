@@ -2592,13 +2592,20 @@ function stringSimilarity(str1: string, str2: string): number {
 function isSuspiciousUSDAResult(
   ingredientName: string,
   usdaResult: { calories: number; protein: number; carbs: number; fat: number } | null,
+  grams: number = 100,
   expectedName?: string
 ): boolean {
   // Ako nema rezultata, sumnjiv
   if (!usdaResult) return true;
   
+  // Izračunaj vrijednosti po 100g
+  const ratio = grams > 0 ? 100 / grams : 1;
+  const caloriesPer100g = usdaResult.calories * ratio;
+  const carbsPer100g = usdaResult.carbs * ratio;
+  const fatPer100g = usdaResult.fat * ratio;
+  const proteinPer100g = usdaResult.protein * ratio;
+  
   // Provjeri kalorije po 100g
-  const caloriesPer100g = (usdaResult.calories / 100) * 100; // Pretpostavljamo da je rezultat za 100g
   if (caloriesPer100g <= 0 || caloriesPer100g > 900) {
     return true; // Sumnjiv: kalorije izvan normalnog raspona
   }
@@ -2613,13 +2620,61 @@ function isSuspiciousUSDAResult(
   
   // Provjeri očekivane makroe za poznate namirnice
   const nameLower = ingredientName.toLowerCase();
+  const expectedNameLower = expectedName?.toLowerCase() || '';
+  const combinedName = `${nameLower} ${expectedNameLower}`;
   
-  // Riža bi trebala imati više UH
-  if (nameLower.includes('rice') || nameLower.includes('riža') || nameLower.includes('riz')) {
-    const carbsRatio = usdaResult.carbs / (usdaResult.protein + usdaResult.carbs + usdaResult.fat);
-    if (carbsRatio < 0.5) {
-      return true; // Sumnjiv: riža ima premalo UH
+  // A) MED / ŠEĆER / SIRUPI - mora imati jako puno UH
+  const sweetKeywords = ['honey', 'med', 'syrup', 'maple', 'sirup', 'agave', 'sugar', 'šećer'];
+  if (sweetKeywords.some(keyword => combinedName.includes(keyword))) {
+    if (carbsPer100g < 70 || caloriesPer100g < 250) {
+      return true; // Sumnjiv: med/šećer mora imati puno UH i kalorija
     }
+  }
+  
+  // B) MASNIJE MESO (beef, pork, but, chuck, thigh, rib, brisket)
+  const meatKeywords = ['beef', 'junetina', 'but', 'chuck', 'thigh', 'rib', 'brisket', 'svinjetina', 'pork'];
+  if (meatKeywords.some(keyword => combinedName.includes(keyword))) {
+    if (fatPer100g < 5 || caloriesPer100g < 120) {
+      return true; // Sumnjiv: meso mora imati više masti i kalorija
+    }
+  }
+  
+  // C) KUHANA RIŽA - carbsPer100g mora biti u rasponu 20-35
+  if (combinedName.includes('rice') || combinedName.includes('riža') || combinedName.includes('riz')) {
+    if (combinedName.includes('cooked') || combinedName.includes('kuhana') || combinedName.includes('kuhano')) {
+      if (carbsPer100g < 20 || carbsPer100g > 35) {
+        return true; // Sumnjiv: kuhana riža mora imati carbs u rasponu 20-35g/100g
+      }
+    } else {
+      // Sirova riža - provjeri da li ima premalo UH
+      const carbsRatio = usdaResult.carbs / (usdaResult.protein + usdaResult.carbs + usdaResult.fat);
+      if (carbsRatio < 0.5) {
+        return true; // Sumnjiv: riža ima premalo UH
+      }
+    }
+  }
+  
+  // C) KUHANA TJESTENINA - carbsPer100g mora biti u rasponu 20-35
+  if (combinedName.includes('pasta') || combinedName.includes('tjestenina') || combinedName.includes('tjestenine')) {
+    if (combinedName.includes('cooked') || combinedName.includes('kuhana') || combinedName.includes('kuhano')) {
+      if (carbsPer100g < 20 || carbsPer100g > 35) {
+        return true; // Sumnjiv: kuhana tjestenina mora imati carbs u rasponu 20-35g/100g
+      }
+    }
+  }
+  
+  // D) VELIKE GRAMAŽE POVRĆA (luk 200g+, mrkva, rajčica)
+  const vegetableKeywords = ['onion', 'luk', 'carrot', 'mrkva', 'tomato', 'rajčica'];
+  if (grams > 200 && vegetableKeywords.some(keyword => combinedName.includes(keyword))) {
+    // Za velike gramaže povrća, pozovi Edamam samo ako su makroi totalno nula ili kalorije per100g > 100
+    if (usdaResult.calories === 0 && usdaResult.protein === 0 && usdaResult.carbs === 0 && usdaResult.fat === 0) {
+      return true; // Sumnjiv: sve je nula
+    }
+    if (caloriesPer100g > 100) {
+      return true; // Sumnjiv: previše kalorija za povrće
+    }
+    // Inače, ne pozivaj Edamam za velike gramaže povrća
+    return false;
   }
   
   // Sir bi trebao imati više masti
@@ -2657,7 +2712,7 @@ async function maybeResolveWithEdamam(
   }
   
   // Provjeri da li je rezultat sumnjiv
-  if (!isSuspiciousUSDAResult(ingredientName, usdaResult, expectedName)) {
+  if (!isSuspiciousUSDAResult(ingredientName, usdaResult, grams, expectedName)) {
     return usdaResult; // Nije sumnjiv, koristi USDA
   }
   
@@ -3799,11 +3854,11 @@ async function generateWeeklyProMealPlanInternal(
             fat: 0,
           })) || [];
           
-          // Izračunaj makroe za komponente
-          const mealComponents = components.map((comp: any) => {
+          // Izračunaj makroe za komponente (koristi Edamam fallback ako je uključen)
+          const mealComponents = await Promise.all(components.map(async (comp: any) => {
             const namirnica = findNamirnica(comp.food);
             if (!namirnica) return comp;
-            const macros = calculateMacrosForGrams(namirnica, comp.grams);
+            const macros = await calculateMacrosForGramsWithFallback(namirnica, comp.grams, comp.name || comp.food);
             return {
               ...comp,
               calories: macros.calories,
@@ -3811,7 +3866,7 @@ async function generateWeeklyProMealPlanInternal(
               carbs: macros.carbs,
               fat: macros.fat,
             };
-          });
+          }));
           
           const mealTotals = mealComponents.reduce(
             (totals: any, comp: any) => ({
@@ -3960,6 +4015,165 @@ async function generateWeeklyProMealPlanInternal(
           // Ponovno izračunaj total
           const recalculatedTotal = sumMealMacros(scaledDayMeals);
           Object.assign(total, recalculatedTotal);
+        }
+        
+        // FINALNI SCALING PASS: Nakon Edamam fallback-a, osiguraj da su dnevne kalorije točne
+        // Izračunaj total kalorije za dan koristeći Edamam fallback (ako je uključen)
+        let finalTotalCalories = 0;
+        const mealCaloriesBefore: Record<string, number> = {};
+        
+        for (const slot of slots) {
+          const meal = scaledDayMeals[slot];
+          if (!meal) continue;
+          
+          const componentDetails = (meal as any).componentDetails || [];
+          let mealCalories = 0;
+          
+          for (const comp of componentDetails) {
+            const foodKey = comp.foodName || comp.name || '';
+            const namirnica = findNamirnica(foodKey);
+            if (!namirnica) continue;
+            
+            // Koristi Edamam fallback za izračun makroa
+            const macros = await calculateMacrosForGramsWithFallback(namirnica, comp.grams, foodKey);
+            mealCalories += macros.calories;
+          }
+          
+          mealCaloriesBefore[slot] = mealCalories;
+          finalTotalCalories += mealCalories;
+        }
+        
+        // Ako postoji odstupanje, primijeni finalni scaling (ograničen na 0.9-1.1, ili 0.85-1.15 ako diff > 200)
+        if (finalTotalCalories > 0 && Math.abs(finalTotalCalories - targetCalories) > 10) {
+          const diff = finalTotalCalories - targetCalories;
+          const finalScaleFactor = targetCalories / finalTotalCalories;
+          
+          // Proširi clamp na 0.85-1.15 SAMO ako diff > 200 kcal
+          const minFactor = Math.abs(diff) > 200 ? 0.85 : 0.9;
+          const maxFactor = Math.abs(diff) > 200 ? 1.15 : 1.1;
+          const limitedFinalFactor = Math.max(minFactor, Math.min(maxFactor, finalScaleFactor));
+          
+          // DEV only logging
+          const isDev = process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';
+          if (isDev) {
+            console.log(`\n🔧 FINAL SCALING PASS (Dan ${i + 1}/7):`);
+            console.log(`   targetCalories: ${targetCalories}`);
+            console.log(`   finalTotalCaloriesBefore: ${Math.round(finalTotalCalories)}`);
+            console.log(`   diff: ${Math.round(diff)} kcal`);
+            console.log(`   rawScaleFactor: ${finalScaleFactor.toFixed(4)}`);
+            console.log(`   clampedScaleFactor: ${limitedFinalFactor.toFixed(4)} (range: ${minFactor}-${maxFactor})`);
+          }
+          
+          // Skaliraj samo količine (grams) obroka za taj dan
+          const finalScaledMeals: Record<string, ScoredMeal> = {};
+          const mealCaloriesAfter: Record<string, number> = {};
+          
+          // Pronađi najveći obrok (po kalorijama) za eventualnu dodatnu korekciju
+          let largestMealSlot = '';
+          let largestMealCalories = 0;
+          for (const slot of slots) {
+            if (mealCaloriesBefore[slot] > largestMealCalories) {
+              largestMealCalories = mealCaloriesBefore[slot];
+              largestMealSlot = slot;
+            }
+          }
+          
+          // Izračunaj ostatak korekcije ako je clamping aktiviran
+          const scaledTotalCalories = finalTotalCalories * limitedFinalFactor;
+          const remainingCorrection = scaledTotalCalories - targetCalories;
+          const needsExtraCorrection = Math.abs(remainingCorrection) > 5 && Math.abs(diff) > 200;
+          
+          for (const slot of slots) {
+            const meal = scaledDayMeals[slot];
+            if (!meal) continue;
+            
+            const originalComponentDetails = (meal as any).componentDetails || [];
+            
+            // Ako je potrebna dodatna korekcija i ovo je najveći obrok, primijeni ostatak
+            let extraFactor = 1.0;
+            if (needsExtraCorrection && slot === largestMealSlot && largestMealCalories > 0) {
+              // Izračunaj koliko kalorija će biti nakon osnovnog skaliranja
+              const scaledLargestMealCalories = largestMealCalories * limitedFinalFactor;
+              const otherMealsScaledCalories = scaledTotalCalories - scaledLargestMealCalories;
+              const targetForLargestMeal = targetCalories - otherMealsScaledCalories;
+              
+              if (targetForLargestMeal > 0 && scaledLargestMealCalories > 0) {
+                extraFactor = targetForLargestMeal / scaledLargestMealCalories;
+                extraFactor = Math.max(0.9, Math.min(1.1, extraFactor));
+                if (isDev) {
+                  console.log(`   ⚠️ Extra correction na najveći obrok (${slot}): ${extraFactor.toFixed(4)}`);
+                }
+              }
+            }
+            
+            const finalScaledComponents = originalComponentDetails.map((comp: any) => {
+              const foodKey = comp.foodName || comp.name || '';
+              const baseGrams = comp.grams * limitedFinalFactor;
+              const finalGrams = clampToPortionLimits(foodKey, baseGrams * extraFactor, userGoal);
+              
+              return {
+                ...comp,
+                grams: finalGrams,
+                displayText: `${comp.foodName || comp.name} (${finalGrams}g)`,
+              };
+            });
+            
+            // Ponovno izračunaj makroe s novim gramažama (koristi Edamam fallback)
+            let finalMealCalories = 0;
+            let finalMealProtein = 0;
+            let finalMealCarbs = 0;
+            let finalMealFat = 0;
+            
+            for (const comp of finalScaledComponents) {
+              const foodKey = comp.foodName || comp.name || '';
+              const namirnica = findNamirnica(foodKey);
+              if (!namirnica) continue;
+              
+              const macros = await calculateMacrosForGramsWithFallback(namirnica, comp.grams, foodKey);
+              finalMealCalories += macros.calories;
+              finalMealProtein += macros.protein;
+              finalMealCarbs += macros.carbs;
+              finalMealFat += macros.fat;
+            }
+            
+            mealCaloriesAfter[slot] = finalMealCalories;
+            
+            finalScaledMeals[slot] = {
+              ...meal,
+              calories: Math.round(finalMealCalories),
+              protein: Math.round(finalMealProtein * 10) / 10,
+              carbs: Math.round(finalMealCarbs * 10) / 10,
+              fat: Math.round(finalMealFat * 10) / 10,
+              componentDetails: finalScaledComponents,
+            } as ScoredMeal;
+          }
+          
+          // DEV only logging - po obroku
+          if (isDev) {
+            console.log(`   Po obroku:`);
+            for (const slot of slots) {
+              const meal = scaledDayMeals[slot];
+              if (!meal) continue;
+              const mealName = meal.name || slot;
+              const caloriesBefore = Math.round(mealCaloriesBefore[slot] || 0);
+              const caloriesAfter = Math.round(mealCaloriesAfter[slot] || 0);
+              console.log(`     ${mealName}: ${caloriesBefore} → ${caloriesAfter} kcal`);
+            }
+          }
+          
+          // Ažuriraj scaledDayMeals s finalno skaliranim vrijednostima
+          Object.assign(scaledDayMeals, finalScaledMeals);
+          
+          // Ponovno izračunaj total
+          const finalRecalculatedTotal = sumMealMacros(scaledDayMeals);
+          const finalDiff = finalRecalculatedTotal.calories - targetCalories;
+          
+          // DEV only logging - finalni diff
+          if (isDev) {
+            console.log(`   ✅ Finalni diff: ${Math.round(finalDiff)} kcal\n`);
+          }
+          
+          Object.assign(total, finalRecalculatedTotal);
         }
         
         const deviation = calculateDailyDeviation(target, total);
