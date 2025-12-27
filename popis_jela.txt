@@ -1,0 +1,225 @@
+============================================================
+POPIS SVIH JELA KOJA GENERATOR KORISTI
+============================================================
+
+Ukupno: 155 jela
+
+
+============================================================
+DORUČAK (30 jela)
+============================================================
+
+Za skidanje kila (lose):
+  • Bjelanjci sa zobenima i wheyem
+  • Kajgana s bjelanjcima i zrnatim sirom
+  • Lagana jaja s bjelanjcima i voćem
+  • Omlet s tikvicama i feta sirom
+  • Proteinska kajgana s bjelanjcima i zobenima
+  • Proteinski smoothie bowl
+  • Shakshuka s bjelanjcima
+
+Za održavanje (maintain):
+  • Avokado tost s jajima
+  • Jaja na oko s grčkim jogurtom
+  • Kajgana sa skyrom i voćem
+  • Klasična kajgana s tostom
+  • Omlet sa zobenima
+  • Overnight oats s bademima
+  • Palačinke od banane i jaja
+
+Za dobivanje (gain):
+  • Bogati doručak sa zobenim i jajima
+  • Bogati omlet s tostom i kikiriki maslacem
+  • Burrito s jajima i grahom
+  • Granola s jogurtom i medom
+  • Jaja sa salamom, sirom i tostom
+  • Kroasan s džemom i sokom
+  • Mega zobena kaša s bananom i medom
+  • Musli bowl s voćem i medom
+  • Omlet s mlijekom i zobenima
+  • Palačinke s medom i voćem
+  • Proteinska zobena kaša s kikiriki maslacem
+  • Proteinska zobena kaša s voćem
+  • Sendvič s jajima i slaninom
+  • Smoothie za masu
+  • Tost sendvič s kikirikijem i bananom
+  • Zobene s tostom i voćem
+
+============================================================
+RUČAK (51 jela)
+============================================================
+
+Za skidanje kila (lose):
+  • Juha od piletine i povrća
+  • Junetina s kuhanim krumpirom i mrkvom
+  • Juneća pljeskavica s pire krumpirom
+  • Juneća prsa s rižom i povrćem
+  • Juneći gulaš s krumpirom (light verzija)
+  • Losos iz air fryera s batatom i brokulom
+  • Losos s grahom i špinatom
+  • Piletina iz air fryera s kuhanim krumpirom
+  • Piletina na žaru s mladim krumpirom
+  • Piletina s grah salatom
+  • Piletina s rižom i kuhanim povrćem
+  • Piletina sa zrnatim sirom i kuhanim povrćem
+  • Piletina u zelenom curry umaku
+  • Pileća prsa s pire krumpirom
+  • Pureća prsa s kuhanim krumpirom i salatom
+  • Pureća prsa s pire krumpirom i graškom
+  • Salata s tunjevinom i jajetom
+  • Tikvice punjene mljevenom puretinom
+  • Tortilje s tunom [maintain, lose]
+  • Tuna sa zapečenim grahom
+  • Tuna salata s kuhanim krumpirom
+  • Tuna steak s krumpirom i špinatom
+  • Varivo od graha i zelja [lose, maintain]
+
+Za održavanje (maintain):
+  • Buddha bowl s tofuom
+  • Junetina s rižom i salatom
+  • Kuhani grah sa zeljem i kobasicom [maintain, gain]
+  • Maneštra [maintain, gain]
+  • Piletina s batatom i brokulom
+  • Pileća prsa s krumpirom iz pećnice
+  • Rižot od povrća s piletinom [maintain, gain]
+  • Tjestenina s tunom i povrćem
+  • Tortilje s piletinom [gain, maintain]
+  • Tortilje s tunom [maintain, lose]
+  • Varivo od graha i zelja [lose, maintain]
+  • Wrap s puretinom i humusom
+
+Za dobivanje (gain):
+  • Bogata tjestenina s tunom i vrhnjem
+  • Burrito bowl s govedinom
+  • Govedina s rižom i povrćem stir-fry
+  • Kremasta tjestenina s piletinom i vrhnjem
+  • Krumpir iz pećnice s junetinom
+  • Krumpir pire s povrćem
+  • Kuhani grah sa zeljem i kobasicom [maintain, gain]
+  • Losos s krumpirom i avokadom
+  • Maneštra [maintain, gain]
+  • Mega tjestenina s umakom od rajčice
+  • Pesto tjestenina s piletinom
+  • Pečeni batat sa zrnatim sirom i voćem
+  • Piletina Alfredo s tjesteninom
+  • Pire krumpir s malo piletine i povrćem
+  • Riža s grahom i kukuruzom
+  • Riža s povrćem i jajima
+  • Riža s povrćem i sirom
+  • Rižot od povrća s piletinom [maintain, gain]
+  • Sendvič combo s voćem
+  • Tjestenina alfredo s malo piletine
+  • Tortilje s piletinom [gain, maintain]
+  • Vegetarijanska tjestenina arabiata
+
+============================================================
+VEČERA (46 jela)
+============================================================
+
+Za skidanje kila (lose):
+  • Grčki jogurt s proteinima i voćem [lose, maintain]
+  • Junetina s kuhanim povrćem
+  • Juneći odrezak s brokulom i rajčicama
+  • Losos s kuhanim krumpirom i brokulom
+  • Losos s kuhanim krumpirom i salatom
+  • Oslić u foliji s povrćem
+  • Pečeni brancin s mladim krumpirom
+  • Piletina iz air fryera sa salatom [lose, maintain]
+  • Piletina s grah salatom
+  • Piletina s pire krumpirom i graškom
+  • Piletina sa zrnatim sirom i špinatom
+  • Pureća prsa s gljivama i pireom
+  • Pureća prsa s kuhanim povrćem
+  • Pureća prsa s mladim krumpirom
+  • Pureća salama s grčkim jogurtom i povrćem
+  • Salata s piletinom i avokadom
+  • Tuna s grahom i rajčicama
+  • Tuna s rižinim kreklerima i kuhanim povrćem [lose, maintain]
+  • Tuna salata s kuhanim jajima
+
+Za održavanje (maintain):
+  • Grčki jogurt s proteinima i voćem [lose, maintain]
+  • Gulaš s krumpirom [maintain, gain]
+  • Junetina s krumpirom i salatom [gain, maintain]
+  • Junetina s kuhanim krumpirom i salatom
+  • Losos s kvinojom i šparogama
+  • Losos s povrćem i rižom
+  • Losos s tostom i salatom [gain, maintain]
+  • Ostatak tjestenine s tunom [gain, maintain]
+  • Pečena orada s batatom
+  • Piletina iz air fryera sa salatom [lose, maintain]
+  • Piletina s mediteranskim povrćem
+  • Piletina tikka masala s rižom
+  • Pizza alternativa [gain, maintain]
+  • Saft od junetine s rižom [maintain, gain]
+  • Tuna s rižinim kreklerima i kuhanim povrćem [lose, maintain]
+
+Za dobivanje (gain):
+  • Biftek s pireom i gljivama
+  • Gnocchi s vrhnjem i piletinom
+  • Gulaš s krumpirom [maintain, gain]
+  • Junetina s krumpirom i salatom [gain, maintain]
+  • Kremasta riža s piletinom
+  • Krumpir pire s umakom i povrćem
+  • Lazanje s govedinom
+  • Losos s tostom i salatom [gain, maintain]
+  • Ostatak tjestenine s tunom [gain, maintain]
+  • Palačinke večera
+  • Pašticada s njokima
+  • Pesto tjestenina s tunom
+  • Pečeni krumpir sa sirom i vrhnjem
+  • Pečeni krumpir sa zrnatim sirom
+  • Piletina s tjesteninom i pestom
+  • Pizza alternativa [gain, maintain]
+  • Riža s malo lososa
+  • Riža s povrćem na azijski način
+  • Rižoto s grahom i kukuruzom
+  • Saft od junetine s rižom [maintain, gain]
+  • Tjestenina carbonara light
+
+============================================================
+UŽINA (28 jela)
+============================================================
+
+Za skidanje kila (lose):
+  • Pileća salama s krekerima i posnim sirom
+  • Proteinski shake [maintain, lose]
+  • Pureća prsa s krastavcima i krekerima
+  • Skyr s bananom [lose, maintain]
+  • Skyr s borovnicama
+  • Tuna s rižinim krekerima
+  • Whey s grčkim jogurtom
+  • Whey shake na vodi
+  • Zdravi proteinski brownie [lose, maintain, gain]
+  • Zdravi proteinski cheesecake [lose, maintain, gain]
+  • Zrnati sir s paprikom
+  • Zrnati sir s rajčicama
+  • Štapići od krastavca s humusom
+
+Za održavanje (maintain):
+  • Banana bread u sportskoj verziji [gain, maintain]
+  • Grčki jogurt s voćem i bademima
+  • Grčki jogurt shake s voćem [gain, maintain]
+  • Jabuka s maslacem od badema
+  • Mix orašastih plodova
+  • Proteinski shake [maintain, lose]
+  • Skyr s bananom [lose, maintain]
+  • Zdravi proteinski brownie [lose, maintain, gain]
+  • Zdravi proteinski cheesecake [lose, maintain, gain]
+  • Zdravi proteinski muffini [gain, maintain]
+
+Za dobivanje (gain):
+  • Banana bread u sportskoj verziji [gain, maintain]
+  • Grčki jogurt shake s voćem [gain, maintain]
+  • Kikiriki maslac s tostom i bananom
+  • Mass gainer shake
+  • Proteinski shake s bananom
+  • Rižini kolačići s kikiriki maslacem i bananom
+  • Rižini krekersi s avokadom
+  • Sendvič s kikirikijem i džemom
+  • Skyr s proteinima, voćem i bademima
+  • Voćni smoothie s zobenim
+  • Zdravi proteinski brownie [lose, maintain, gain]
+  • Zdravi proteinski cheesecake [lose, maintain, gain]
+  • Zdravi proteinski muffini [gain, maintain]
+  • Zobena kaša s bananom (brza)

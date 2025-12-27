@@ -45,6 +45,17 @@ export const NAMIRNICE: Namirnica[] = [
     category: 'protein',
   },
   {
+    id: 'smoked_chicken_breast',
+    name: 'Pileći dimcek Cekin',
+    nameEn: 'Smoked chicken breast',
+    // Cekin Dimcek - makronutrijenti sa pakiranja
+    proteinPer100g: 17.0,
+    carbsPer100g: 2.7,
+    fatsPer100g: 1.0,
+    caloriesPer100g: 88, // Prema pakiranju
+    category: 'protein',
+  },
+  {
     id: 'turkey_breast',
     name: 'Pureća prsa',
     nameEn: 'Turkey breast',
@@ -171,6 +182,29 @@ export const NAMIRNICE: Namirnica[] = [
     category: 'dairy',
   },
   {
+    id: 'milk_1_2',
+    name: 'Mlijeko 1.2%',
+    nameEn: 'Milk 1.2%',
+    // USDA FDC 322228: Milk, lowfat, fluid, 1% milkfat (koristimo za 1.2%)
+    // Hrvatsko mlijeko 1.2% ima slične vrijednosti kao USDA 1% milkfat
+    proteinPer100g: 3.4,
+    carbsPer100g: 5.2,
+    fatsPer100g: 1.2,
+    caloriesPer100g: calcKcal(3.4, 5.2, 1.2), // 44 kcal
+    category: 'dairy',
+  },
+  {
+    id: 'milk_3_2',
+    name: 'Mlijeko 3.2%',
+    nameEn: 'Milk 3.2%',
+    // USDA FDC 171265: Milk, whole, 3.25% milkfat
+    proteinPer100g: 3.2,
+    carbsPer100g: 4.8,
+    fatsPer100g: 3.2,
+    caloriesPer100g: calcKcal(3.2, 4.8, 3.2), // 61 kcal
+    category: 'dairy',
+  },
+  {
     id: 'milk_low_fat',
     name: 'Mlijeko 1.5%',
     nameEn: 'Milk',
@@ -223,11 +257,11 @@ export const NAMIRNICE: Namirnica[] = [
     id: 'rice_crackers',
     name: 'Rižini krekeri',
     nameEn: 'Rice crackers',
-    // Estimate based on rice cake values
-    proteinPer100g: 7.0,
-    carbsPer100g: 82.0,
-    fatsPer100g: 2.5,
-    caloriesPer100g: calcKcal(7.0, 82.0, 2.5), // 379 kcal
+    // Natur bio rižini krekeri - makronutrijenti sa neta (384 kcal/100g)
+    proteinPer100g: 9.3,
+    carbsPer100g: 78.0,
+    fatsPer100g: 3.1,
+    caloriesPer100g: 384, // Točno prema Natur bio rižini krekeri
     category: 'carb',
   },
   {
@@ -272,6 +306,19 @@ export const NAMIRNICE: Namirnica[] = [
     carbsPer100g: 23.7,
     fatsPer100g: 1.0,
     caloriesPer100g: calcKcal(3.7, 23.7, 1.0), // 119 kcal
+    category: 'carb',
+  },
+  {
+    id: 'semolina_cooked',
+    name: 'Griz (kuhani)',
+    nameEn: 'Semolina',
+    // Semolina (griz) cooked - proizvod od pšenice, kuhan s omjerom 1:3-4
+    // Suhi griz: ~374 kcal/100g, 8g P, 75g C, 1.5g F
+    // Kuhani griz (1:3 omjer): ~125 kcal/100g
+    proteinPer100g: 3.5,
+    carbsPer100g: 25.0,
+    fatsPer100g: 0.4,
+    caloriesPer100g: calcKcal(3.5, 25.0, 0.4), // 125 kcal
     category: 'carb',
   },
 
@@ -684,6 +731,39 @@ export const NAMIRNICE: Namirnica[] = [
     category: 'vegetable',
   },
   {
+    id: 'cherry_tomatoes',
+    name: 'Cherry rajčice',
+    nameEn: 'Cherry tomatoes',
+    // USDA: Tomatoes, red, ripe, raw, year round average
+    proteinPer100g: 0.9,
+    carbsPer100g: 3.9,
+    fatsPer100g: 0.2,
+    caloriesPer100g: calcKcal(0.9, 3.9, 0.2), // 21 kcal
+    category: 'vegetable',
+  },
+  {
+    id: 'pesto',
+    name: 'Pesto genovese',
+    nameEn: 'Pesto',
+    // USDA: Sauce, pesto, ready-to-serve, refrigerated
+    proteinPer100g: 4.6,
+    carbsPer100g: 5.0,
+    fatsPer100g: 38.0,
+    caloriesPer100g: calcKcal(4.6, 5.0, 38.0), // 372 kcal
+    category: 'fat',
+  },
+  {
+    id: 'pine_nuts',
+    name: 'Pinija',
+    nameEn: 'Pine nuts',
+    // USDA: Nuts, pine nuts, dried
+    proteinPer100g: 13.7,
+    carbsPer100g: 13.1,
+    fatsPer100g: 68.4,
+    caloriesPer100g: calcKcal(13.7, 13.1, 68.4), // 673 kcal
+    category: 'fat',
+  },
+  {
     id: 'olives',
     name: 'Masline',
     nameEn: 'Olives',
@@ -693,6 +773,413 @@ export const NAMIRNICE: Namirnica[] = [
     fatsPer100g: 12.9,
     caloriesPer100g: calcKcal(1.1, 5.0, 12.9), // 140 kcal
     category: 'fat',
+  },
+  {
+    id: 'asparagus',
+    name: 'Šparoga',
+    nameEn: 'Asparagus',
+    // USDA: Asparagus, raw
+    proteinPer100g: 2.2,
+    carbsPer100g: 3.9,
+    fatsPer100g: 0.1,
+    caloriesPer100g: calcKcal(2.2, 3.9, 0.1), // 25 kcal
+    category: 'vegetable',
+  },
+  {
+    id: 'basmati_rice',
+    name: 'Basmati riža (kuhana)',
+    nameEn: 'Basmati rice',
+    // USDA: Rice, white, long-grain, cooked
+    proteinPer100g: 2.7,
+    carbsPer100g: 28.0,
+    fatsPer100g: 0.3,
+    caloriesPer100g: calcKcal(2.7, 28.0, 0.3), // 130 kcal
+    category: 'carb',
+  },
+  {
+    id: 'bechamel_sauce',
+    name: 'Bešamel umak',
+    nameEn: 'Bechamel sauce',
+    // USDA: Sauce, white, medium
+    proteinPer100g: 4.0,
+    carbsPer100g: 7.0,
+    fatsPer100g: 9.0,
+    caloriesPer100g: calcKcal(4.0, 7.0, 9.0), // 130 kcal
+    category: 'fat',
+  },
+  {
+    id: 'carp',
+    name: 'Šaran',
+    nameEn: 'Carp',
+    // USDA: Fish, carp, raw
+    proteinPer100g: 18.0,
+    carbsPer100g: 0,
+    fatsPer100g: 5.6,
+    caloriesPer100g: calcKcal(18.0, 0, 5.6), // 127 kcal
+    category: 'protein',
+  },
+  {
+    id: 'cheese',
+    name: 'Sir',
+    nameEn: 'Cheese',
+    // USDA: Cheese, cheddar (generic)
+    proteinPer100g: 25.0,
+    carbsPer100g: 1.3,
+    fatsPer100g: 33.0,
+    caloriesPer100g: calcKcal(25.0, 1.3, 33.0), // 408 kcal
+    category: 'dairy',
+  },
+  {
+    id: 'chives',
+    name: 'Vlasac',
+    nameEn: 'Chives',
+    // USDA: Chives, raw
+    proteinPer100g: 3.3,
+    carbsPer100g: 4.4,
+    fatsPer100g: 0.7,
+    caloriesPer100g: calcKcal(3.3, 4.4, 0.7), // 30 kcal
+    category: 'vegetable',
+  },
+  {
+    id: 'cocoa_powder',
+    name: 'Kakao prah',
+    nameEn: 'Cocoa powder',
+    // USDA: Cocoa, dry powder, unsweetened
+    proteinPer100g: 19.6,
+    carbsPer100g: 57.9,
+    fatsPer100g: 13.7,
+    caloriesPer100g: calcKcal(19.6, 57.9, 13.7), // 228 kcal
+    category: 'carb',
+  },
+  {
+    id: 'dark_chocolate',
+    name: 'Tamna čokolada',
+    nameEn: 'Dark chocolate',
+    // USDA: Chocolate, dark, 70-85% cacao
+    proteinPer100g: 7.8,
+    carbsPer100g: 45.9,
+    fatsPer100g: 42.6,
+    caloriesPer100g: calcKcal(7.8, 45.9, 42.6), // 598 kcal
+    category: 'fat',
+  },
+  {
+    id: 'dried_cranberries',
+    name: 'Suhe brusnice',
+    nameEn: 'Dried cranberries',
+    // USDA: Cranberries, dried, sweetened
+    proteinPer100g: 0.1,
+    carbsPer100g: 82.4,
+    fatsPer100g: 1.4,
+    caloriesPer100g: calcKcal(0.1, 82.4, 1.4), // 308 kcal
+    category: 'fruit',
+  },
+  {
+    id: 'eggplant',
+    name: 'Patlidžan',
+    nameEn: 'Eggplant',
+    // USDA: Eggplant, raw
+    proteinPer100g: 1.0,
+    carbsPer100g: 5.9,
+    fatsPer100g: 0.2,
+    caloriesPer100g: calcKcal(1.0, 5.9, 0.2), // 25 kcal
+    category: 'vegetable',
+  },
+  {
+    id: 'gnocchi',
+    name: 'Njoki',
+    nameEn: 'Gnocchi',
+    // USDA: Pasta, cooked, enriched, without added salt (similar to gnocchi)
+    proteinPer100g: 4.6,
+    carbsPer100g: 30.9,
+    fatsPer100g: 0.9,
+    caloriesPer100g: calcKcal(4.6, 30.9, 0.9), // 158 kcal
+    category: 'carb',
+  },
+  {
+    id: 'ground_beef',
+    name: 'Mljevena govedina',
+    nameEn: 'Ground beef',
+    // USDA: Beef, ground, 85% lean meat / 15% fat, raw
+    proteinPer100g: 18.6,
+    carbsPer100g: 0,
+    fatsPer100g: 15.0,
+    caloriesPer100g: calcKcal(18.6, 0, 15.0), // 215 kcal
+    category: 'protein',
+  },
+  {
+    id: 'hazelnuts',
+    name: 'Lješnjaci',
+    nameEn: 'Hazelnuts',
+    // USDA: Nuts, hazelnuts or filberts
+    proteinPer100g: 15.0,
+    carbsPer100g: 16.7,
+    fatsPer100g: 60.8,
+    caloriesPer100g: calcKcal(15.0, 16.7, 60.8), // 628 kcal
+    category: 'fat',
+  },
+  {
+    id: 'lasagna_sheets',
+    name: 'Lasagne listovi',
+    nameEn: 'Lasagna sheets',
+    // USDA: Pasta, dry, enriched (similar to lasagna sheets)
+    proteinPer100g: 13.0,
+    carbsPer100g: 71.0,
+    fatsPer100g: 1.5,
+    caloriesPer100g: calcKcal(13.0, 71.0, 1.5), // 371 kcal
+    category: 'carb',
+  },
+  {
+    id: 'lemon',
+    name: 'Limun',
+    nameEn: 'Lemon',
+    // USDA: Lemons, raw, without peel
+    proteinPer100g: 1.1,
+    carbsPer100g: 9.3,
+    fatsPer100g: 0.3,
+    caloriesPer100g: calcKcal(1.1, 9.3, 0.3), // 29 kcal
+    category: 'fruit',
+  },
+  {
+    id: 'mushrooms',
+    name: 'Gljive',
+    nameEn: 'Mushrooms',
+    // USDA: Mushrooms, white, raw
+    proteinPer100g: 3.1,
+    carbsPer100g: 3.3,
+    fatsPer100g: 0.3,
+    caloriesPer100g: calcKcal(3.1, 3.3, 0.3), // 22 kcal
+    category: 'vegetable',
+  },
+  {
+    id: 'new_potatoes',
+    name: 'Mladi krumpir',
+    nameEn: 'New potatoes',
+    // USDA: Potatoes, raw, skin
+    proteinPer100g: 2.0,
+    carbsPer100g: 17.5,
+    fatsPer100g: 0.1,
+    caloriesPer100g: calcKcal(2.0, 17.5, 0.1), // 77 kcal
+    category: 'carb',
+  },
+  {
+    id: 'pancake',
+    name: 'Palačinka',
+    nameEn: 'Pancake',
+    // USDA: Pancakes, plain, prepared from recipe
+    proteinPer100g: 7.9,
+    carbsPer100g: 28.3,
+    fatsPer100g: 9.7,
+    caloriesPer100g: calcKcal(7.9, 28.3, 9.7), // 227 kcal
+    category: 'carb',
+  },
+  {
+    id: 'paprika_powder',
+    name: 'Papar',
+    nameEn: 'Paprika powder',
+    // USDA: Spices, paprika
+    proteinPer100g: 14.1,
+    carbsPer100g: 53.9,
+    fatsPer100g: 12.9,
+    caloriesPer100g: calcKcal(14.1, 53.9, 12.9), // 282 kcal
+    category: 'vegetable',
+  },
+  {
+    id: 'pork_tenderloin',
+    name: 'Svinjski file',
+    nameEn: 'Pork tenderloin',
+    // USDA: Pork, fresh, loin, tenderloin, separable lean only, raw
+    proteinPer100g: 22.3,
+    carbsPer100g: 0,
+    fatsPer100g: 3.5,
+    caloriesPer100g: calcKcal(22.3, 0, 3.5), // 120 kcal
+    category: 'protein',
+  },
+  {
+    id: 'prunes',
+    name: 'Šljive',
+    nameEn: 'Prunes',
+    // USDA: Plums, dried (prunes), uncooked
+    proteinPer100g: 2.2,
+    carbsPer100g: 63.9,
+    fatsPer100g: 0.4,
+    caloriesPer100g: calcKcal(2.2, 63.9, 0.4), // 240 kcal
+    category: 'fruit',
+  },
+  {
+    id: 'pumpkin_seeds',
+    name: 'Sjemenke bundeve',
+    nameEn: 'Pumpkin seeds',
+    // USDA: Seeds, pumpkin and squash seed kernels, dried
+    proteinPer100g: 30.2,
+    carbsPer100g: 10.7,
+    fatsPer100g: 49.0,
+    caloriesPer100g: calcKcal(30.2, 10.7, 49.0), // 559 kcal
+    category: 'fat',
+  },
+  {
+    id: 'red_wine',
+    name: 'Crno vino',
+    nameEn: 'Red wine',
+    // USDA: Alcoholic beverage, wine, table, red
+    proteinPer100g: 0.1,
+    carbsPer100g: 2.6,
+    fatsPer100g: 0,
+    caloriesPer100g: calcKcal(0.1, 2.6, 0), // 85 kcal
+    category: 'carb',
+  },
+  {
+    id: 'ribeye_steak',
+    name: 'Rebro odrezak',
+    nameEn: 'Ribeye steak',
+    // USDA: Beef, rib eye, small end (ribs 10-12), separable lean and fat, trimmed to 0" fat, choice, raw
+    proteinPer100g: 18.9,
+    carbsPer100g: 0,
+    fatsPer100g: 18.5,
+    caloriesPer100g: calcKcal(18.9, 0, 18.5), // 264 kcal
+    category: 'protein',
+  },
+  {
+    id: 'rice_cakes',
+    name: 'Rižine krekere',
+    nameEn: 'Rice cakes',
+    // USDA: Snacks, rice cakes, brown rice, plain
+    proteinPer100g: 7.2,
+    carbsPer100g: 81.5,
+    fatsPer100g: 3.2,
+    caloriesPer100g: calcKcal(7.2, 81.5, 3.2), // 387 kcal
+    category: 'carb',
+  },
+  {
+    id: 'sea_bass',
+    name: 'Brancin',
+    nameEn: 'Sea bass',
+    // USDA: Fish, sea bass, mixed species, raw
+    proteinPer100g: 18.4,
+    carbsPer100g: 0,
+    fatsPer100g: 2.0,
+    caloriesPer100g: calcKcal(18.4, 0, 2.0), // 97 kcal
+    category: 'protein',
+  },
+  {
+    id: 'sea_bream',
+    name: 'Orata',
+    nameEn: 'Sea bream',
+    // USDA: Fish, porgy, mixed species, raw (similar to sea bream)
+    proteinPer100g: 18.9,
+    carbsPer100g: 0,
+    fatsPer100g: 1.9,
+    caloriesPer100g: calcKcal(18.9, 0, 1.9), // 105 kcal
+    category: 'protein',
+  },
+  {
+    id: 'squid',
+    name: 'Lignje',
+    nameEn: 'Squid',
+    // USDA: Mollusks, squid, mixed species, raw
+    proteinPer100g: 15.6,
+    carbsPer100g: 3.1,
+    fatsPer100g: 1.4,
+    caloriesPer100g: calcKcal(15.6, 3.1, 1.4), // 92 kcal
+    category: 'protein',
+  },
+  {
+    id: 'tikka_masala_paste',
+    name: 'Tikka masala pasta',
+    nameEn: 'Tikka masala paste',
+    // USDA: Spices, curry powder (approximation for tikka masala)
+    proteinPer100g: 14.3,
+    carbsPer100g: 55.8,
+    fatsPer100g: 14.0,
+    caloriesPer100g: calcKcal(14.3, 55.8, 14.0), // 325 kcal
+    category: 'fat',
+  },
+  {
+    id: 'tomato_paste',
+    name: 'Pasirana rajčica',
+    nameEn: 'Tomato paste',
+    // USDA: Tomatoes, red, ripe, canned, with green chilies
+    proteinPer100g: 4.3,
+    carbsPer100g: 18.9,
+    fatsPer100g: 0.3,
+    caloriesPer100g: calcKcal(4.3, 18.9, 0.3), // 82 kcal
+    category: 'vegetable',
+  },
+  {
+    id: 'trout',
+    name: 'Pastrva',
+    nameEn: 'Trout',
+    // USDA: Fish, trout, rainbow, farmed, raw
+    proteinPer100g: 19.9,
+    carbsPer100g: 0,
+    fatsPer100g: 6.6,
+    caloriesPer100g: calcKcal(19.9, 0, 6.6), // 148 kcal
+    category: 'protein',
+  },
+  {
+    id: 'tuna_canned',
+    name: 'Tuna (konzerva)',
+    nameEn: 'Tuna canned',
+    // USDA: Fish, tuna, light, canned in water, drained solids
+    proteinPer100g: 25.5,
+    carbsPer100g: 0,
+    fatsPer100g: 0.8,
+    caloriesPer100g: calcKcal(25.5, 0, 0.8), // 116 kcal
+    category: 'protein',
+  },
+  {
+    id: 'walnuts',
+    name: 'Orašasti plodovi',
+    nameEn: 'Walnuts',
+    // USDA: Nuts, walnuts, english
+    proteinPer100g: 15.2,
+    carbsPer100g: 13.7,
+    fatsPer100g: 65.2,
+    caloriesPer100g: calcKcal(15.2, 13.7, 65.2), // 654 kcal
+    category: 'fat',
+  },
+  {
+    id: 'water',
+    name: 'Voda',
+    nameEn: 'Water',
+    // Voda nema kalorije
+    proteinPer100g: 0,
+    carbsPer100g: 0,
+    fatsPer100g: 0,
+    caloriesPer100g: 0,
+    category: 'vegetable',
+  },
+  {
+    id: 'white_wine',
+    name: 'Bijelo vino',
+    nameEn: 'White wine',
+    // USDA: Alcoholic beverage, wine, table, white
+    proteinPer100g: 0.1,
+    carbsPer100g: 2.6,
+    fatsPer100g: 0,
+    caloriesPer100g: calcKcal(0.1, 2.6, 0), // 82 kcal
+    category: 'carb',
+  },
+  {
+    id: 'whole_egg',
+    name: 'Cijelo jaje',
+    nameEn: 'Whole egg',
+    // USDA: Egg, whole, raw, fresh (same as Egg)
+    proteinPer100g: 12.6,
+    carbsPer100g: 0.7,
+    fatsPer100g: 9.5,
+    caloriesPer100g: calcKcal(12.6, 0.7, 9.5), // 143 kcal
+    category: 'protein',
+  },
+  {
+    id: 'wine_vinegar',
+    name: 'Vinski ocat',
+    nameEn: 'Wine vinegar',
+    // USDA: Vinegar, red wine
+    proteinPer100g: 0,
+    carbsPer100g: 0.3,
+    fatsPer100g: 0,
+    caloriesPer100g: calcKcal(0, 0.3, 0), // 18 kcal
+    category: 'vegetable',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -898,6 +1385,8 @@ export const FOOD_ALIASES: Record<string, string> = {
   'Egg white': 'egg_white',
   'Chicken breast': 'chicken_breast',
   'Chicken': 'chicken_breast',
+  'Smoked chicken breast': 'smoked_chicken_breast',
+  'Smoked Chicken breast': 'smoked_chicken_breast',
   'Turkey breast': 'turkey_breast',
   'Turkey': 'turkey_breast',
   'Salmon': 'salmon',
@@ -911,7 +1400,9 @@ export const FOOD_ALIASES: Record<string, string> = {
   'Cottage cheese': 'cottage_cheese',
   'Cream cheese light': 'cream_cheese_light',
   'Cream cheese': 'cream_cheese_light',
-  'Milk': 'milk_low_fat',
+  'Milk': 'milk_1_2', // Default: Mlijeko 1.2% (najčešće korišteno)
+  'Milk 1.2%': 'milk_1_2',
+  'Milk 3.2%': 'milk_3_2',
   'Sour cream': 'sour_cream',
   
   // Ugljikohidrati
@@ -924,6 +1415,9 @@ export const FOOD_ALIASES: Record<string, string> = {
   'Potato': 'potato_boiled',
   'Rice': 'rice_cooked',
   'Buckwheat': 'buckwheat_cooked',
+  'Semolina': 'semolina_cooked',
+  'Griz': 'semolina_cooked',
+  'Griz (kuhani)': 'semolina_cooked',
   'Honey': 'honey',
   'Med': 'honey',
   'Jam': 'jam',
@@ -953,6 +1447,7 @@ export const FOOD_ALIASES: Record<string, string> = {
   // Povrće
   'Lettuce': 'lettuce',
   'Tomato': 'tomato',
+  'Cherry tomatoes': 'cherry_tomatoes',
   'Cucumber': 'cucumber',
   'Broccoli': 'broccoli',
   'Carrot': 'carrot',
@@ -985,6 +1480,47 @@ export const FOOD_ALIASES: Record<string, string> = {
   'Chia': 'chia_seeds',
   'Flax seeds': 'flax_seeds',
   'Flax': 'flax_seeds',
+  'Pine nuts': 'pine_nuts',
+  'Pinija': 'pine_nuts',
+  'Pesto': 'pesto',
+  'Pesto genovese': 'pesto',
+  'Asparagus': 'asparagus',
+  'Basmati rice': 'basmati_rice',
+  'Bechamel sauce': 'bechamel_sauce',
+  'Carp': 'carp',
+  'Cheese': 'cheese',
+  'Chives': 'chives',
+  'Cocoa powder': 'cocoa_powder',
+  'Dark chocolate': 'dark_chocolate',
+  'Dried cranberries': 'dried_cranberries',
+  'Eggplant': 'eggplant',
+  'Gnocchi': 'gnocchi',
+  'Ground beef': 'ground_beef',
+  'Hazelnuts': 'hazelnuts',
+  'Lasagna sheets': 'lasagna_sheets',
+  'Lemon': 'lemon',
+  'Mushrooms': 'mushrooms',
+  'New potatoes': 'new_potatoes',
+  'Pancake': 'pancake',
+  'Paprika powder': 'paprika_powder',
+  'Pork tenderloin': 'pork_tenderloin',
+  'Prunes': 'prunes',
+  'Pumpkin seeds': 'pumpkin_seeds',
+  'Red wine': 'red_wine',
+  'Ribeye steak': 'ribeye_steak',
+  'Rice cakes': 'rice_cakes',
+  'Sea bass': 'sea_bass',
+  'Sea bream': 'sea_bream',
+  'Squid': 'squid',
+  'Tikka masala paste': 'tikka_masala_paste',
+  'Tomato paste': 'tomato_paste',
+  'Trout': 'trout',
+  'Tuna canned': 'tuna_canned',
+  'Walnuts': 'walnuts',
+  'Water': 'water',
+  'White wine': 'white_wine',
+  'Whole egg': 'whole_egg',
+  'Wine vinegar': 'wine_vinegar',
   
   // Nove žitarice i mahunarke
   'Quinoa': 'quinoa_cooked',

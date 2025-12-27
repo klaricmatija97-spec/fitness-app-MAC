@@ -39,7 +39,8 @@ interface MealComponentsJson {
   snack: MealData[];
 }
 
-const mealData = mealComponentsData as MealComponentsJson;
+// Type assertion - meal_components.json ne mora imati image property
+const mealData = mealComponentsData as unknown as MealComponentsJson;
 
 export async function POST(request: NextRequest) {
   try {

@@ -8,6 +8,7 @@ const FOOD_TRANSLATIONS: Record<string, string> = {
   // Meso i proteini
   'chicken': 'Piletina',
   'chicken breast': 'Pileća prsa',
+  'smoked chicken breast': 'Pileći dimcek Cekin',
   'chicken ham': 'Pileća šunka',
   'chicken salami': 'Pileća salama',
   'chicken sausage': 'Pileća kobasica',

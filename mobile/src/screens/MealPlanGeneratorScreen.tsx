@@ -285,23 +285,31 @@ export default function MealPlanGeneratorScreen({ onBack, directCalculations }: 
         
         let components: MealComponent[] = [];
         if ((scoredMeal as any).componentDetails && Array.isArray((scoredMeal as any).componentDetails)) {
-          components = (scoredMeal as any).componentDetails.map((c: any) => ({
-            name: c.foodName || c.name || '',
-            grams: c.grams || 0,
-            calories: 0,
-            protein: 0,
-            carbs: 0,
-            fat: 0,
-          }));
+          components = (scoredMeal as any).componentDetails.map((c: any) => {
+            // Calculate total grams: grams per unit * number of units
+            const totalGrams = (c.grams || 0) * (c.units || 1);
+            return {
+              name: c.foodName || c.food?.name || c.name || '',
+              grams: totalGrams,
+              calories: 0,
+              protein: 0,
+              carbs: 0,
+              fat: 0,
+            };
+          });
         } else if (scoredMeal.meta?.components && Array.isArray(scoredMeal.meta.components)) {
-          components = scoredMeal.meta.components.map((c: any) => ({
-            name: c.food || c.name || '',
-            grams: c.grams || 0,
-            calories: 0,
-            protein: 0,
-            carbs: 0,
-            fat: 0,
-          }));
+          components = scoredMeal.meta.components.map((c: any) => {
+            // Calculate total grams: grams per unit * number of units
+            const totalGrams = (c.grams || 0) * (c.units || 1);
+            return {
+              name: c.food || c.name || '',
+              grams: totalGrams,
+              calories: 0,
+              protein: 0,
+              carbs: 0,
+              fat: 0,
+            };
+          });
         } else if (scoredMeal.meta?.recipe) {
           components = [{
             name: scoredMeal.name,
@@ -328,12 +336,49 @@ export default function MealPlanGeneratorScreen({ onBack, directCalculations }: 
         const carbs = Math.round((scoredMeal.carbs || 0) * 10) / 10;
         const fat = Math.round((scoredMeal.fat || 0) * 10) / 10;
         
+        // CRITICAL FIX: Ensure description and macros come from the SAME source
+        // Prefer description from the same object that contains the macro calculations
+        // Priority: scoredMeal.description > scoredMeal.meta?.description (skip recipe fallbacks to avoid mixing sources)
+        const description = scoredMeal.description || scoredMeal.meta?.description || '';
+        const preparationTip = scoredMeal.preparationTip || scoredMeal.meta?.preparationTip || undefined;
+        
+        // Validation: Check if description mentions ingredients that aren't in components
+        const descLower = description.toLowerCase();
+        const componentNamesLower = components.map(c => c.name.toLowerCase()).join(' ');
+        const hasMismatch = 
+          (descLower.includes('banana') && !componentNamesLower.includes('banana')) ||
+          (descLower.includes('mlijeko') && !componentNamesLower.includes('mlijeko') && !componentNamesLower.includes('milk')) ||
+          (descLower.includes('milk') && !componentNamesLower.includes('milk') && !componentNamesLower.includes('mlijeko')) ||
+          (descLower.includes('voda') && !componentNamesLower.includes('voda') && !componentNamesLower.includes('water')) ||
+          (descLower.includes('water') && !componentNamesLower.includes('water') && !componentNamesLower.includes('voda'));
+        
+        if (hasMismatch) {
+          console.warn(`⚠️ Description mismatch for "${scoredMeal.name}":`, {
+            descriptionPreview: description.substring(0, 100),
+            components: components.map(c => c.name),
+            hasBananaInDesc: descLower.includes('banana'),
+            hasBananaInComponents: componentNamesLower.includes('banana'),
+            hasMilkInDesc: descLower.includes('mlijeko') || descLower.includes('milk'),
+            hasMilkInComponents: componentNamesLower.includes('mlijeko') || componentNamesLower.includes('milk'),
+            calories: Math.round(calories),
+            protein: Math.round(protein),
+            carbs: Math.round(carbs),
+            fat: Math.round(fat),
+          });
+        }
+        
+        // Additional validation: Log meal ID for tracking
+        const mealId = scoredMeal.id || scoredMeal.meta?.recipe?.id || 'unknown';
+        if (hasMismatch || calories < 100) {
+          console.log(`📋 Meal ID: ${mealId}, Name: ${scoredMeal.name}`);
+        }
+        
         // Always return meal, even if macros are 0
         return {
           name: scoredMeal.name || 'Nepoznato jelo',
-          description: scoredMeal.description || scoredMeal.meta?.description || scoredMeal.meta?.recipe?.description || scoredMeal.meta?.recipe?.instructions || '',
+          description: description, // Use only from same source as macros
           image: scoredMeal.meta?.recipe?.image_url || undefined,
-          preparationTip: scoredMeal.preparationTip || scoredMeal.meta?.preparationTip || scoredMeal.meta?.recipe?.instructions || undefined,
+          preparationTip: preparationTip, // Use only from same source
           components,
           totals: {
             calories,
@@ -804,12 +849,26 @@ export default function MealPlanGeneratorScreen({ onBack, directCalculations }: 
 
             <View style={styles.ingredientsSection}>
               <Text style={styles.sectionTitle}>Sastojci:</Text>
-              {meal.components.map((component, idx) => (
-                <View key={idx} style={styles.ingredientItem}>
-                  <Text style={styles.ingredientName}>{component.name}</Text>
-                  <Text style={styles.ingredientAmount}>{component.grams}g</Text>
-                </View>
-              ))}
+              {meal.components && meal.components.length > 0 ? (
+                meal.components.map((component, idx) => {
+                  // Debug logging za "Grčki jogurt s voćem i bademima"
+                  if (meal.name?.toLowerCase().includes('grčki jogurt') && meal.name?.toLowerCase().includes('voćem') && meal.name?.toLowerCase().includes('badem')) {
+                    console.log(`🔍 DEBUG UI - Component ${idx}:`, {
+                      name: component.name,
+                      grams: component.grams,
+                      componentObject: component
+                    });
+                  }
+                  return (
+                    <View key={`component-${meal.name}-${component.name || 'unknown'}-${idx}`} style={styles.ingredientItem}>
+                      <Text style={styles.ingredientName}>{component.name || 'Nepoznato'}</Text>
+                      <Text style={styles.ingredientAmount}>{component.grams || 0}g</Text>
+                    </View>
+                  );
+                })
+              ) : (
+                <Text style={styles.ingredientName}>Nema dostupnih sastojaka</Text>
+              )}
             </View>
 
             <View style={styles.macrosSection}>
@@ -963,10 +1022,12 @@ export default function MealPlanGeneratorScreen({ onBack, directCalculations }: 
           const dateObj = new Date(day.date + 'T12:00:00'); // Koristi noon da izbjegne timezone probleme
           const dayName = day.dayName || DAY_NAMES[dateObj.getDay()];
           const isSelected = idx === validSelectedDay;
+          // Use stable key based on date instead of index to prevent React key warnings and state reuse
+          const dayKey = `day-${day.date || idx}`;
 
           return (
             <TouchableOpacity
-              key={idx}
+              key={dayKey}
               style={[styles.dayButton, isSelected && styles.dayButtonSelected]}
               onPress={() => setSelectedDay(idx)}
             >

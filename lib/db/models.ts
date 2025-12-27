@@ -47,6 +47,13 @@ export type FoodUpdate = Partial<Omit<Food, "id" | "created_at" | "updated_at">>
 // RECIPES - Recepti
 // ============================================
 
+export type RecipeVersion = 1 | 2; // 1 = legacy, 2 = edamam+semantic verified
+export type DataQualityStatus = 
+  | "VERIFIED"           // Edamam verified + semantic consistent
+  | "NEEDS_REVIEW"       // Needs manual review
+  | "INVALID_MAPPING"    // Semantic mismatch detected
+  | "NEEDS_REMAP";       // Ingredients need remapping
+
 export interface Recipe {
   id: string; // UUID
   name: string;
@@ -64,6 +71,11 @@ export interface Recipe {
   goal_tags: string[]; // Novi field - JSONB array pretvoren u string[]
   diet_tags: string[]; // Novi field - JSONB array pretvoren u string[]
   health_score: number | null; // Novi field (0-100)
+  // Data Quality Fields
+  version?: RecipeVersion; // 1 = legacy, 2 = edamam+semantic verified (default: 1 for legacy)
+  data_quality_status?: DataQualityStatus; // Status validacije (default: null for legacy)
+  data_quality_errors?: string[]; // Array of error messages (JSONB)
+  edamam_audit_trail?: any; // Full Edamam audit trail (JSONB)
   created_at: string; // ISO timestamp
   updated_at: string; // ISO timestamp
 }

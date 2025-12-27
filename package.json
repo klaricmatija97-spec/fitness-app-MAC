@@ -8,7 +8,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "import:usda": "tsx scripts/importUsdaFoodsToSupabase.ts"
+    "import:usda": "tsx scripts/importUsdaFoodsToSupabase.ts",
+    "test:meal-components": "tsx scripts/test-meal-components-validation.ts",
+    "test:validate-meal-components": "tsx scripts/validate-meal-components.ts",
+    "test:meal-invariants": "tsx scripts/test-meal-components-invariants.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.83.0",

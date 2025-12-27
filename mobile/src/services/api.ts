@@ -8,15 +8,27 @@
 
 // Koristi localhost za development (Expo Go na istom WiFi-u)
 // Za production, koristi environment varijablu ili postavi pravi URL
+// AUTO-DETECT: Koristi trenutnu LAN IP adresu (može se promijeniti ako se prebaciš na drugu mrežu)
+const LAN_IP = '172.20.10.10'; // Ažurirano: koristi ifconfig | grep "inet " | grep -v 127.0.0.1 za pronalazak
+
 const getApiBaseUrl = () => {
-  if (__DEV__) {
+  // Check if we're in development mode
+  // In React Native/Expo, __DEV__ is a global boolean
+  const isDev = (typeof (global as any).__DEV__ !== 'undefined' 
+    ? (global as any).__DEV__ 
+    : true) as boolean;
+  
+  if (isDev) {
     // Development - koristi LAN IP za pristup s mobilnog uređaja
     // Zamijeni sa svojom LAN IP adresom ako je drugačija
-    const LAN_IP = '192.168.1.19'; // Promijeni ovo ako je potrebno
     return `http://${LAN_IP}:3000`;
   }
   // Production - TODO: Postavi pravi URL
-  return process.env.EXPO_PUBLIC_API_URL || 'https://your-production-url.com';
+  // In Expo, environment variables prefixed with EXPO_PUBLIC_ are available at build time
+  const apiUrl = typeof process !== 'undefined' && (process as any).env?.EXPO_PUBLIC_API_URL 
+    ? (process as any).env.EXPO_PUBLIC_API_URL 
+    : 'https://your-production-url.com';
+  return apiUrl;
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -228,24 +240,71 @@ export async function generateWeeklyMealPlan(
 
     let response: Response;
     try {
+      console.log('🌐 Attempting to connect to:', requestUrl);
+      console.log('📤 Request body:', JSON.stringify(body, null, 2));
+      
       response = await fetch(requestUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify(body),
       });
+      
+      console.log('✅ Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+      });
     } catch (fetchError) {
-      console.error('❌ Network Error:', fetchError);
-      throw new Error(`Network error: ${fetchError instanceof Error ? fetchError.message : 'Unable to connect to server. Make sure Next.js server is running on port 3000.'}`);
+      console.error('❌ Network Error Details:', {
+        error: fetchError,
+        message: fetchError instanceof Error ? fetchError.message : String(fetchError),
+        name: fetchError instanceof Error ? fetchError.name : 'Unknown',
+        url: requestUrl,
+      });
+      
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        throw new Error(`Request timeout - server nije odgovorio u roku od 30 sekundi.\n\nProvjeri:\n1. Je li Next.js server pokrenut? (npm run dev u root folderu)\n2. Je li server dostupan na http://${LAN_IP}:3000?\n3. Otvori browser i provjeri: http://localhost:3000`);
+      }
+      
+      const errorMsg = fetchError instanceof Error ? fetchError.message : 'Unable to connect to server';
+      throw new Error(`❌ Ne mogu se spojiti na server!\n\nProvjeri:\n1. ✅ Je li Next.js server pokrenut?\n   → Pokreni: cd /Users/matija/Documents/GitHub/fitness-app-MAC && npm run dev\n2. ✅ Je li telefon na istoj WiFi mreži kao Mac?\n3. ✅ Provjeri u browseru: http://localhost:3000 (treba raditi)\n4. ✅ Server URL: http://${LAN_IP}:3000\n\nAko IP adresa nije točna, provjeri sa: ifconfig | grep "inet " | grep -v 127.0.0.1`);
     }
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ API Error Response:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText,
-      });
-      throw new Error(`API error: ${response.status} - ${errorText}`);
+      // Pokušaj parsirati kao JSON prvo, ako ne uspije, koristi tekst
+      let errorMessage = `API error: ${response.status}`;
+      try {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || JSON.stringify(errorData);
+          console.error('❌ API Error Response (JSON):', {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorData,
+          });
+        } else {
+          // Ako nije JSON, pokušaj parsirati kao tekst (ali ograniči duljinu)
+          const errorText = await response.text();
+          const truncatedText = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
+          errorMessage = `API error: ${response.status} - ${truncatedText}`;
+          console.error('❌ API Error Response (Text/HTML):', {
+            status: response.status,
+            statusText: response.statusText,
+            bodyLength: errorText.length,
+            bodyPreview: truncatedText,
+          });
+        }
+      } catch (parseError) {
+        // Ako ni JSON ni tekst ne mogu biti parsirani, koristi default poruku
+        console.error('❌ API Error Response (Parse failed):', {
+          status: response.status,
+          statusText: response.statusText,
+          parseError: parseError instanceof Error ? parseError.message : String(parseError),
+        });
+        errorMessage = `API error: ${response.status} - Unable to parse error response`;
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
