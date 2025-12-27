@@ -2,17 +2,13 @@
  * POST /api/meal-plan/pro/weekly
  * 
  * Generiše PRO tjedni plan prehrane (7 dana) sa raznolikošću i user preferences
+ * KORISTI LOKALNI GENERATOR (bez Supabase)
  * 
- * Body: { userId: string (UUID) }
+ * Body: { calculations: { targetCalories, targetProtein, targetCarbs, targetFat, goalType } }
  */
 
 import { NextResponse } from "next/server";
-import {
-  generateWeeklyProMealPlan,
-  generateWeeklyProMealPlanWithCalculations,
-  saveWeeklyProMealPlanToSupabase,
-} from "@/lib/services/proMealPlanGenerator";
-import { loadUserCalculations } from "@/lib/utils/loadCalculations";
+import { generateWeeklyMealPlanLocal } from "@/lib/services/localMealPlanGenerator";
 import { z } from "zod";
 
 const requestSchema = z.object({
@@ -53,35 +49,29 @@ async function handleRequest(request: Request) {
     
     // Provjeri da li su poslane direktne kalkulacije
     if (body.calculations) {
-      // Unauthenticated mode - use direct calculations
-      console.log(`[meal-plan/pro/weekly] Generiranje plana s direktnim kalkulacijama`);
+      // LOKALNI GENERATOR - bez Supabase
+      console.log(`[meal-plan/pro/weekly] Generiranje plana s LOKALNIM generatorom`);
       
       const validatedData = requestSchema.parse({ calculations: body.calculations });
+      const calc = validatedData.calculations!;
       
       let weeklyPlan;
       try {
-        weeklyPlan = await generateWeeklyProMealPlanWithCalculations(validatedData.calculations!);
-        console.log(`[meal-plan/pro/weekly] Plan uspješno generiran`);
-        
-        // DEBUG: Logiraj strukturu plana
-        console.log(`[meal-plan/pro/weekly] Plan struktura:`, {
-          hasDays: !!weeklyPlan.days,
-          daysLength: weeklyPlan.days?.length,
-          firstDay: weeklyPlan.days?.[0],
-          firstDayMeals: weeklyPlan.days?.[0]?.meals,
-          firstDayMealsKeys: weeklyPlan.days?.[0]?.meals ? Object.keys(weeklyPlan.days[0].meals) : [],
-          firstDayBreakfast: weeklyPlan.days?.[0]?.meals?.breakfast,
-          firstDayBreakfastName: weeklyPlan.days?.[0]?.meals?.breakfast?.name,
-          firstDayBreakfastCalories: weeklyPlan.days?.[0]?.meals?.breakfast?.calories,
-        });
+        weeklyPlan = await generateWeeklyMealPlanLocal(
+          {
+            targetCalories: calc.targetCalories,
+            targetProtein: calc.targetProtein,
+            targetCarbs: calc.targetCarbs,
+            targetFat: calc.targetFat,
+            goalType: calc.goalType,
+            bmr: calc.bmr,
+            tdee: calc.tdee,
+          },
+          calc.preferences
+        );
+        console.log(`[meal-plan/pro/weekly] Plan uspješno generiran (lokalno)`);
       } catch (genError) {
         console.error(`[meal-plan/pro/weekly] Greška pri generiranju plana:`, genError);
-        console.error(`[meal-plan/pro/weekly] Error details:`, {
-          message: genError instanceof Error ? genError.message : String(genError),
-          stack: genError instanceof Error ? genError.stack : 'No stack trace',
-          name: genError instanceof Error ? genError.name : 'Unknown',
-        });
-        // Ne baci error direktno - umjesto toga, vrati JSON error response
         const errorMessage = genError instanceof Error 
           ? genError.message 
           : String(genError);
@@ -92,152 +82,41 @@ async function handleRequest(request: Request) {
         return NextResponse.json(
           {
             ok: false,
-            message: safeErrorMessage || "Greška pri generiranju PRO tjednog plana prehrane",
+            message: safeErrorMessage || "Greška pri generiranju plana prehrane",
             error: process.env.NODE_ENV === 'development' 
               ? (genError instanceof Error ? genError.stack : undefined)
               : undefined,
           },
-          { 
-            status: 500,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
+          { status: 500 }
         );
       }
 
-      // Vrati finalni plan (bez spremanja u bazu za guest korisnike)
-      const response = {
+      return NextResponse.json({
         ok: true,
-        message: "PRO tjedni plan prehrane je uspješno generiran",
+        message: "Tjedni plan prehrane uspješno generiran (lokalno)",
         plan: weeklyPlan,
         weeklyAverage: weeklyPlan.weeklyAverage,
-      };
-      
-      // DEBUG: Logiraj što se vraća
-      console.log(`[meal-plan/pro/weekly] Vraćam response:`, {
-        ok: response.ok,
-        planHasDays: !!response.plan?.days,
-        planDaysLength: response.plan?.days?.length,
-        firstDayMeals: response.plan?.days?.[0]?.meals,
-      });
-      
-      return NextResponse.json(response, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
       });
     }
 
-    // Authenticated mode - use userId
-    const url = new URL(request.url);
-    const queryUserId = url.searchParams.get("userId");
-    let userId: string;
-
-    if (queryUserId) {
-      userId = queryUserId;
-    } else {
-      userId = body.userId;
-    }
-
-    // Validiraj userId
-    if (!userId) {
-      return NextResponse.json(
-        {
-          ok: false,
-          message: "userId je obavezan (query parametar ili body) ili pošaljite calculations",
-        },
-        { status: 400 }
-      );
-    }
-
-    const validatedData = requestSchema.parse({ userId });
-
-    console.log(`[meal-plan/pro/weekly] Generiranje plana za korisnika: ${validatedData.userId}`);
-
-    // Provjeri da li korisnik ima kalkulacije prije generiranja
-    const calculationsResult = await loadUserCalculations(validatedData.userId!, true);
-    if (!calculationsResult.success || !calculationsResult.calculations) {
-      return NextResponse.json(
-        {
-          ok: false,
-          message: calculationsResult.error || "Nema spremljenih kalkulacija – prvo popuni kalkulator.",
-        },
-        { status: 400 }
-      );
-    }
-
-    const calc = calculationsResult.calculations;
-
-    // Generiši PRO tjedni plan prehrane sa opcijama
-    let weeklyPlan;
-    try {
-      // Default 5 obroka dnevno
-      const mealsPerDay = 5;
-
-      weeklyPlan = await generateWeeklyProMealPlan(validatedData.userId!, {
-        mealsPerDay,
-        targetCalories: calc.targetCalories,
-        targetProtein: calc.targetProtein,
-        targetCarbs: calc.targetCarbs,
-        targetFat: calc.targetFats,
-      });
-      console.log(`[meal-plan/pro/weekly] Plan uspješno generiran`);
-    } catch (genError) {
-      console.error(`[meal-plan/pro/weekly] Greška pri generiranju plana:`, genError);
-      console.error(`[meal-plan/pro/weekly] Error details:`, {
-        message: genError instanceof Error ? genError.message : String(genError),
-        stack: genError instanceof Error ? genError.stack : 'No stack trace',
-        name: genError instanceof Error ? genError.name : 'Unknown',
-      });
-      // Ne baci error direktno - umjesto toga, vrati JSON error response
-      const errorMessage = genError instanceof Error 
-        ? genError.message 
-        : String(genError);
-      const safeErrorMessage = errorMessage.length > 500 
-        ? errorMessage.substring(0, 500) + '...' 
-        : errorMessage;
-      
-      return NextResponse.json(
-        {
-          ok: false,
-          message: safeErrorMessage || "Greška pri generiranju PRO tjednog plana prehrane",
-          error: process.env.NODE_ENV === 'development' 
-            ? (genError instanceof Error ? genError.stack : undefined)
-            : undefined,
-        },
-        { 
-          status: 500,
-          headers: {
-            'Content-Type': 'application/json',
-          },
+    // LOKALNI GENERATOR - calculations su obavezni
+    // userId nije podržan u lokalnom načinu rada
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "calculations objekt je obavezan. Lokalni generator ne podržava userId autentikaciju.",
+        example: {
+          calculations: {
+            targetCalories: 2000,
+            targetProtein: 150,
+            targetCarbs: 200,
+            targetFat: 67,
+            goalType: "maintain"
+          }
         }
-      );
-    }
-
-    // Spremi plan u bazu (opcionalno - ne bacaj grešku ako ne uspije)
-    let savedPlan;
-    try {
-      savedPlan = await saveWeeklyProMealPlanToSupabase(validatedData.userId!, weeklyPlan);
-      console.log(`[meal-plan/pro/weekly] Plan spremljen u bazu: ${savedPlan.id}`);
-    } catch (saveError) {
-      console.warn(`[meal-plan/pro/weekly] Greška pri spremanju u bazu (plan je generiran):`, saveError);
-      // Nastavi bez spremanja u bazu
-      savedPlan = { id: null };
-    }
-
-    // Vrati finalni plan
-    return NextResponse.json({
-      ok: true,
-      message: "PRO tjedni plan prehrane je uspješno generiran i spremljen",
-      plan: weeklyPlan,
-      savedPlanId: savedPlan.id,
-      weeklyAverage: weeklyPlan.weeklyAverage,
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
       },
-    });
+      { status: 400 }
+    );
   } catch (error) {
     console.error("[meal-plan/pro/weekly] error:", error);
     console.error("[meal-plan/pro/weekly] error stack:", error instanceof Error ? error.stack : 'No stack trace');

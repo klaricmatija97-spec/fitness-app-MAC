@@ -187,7 +187,7 @@ export async function getCalculations(clientId: string, token: string) {
 
 /**
  * Generate weekly meal plan
- * Supports both authenticated (with userId) and unauthenticated (with direct calculations) modes
+ * Koristi LOKALNI generator (bez Supabase) - šalje direktne kalkulacije
  */
 export async function generateWeeklyMealPlan(
   clientId: string | null,
@@ -213,24 +213,24 @@ export async function generateWeeklyMealPlan(
       'Content-Type': 'application/json',
     };
 
+    // Token je opcionalan za lokalni generator
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    const body: any = {};
-    
-    if (clientId && !directCalculations) {
-      // Authenticated mode - use userId
-      body.userId = clientId;
-    } else if (directCalculations) {
-      // Unauthenticated mode - use direct calculations
-      body.calculations = directCalculations;
-      console.log('📤 Sending direct calculations:', directCalculations);
-    } else {
-      throw new Error('Either clientId or directCalculations must be provided');
+    // LOKALNI GENERATOR: Uvijek koristi directCalculations
+    if (!directCalculations) {
+      throw new Error('directCalculations je obavezan za lokalni generator');
     }
 
-    const requestUrl = `${API_BASE_URL}/api/meal-plan/pro/weekly`;
+    const body = {
+      calculations: directCalculations,
+      preferences: directCalculations.preferences,
+    };
+    console.log('📤 Sending calculations to LOCAL generator:', directCalculations);
+
+    // Koristi LOKALNI endpoint (bez Supabase)
+    const requestUrl = `${API_BASE_URL}/api/meal-plan/local`;
     console.log('📤 API Request:', {
       url: requestUrl,
       method: 'POST',
@@ -263,11 +263,10 @@ export async function generateWeeklyMealPlan(
       });
       
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-        throw new Error(`Request timeout - server nije odgovorio u roku od 30 sekundi.\n\nProvjeri:\n1. Je li Next.js server pokrenut? (npm run dev u root folderu)\n2. Je li server dostupan na http://${LAN_IP}:3000?\n3. Otvori browser i provjeri: http://localhost:3000`);
+        throw new Error(`Request timeout - server nije odgovorio.\n\nProvjeri:\n1. Je li Next.js server pokrenut? (npm run dev)\n2. Je li server dostupan na http://${LAN_IP}:3000?`);
       }
       
-      const errorMsg = fetchError instanceof Error ? fetchError.message : 'Unable to connect to server';
-      throw new Error(`❌ Ne mogu se spojiti na server!\n\nProvjeri:\n1. ✅ Je li Next.js server pokrenut?\n   → Pokreni: cd /Users/matija/Documents/GitHub/fitness-app-MAC && npm run dev\n2. ✅ Je li telefon na istoj WiFi mreži kao Mac?\n3. ✅ Provjeri u browseru: http://localhost:3000 (treba raditi)\n4. ✅ Server URL: http://${LAN_IP}:3000\n\nAko IP adresa nije točna, provjeri sa: ifconfig | grep "inet " | grep -v 127.0.0.1`);
+      throw new Error(`❌ Ne mogu se spojiti na server!\n\nProvjeri:\n1. Pokreni server: npm run dev\n2. Je li telefon na istoj WiFi mreži?\n3. Server URL: http://${LAN_IP}:3000`);
     }
 
     if (!response.ok) {

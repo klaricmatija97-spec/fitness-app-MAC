@@ -256,17 +256,21 @@ export default function MealPlanGeneratorScreen({ onBack, directCalculations }: 
       }
       
       // STEP 1: RAW API RESPONSE LOGGING
-      console.log('RAW API RESPONSE', JSON.stringify(result, null, 2));
-      console.log('Object.keys(response)', Object.keys(result));
-      console.log('Object.keys(response.data)', result.data ? Object.keys(result.data) : 'no data');
-      console.log('Object.keys(plan)', plan ? Object.keys(plan) : 'no plan');
-      console.log('plan?.days?.length', plan?.days?.length);
-      console.log('plan?.days?.[0]?.meals', plan?.days?.[0]?.meals);
-      console.log('RAW days', plan?.days);
-      console.log('RAW first day', plan?.days?.[0]);
-      console.log('RAW first day meals', plan?.days?.[0]?.meals);
-      console.log('meals type', typeof plan?.days?.[0]?.meals);
-      console.log('meals isArray', Array.isArray(plan?.days?.[0]?.meals));
+      console.log('🔵 RAW API RESPONSE keys:', Object.keys(result));
+      console.log('🔵 result.plan exists:', !!result.plan);
+      console.log('🔵 result.data exists:', !!result.data);
+      
+      // Log raw breakfast data
+      const rawBreakfast = plan?.days?.[0]?.meals?.breakfast;
+      console.log('🔵 RAW BREAKFAST:', {
+        name: rawBreakfast?.name,
+        hasTotals: !!rawBreakfast?.totals,
+        totalsCalories: rawBreakfast?.totals?.calories,
+        topLevelCalories: rawBreakfast?.calories,
+        hasComponents: !!rawBreakfast?.components,
+        componentsLength: rawBreakfast?.components?.length,
+        firstComponent: rawBreakfast?.components?.[0],
+      });
       
       if (!plan) {
         throw new Error('Plan object not found in API response');
@@ -284,57 +288,76 @@ export default function MealPlanGeneratorScreen({ onBack, directCalculations }: 
         }
         
         let components: MealComponent[] = [];
-        if ((scoredMeal as any).componentDetails && Array.isArray((scoredMeal as any).componentDetails)) {
+        
+        // FIX: Prvo provjeri lokalni generator format (scoredMeal.components s makroima)
+        if (scoredMeal.components && Array.isArray(scoredMeal.components)) {
+          components = scoredMeal.components.map((c: any) => ({
+            name: c.name || c.food || '',
+            grams: c.grams || 0,
+            calories: c.calories || 0,
+            protein: c.protein || 0,
+            carbs: c.carbs || 0,
+            fat: c.fat || 0,
+          }));
+        } else if ((scoredMeal as any).componentDetails && Array.isArray((scoredMeal as any).componentDetails)) {
           components = (scoredMeal as any).componentDetails.map((c: any) => {
-            // Calculate total grams: grams per unit * number of units
             const totalGrams = (c.grams || 0) * (c.units || 1);
             return {
               name: c.foodName || c.food?.name || c.name || '',
               grams: totalGrams,
-              calories: 0,
-              protein: 0,
-              carbs: 0,
-              fat: 0,
+              calories: c.calories || 0,
+              protein: c.protein || 0,
+              carbs: c.carbs || 0,
+              fat: c.fat || 0,
             };
           });
         } else if (scoredMeal.meta?.components && Array.isArray(scoredMeal.meta.components)) {
-          components = scoredMeal.meta.components.map((c: any) => {
-            // Calculate total grams: grams per unit * number of units
-            const totalGrams = (c.grams || 0) * (c.units || 1);
-            return {
-              name: c.food || c.name || '',
-              grams: totalGrams,
-              calories: 0,
-              protein: 0,
-              carbs: 0,
-              fat: 0,
-            };
-          });
+          components = scoredMeal.meta.components.map((c: any) => ({
+            name: c.food || c.name || '',
+            grams: (c.grams || 0) * (c.units || 1),
+            calories: c.calories || 0,
+            protein: c.protein || 0,
+            carbs: c.carbs || 0,
+            fat: c.fat || 0,
+          }));
         } else if (scoredMeal.meta?.recipe) {
           components = [{
             name: scoredMeal.name,
             grams: scoredMeal.meta.quantity || 100,
-            calories: 0,
-            protein: 0,
-            carbs: 0,
-            fat: 0,
+            calories: scoredMeal.calories || 0,
+            protein: scoredMeal.protein || 0,
+            carbs: scoredMeal.carbs || 0,
+            fat: scoredMeal.fat || 0,
           }];
         } else {
+          // Fallback - koristi totale ako postoje
           components = [{
             name: scoredMeal.name,
             grams: 100,
-            calories: 0,
-            protein: 0,
-            carbs: 0,
-            fat: 0,
+            calories: scoredMeal.totals?.calories || scoredMeal.calories || 0,
+            protein: scoredMeal.totals?.protein || scoredMeal.protein || 0,
+            carbs: scoredMeal.totals?.carbs || scoredMeal.carbs || 0,
+            fat: scoredMeal.totals?.fat || scoredMeal.fat || 0,
           }];
         }
         
         // STEP 3: Never filter meals by calories/macros > 0
-        const calories = Math.round(scoredMeal.calories || 0);
-        const protein = Math.round((scoredMeal.protein || 0) * 10) / 10;
-        const carbs = Math.round((scoredMeal.carbs || 0) * 10) / 10;
-        const fat = Math.round((scoredMeal.fat || 0) * 10) / 10;
+        // FIX: Provjeri totals objekt (lokalni generator) ILI top-level polja (stari format)
+        const calories = Math.round(scoredMeal.totals?.calories || scoredMeal.calories || 0);
+        const protein = Math.round((scoredMeal.totals?.protein || scoredMeal.protein || 0) * 10) / 10;
+        const carbs = Math.round((scoredMeal.totals?.carbs || scoredMeal.carbs || 0) * 10) / 10;
+        const fat = Math.round((scoredMeal.totals?.fat || scoredMeal.fat || 0) * 10) / 10;
+        
+        // DEBUG: Log what we're extracting
+        console.log(`🔍 transformScoredMeal "${scoredMeal.name}":`, {
+          hasTotals: !!scoredMeal.totals,
+          totalsCalories: scoredMeal.totals?.calories,
+          topLevelCalories: scoredMeal.calories,
+          finalCalories: calories,
+          hasComponents: !!scoredMeal.components,
+          componentsLength: scoredMeal.components?.length,
+          firstComponentCalories: scoredMeal.components?.[0]?.calories,
+        });
         
         // CRITICAL FIX: Ensure description and macros come from the SAME source
         // Prefer description from the same object that contains the macro calculations

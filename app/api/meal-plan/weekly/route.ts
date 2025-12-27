@@ -1,76 +1,72 @@
 /**
  * POST /api/meal-plan/weekly
  * 
- * NOVI generator tjednog plana prehrane
- * Koristi SAMO kompozitne obroke iz meal_components.json
+ * LOKALNI generator tjednog plana prehrane
+ * Koristi SAMO lokalne podatke (meal_components.json + foods-database.ts)
+ * NE koristi Supabase
  * 
- * Body: { userId: string }
+ * Body: { calculations: { targetCalories, targetProtein, targetCarbs, targetFat, goalType } }
  */
 
 import { NextResponse } from "next/server";
-import { generateWeeklyMealPlan, generateWeeklyMealPlanWithCalculations, saveWeeklyPlanToSupabase } from "@/lib/services/weeklyMealPlanGenerator";
+import { generateWeeklyMealPlanLocal } from "@/lib/services/localMealPlanGenerator";
 
 export async function POST(request: Request) {
   try {
-    // Dohvati userId ili direktne kalkulacije
-    const url = new URL(request.url);
-    const queryUserId = url.searchParams.get("userId");
-
     const body = await request.json().catch(() => ({}));
-    
-    let userId: string | undefined;
-    let directCalculations: any | undefined;
 
-    if (queryUserId) {
-      userId = queryUserId;
-    } else if (body.userId) {
-      userId = body.userId;
-    } else if (body.calculations) {
-      // Direct calculations mode (no login required)
-      directCalculations = body.calculations;
-    }
-
-    if (!userId && !directCalculations) {
+    // LOKALNI GENERATOR - calculations su obavezni
+    if (!body.calculations) {
       return NextResponse.json(
-        { ok: false, message: "userId ili calculations su obavezni" },
+        { 
+          ok: false, 
+          message: "calculations objekt je obavezan",
+          example: {
+            calculations: {
+              targetCalories: 2000,
+              targetProtein: 150,
+              targetCarbs: 200,
+              targetFat: 67,
+              goalType: "maintain"
+            }
+          }
+        },
         { status: 400 }
       );
     }
 
+    const { calculations, preferences } = body;
+
     console.log(`\n========================================`);
-    console.log(`🚀 NOVI TJEDNI GENERATOR - START`);
-    if (userId) {
-      console.log(`📋 User ID: ${userId}`);
-    } else {
-      console.log(`📋 Direct calculations mode`);
-      console.log(`   Calories: ${directCalculations.targetCalories}`);
-      console.log(`   Macros: P:${directCalculations.targetProtein}g C:${directCalculations.targetCarbs}g F:${directCalculations.targetFat}g`);
-    }
+    console.log(`🚀 LOKALNI TJEDNI GENERATOR - START`);
+    console.log(`   Calories: ${calculations.targetCalories}`);
+    console.log(`   Macros: P:${calculations.targetProtein}g C:${calculations.targetCarbs}g F:${calculations.targetFat}g`);
+    console.log(`   Goal: ${calculations.goalType}`);
     console.log(`========================================\n`);
 
-    // Generiraj tjedni plan
-    const weeklyPlan = userId 
-      ? await generateWeeklyMealPlan(userId)
-      : await generateWeeklyMealPlanWithCalculations(directCalculations);
-
-    // Pokušaj spremiti u bazu (ne baci grešku ako ne uspije)
-    const saveResult = await saveWeeklyPlanToSupabase(weeklyPlan);
-    if (saveResult.success) {
-      console.log(`✅ Plan spremljen u bazu: ${saveResult.id}`);
-    } else {
-      console.warn(`⚠️ Plan nije spremljen u bazu: ${saveResult.error}`);
-    }
+    // Generiraj tjedni plan lokalno
+    const weeklyPlan = await generateWeeklyMealPlanLocal(
+      {
+        targetCalories: Number(calculations.targetCalories),
+        targetProtein: Number(calculations.targetProtein),
+        targetCarbs: Number(calculations.targetCarbs),
+        targetFat: Number(calculations.targetFat),
+        goalType: calculations.goalType,
+        bmr: calculations.bmr ? Number(calculations.bmr) : undefined,
+        tdee: calculations.tdee ? Number(calculations.tdee) : undefined,
+      },
+      preferences
+    );
 
     console.log(`\n========================================`);
-    console.log(`✅ TJEDNI PLAN USPJEŠNO GENERIRAN!`);
+    console.log(`✅ TJEDNI PLAN USPJEŠNO GENERIRAN (lokalno)!`);
     console.log(`========================================\n`);
 
     return NextResponse.json({
       ok: true,
-      message: "Tjedni plan prehrane uspješno generiran",
+      message: "Tjedni plan prehrane uspješno generiran (lokalno)",
       plan: weeklyPlan,
-      savedToDatabase: saveResult.success,
-      savedPlanId: saveResult.id || null,
+      weeklyAverage: weeklyPlan.weeklyAverage,
     });
 
   } catch (error) {
@@ -87,7 +83,20 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
-  // Podržava i GET za lakše testiranje
-  return POST(request);
+  return NextResponse.json(
+    { 
+      ok: false, 
+      message: "Koristi POST metodu s calculations objektom",
+      example: {
+        calculations: {
+          targetCalories: 2000,
+          targetProtein: 150,
+          targetCarbs: 200,
+          targetFat: 67,
+          goalType: "maintain"
+        }
+      }
+    },
+    { status: 400 }
+  );
 }
-
