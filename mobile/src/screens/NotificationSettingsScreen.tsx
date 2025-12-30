@@ -116,8 +116,8 @@ export default function NotificationSettingsScreen({ onBack }: Props) {
         <Switch
           value={value}
           onValueChange={onValueChange}
-          trackColor={{ false: '#444', true: '#8B5CF6' }}
-          thumbColor={value ? '#FFF' : '#888'}
+          trackColor={{ false: '#444', true: '#FFFFFF' }}
+          thumbColor={value ? '#FFF' : '#71717A'}
         />
       </View>
     );
@@ -168,7 +168,7 @@ export default function NotificationSettingsScreen({ onBack }: Props) {
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+      <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
         {/* Header */}
         <View style={styles.header}>
           {onBack && (
@@ -176,7 +176,7 @@ export default function NotificationSettingsScreen({ onBack }: Props) {
               <Text style={styles.backText}>← Natrag</Text>
             </TouchableOpacity>
           )}
-          <Text style={styles.title}>🔔 Notifikacije</Text>
+          <Text style={styles.title}> Notifikacije</Text>
           <View style={styles.placeholder} />
         </View>
 
@@ -184,7 +184,7 @@ export default function NotificationSettingsScreen({ onBack }: Props) {
           {/* Master Switch */}
           <View style={styles.section}>
             <SettingRow
-              icon="🔔"
+              icon=""
               title="Omogući notifikacije"
               subtitle="Sve notifikacije iz aplikacije"
               value={preferences.enabled}
@@ -194,10 +194,10 @@ export default function NotificationSettingsScreen({ onBack }: Props) {
 
           {/* Workout Reminders */}
           <View style={[styles.section, !preferences.enabled && styles.sectionDisabled]}>
-            <Text style={styles.sectionTitle}>🏋️ Treninzi</Text>
+            <Text style={styles.sectionTitle}> Treninzi</Text>
             
             <SettingRow
-              icon="⏰"
+              icon=""
               title="Podsjetnici za trening"
               subtitle="Dnevni podsjetnik za trening"
               value={preferences.workoutReminders}
@@ -215,10 +215,10 @@ export default function NotificationSettingsScreen({ onBack }: Props) {
 
           {/* Achievements */}
           <View style={[styles.section, !preferences.enabled && styles.sectionDisabled]}>
-            <Text style={styles.sectionTitle}>🏆 Postignuća</Text>
+            <Text style={styles.sectionTitle}> Postignuća</Text>
             
             <SettingRow
-              icon="💪"
+              icon=""
               title="Personal Records"
               subtitle="Obavijesti o novim PR-ovima"
               value={preferences.prNotifications}
@@ -226,7 +226,7 @@ export default function NotificationSettingsScreen({ onBack }: Props) {
             />
 
             <SettingRow
-              icon="🔥"
+              icon=""
               title="Streak milestones"
               subtitle="Obavijesti o streak dostignućima"
               value={preferences.streakNotifications}
@@ -304,14 +304,14 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 15,
   },
-  backText: { color: '#8B5CF6', fontSize: 16, fontWeight: '600' },
+  backText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   title: { color: '#FFF', fontSize: 20, fontWeight: '700' },
   placeholder: { width: 60 },
   content: { flex: 1, paddingHorizontal: 20 },
 
   // Section
   section: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   settingSubtitle: {
-    color: '#888',
+    color: '#71717A',
     fontSize: 12,
     marginTop: 2,
   },
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   timeLabel: {
-    color: '#888',
+    color: '#71717A',
     fontSize: 12,
     marginBottom: 6,
   },
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   timeArrow: {
-    color: '#888',
+    color: '#71717A',
     fontSize: 10,
   },
   timeOptions: {
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#444',
   },
   timeOptionActive: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
   },
   timeOptionText: {
     color: '#FFF',
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   testButton: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   clearButtonText: {
-    color: '#EF4444',
+    color: '#71717A',
     fontSize: 16,
     fontWeight: '600',
   },

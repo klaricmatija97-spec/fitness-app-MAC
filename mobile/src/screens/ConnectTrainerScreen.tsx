@@ -76,7 +76,7 @@ export default function ConnectTrainerScreen({ authToken, onConnected, onSkip, o
 
       if (result.success) {
         Alert.alert(
-          '🎉 Uspješno povezano!',
+          'Uspješno povezano!',
           result.message,
           [
             {
@@ -98,7 +98,7 @@ export default function ConnectTrainerScreen({ authToken, onConnected, onSkip, o
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+      <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
         <KeyboardAvoidingView 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
@@ -116,7 +116,7 @@ export default function ConnectTrainerScreen({ authToken, onConnected, onSkip, o
           <View style={styles.content}>
             {/* Icon */}
             <View style={styles.iconContainer}>
-              <Text style={styles.icon}>🔗</Text>
+              <Text style={styles.icon}>#</Text>
             </View>
 
             {/* Title */}
@@ -128,7 +128,7 @@ export default function ConnectTrainerScreen({ authToken, onConnected, onSkip, o
             {/* Browse Trainers Button */}
             {onBrowseTrainers && (
               <TouchableOpacity style={styles.browseButton} onPress={onBrowseTrainers}>
-                <Text style={styles.browseButtonText}>🔍 Pregledaj trenere i njihove profile</Text>
+                <Text style={styles.browseButtonText}>Pregledaj trenere i njihove profile</Text>
               </TouchableOpacity>
             )}
 
@@ -146,7 +146,7 @@ export default function ConnectTrainerScreen({ authToken, onConnected, onSkip, o
                 value={code}
                 onChangeText={handleCodeChange}
                 placeholder="TRN-XXXX"
-                placeholderTextColor="#666"
+                placeholderTextColor="#52525B"
                 autoCapitalize="characters"
                 autoCorrect={false}
                 maxLength={8}
@@ -162,7 +162,7 @@ export default function ConnectTrainerScreen({ authToken, onConnected, onSkip, o
             {/* Error message */}
             {error && (
               <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>⚠️ {error}</Text>
+                <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
 
@@ -175,7 +175,7 @@ export default function ConnectTrainerScreen({ authToken, onConnected, onSkip, o
               {loading ? (
                 <ActivityIndicator color="#FFF" />
               ) : (
-                <Text style={styles.connectButtonText}>🔗 Poveži se</Text>
+                <Text style={styles.connectButtonText}>Poveži se</Text>
               )}
             </TouchableOpacity>
 
@@ -189,7 +189,7 @@ export default function ConnectTrainerScreen({ authToken, onConnected, onSkip, o
 
           {/* Info Section */}
           <View style={styles.infoSection}>
-            <Text style={styles.infoTitle}>💡 Kako dobiti kod?</Text>
+            <Text style={styles.infoTitle}>Kako dobiti kod?</Text>
             <Text style={styles.infoText}>
               Vaš trener ima jedinstveni kod u svojoj aplikaciji.{'\n'}
               Zamolite ga da vam pošalje kod putem SMS-a ili emaila.
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 10,
   },
-  backText: { color: '#8B5CF6', fontSize: 16, fontWeight: '600' },
+  backText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   content: {
     flex: 1,
     paddingHorizontal: 30,
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 30,
   },
-  icon: { fontSize: 48 },
+  icon: { fontSize: 48, color: '#FFFFFF', fontWeight: '300' },
   title: {
     fontSize: 28,
     fontWeight: '700',
@@ -236,22 +236,22 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#AAA',
+    color: '#A1A1AA',
     textAlign: 'center',
     marginBottom: 30,
   },
   browseButton: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#18181B',
     borderRadius: 16,
     padding: 18,
     width: '100%',
     alignItems: 'center',
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#3A3A3C',
+    borderColor: '#3F3F46',
   },
   browseButtonText: {
-    color: '#0A84FF',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#3A3A3C',
+    backgroundColor: '#3F3F46',
   },
   dividerText: {
     color: '#48484A',
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     borderColor: '#444',
   },
   helperText: {
-    color: '#666',
+    color: '#52525B',
     fontSize: 12,
     textAlign: 'center',
     marginTop: 10,
@@ -302,12 +302,12 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   errorText: {
-    color: '#EF4444',
+    color: '#71717A',
     fontSize: 14,
     textAlign: 'center',
   },
   connectButton: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     borderRadius: 16,
     padding: 18,
     width: '100%',
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   skipButtonText: {
-    color: '#888',
+    color: '#71717A',
     fontSize: 16,
   },
   infoSection: {
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   infoText: {
-    color: '#AAA',
+    color: '#A1A1AA',
     fontSize: 14,
     lineHeight: 20,
   },

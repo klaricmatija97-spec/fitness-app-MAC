@@ -34,11 +34,21 @@ function getSupabase() {
 // MAPIRANJE CILJA I RAZINE NA POSTOJEĆI FORMAT
 // ============================================
 
+/**
+ * Mapiranje IFT ciljeva na Supabase format
+ * IFT Metodika: jakost, snaga, hipertrofija, izdrzljivost
+ */
 const CILJ_MAP: Record<string, string> = {
-  hipertrofija: 'hypertrophy',
+  // IFT ciljevi (novi)
+  jakost: 'strength',           // Maksimalna snaga (1-5 rep)
+  snaga: 'power',               // Power/Eksplozivnost (6-8 rep)
+  hipertrofija: 'hypertrophy',  // Mišićna masa (8-12 rep)
+  izdrzljivost: 'endurance',    // Mišićna izdržljivost (12+ rep)
+  rekreacija_zdravlje: 'general_fitness',
+  
+  // Legacy podrška (stari nazivi)
   maksimalna_snaga: 'strength',
   misicna_izdrzljivost: 'endurance',
-  rekreacija_zdravlje: 'general_fitness',
 };
 
 const RAZINA_MAP: Record<string, string> = {

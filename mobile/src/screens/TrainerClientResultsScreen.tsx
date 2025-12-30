@@ -208,15 +208,15 @@ export default function TrainerClientResultsScreen({
   function getAlertColor(type: 'warning' | 'info' | 'success') {
     switch (type) {
       case 'warning': return '#F59E0B';
-      case 'success': return '#22C55E';
+      case 'success': return '#3F3F46';
       case 'info': return '#3B82F6';
     }
   }
 
   function getAlertIcon(type: 'warning' | 'info' | 'success') {
     switch (type) {
-      case 'warning': return '⚠️';
-      case 'success': return '🎉';
+      case 'warning': return '';
+      case 'success': return '';
       case 'info': return 'ℹ️';
     }
   }
@@ -224,9 +224,9 @@ export default function TrainerClientResultsScreen({
   if (loading) {
     return (
       <View style={styles.container}>
-        <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+        <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#8B5CF6" />
+            <ActivityIndicator size="large" color="#FFFFFF" />
             <Text style={styles.loadingText}>Učitavanje rezultata...</Text>
           </View>
         </LinearGradient>
@@ -236,7 +236,7 @@ export default function TrainerClientResultsScreen({
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+      <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
         {/* Header */}
         <View style={styles.header}>
           {onBack && (
@@ -274,9 +274,9 @@ export default function TrainerClientResultsScreen({
         {/* Tab Selector */}
         <View style={styles.tabSelector}>
           {([
-            { key: 'overview', label: '📊 Pregled' },
-            { key: 'workouts', label: '🏋️ Treninzi' },
-            { key: 'prs', label: '🏆 PR-ovi' },
+            { key: 'overview', label: ' Pregled' },
+            { key: 'workouts', label: ' Treninzi' },
+            { key: 'prs', label: ' PR-ovi' },
           ] as const).map((tab) => (
             <TouchableOpacity
               key={tab.key}
@@ -313,7 +313,7 @@ export default function TrainerClientResultsScreen({
                   <Text style={styles.summaryLabel}>Adherence</Text>
                 </View>
                 <View style={styles.summaryCard}>
-                  <Text style={styles.summaryValue}>{data.summary.currentStreak}🔥</Text>
+                  <Text style={styles.summaryValue}>{data.summary.currentStreak}</Text>
                   <Text style={styles.summaryLabel}>Streak</Text>
                 </View>
                 <View style={styles.summaryCard}>
@@ -324,7 +324,7 @@ export default function TrainerClientResultsScreen({
 
               {/* Weekly Progress Chart */}
               <View style={styles.chartSection}>
-                <Text style={styles.sectionTitle}>📈 Tjedni napredak</Text>
+                <Text style={styles.sectionTitle}> Tjedni napredak</Text>
                 <View style={styles.weeklyChart}>
                   {data.weeklyProgress.map((week, index) => {
                     const maxVolume = Math.max(...data.weeklyProgress.map(w => w.volume));
@@ -342,7 +342,7 @@ export default function TrainerClientResultsScreen({
 
               {/* Stats Details */}
               <View style={styles.statsSection}>
-                <Text style={styles.sectionTitle}>📋 Detalji</Text>
+                <Text style={styles.sectionTitle}> Detalji</Text>
                 <View style={styles.statRow}>
                   <Text style={styles.statLabel}>⏱️ Prosječno trajanje</Text>
                   <Text style={styles.statValue}>{data.summary.avgSessionDuration} min</Text>
@@ -352,7 +352,7 @@ export default function TrainerClientResultsScreen({
                   <Text style={styles.statValue}>{(data.summary.totalVolumeKg / 1000).toFixed(1)}t</Text>
                 </View>
                 <View style={styles.statRow}>
-                  <Text style={styles.statLabel}>❌ Propušteni treninzi</Text>
+                  <Text style={styles.statLabel}> Propušteni treninzi</Text>
                   <Text style={[styles.statValue, styles.valueRed]}>{data.summary.missedWorkouts}</Text>
                 </View>
               </View>
@@ -403,14 +403,14 @@ export default function TrainerClientResultsScreen({
                       <Text style={styles.workoutStatValue}>{(workout.totalVolume / 1000).toFixed(1)}t</Text>
                     </View>
                     <View style={styles.workoutStat}>
-                      <Text style={styles.workoutStatLabel}>💪</Text>
+                      <Text style={styles.workoutStatLabel}></Text>
                       <Text style={styles.workoutStatValue}>RIR {workout.averageRIR.toFixed(1)}</Text>
                     </View>
                   </View>
 
                   {workout.flagged && workout.flagReason && (
                     <View style={styles.flagContainer}>
-                      <Text style={styles.flagText}>⚠️ {workout.flagReason}</Text>
+                      <Text style={styles.flagText}> {workout.flagReason}</Text>
                     </View>
                   )}
                 </View>
@@ -421,12 +421,12 @@ export default function TrainerClientResultsScreen({
           {/* PRs Tab */}
           {selectedTab === 'prs' && data && (
             <>
-              <Text style={styles.sectionTitle}>🏆 Personal Records</Text>
+              <Text style={styles.sectionTitle}> Personal Records</Text>
               {data.personalBests.map((pr, index) => (
                 <View key={index} style={styles.prCard}>
                   <View style={styles.prMedal}>
                     <Text style={styles.prMedalText}>
-                      {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🏆'}
+                      {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : ''}
                     </Text>
                   </View>
                   <View style={styles.prInfo}>
@@ -464,10 +464,10 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 15,
   },
-  backText: { color: '#8B5CF6', fontSize: 16, fontWeight: '600' },
+  backText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   headerCenter: { alignItems: 'center' },
   title: { color: '#FFF', fontSize: 20, fontWeight: '700' },
-  subtitle: { color: '#888', fontSize: 12, marginTop: 2 },
+  subtitle: { color: '#71717A', fontSize: 12, marginTop: 2 },
   placeholder: { width: 60 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { color: '#FFF', marginTop: 10, fontSize: 16 },
@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
   alertCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 10,
@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginHorizontal: 20,
     marginBottom: 20,
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 4,
   },
@@ -512,9 +512,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   tabButtonActive: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
   },
-  tabText: { color: '#888', fontSize: 13, fontWeight: '500' },
+  tabText: { color: '#71717A', fontSize: 13, fontWeight: '500' },
   tabTextActive: { color: '#FFF', fontWeight: '600' },
 
   // Summary
@@ -527,20 +527,20 @@ const styles = StyleSheet.create({
   summaryCard: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
   },
   summaryValue: { color: '#FFF', fontSize: 24, fontWeight: '700' },
-  summaryLabel: { color: '#888', fontSize: 12, marginTop: 4 },
-  valueGreen: { color: '#22C55E' },
+  summaryLabel: { color: '#71717A', fontSize: 12, marginTop: 4 },
+  valueGreen: { color: '#3F3F46' },
   valueYellow: { color: '#F59E0B' },
-  valueRed: { color: '#EF4444' },
+  valueRed: { color: '#71717A' },
 
   // Chart
   chartSection: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -557,16 +557,16 @@ const styles = StyleSheet.create({
   },
   weekBar: {
     width: 40,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     borderRadius: 6,
     marginBottom: 8,
   },
   weekLabel: { color: '#FFF', fontSize: 12, fontWeight: '600' },
-  weekVolume: { color: '#888', fontSize: 10 },
+  weekVolume: { color: '#71717A', fontSize: 10 },
 
   // Stats
   statsSection: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -578,12 +578,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
-  statLabel: { color: '#CCC', fontSize: 14 },
+  statLabel: { color: '#D4D4D8', fontSize: 14 },
   statValue: { color: '#FFF', fontSize: 14, fontWeight: '600' },
 
   // Adjust Button
   adjustButton: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
 
   // Workout Card
   workoutCard: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -609,9 +609,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   workoutName: { color: '#FFF', fontSize: 16, fontWeight: '600' },
-  workoutDate: { color: '#888', fontSize: 12, marginTop: 2 },
+  workoutDate: { color: '#71717A', fontSize: 12, marginTop: 2 },
   workoutCompletion: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#3F3F46',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
@@ -638,7 +638,7 @@ const styles = StyleSheet.create({
   prCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 16,
     marginBottom: 10,
@@ -655,10 +655,10 @@ const styles = StyleSheet.create({
   prMedalText: { fontSize: 20 },
   prInfo: { flex: 1 },
   prExercise: { color: '#FFF', fontSize: 16, fontWeight: '600' },
-  prDate: { color: '#888', fontSize: 12, marginTop: 2 },
+  prDate: { color: '#71717A', fontSize: 12, marginTop: 2 },
   prWeightContainer: { alignItems: 'flex-end' },
   prWeight: { color: '#FFF', fontSize: 20, fontWeight: '700' },
-  prImprovement: { color: '#22C55E', fontSize: 12, fontWeight: '600' },
+  prImprovement: { color: '#3F3F46', fontSize: 12, fontWeight: '600' },
 
   bottomPadding: { height: 40 },
 });

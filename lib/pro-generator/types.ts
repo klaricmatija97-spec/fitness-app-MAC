@@ -9,12 +9,16 @@
 // ENUMI I OSNOVNI TIPOVI
 // ============================================
 
-/** Cilj treninga */
+/** 
+ * Cilj treninga - IFT Metodika (Tablica 23)
+ * Izvor: M. Čakan, K. Marković, D. Perkov - Metodika fitnessa u teretani
+ */
 export type CiljTreninga = 
-  | 'hipertrofija'          // Povećanje mišićne mase
-  | 'maksimalna_snaga'       // 1RM fokus
-  | 'misicna_izdrzljivost'   // Visoka ponavljanja, kraći odmori
-  | 'rekreacija_zdravlje';   // Održavanje forme
+  | 'jakost'                 // Maksimalna snaga (1-5 rep, 90-100% 1RM, 3-5 min odmor)
+  | 'snaga'                  // Power/Eksplozivnost (6-8 rep, 80-90% 1RM, 2-3 min odmor)
+  | 'hipertrofija'           // Povećanje mišićne mase (8-12 rep, 65-80% 1RM, 60-90 sec odmor)
+  | 'izdrzljivost'           // Mišićna izdržljivost (12+ rep, do 60% 1RM, 0-60 sec odmor)
+  | 'rekreacija_zdravlje';   // Održavanje forme i prevencija
 
 /** Razina korisnika */
 export type RazinaKorisnika = 
@@ -31,6 +35,12 @@ export type TipSplita =
 
 /** Status programa */
 export type StatusPrograma = 'draft' | 'aktivan' | 'pauziran' | 'zavrsen';
+
+/** Tip sesije - snaga ili kardio */
+export type TipSesije = 'snaga' | 'kardio' | 'kombinirana';
+
+/** Tip kardio treninga */
+export type TipKardioTreninga = 'kontinuirani' | 'intervalni' | 'hiit';
 
 /** Tip mezociklusa - IFT faze */
 export type TipMezociklusa = 
@@ -281,6 +291,84 @@ export interface ZavrsniBlok {
     trajanje: number;
   };
 }
+
+/**
+ * Kardio sesija - IFT Metodika (Tablica 26)
+ * Programiranje kardiorespiratornog vježbanja
+ */
+export interface KardioSesija {
+  id: string;
+  weekId: string;
+  danUTjednu: number;
+  naziv: string;
+  tipKardio: TipKardioTreninga;
+  
+  // Parametri treninga
+  trajanje: number;  // minuta
+  intenzitetSF: { min: number; max: number };  // % max SF
+  tempo?: string;  // npr. "10 km/h umjereni"
+  
+  // Za intervalne treninge
+  intervalRada?: number;  // sekundi
+  intervalOdmora?: number;  // sekundi
+  brojIntervala?: number;
+  brojSerija?: number;  // za HIIT
+  odmorIzmeduSerija?: number;  // sekundi
+  
+  // HIIT specifično
+  hiitVjezbe?: string[];  // lista vježbi za HIIT
+  
+  // Meta
+  oprema?: string;  // bicikl, traka, veslo, bez opreme
+  napomene?: string;
+}
+
+/**
+ * Kombinirana sesija - snaga + kardio
+ */
+export interface KombiranaSesija extends TrenigSesija {
+  kardioBlok?: KardioSesija;
+}
+
+/**
+ * Pliometrijska sesija - IFT Metodika
+ * Za razvoj eksplozivne snage u fazi SNAGA/POWER
+ */
+export interface PliometrijskaSesija {
+  id: string;
+  weekId: string;
+  danUTjednu: number;
+  naziv: string;
+  
+  // Parametri
+  ukupniKontakti: number;  // ukupni broj kontakata (skokova) u treningu
+  vjezbe: PliometrijskaVjezbaSesije[];
+  
+  // Meta
+  napomene?: string;
+  razina: 'pocetnik' | 'srednji' | 'napredni';
+}
+
+/**
+ * Pojedinačna pliometrijska vježba u sesiji
+ */
+export interface PliometrijskaVjezbaSesije {
+  id: string;
+  vjezbaId: string;
+  naziv: string;
+  nazivHr: string;
+  serije: number;
+  ponavljanja: number;
+  odmorSekunde: number;
+  tip: 'skok' | 'bacanje' | 'odraz' | 'reaktivna';
+  misicneGrupe: string[];
+  napomene?: string;
+}
+
+/**
+ * Tip treninga u tjednom planu
+ */
+export type TipTreningaDan = 'snaga' | 'kardio' | 'pliometrija' | 'kombinacija' | 'odmor';
 
 /** Pojedinačna vježba u sesiji */
 export interface VjezbaSesije {

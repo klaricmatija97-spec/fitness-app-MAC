@@ -285,9 +285,9 @@ export default function ProgressChartsScreen({ authToken, onBack }: Props) {
   if (loading) {
     return (
       <View style={styles.container}>
-        <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+        <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#8B5CF6" />
+            <ActivityIndicator size="large" color="#FFFFFF" />
             <Text style={styles.loadingText}>Učitavanje napretka...</Text>
           </View>
         </LinearGradient>
@@ -297,7 +297,7 @@ export default function ProgressChartsScreen({ authToken, onBack }: Props) {
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+      <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
         {/* Header */}
         <View style={styles.header}>
           {onBack && (
@@ -305,7 +305,7 @@ export default function ProgressChartsScreen({ authToken, onBack }: Props) {
               <Text style={styles.backText}>← Natrag</Text>
             </TouchableOpacity>
           )}
-          <Text style={styles.title}>📊 Napredak</Text>
+          <Text style={styles.title}> Napredak</Text>
           <View style={styles.placeholder} />
         </View>
 
@@ -327,9 +327,9 @@ export default function ProgressChartsScreen({ authToken, onBack }: Props) {
         {/* Tab Selector */}
         <View style={styles.tabSelector}>
           {([
-            { key: 'overview', label: '📈 Pregled' },
-            { key: 'exercises', label: '💪 Vježbe' },
-            { key: 'muscles', label: '🎯 Mišići' },
+            { key: 'overview', label: ' Pregled' },
+            { key: 'exercises', label: ' Vježbe' },
+            { key: 'muscles', label: ' Mišići' },
           ] as const).map((tab) => (
             <TouchableOpacity
               key={tab.key}
@@ -360,7 +360,7 @@ export default function ProgressChartsScreen({ authToken, onBack }: Props) {
                   <Text style={styles.summaryLabel}>Adherence</Text>
                 </View>
                 <View style={styles.summaryCard}>
-                  <Text style={styles.summaryValue}>{data.summary.currentStreak}🔥</Text>
+                  <Text style={styles.summaryValue}>{data.summary.currentStreak}</Text>
                   <Text style={styles.summaryLabel}>Streak</Text>
                 </View>
                 <View style={styles.summaryCard}>
@@ -371,14 +371,14 @@ export default function ProgressChartsScreen({ authToken, onBack }: Props) {
 
               {/* Volume Chart */}
               <View style={styles.chartSection}>
-                <Text style={styles.chartTitle}>📊 Tjedni volumen (kg)</Text>
-                <BarChart data={data.weeklyData} dataKey="volume" color="#8B5CF6" />
+                <Text style={styles.chartTitle}> Tjedni volumen (kg)</Text>
+                <BarChart data={data.weeklyData} dataKey="volume" color="#FFFFFF" />
               </View>
 
               {/* Adherence Chart */}
               <View style={styles.chartSection}>
-                <Text style={styles.chartTitle}>✅ Adherence (%)</Text>
-                <BarChart data={data.weeklyData} dataKey="adherence" color="#22C55E" maxValue={100} />
+                <Text style={styles.chartTitle}> Adherence (%)</Text>
+                <BarChart data={data.weeklyData} dataKey="adherence" color="#3F3F46" maxValue={100} />
               </View>
             </>
           )}
@@ -396,7 +396,7 @@ export default function ProgressChartsScreen({ authToken, onBack }: Props) {
                   </View>
                   
                   <View style={styles.personalBest}>
-                    <Text style={styles.pbLabel}>🏆 Personal Best</Text>
+                    <Text style={styles.pbLabel}> Personal Best</Text>
                     <Text style={styles.pbValue}>{exercise.personalBest.weight} kg</Text>
                   </View>
 
@@ -413,7 +413,7 @@ export default function ProgressChartsScreen({ authToken, onBack }: Props) {
                           <View 
                             style={[
                               styles.miniBar,
-                              { height, backgroundColor: '#8B5CF6' }
+                              { height, backgroundColor: '#27272A' }
                             ]}
                           />
                           <Text style={styles.miniBarLabel}>{point.weight}</Text>
@@ -435,7 +435,7 @@ export default function ProgressChartsScreen({ authToken, onBack }: Props) {
                   key={index}
                   value={muscle.volume}
                   max={Math.max(...data.muscleGroupVolume.map(m => m.volume))}
-                  color={['#8B5CF6', '#22C55E', '#F59E0B', '#EF4444', '#3B82F6', '#EC4899'][index % 6]}
+                  color={['#FFFFFF', '#3F3F46', '#F59E0B', '#71717A', '#3B82F6', '#EC4899'][index % 6]}
                   label={`${muscle.group} (${muscle.percentage}%)`}
                 />
               ))}
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 15,
   },
-  backText: { color: '#8B5CF6', fontSize: 16, fontWeight: '600' },
+  backText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   title: { color: '#FFF', fontSize: 20, fontWeight: '700' },
   placeholder: { width: 60 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -482,9 +482,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#333',
   },
   periodButtonActive: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
   },
-  periodText: { color: '#888', fontSize: 14 },
+  periodText: { color: '#71717A', fontSize: 14 },
   periodTextActive: { color: '#FFF', fontWeight: '600' },
 
   // Tab Selector
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginHorizontal: 20,
     marginBottom: 20,
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 4,
   },
@@ -503,9 +503,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   tabButtonActive: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
   },
-  tabText: { color: '#888', fontSize: 13, fontWeight: '500' },
+  tabText: { color: '#71717A', fontSize: 13, fontWeight: '500' },
   tabTextActive: { color: '#FFF', fontWeight: '600' },
 
   // Summary Grid
@@ -518,17 +518,17 @@ const styles = StyleSheet.create({
   summaryCard: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
   },
   summaryValue: { color: '#FFF', fontSize: 24, fontWeight: '700' },
-  summaryLabel: { color: '#888', fontSize: 12, marginTop: 4 },
+  summaryLabel: { color: '#71717A', fontSize: 12, marginTop: 4 },
 
   // Charts
   chartSection: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     minHeight: 4,
   },
-  barLabel: { color: '#888', fontSize: 10, marginTop: 4 },
+  barLabel: { color: '#71717A', fontSize: 10, marginTop: 4 },
 
   // Line Chart
   lineChartContainer: {
@@ -576,12 +576,12 @@ const styles = StyleSheet.create({
     height: 2,
     transformOrigin: 'left center',
   },
-  lineLabel: { color: '#888', fontSize: 10, marginTop: 4 },
-  lineValue: { color: '#8B5CF6', fontSize: 10, fontWeight: '600' },
+  lineLabel: { color: '#71717A', fontSize: 10, marginTop: 4 },
+  lineValue: { color: '#FFFFFF', fontSize: 10, fontWeight: '600' },
 
   // Exercise Progress
   exerciseCard: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -594,7 +594,7 @@ const styles = StyleSheet.create({
   },
   exerciseName: { color: '#FFF', fontSize: 18, fontWeight: '600' },
   improvementBadge: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#3F3F46',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -621,11 +621,11 @@ const styles = StyleSheet.create({
     width: '80%',
     borderRadius: 3,
   },
-  miniBarLabel: { color: '#888', fontSize: 9, marginTop: 2 },
+  miniBarLabel: { color: '#71717A', fontSize: 9, marginTop: 2 },
 
   // Muscle Section
   muscleSection: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 16,
     padding: 16,
   },
@@ -638,8 +638,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 6,
   },
-  progressBarLabel: { color: '#CCC', fontSize: 14 },
-  progressBarValue: { color: '#888', fontSize: 12 },
+  progressBarLabel: { color: '#D4D4D8', fontSize: 14 },
+  progressBarValue: { color: '#71717A', fontSize: 12 },
   progressBarTrack: {
     height: 8,
     backgroundColor: '#444',

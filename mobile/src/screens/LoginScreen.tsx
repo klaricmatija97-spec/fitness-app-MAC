@@ -325,7 +325,7 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
                     onPress={onTrainerMode}
                   >
                     <Text style={styles.trainerButtonText}>
-                      💪 Trener mod
+                       Trener mod
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -462,7 +462,7 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
                     onPress={onTrainerMode}
                   >
                     <Text style={styles.trainerButtonText}>
-                      💪 Trener mod
+                       Trener mod
                     </Text>
                   </TouchableOpacity>
                 )}

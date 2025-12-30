@@ -157,7 +157,7 @@ export default function CalculationsSummaryScreen({
 
           {/* Info */}
           <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>💡 Informacije</Text>
+            <Text style={styles.infoTitle}> Informacije</Text>
             <Text style={styles.infoText}>
               Na temelju ovih podataka generirat ćemo tjedni plan prehrane koji će ti pomoći da postigneš svoj cilj.
             </Text>

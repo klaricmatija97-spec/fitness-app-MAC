@@ -305,12 +305,13 @@ export async function GET(request: NextRequest) {
           id: client.id,
           name: client.name,
           email: client.email,
-          avatarUrl: null, // TODO: dodati avatar_url stupac u clients tablicu
-          program: program
+          phone: client.phone || undefined,
+          avatar: undefined, // TODO: dodati avatar_url stupac u clients tablicu
+          currentProgram: program
             ? {
                 id: program.id,
                 name: program.name,
-                status: program.status,
+                status: program.status as 'draft' | 'active' | 'archived',
                 adherence: adherence || 0,
                 lastSessionDate,
                 needsAttention,
@@ -325,15 +326,15 @@ export async function GET(request: NextRequest) {
       data: {
         clients: clientsWithPrograms,
         stats: {
-          total: clientsWithPrograms.length,
-          active: clientsWithPrograms.filter(
-            (c) => c.program?.status === "active",
+          totalClients: clientsWithPrograms.length,
+          activePrograms: clientsWithPrograms.filter(
+            (c) => c.currentProgram?.status === "active",
           ).length,
-          draft: clientsWithPrograms.filter(
-            (c) => c.program?.status === "draft",
+          draftPrograms: clientsWithPrograms.filter(
+            (c) => c.currentProgram?.status === "draft",
           ).length,
           needsAttention: clientsWithPrograms.filter(
-            (c) => c.program?.needsAttention,
+            (c) => c.currentProgram?.needsAttention,
           ).length,
         },
       },

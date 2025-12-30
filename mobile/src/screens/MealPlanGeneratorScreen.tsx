@@ -349,7 +349,7 @@ export default function MealPlanGeneratorScreen({ onBack, onNavigateToTraining, 
           (descLower.includes('water') && !componentNamesLower.includes('water') && !componentNamesLower.includes('voda'));
         
         if (hasMismatch) {
-          console.warn(`⚠️ Description mismatch for "${scoredMeal.name}":`, {
+          console.warn(` Description mismatch for "${scoredMeal.name}":`, {
             descriptionPreview: description.substring(0, 100),
             components: components.map(c => c.name),
             hasBananaInDesc: descLower.includes('banana'),
@@ -366,7 +366,7 @@ export default function MealPlanGeneratorScreen({ onBack, onNavigateToTraining, 
         // Additional validation: Log meal ID for tracking
         const mealId = scoredMeal.id || scoredMeal.meta?.recipe?.id || 'unknown';
         if (hasMismatch || calories < 100) {
-          console.log(`📋 Meal ID: ${mealId}, Name: ${scoredMeal.name}`);
+          console.log(` Meal ID: ${mealId}, Name: ${scoredMeal.name}`);
         }
         
         // Always return meal, even if macros are 0
@@ -390,7 +390,7 @@ export default function MealPlanGeneratorScreen({ onBack, onNavigateToTraining, 
        * Normalize meals - handle array OR object, lowercase keys, NEVER filter by calories
        */
       const normalizeMeals = (meals: any, dayIndex?: number): DailyPlanMeals => {
-        console.log(`🔍 normalizeMeals called for day ${dayIndex}:`, {
+        console.log(` normalizeMeals called for day ${dayIndex}:`, {
           meals,
           mealsType: typeof meals,
           mealsIsArray: Array.isArray(meals),
@@ -561,7 +561,7 @@ export default function MealPlanGeneratorScreen({ onBack, onNavigateToTraining, 
       const isProPlanFormat = rawDays.length > 0 && 
         (rawDays[0].total || (rawDays[0].meals && (rawDays[0].meals.snack || rawDays[0].meals.extraSnack)));
       
-      console.log('🔍 Is PRO plan format:', isProPlanFormat);
+      console.log(' Is PRO plan format:', isProPlanFormat);
       
       
       // STEP 5: Build normalizedDays using normalizeMeals for each day
@@ -579,7 +579,7 @@ export default function MealPlanGeneratorScreen({ onBack, onNavigateToTraining, 
 
         // STEP 3: Normalize meals defensively
         const dayMeals = day.meals ?? {};
-        console.log(`🔍 Day ${dayIndex} raw meals:`, {
+        console.log(` Day ${dayIndex} raw meals:`, {
           dayMeals,
           dayMealsType: typeof dayMeals,
           dayMealsIsArray: Array.isArray(dayMeals),
@@ -592,7 +592,7 @@ export default function MealPlanGeneratorScreen({ onBack, onNavigateToTraining, 
         // PRO plan specific: if format detected, ensure proper mapping
         // This should override normalizeMeals results if needed
         if (isProPlanFormat && dayMeals && typeof dayMeals === 'object' && !Array.isArray(dayMeals)) {
-          console.log(`🔍 Day ${dayIndex}: Applying PRO plan specific mapping`);
+          console.log(` Day ${dayIndex}: Applying PRO plan specific mapping`);
           
           if (dayMeals.breakfast) {
             const transformed = transformScoredMeal(dayMeals.breakfast);
@@ -631,7 +631,7 @@ export default function MealPlanGeneratorScreen({ onBack, onNavigateToTraining, 
           }
         }
         
-        console.log(`✅ Day ${dayIndex} final meals:`, {
+        console.log(` Day ${dayIndex} final meals:`, {
           breakfast: !!meals.breakfast,
           snack1: !!meals.snack1,
           lunch: !!meals.lunch,
@@ -701,7 +701,7 @@ export default function MealPlanGeneratorScreen({ onBack, onNavigateToTraining, 
       console.log('FINAL totalMeals:', totalMeals);
       
       // STEP 7: Add logs
-      console.log('🔍 Final validation:', {
+      console.log(' Final validation:', {
         daysCount: normalizedDays.length,
         totalMeals,
         firstDayMealsCount: getMealCount(normalizedDays[0]?.meals),
@@ -716,12 +716,12 @@ export default function MealPlanGeneratorScreen({ onBack, onNavigateToTraining, 
       // Let the app render the plan UI even if meals are empty,
       // so we can visually confirm what data actually exists
       // if (totalMeals === 0) {
-      //   console.error('❌ Plan has NO meals!');
+      //   console.error(' Plan has NO meals!');
       //   throw new Error('Plan nema obroka - provjeri API response');
       // }
       
       if (totalMeals === 0) {
-        console.warn('⚠️ Plan has NO meals - but continuing to render UI for debugging');
+        console.warn(' Plan has NO meals - but continuing to render UI for debugging');
       }
 
       // Osiguraj da selectedDay je validan
@@ -838,7 +838,7 @@ export default function MealPlanGeneratorScreen({ onBack, onNavigateToTraining, 
 
             {meal.preparationTip && (
               <View style={styles.preparationTip}>
-                <Text style={styles.preparationTipTitle}>💡 Savjet za pripremu</Text>
+                <Text style={styles.preparationTipTitle}> Savjet za pripremu</Text>
                 <Text style={styles.preparationTipText}>{meal.preparationTip}</Text>
               </View>
             )}
@@ -934,7 +934,7 @@ export default function MealPlanGeneratorScreen({ onBack, onNavigateToTraining, 
   const dailyTotals = currentDay.dailyTotals; // UVIJEK postoji nakon normalizacije
   
   // Debug logging for render
-  console.log('🔍 RENDERING - currentDay:', {
+  console.log(' RENDERING - currentDay:', {
     date: currentDay.date,
     dayName: currentDay.dayName,
     mealsKeys: Object.keys(meals),
@@ -990,7 +990,7 @@ export default function MealPlanGeneratorScreen({ onBack, onNavigateToTraining, 
                 style={styles.connectTrainerButton}
                 onPress={onConnectTrainer}
               >
-                <Text style={styles.connectTrainerButtonText}>🔗 Poveži se s trenerom za plan treninga</Text>
+                <Text style={styles.connectTrainerButtonText}> Poveži se s trenerom za plan treninga</Text>
               </TouchableOpacity>
             ) : (
               // Povezan - prikaži gumb za dashboard treninga
@@ -998,7 +998,7 @@ export default function MealPlanGeneratorScreen({ onBack, onNavigateToTraining, 
                 style={styles.connectedButton}
                 onPress={onNavigateToTraining}
               >
-                <Text style={styles.connectedButtonText}>💪 Moj trening ({trainerName})</Text>
+                <Text style={styles.connectedButtonText}> Moj trening ({trainerName})</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -1201,9 +1201,9 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
   },
   trainingButton: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     borderWidth: 1.5,
-    borderColor: '#8B5CF6',
+    borderColor: '#FFFFFF',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 12,
@@ -1215,7 +1215,7 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
   },
   connectTrainerButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#3F3F46',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 12,
@@ -1229,7 +1229,7 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
   },
   connectedButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#3F3F46',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 12,

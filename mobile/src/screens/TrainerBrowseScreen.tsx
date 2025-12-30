@@ -240,8 +240,8 @@ export default function TrainerBrowseScreen({ authToken, onSelectTrainer, onBack
           </View>
           <View style={styles.footerItem}>
             <Text style={styles.footerValue}>
-              {item.training_type === 'online' ? '💻' : 
-               item.training_type === 'in_person' ? '🏋️' : '💻🏋️'}
+              {item.training_type === 'online' ? 'ONL' : 
+               item.training_type === 'in_person' ? 'GYM' : 'ONL+GYM'}
             </Text>
             <Text style={styles.footerLabel}>
               {item.training_type === 'online' ? 'Online' : 
@@ -266,7 +266,7 @@ export default function TrainerBrowseScreen({ authToken, onSelectTrainer, onBack
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#000', '#1C1C1E']} style={styles.gradient}>
+      <LinearGradient colors={['#000', '#18181B']} style={styles.gradient}>
         {/* Header */}
         <View style={styles.header}>
           {onBack && (
@@ -282,7 +282,7 @@ export default function TrainerBrowseScreen({ authToken, onSelectTrainer, onBack
           <TextInput
             style={styles.searchInput}
             placeholder="Pretraži po imenu, lokaciji ili specijalizaciji..."
-            placeholderTextColor="#48484A"
+            placeholderTextColor="#52525B"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -303,7 +303,7 @@ export default function TrainerBrowseScreen({ authToken, onSelectTrainer, onBack
             onPress={() => setTypeFilter('online')}
           >
             <Text style={[styles.filterChipText, typeFilter === 'online' && styles.filterChipTextActive]}>
-              💻 Online
+              Online
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -311,7 +311,7 @@ export default function TrainerBrowseScreen({ authToken, onSelectTrainer, onBack
             onPress={() => setTypeFilter('in_person')}
           >
             <Text style={[styles.filterChipText, typeFilter === 'in_person' && styles.filterChipTextActive]}>
-              🏋️ Uživo
+              Uživo
             </Text>
           </TouchableOpacity>
         </View>
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   backText: {
-    color: '#0A84FF',
+    color: '#FFFFFF',
     fontSize: 17,
   },
   title: {
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   searchInput: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#18181B',
     color: '#FFF',
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -396,16 +396,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterChip: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#18181B',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
   },
   filterChipActive: {
-    backgroundColor: '#0A84FF',
+    backgroundColor: '#27272A',
   },
   filterChipText: {
-    color: '#8E8E93',
+    color: '#71717A',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#8E8E93',
+    color: '#71717A',
     marginTop: 16,
   },
   emptyContainer: {
@@ -432,14 +432,14 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   emptyText: {
-    color: '#8E8E93',
+    color: '#71717A',
     fontSize: 16,
     textAlign: 'center',
   },
 
   // Trainer Card
   trainerCard: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#18181B',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#27272A',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#0A84FF',
+    backgroundColor: '#27272A',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 6,
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   location: {
-    color: '#8E8E93',
+    color: '#71717A',
     fontSize: 14,
     marginTop: 2,
   },
@@ -506,16 +506,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   stars: {
-    color: '#FFD60A',
+    color: '#FFFFFF',
     fontSize: 12,
   },
   ratingText: {
-    color: '#8E8E93',
+    color: '#71717A',
     fontSize: 12,
     marginLeft: 6,
   },
   bio: {
-    color: '#D1D1D6',
+    color: '#D4D4D8',
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 12,
@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   specTag: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#27272A',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 6,
@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#2C2C2E',
+    borderTopColor: '#27272A',
   },
   footerItem: {
     flex: 1,
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   footerLabel: {
-    color: '#48484A',
+    color: '#52525B',
     fontSize: 11,
     marginTop: 2,
   },
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
     marginTop: -12,
   },
   arrowText: {
-    color: '#48484A',
+    color: '#52525B',
     fontSize: 24,
     fontWeight: '300',
   },

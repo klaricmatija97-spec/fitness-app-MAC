@@ -89,7 +89,7 @@ export default function WorkoutSessionScreen({ authToken, sessionId, onComplete,
       }, 1000);
     } else if (restTimer === 0) {
       setIsResting(false);
-      Alert.alert('⏰ Odmor završen!', 'Vrijeme je za sljedeći set!');
+      Alert.alert(' Odmor završen!', 'Vrijeme je za sljedeći set!');
     }
     return () => clearInterval(interval);
   }, [isResting, restTimer]);
@@ -298,14 +298,14 @@ export default function WorkoutSessionScreen({ authToken, sessionId, onComplete,
 
       if (result.success) {
         Alert.alert(
-          '🎉 Trening završen!',
+          ' Trening završen!',
           'Odličan posao! Tvoj napredak je spremljen.',
           [{ text: 'OK', onPress: () => onComplete?.() }]
         );
       } else {
         // Simuliraj uspjeh za testiranje
         Alert.alert(
-          '🎉 Trening završen!',
+          ' Trening završen!',
           'Odličan posao!',
           [{ text: 'OK', onPress: () => onComplete?.() }]
         );
@@ -314,7 +314,7 @@ export default function WorkoutSessionScreen({ authToken, sessionId, onComplete,
       console.error('Error completing workout:', error);
       // Simuliraj uspjeh za testiranje
       Alert.alert(
-        '🎉 Trening završen!',
+        ' Trening završen!',
         'Odličan posao!',
         [{ text: 'OK', onPress: () => onComplete?.() }]
       );
@@ -337,9 +337,9 @@ export default function WorkoutSessionScreen({ authToken, sessionId, onComplete,
   if (loading) {
     return (
       <View style={styles.container}>
-        <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+        <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#8B5CF6" />
+            <ActivityIndicator size="large" color="#FFFFFF" />
             <Text style={styles.loadingText}>Učitavanje treninga...</Text>
           </View>
         </LinearGradient>
@@ -350,7 +350,7 @@ export default function WorkoutSessionScreen({ authToken, sessionId, onComplete,
   if (!session) {
     return (
       <View style={styles.container}>
-        <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+        <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>Trening nije pronađen</Text>
             <TouchableOpacity style={styles.backButton} onPress={onBack}>
@@ -367,7 +367,7 @@ export default function WorkoutSessionScreen({ authToken, sessionId, onComplete,
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+      <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onBack}>
@@ -410,7 +410,7 @@ export default function WorkoutSessionScreen({ authToken, sessionId, onComplete,
               >
                 <View style={styles.exerciseInfo}>
                   <Text style={styles.exerciseNumber}>
-                    {exercise.isCompleted ? '✅' : `${exerciseIndex + 1}`}
+                    {exercise.isCompleted ? '' : `${exerciseIndex + 1}`}
                   </Text>
                   <View>
                     <Text style={styles.exerciseName}>{exercise.name}</Text>
@@ -433,7 +433,7 @@ export default function WorkoutSessionScreen({ authToken, sessionId, onComplete,
                       <Text style={styles.detailText}>⏱️ Tempo: {exercise.tempo}</Text>
                     )}
                     {exercise.rir !== undefined && (
-                      <Text style={styles.detailText}>💪 RIR: {exercise.rir}</Text>
+                      <Text style={styles.detailText}> RIR: {exercise.rir}</Text>
                     )}
                     <Text style={styles.detailText}>😮‍💨 Odmor: {exercise.restSeconds}s</Text>
                   </View>
@@ -515,7 +515,7 @@ export default function WorkoutSessionScreen({ authToken, sessionId, onComplete,
                   value={setInput.weight?.toString() || ''}
                   onChangeText={(text) => setSetInput({ ...setInput, weight: text ? parseFloat(text) : null })}
                   placeholder="0"
-                  placeholderTextColor="#666"
+                  placeholderTextColor="#52525B"
                 />
               </View>
 
@@ -528,7 +528,7 @@ export default function WorkoutSessionScreen({ authToken, sessionId, onComplete,
                   value={setInput.reps?.toString() || ''}
                   onChangeText={(text) => setSetInput({ ...setInput, reps: text ? parseInt(text) : null })}
                   placeholder={currentExercise?.reps || '0'}
-                  placeholderTextColor="#666"
+                  placeholderTextColor="#52525B"
                 />
               </View>
 
@@ -568,7 +568,7 @@ export default function WorkoutSessionScreen({ authToken, sessionId, onComplete,
                   style={styles.modalSaveButton}
                   onPress={handleSaveSet}
                 >
-                  <Text style={styles.modalSaveText}>✓ Spremi</Text>
+                  <Text style={styles.modalSaveText}>Spremi</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -590,9 +590,9 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 15,
   },
-  backText: { color: '#EF4444', fontSize: 16, fontWeight: '600' },
+  backText: { color: '#71717A', fontSize: 16, fontWeight: '600' },
   title: { color: '#FFF', fontSize: 18, fontWeight: '700' },
-  progressText: { color: '#8B5CF6', fontSize: 16, fontWeight: '700' },
+  progressText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
   progressBarContainer: {
     height: 4,
     backgroundColor: '#333',
@@ -601,14 +601,14 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     borderRadius: 2,
   },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { color: '#FFF', marginTop: 10, fontSize: 16 },
   errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { color: '#FFF', fontSize: 18, marginBottom: 20 },
-  backButton: { backgroundColor: '#8B5CF6', padding: 15, borderRadius: 12 },
+  backButton: { backgroundColor: '#27272A', padding: 15, borderRadius: 12 },
   backButtonText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
   content: { flex: 1, padding: 20 },
 
@@ -628,17 +628,17 @@ const styles = StyleSheet.create({
 
   // Exercise Card
   exerciseCard: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 16,
     marginBottom: 12,
     overflow: 'hidden',
   },
   exerciseCardCompleted: {
-    borderColor: '#22C55E',
+    borderColor: '#3F3F46',
     borderWidth: 2,
   },
   exerciseCardActive: {
-    borderColor: '#8B5CF6',
+    borderColor: '#FFFFFF',
     borderWidth: 2,
   },
   exerciseHeader: {
@@ -652,7 +652,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     color: '#FFF',
     fontSize: 14,
     fontWeight: '700',
@@ -662,8 +662,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   exerciseName: { color: '#FFF', fontSize: 16, fontWeight: '600' },
-  exerciseMeta: { color: '#888', fontSize: 12, marginTop: 2 },
-  exerciseExpandIcon: { color: '#888', fontSize: 12 },
+  exerciseMeta: { color: '#71717A', fontSize: 12, marginTop: 2 },
+  exerciseExpandIcon: { color: '#71717A', fontSize: 12 },
 
   // Sets
   setsContainer: { padding: 16, paddingTop: 0 },
@@ -676,7 +676,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#222',
     borderRadius: 8,
   },
-  detailText: { color: '#AAA', fontSize: 13 },
+  detailText: { color: '#A1A1AA', fontSize: 13 },
   setsGrid: { gap: 8 },
   setButton: {
     backgroundColor: '#333',
@@ -688,18 +688,18 @@ const styles = StyleSheet.create({
   },
   setButtonCompleted: {
     backgroundColor: 'rgba(34, 197, 94, 0.2)',
-    borderColor: '#22C55E',
+    borderColor: '#3F3F46',
     borderWidth: 1,
   },
   setNumber: { color: '#FFF', fontSize: 14, fontWeight: '600' },
   setResult: { alignItems: 'flex-end' },
-  setResultText: { color: '#22C55E', fontSize: 16, fontWeight: '700' },
-  setRirText: { color: '#888', fontSize: 12 },
-  setPlaceholder: { color: '#666', fontSize: 14 },
+  setResultText: { color: '#3F3F46', fontSize: 16, fontWeight: '700' },
+  setRirText: { color: '#71717A', fontSize: 12 },
+  setPlaceholder: { color: '#52525B', fontSize: 14 },
 
   // Complete Button
   completeButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#3F3F46',
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',
@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   inputGroup: { marginBottom: 20 },
-  inputLabel: { color: '#AAA', fontSize: 14, marginBottom: 8 },
+  inputLabel: { color: '#A1A1AA', fontSize: 14, marginBottom: 8 },
   input: {
     backgroundColor: '#333',
     borderRadius: 12,
@@ -752,9 +752,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   rirButtonActive: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
   },
-  rirButtonText: { color: '#888', fontSize: 18, fontWeight: '700' },
+  rirButtonText: { color: '#71717A', fontSize: 18, fontWeight: '700' },
   rirButtonTextActive: { color: '#FFF' },
   modalActions: {
     flexDirection: 'row',
@@ -771,7 +771,7 @@ const styles = StyleSheet.create({
   modalCancelText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
   modalSaveButton: {
     flex: 2,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#3F3F46',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',

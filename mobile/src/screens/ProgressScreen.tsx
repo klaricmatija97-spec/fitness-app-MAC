@@ -61,9 +61,9 @@ export default function ProgressScreen({ authToken, onBack }: Props) {
   if (loading) {
     return (
       <View style={styles.container}>
-        <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+        <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#8B5CF6" />
+            <ActivityIndicator size="large" color="#FFFFFF" />
           </View>
         </LinearGradient>
       </View>
@@ -73,7 +73,7 @@ export default function ProgressScreen({ authToken, onBack }: Props) {
   if (!data || !data.program) {
     return (
       <View style={styles.container}>
-        <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+        <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>Nema podataka</Text>
           </View>
@@ -84,7 +84,7 @@ export default function ProgressScreen({ authToken, onBack }: Props) {
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+      <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onBack}>
@@ -208,22 +208,22 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 20,
   },
-  backText: { color: '#8B5CF6', fontSize: 16 },
+  backText: { color: '#FFFFFF', fontSize: 16 },
   title: { fontSize: 20, fontWeight: 'bold', color: '#FFF' },
   placeholder: { width: 80 },
   content: { flex: 1, paddingHorizontal: 20 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  emptyText: { color: '#999', fontSize: 16 },
+  emptyText: { color: '#71717A', fontSize: 16 },
   card: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
   },
-  cardTitle: { fontSize: 14, color: '#999', marginBottom: 8 },
+  cardTitle: { fontSize: 14, color: '#71717A', marginBottom: 8 },
   cardValue: { fontSize: 20, fontWeight: 'bold', color: '#FFF', marginBottom: 4 },
-  cardLabel: { fontSize: 14, color: '#CCC', marginTop: 4 },
+  cardLabel: { fontSize: 14, color: '#D4D4D8', marginTop: 4 },
   weekProgress: {
     flexDirection: 'row',
     gap: 8,
@@ -235,9 +235,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#333',
     borderRadius: 4,
   },
-  weekDotCompleted: { backgroundColor: '#4CAF50' },
-  weekDotCurrent: { backgroundColor: '#8B5CF6' },
-  adherenceValue: { fontSize: 36, fontWeight: 'bold', color: '#8B5CF6', marginBottom: 12 },
+  weekDotCompleted: { backgroundColor: '#3F3F46' },
+  weekDotCurrent: { backgroundColor: '#27272A' },
+  adherenceValue: { fontSize: 36, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 12 },
   progressBar: {
     height: 8,
     backgroundColor: '#333',
@@ -247,17 +247,17 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
   },
   chartContainer: { marginTop: 20 },
-  chartTitle: { fontSize: 14, color: '#999', marginBottom: 12 },
+  chartTitle: { fontSize: 14, color: '#71717A', marginBottom: 12 },
   chartRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
     gap: 12,
   },
-  chartLabel: { fontSize: 12, color: '#CCC', width: 80 },
+  chartLabel: { fontSize: 12, color: '#D4D4D8', width: 80 },
   chartBarContainer: {
     flex: 1,
     height: 20,
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   },
   chartBar: {
     height: '100%',
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
   },
   chartValue: { fontSize: 12, color: '#FFF', width: 50, textAlign: 'right' },
   sessionItem: {
@@ -279,14 +279,14 @@ const styles = StyleSheet.create({
     borderBottomColor: '#333',
   },
   sessionName: { fontSize: 16, fontWeight: '600', color: '#FFF', flex: 1 },
-  sessionDate: { fontSize: 12, color: '#999', marginRight: 12 },
+  sessionDate: { fontSize: 12, color: '#71717A', marginRight: 12 },
   sessionStatusBadge: {
     backgroundColor: '#333',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
-  sessionStatusCompleted: { backgroundColor: '#4CAF50' },
+  sessionStatusCompleted: { backgroundColor: '#3F3F46' },
   sessionStatusText: { color: '#FFF', fontSize: 10, fontWeight: '600' },
 });
 

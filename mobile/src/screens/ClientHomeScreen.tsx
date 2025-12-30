@@ -62,10 +62,10 @@ export default function ClientHomeScreen({ authToken, onStartWorkout, onViewProg
 
   function getStatusColor(status: string): string {
     switch (status) {
-      case 'completed': return '#4CAF50';
-      case 'in_progress': return '#FFA500';
-      case 'skipped': return '#FF4444';
-      default: return '#8B5CF6';
+      case 'completed': return '#3F3F46';
+      case 'in_progress': return '#A1A1AA';
+      case 'skipped': return '#71717A';
+      default: return '#FFFFFF';
     }
   }
 
@@ -81,9 +81,9 @@ export default function ClientHomeScreen({ authToken, onStartWorkout, onViewProg
   if (loading) {
     return (
       <View style={styles.container}>
-        <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+        <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#8B5CF6" />
+            <ActivityIndicator size="large" color="#FFFFFF" />
             <Text style={styles.loadingText}>Učitavanje...</Text>
           </View>
         </LinearGradient>
@@ -93,7 +93,7 @@ export default function ClientHomeScreen({ authToken, onStartWorkout, onViewProg
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+      <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Danas</Text>
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: 'bold', color: '#FFF' },
   content: { flex: 1, paddingHorizontal: 20 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { color: '#999', marginTop: 16, fontSize: 16 },
+  loadingText: { color: '#71717A', marginTop: 16, fontSize: 16 },
   emptyContainer: {
     padding: 40,
     alignItems: 'center',
@@ -213,32 +213,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   emptyTitle: { fontSize: 20, fontWeight: 'bold', color: '#FFF', marginBottom: 12 },
-  emptyText: { fontSize: 14, color: '#999', textAlign: 'center' },
+  emptyText: { fontSize: 14, color: '#71717A', textAlign: 'center' },
   card: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
   },
-  cardTitle: { fontSize: 14, color: '#999', marginBottom: 8 },
+  cardTitle: { fontSize: 14, color: '#71717A', marginBottom: 8 },
   cardValue: { fontSize: 20, fontWeight: 'bold', color: '#FFF', marginBottom: 4 },
-  cardLabel: { fontSize: 14, color: '#CCC', marginTop: 4 },
+  cardLabel: { fontSize: 14, color: '#D4D4D8', marginTop: 4 },
   sessionCard: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
     borderWidth: 2,
-    borderColor: '#8B5CF6',
+    borderColor: '#FFFFFF',
   },
-  sessionTitle: { fontSize: 14, color: '#999', marginBottom: 8 },
+  sessionTitle: { fontSize: 14, color: '#71717A', marginBottom: 8 },
   sessionName: { fontSize: 24, fontWeight: 'bold', color: '#FFF', marginBottom: 12 },
   sessionInfo: {
     flexDirection: 'row',
     gap: 16,
     marginBottom: 16,
   },
-  sessionInfoText: { fontSize: 14, color: '#CCC' },
+  sessionInfoText: { fontSize: 14, color: '#D4D4D8' },
   statusBadge: {
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   statusText: { color: '#FFF', fontSize: 12, fontWeight: '600' },
-  adherenceValue: { fontSize: 36, fontWeight: 'bold', color: '#8B5CF6', marginBottom: 12 },
+  adherenceValue: { fontSize: 36, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 12 },
   progressBar: {
     height: 8,
     backgroundColor: '#333',
@@ -256,10 +256,10 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
   },
   progressButton: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',

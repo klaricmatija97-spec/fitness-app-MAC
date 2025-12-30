@@ -1,3 +1,13 @@
+/**
+ * Annual Plan Builder Screen
+ * ==========================
+ * 
+ * Timeline kao u video editoru:
+ * - Povuci lijevi/desni rub bloka za resize
+ * - Povuci sredinu bloka za pomicanje
+ * - Tap na prazan tjedan za dodavanje
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -9,119 +19,43 @@ import {
   Alert,
   Dimensions,
   Modal,
+  PanResponder,
+  GestureResponderEvent,
+  PanResponderGestureState,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { API_BASE_URL } from '../services/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const WEEK_WIDTH = 25; // Širina jednog tjedna u pikselima
-const TIMELINE_HEIGHT = 80;
+const WEEK_WIDTH = 24;
+const TRACK_HEIGHT = 60;
+const HANDLE_WIDTH = 16;
 
 // ============================================
-// IFT FAZE - Definicije
+// IFT FAZE
 // ============================================
 
 interface FazaDefinicija {
   tip: string;
   naziv: string;
-  nazivKratki: string;
+  kratki: string;
   boja: string;
-  ikona: string;
   opis: string;
-  trajanjeTjedana: { min: number; max: number };
+  tjedanaMin: number;
+  tjedanaMax: number;
   ponavljanja: string;
   intenzitet: string;
 }
 
-const IFT_FAZE: FazaDefinicija[] = [
-  { 
-    tip: 'hipertrofija', 
-    naziv: 'Hipertrofija', 
-    nazivKratki: 'HIP', 
-    boja: '#8B5CF6', 
-    ikona: '💪', 
-    opis: 'Povećanje mišićne mase',
-    trajanjeTjedana: { min: 4, max: 8 },
-    ponavljanja: '8-12',
-    intenzitet: '65-80% 1RM',
-  },
-  { 
-    tip: 'jakost', 
-    naziv: 'Jakost', 
-    nazivKratki: 'JAK', 
-    boja: '#EF4444', 
-    ikona: '🏋️', 
-    opis: 'Maksimalna snaga',
-    trajanjeTjedana: { min: 3, max: 6 },
-    ponavljanja: '1-5',
-    intenzitet: '85-100% 1RM',
-  },
-  { 
-    tip: 'snaga', 
-    naziv: 'Snaga/Power', 
-    nazivKratki: 'PWR', 
-    boja: '#F97316', 
-    ikona: '⚡', 
-    opis: 'Eksplozivnost',
-    trajanjeTjedana: { min: 3, max: 5 },
-    ponavljanja: '3-6 ekspl.',
-    intenzitet: '75-90% 1RM',
-  },
-  { 
-    tip: 'izdrzljivost', 
-    naziv: 'Izdržljivost', 
-    nazivKratki: 'IZD', 
-    boja: '#22C55E', 
-    ikona: '🔄', 
-    opis: 'Mišićna izdržljivost',
-    trajanjeTjedana: { min: 3, max: 6 },
-    ponavljanja: '15-25',
-    intenzitet: '50-65% 1RM',
-  },
-  { 
-    tip: 'deload', 
-    naziv: 'Deload', 
-    nazivKratki: 'DEL', 
-    boja: '#6B7280', 
-    ikona: '😴', 
-    opis: 'Oporavak',
-    trajanjeTjedana: { min: 1, max: 1 },
-    ponavljanja: '8-12',
-    intenzitet: '50-60% 1RM',
-  },
-  { 
-    tip: 'priprema', 
-    naziv: 'Priprema', 
-    nazivKratki: 'PRI', 
-    boja: '#14B8A6', 
-    ikona: '🎪', 
-    opis: 'Priprema za natjecanje',
-    trajanjeTjedana: { min: 2, max: 4 },
-    ponavljanja: 'Specifično',
-    intenzitet: '70-85% 1RM',
-  },
-  { 
-    tip: 'natjecanje', 
-    naziv: 'Natjecanje', 
-    nazivKratki: 'NAT', 
-    boja: '#FFD700', 
-    ikona: '🏆', 
-    opis: 'Natjecateljska faza',
-    trajanjeTjedana: { min: 1, max: 2 },
-    ponavljanja: 'Održavanje',
-    intenzitet: '95-105% 1RM',
-  },
-  { 
-    tip: 'tranzicija', 
-    naziv: 'Tranzicija', 
-    nazivKratki: 'TRA', 
-    boja: '#94A3B8', 
-    ikona: '🌊', 
-    opis: 'Aktivni odmor',
-    trajanjeTjedana: { min: 1, max: 3 },
-    ponavljanja: 'Lagano',
-    intenzitet: '40-60% 1RM',
-  },
+const FAZE: FazaDefinicija[] = [
+  { tip: 'hipertrofija', naziv: 'Hipertrofija', kratki: 'HIP', boja: '#FFFFFF', opis: 'Povećanje mišićne mase', tjedanaMin: 4, tjedanaMax: 8, ponavljanja: '8-12', intenzitet: '65-80%' },
+  { tip: 'jakost', naziv: 'Jakost', kratki: 'JAK', boja: '#A1A1AA', opis: 'Maksimalna snaga', tjedanaMin: 3, tjedanaMax: 6, ponavljanja: '1-5', intenzitet: '85-100%' },
+  { tip: 'snaga', naziv: 'Snaga', kratki: 'PWR', boja: '#71717A', opis: 'Eksplozivnost', tjedanaMin: 3, tjedanaMax: 5, ponavljanja: '3-6', intenzitet: '75-90%' },
+  { tip: 'izdrzljivost', naziv: 'Izdržljivost', kratki: 'IZD', boja: '#D4D4D8', opis: 'Mišićna izdržljivost', tjedanaMin: 3, tjedanaMax: 6, ponavljanja: '15-25', intenzitet: '50-65%' },
+  { tip: 'deload', naziv: 'Deload', kratki: 'DEL', boja: '#3F3F46', opis: 'Tjedan oporavka', tjedanaMin: 1, tjedanaMax: 1, ponavljanja: '8-12', intenzitet: '50-60%' },
+  { tip: 'priprema', naziv: 'Priprema', kratki: 'PRI', boja: '#52525B', opis: 'Priprema za natjecanje', tjedanaMin: 2, tjedanaMax: 4, ponavljanja: 'Specifično', intenzitet: '70-85%' },
+  { tip: 'natjecanje', naziv: 'Natjecanje', kratki: 'NAT', boja: '#E4E4E7', opis: 'Natjecateljska faza', tjedanaMin: 1, tjedanaMax: 2, ponavljanja: 'Održavanje', intenzitet: '95-105%' },
+  { tip: 'tranzicija', naziv: 'Tranzicija', kratki: 'TRA', boja: '#27272A', opis: 'Aktivni odmor', tjedanaMin: 1, tjedanaMax: 3, ponavljanja: 'Lagano', intenzitet: '40-60%' },
 ];
 
 // ============================================
@@ -139,22 +73,28 @@ interface Mesocycle {
   orderIndex: number;
 }
 
+interface PhaseData {
+  phaseType: string;
+  phaseName: string;
+  startWeek: number;
+  endWeek: number;
+  durationWeeks: number;
+  mesocycleId: string;
+  ponavljanja: string;
+  intenzitet: string;
+}
+
 interface Props {
   authToken: string;
   clientId: string;
   clientName: string;
   year: number;
   onBack?: () => void;
-  onGenerateProgram?: (clientId: string, mesocycleId: string) => void;
-  onManualMesocycle?: (programId: string, mesocycleId?: string) => void;
+  onGenerateProgram?: (clientId: string, phaseData: PhaseData) => void;
 }
 
-const MONTH_NAMES = [
-  'Sij', 'Velj', 'Ožu', 'Tra', 'Svi', 'Lip',
-  'Srp', 'Kol', 'Ruj', 'Lis', 'Stu', 'Pro'
-];
-
-const WEEKS_PER_MONTH = [5, 4, 4, 5, 4, 4, 5, 4, 5, 4, 4, 5]; // Približno
+const MONTHS = ['Sij', 'Velj', 'Ožu', 'Tra', 'Svi', 'Lip', 'Srp', 'Kol', 'Ruj', 'Lis', 'Stu', 'Pro'];
+const WEEKS_PER_MONTH = [5, 4, 4, 5, 4, 4, 5, 4, 5, 4, 4, 5];
 
 export default function AnnualPlanBuilderScreen({
   authToken,
@@ -163,19 +103,23 @@ export default function AnnualPlanBuilderScreen({
   year,
   onBack,
   onGenerateProgram,
-  onManualMesocycle,
 }: Props) {
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [mesocycles, setMesocycles] = useState<Mesocycle[]>([]);
   const [annualProgramId, setAnnualProgramId] = useState<string | null>(null);
-  const [showFazaModal, setShowFazaModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
-  const [selectedMesocycle, setSelectedMesocycle] = useState<Mesocycle | null>(null);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const [dragging, setDragging] = useState<{id: string; type: 'left' | 'right' | 'move'; startX: number; originalStart: number; originalDuration: number} | null>(null);
+  const [scrollEnabled, setScrollEnabled] = useState(true);
+  const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    loadAnnualProgram();
+    // Provjeri da li je backend dostupan
+    loadAnnualProgram().catch(() => {
+      // Ako nije, radi lokalno
+      console.log('Working in local mode');
+      setLoading(false);
+    });
   }, [year, clientId]);
 
   async function loadAnnualProgram() {
@@ -184,20 +128,38 @@ export default function AnnualPlanBuilderScreen({
       const response = await fetch(`${API_BASE_URL}/api/trainer/annual-plan?clientId=${clientId}&year=${year}`, {
         headers: { 'Authorization': `Bearer ${authToken}` },
       });
-      const result = await response.json();
+      
+      // Provjeri da li je odgovor OK
+      if (!response.ok) {
+        // 404 = plan ne postoji, treba kreirati
+        if (response.status === 404) {
+          console.log('Annual plan not found, creating new one...');
+          await createNewAnnualProgram();
+          return;
+        }
+        console.error('API error:', response.status);
+        setMesocycles([]);
+        return;
+      }
+
+      const text = await response.text();
+      if (!text) {
+        console.log('Empty response, creating new plan...');
+        await createNewAnnualProgram();
+        return;
+      }
+
+      const result = JSON.parse(text);
 
       if (result.success && result.data) {
         setMesocycles(result.data.mesocycles || []);
         setAnnualProgramId(result.data.id);
-      } else if (result.code === 'NOT_FOUND') {
-        await createNewAnnualProgram();
       } else {
-        // Za sada, kreiraj prazan plan
         await createNewAnnualProgram();
       }
     } catch (error) {
       console.error('Error loading annual program:', error);
-      // Za sada, nastavi s praznim planom
+      // Ako je network error ili parsing error, prikaži prazan plan
       setMesocycles([]);
     } finally {
       setLoading(false);
@@ -215,68 +177,168 @@ export default function AnnualPlanBuilderScreen({
         body: JSON.stringify({
           clientId,
           year,
-          name: `${clientName} - Godišnji plan ${year}`,
+          name: `${clientName} - ${year}`,
           startDate: `${year}-01-01`,
           endDate: `${year}-12-31`,
         }),
       });
-      const result = await response.json();
-      if (result.success) {
-        setAnnualProgramId(result.data.id);
+      
+      if (!response.ok) {
+        // 409 = već postoji, pokušaj dohvatiti ID
+        if (response.status === 409) {
+          const text = await response.text();
+          if (text) {
+            const result = JSON.parse(text);
+            if (result.data?.annualProgramId) {
+              setAnnualProgramId(result.data.annualProgramId);
+            }
+          }
+          return;
+        }
+        console.error('Error creating annual program:', response.status);
+        return;
+      }
+      
+      const text = await response.text();
+      if (text) {
+        const result = JSON.parse(text);
+        if (result.success && result.data?.id) {
+          setAnnualProgramId(result.data.id);
+        }
       }
     } catch (error) {
       console.error('Error creating annual program:', error);
+      // Nastavi bez ID-a, korisnik može raditi lokalno
     }
   }
 
-  function getFazaByTip(tip: string): FazaDefinicija {
-    return IFT_FAZE.find(f => f.tip === tip) || IFT_FAZE[0];
+  function getFaza(tip: string): FazaDefinicija {
+    return FAZE.find(f => f.tip === tip) || FAZE[0];
   }
 
-  function handleTimelinePress(week: number) {
-    // Provjeri da li već postoji mezociklus na ovom tjednu
+  // ============================================
+  // DRAG HANDLERS - Video Editor Style
+  // ============================================
+
+  function handleDragStart(
+    id: string, 
+    type: 'left' | 'right' | 'move', 
+    pageX: number
+  ) {
+    const meso = mesocycles.find(m => m.id === id);
+    if (!meso) return;
+    
+    // Zaključaj scroll dok povlačiš
+    setScrollEnabled(false);
+    
+    setDragging({
+      id,
+      type,
+      startX: pageX,
+      originalStart: meso.startWeek,
+      originalDuration: meso.durationWeeks,
+    });
+  }
+
+  function handleDragMove(pageX: number) {
+    if (!dragging) return;
+
+    const deltaX = pageX - dragging.startX;
+    const deltaWeeks = Math.round(deltaX / WEEK_WIDTH);
+
+    setMesocycles(prev => prev.map(m => {
+      if (m.id !== dragging.id) return m;
+
+      let newStart = dragging.originalStart;
+      let newDuration = dragging.originalDuration;
+
+      if (dragging.type === 'left') {
+        // Pomakni lijevi rub
+        newStart = Math.max(1, Math.min(51, dragging.originalStart + deltaWeeks));
+        newDuration = dragging.originalDuration - (newStart - dragging.originalStart);
+        newDuration = Math.max(1, Math.min(12, newDuration));
+      } else if (dragging.type === 'right') {
+        // Pomakni desni rub
+        newDuration = Math.max(1, Math.min(12, dragging.originalDuration + deltaWeeks));
+        // Ne prelazi 52 tjedna
+        if (newStart + newDuration > 53) {
+          newDuration = 53 - newStart;
+        }
+      } else {
+        // Move cijeli blok
+        newStart = Math.max(1, Math.min(53 - dragging.originalDuration, dragging.originalStart + deltaWeeks));
+      }
+
+      return { ...m, startWeek: newStart, durationWeeks: newDuration };
+    }));
+  }
+
+  function handleDragEnd() {
+    setDragging(null);
+    // Otključaj scroll
+    setScrollEnabled(true);
+  }
+
+  function handleWeekPress(week: number) {
     const existing = mesocycles.find(m => 
       week >= m.startWeek && week < m.startWeek + m.durationWeeks
     );
     
     if (existing) {
-      setSelectedMesocycle(existing);
+      const faza = getFaza(existing.type);
+      const endWeek = existing.startWeek + existing.durationWeeks - 1;
+      
       Alert.alert(
-        existing.name,
-        `Tip: ${getFazaByTip(existing.type).naziv}\nTjedni: ${existing.startWeek} - ${existing.startWeek + existing.durationWeeks - 1}`,
+        faza.naziv,
+        `Tjedni ${existing.startWeek}-${endWeek}\n${faza.ponavljanja} rep, ${faza.intenzitet}`,
         [
-          { text: 'Generiraj trening', onPress: () => onGenerateProgram?.(clientId, existing.trainingProgramId) },
-          { text: 'Ručno složi', onPress: () => onManualMesocycle?.(existing.trainingProgramId, existing.id) },
-          { text: 'Obriši', style: 'destructive', onPress: () => handleDeleteMesocycle(existing.id) },
+          { 
+            text: 'Generiraj program', 
+            onPress: () => onGenerateProgram?.(clientId, {
+              phaseType: existing.type,
+              phaseName: faza.naziv,
+              startWeek: existing.startWeek,
+              endWeek: endWeek,
+              durationWeeks: existing.durationWeeks,
+              mesocycleId: existing.id,
+              ponavljanja: faza.ponavljanja,
+              intenzitet: faza.intenzitet,
+            })
+          },
+          { text: 'Obriši', style: 'destructive', onPress: () => deleteMesocycle(existing.id) },
           { text: 'Zatvori', style: 'cancel' },
         ]
       );
     } else {
       setSelectedWeek(week);
-      setShowFazaModal(true);
+      setShowModal(true);
     }
   }
 
-  async function handleAddFaza(faza: FazaDefinicija) {
+  function deleteMesocycle(id: string) {
+    setMesocycles(prev => prev.filter(m => m.id !== id));
+  }
+
+  async function addFaza(faza: FazaDefinicija) {
     if (selectedWeek === null) return;
     
     const newMesocycle: Mesocycle = {
-      id: `temp-${Date.now()}`,
-      trainingProgramId: annualProgramId || '',
-      name: `${faza.naziv} - Tjedan ${selectedWeek}`,
+      id: `local-${Date.now()}`,
+      trainingProgramId: annualProgramId || `local-program-${Date.now()}`,
+      name: faza.naziv,
       type: faza.tip,
       startWeek: selectedWeek,
-      durationWeeks: faza.trajanjeTjedana.min,
+      durationWeeks: faza.tjedanaMin,
       status: 'planned',
       orderIndex: mesocycles.length,
     };
     
     setMesocycles([...mesocycles, newMesocycle]);
-    setShowFazaModal(false);
+    setShowModal(false);
     setSelectedWeek(null);
     
-    // TODO: Spremi u bazu
-    if (annualProgramId) {
+    // Spremi na backend ako je dostupan
+    if (annualProgramId && !annualProgramId.startsWith('local-')) {
       try {
         await fetch(`${API_BASE_URL}/api/training/manual/mesocycle`, {
           method: 'POST',
@@ -289,520 +351,586 @@ export default function AnnualPlanBuilderScreen({
             name: newMesocycle.name,
             type: faza.tip,
             startWeek: selectedWeek,
-            durationWeeks: faza.trajanjeTjedana.min,
+            durationWeeks: faza.tjedanaMin,
             orderIndex: mesocycles.length,
           }),
         });
       } catch (error) {
-        console.error('Error saving mesocycle:', error);
+        console.log('Saving locally (backend unavailable)');
       }
     }
   }
 
-  async function handleDeleteMesocycle(mesocycleId: string) {
-    setMesocycles(mesocycles.filter(m => m.id !== mesocycleId));
-    // TODO: Obriši iz baze
-  }
-
-  function handleExtendMesocycle(mesocycleId: string, weeks: number) {
-    setMesocycles(mesocycles.map(m => {
-      if (m.id === mesocycleId) {
-        return { ...m, durationWeeks: Math.max(1, m.durationWeeks + weeks) };
-      }
-      return m;
-    }));
-  }
-
-  // Render timeline header (mjeseci)
-  function renderMonthHeader() {
-    let weekOffset = 0;
-    return (
-      <View style={styles.monthHeader}>
-        {MONTH_NAMES.map((month, index) => {
-          const weeksInMonth = WEEKS_PER_MONTH[index];
-          const width = weeksInMonth * WEEK_WIDTH;
-          const offset = weekOffset;
-          weekOffset += weeksInMonth;
-          return (
-            <View key={index} style={[styles.monthCell, { width, left: offset * WEEK_WIDTH }]}>
-              <Text style={styles.monthText}>{month}</Text>
-            </View>
-          );
-        })}
-      </View>
-    );
-  }
-
-  // Render week numbers
-  function renderWeekNumbers() {
-    return (
-      <View style={styles.weekNumbersRow}>
-        {Array.from({ length: 52 }, (_, i) => (
-          <TouchableOpacity 
-            key={i} 
-            style={styles.weekNumberCell}
-            onPress={() => handleTimelinePress(i + 1)}
-          >
-            <Text style={styles.weekNumberText}>{i + 1}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    );
-  }
-
-  // Render mesocycles na timeline
-  function renderMesocyclesTimeline() {
-    return (
-      <View style={styles.timelineTrack}>
-        {mesocycles.map((mesocycle, index) => {
-          const faza = getFazaByTip(mesocycle.type);
-          const left = (mesocycle.startWeek - 1) * WEEK_WIDTH;
-          const width = mesocycle.durationWeeks * WEEK_WIDTH;
-          
-          return (
-            <TouchableOpacity
-              key={mesocycle.id}
-              style={[
-                styles.mesocycleBlock,
-                {
-                  left,
-                  width: Math.max(width, 50),
-                  backgroundColor: faza.boja,
-                },
-              ]}
-              onPress={() => handleTimelinePress(mesocycle.startWeek)}
-              onLongPress={() => {
-                Alert.alert(
-                  'Promijeni trajanje',
-                  `Trenutno trajanje: ${mesocycle.durationWeeks} tjedana`,
-                  [
-                    { text: '-1 tjedan', onPress: () => handleExtendMesocycle(mesocycle.id, -1) },
-                    { text: '+1 tjedan', onPress: () => handleExtendMesocycle(mesocycle.id, 1) },
-                    { text: 'Zatvori', style: 'cancel' },
-                  ]
-                );
-              }}
-            >
-              <Text style={styles.mesocycleIcon}>{faza.ikona}</Text>
-              <Text style={styles.mesocycleLabel} numberOfLines={1}>
-                {faza.nazivKratki}
-              </Text>
-              <Text style={styles.mesocycleWeeks}>{mesocycle.durationWeeks}t</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    );
-  }
-
-  // Render legenda faza
-  function renderLegenda() {
-    return (
-      <View style={styles.legenda}>
-        <Text style={styles.legendaTitle}>IFT FAZE</Text>
-        <View style={styles.legendaGrid}>
-          {IFT_FAZE.map((faza) => (
-            <TouchableOpacity
-              key={faza.tip}
-              style={styles.legendaItem}
-              onPress={() => {
-                Alert.alert(
-                  `${faza.ikona} ${faza.naziv}`,
-                  `${faza.opis}\n\nPonavljanja: ${faza.ponavljanja}\nIntenzitet: ${faza.intenzitet}\nTrajanje: ${faza.trajanjeTjedana.min}-${faza.trajanjeTjedana.max} tjedana`,
-                  [{ text: 'OK' }]
-                );
-              }}
-            >
-              <View style={[styles.legendaColor, { backgroundColor: faza.boja }]}>
-                <Text style={styles.legendaIcon}>{faza.ikona}</Text>
-              </View>
-              <Text style={styles.legendaLabel}>{faza.naziv}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-    );
-  }
-
-  // Modal za odabir faze
-  function renderFazaModal() {
-    return (
-      <Modal
-        visible={showFazaModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowFazaModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Odaberi fazu za tjedan {selectedWeek}</Text>
-            
-            <ScrollView style={styles.fazaList}>
-              {IFT_FAZE.map((faza) => (
-                <TouchableOpacity
-                  key={faza.tip}
-                  style={[styles.fazaOption, { borderLeftColor: faza.boja }]}
-                  onPress={() => handleAddFaza(faza)}
-                >
-                  <View style={styles.fazaOptionHeader}>
-                    <Text style={styles.fazaOptionIcon}>{faza.ikona}</Text>
-                    <Text style={styles.fazaOptionName}>{faza.naziv}</Text>
-                  </View>
-                  <Text style={styles.fazaOptionDesc}>{faza.opis}</Text>
-                  <View style={styles.fazaOptionParams}>
-                    <Text style={styles.fazaParam}>📊 {faza.ponavljanja}</Text>
-                    <Text style={styles.fazaParam}>💪 {faza.intenzitet}</Text>
-                    <Text style={styles.fazaParam}>📅 {faza.trajanjeTjedana.min}-{faza.trajanjeTjedana.max}t</Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setShowFazaModal(false)}
-            >
-              <Text style={styles.modalCloseText}>Zatvori</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    );
-  }
+  // ============================================
+  // RENDER
+  // ============================================
 
   if (loading) {
     return (
       <View style={styles.container}>
-        <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+        <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#8B5CF6" />
-            <Text style={styles.loadingText}>Učitavanje godišnjeg plana...</Text>
+            <ActivityIndicator size="large" color="#FFF" />
           </View>
         </LinearGradient>
       </View>
     );
   }
 
+  const timelineWidth = 52 * WEEK_WIDTH;
+
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+      <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={onBack}>
-            <Text style={styles.backText}>← Natrag</Text>
+          <TouchableOpacity onPress={onBack} style={styles.backButton}>
+            <Text style={styles.backText}>Natrag</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>📅 {year}</Text>
-          <TouchableOpacity onPress={() => Alert.alert('Info', 'Klikni na prazan tjedan da dodaš fazu.\nDugi klik na fazu za promjenu trajanja.')}>
-            <Text style={styles.infoText}>ℹ️</Text>
-          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Text style={styles.year}>{year}</Text>
+            <Text style={styles.clientName}>{clientName}</Text>
+          </View>
+          <View style={styles.headerRight} />
         </View>
 
-        <Text style={styles.clientName}>{clientName}</Text>
+        {/* Help Text */}
+        <View style={styles.helpSection}>
+          {dragging ? (
+            <Text style={styles.helpTextActive}>Povlacis... Pusti za potvrdu</Text>
+          ) : (
+            <>
+              <Text style={styles.helpText}>Povuci rubove bloka za produživanje</Text>
+              <Text style={styles.helpTextSub}>Tap prazan tjedan = dodaj fazu</Text>
+            </>
+          )}
+        </View>
 
-        {/* Legenda faza */}
-        {renderLegenda()}
-
-        {/* Timeline */}
+        {/* Timeline - Video Editor Style */}
         <View style={styles.timelineContainer}>
-          <Text style={styles.sectionTitle}>GODIŠNJA LENTA VREMENA</Text>
-          <Text style={styles.sectionSubtitle}>Klikni na tjedan za dodavanje faze</Text>
-          
           <ScrollView 
             horizontal 
-            ref={scrollViewRef}
-            showsHorizontalScrollIndicator={true}
-            contentContainerStyle={styles.timelineScroll}
+            ref={scrollRef}
+            showsHorizontalScrollIndicator={false}
+            scrollEventThrottle={16}
+            scrollEnabled={scrollEnabled}
+            nestedScrollEnabled={false}
           >
-            <View style={styles.timeline}>
-              {/* Mjeseci header */}
-              {renderMonthHeader()}
+            <View style={[styles.timeline, { width: timelineWidth + 40 }]}>
               
-              {/* Week numbers */}
-              {renderWeekNumbers()}
-              
-              {/* Mesocycles track */}
-              {renderMesocyclesTimeline()}
+              {/* Month Ruler */}
+              <View style={styles.monthRuler}>
+                {MONTHS.map((month, i) => {
+                  let left = 0;
+                  for (let j = 0; j < i; j++) {
+                    left += WEEKS_PER_MONTH[j] * WEEK_WIDTH;
+                  }
+                  return (
+                    <View key={i} style={[styles.monthMark, { left, width: WEEKS_PER_MONTH[i] * WEEK_WIDTH }]}>
+                      <Text style={styles.monthLabel}>{month}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+
+              {/* Week Numbers */}
+              <View style={styles.weekRuler}>
+                {Array.from({ length: 52 }, (_, i) => (
+                  <View key={i} style={[styles.weekMark, { left: i * WEEK_WIDTH }]}>
+                    {(i + 1) % 4 === 1 && (
+                      <Text style={styles.weekLabel}>{i + 1}</Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+
+              {/* Clickable Week Grid */}
+              <View style={styles.weekGrid}>
+                {Array.from({ length: 52 }, (_, i) => {
+                  const week = i + 1;
+                  const isOccupied = mesocycles.some(m => 
+                    week >= m.startWeek && week < m.startWeek + m.durationWeeks
+                  );
+                  return (
+                    <TouchableOpacity
+                      key={i}
+                      style={[styles.weekCell, isOccupied && styles.weekCellOccupied]}
+                      onPress={() => !isOccupied && handleWeekPress(week)}
+                      activeOpacity={0.7}
+                    />
+                  );
+                })}
+              </View>
+
+              {/* Mesocycle Blocks - Draggable */}
+              <View style={styles.trackArea}>
+                {mesocycles.map((m) => {
+                  const faza = getFaza(m.type);
+                  const left = (m.startWeek - 1) * WEEK_WIDTH;
+                  const width = m.durationWeeks * WEEK_WIDTH;
+                  const isDragging = dragging?.id === m.id;
+                  
+                  return (
+                    <View
+                      key={m.id}
+                      style={[
+                        styles.mesocycleBlock,
+                        { 
+                          left, 
+                          width,
+                          backgroundColor: faza.boja,
+                          opacity: isDragging ? 0.9 : 1,
+                          borderWidth: isDragging ? 2 : 1,
+                          borderColor: isDragging ? '#FFF' : 'rgba(255,255,255,0.2)',
+                        },
+                      ]}
+                    >
+                      {/* Left Handle - Drag to resize */}
+                      <View
+                        style={styles.handleLeft}
+                        onTouchStart={(e) => handleDragStart(m.id, 'left', e.nativeEvent.pageX)}
+                        onTouchMove={(e) => handleDragMove(e.nativeEvent.pageX)}
+                        onTouchEnd={handleDragEnd}
+                      >
+                        <View style={styles.handleBar} />
+                      </View>
+
+                      {/* Center - Tap for options or drag to move */}
+                      <TouchableOpacity
+                        style={styles.blockCenter}
+                        onPress={() => handleWeekPress(m.startWeek)}
+                        onLongPress={() => {
+                          // Start move on long press
+                        }}
+                      >
+                        <Text style={[styles.blockLabel, { color: faza.boja === '#FFFFFF' || faza.boja === '#E4E4E7' || faza.boja === '#D4D4D8' ? '#000' : '#FFF' }]}>
+                          {faza.kratki}
+                        </Text>
+                        <Text style={[styles.blockWeeks, { color: faza.boja === '#FFFFFF' || faza.boja === '#E4E4E7' || faza.boja === '#D4D4D8' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)' }]}>
+                          {m.durationWeeks}t
+                        </Text>
+                      </TouchableOpacity>
+
+                      {/* Right Handle - Drag to resize */}
+                      <View
+                        style={styles.handleRight}
+                        onTouchStart={(e) => handleDragStart(m.id, 'right', e.nativeEvent.pageX)}
+                        onTouchMove={(e) => handleDragMove(e.nativeEvent.pageX)}
+                        onTouchEnd={handleDragEnd}
+                      >
+                        <View style={styles.handleBar} />
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+
             </View>
           </ScrollView>
         </View>
 
-        {/* Lista mezociklusa */}
-        <ScrollView style={styles.mesocyclesList}>
-          <Text style={styles.sectionTitle}>MEZOCIKLUSI ({mesocycles.length})</Text>
+        {/* Legend */}
+        <View style={styles.legend}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {FAZE.map((faza) => (
+              <View key={faza.tip} style={styles.legendItem}>
+                <View style={[styles.legendColor, { backgroundColor: faza.boja }]} />
+                <Text style={styles.legendText}>{faza.kratki}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Mesocycle List */}
+        <ScrollView style={styles.listSection}>
+          <Text style={styles.listTitle}>PLAN ({mesocycles.length})</Text>
           
           {mesocycles.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>📅</Text>
               <Text style={styles.emptyText}>Nema mezociklusa</Text>
-              <Text style={styles.emptySubtext}>Klikni na tjedan u vremenskoj lenti iznad da dodaš prvu fazu</Text>
+              <Text style={styles.emptySubtext}>Tap tjedan u timelinu</Text>
             </View>
           ) : (
-            mesocycles.map((mesocycle, index) => {
-              const faza = getFazaByTip(mesocycle.type);
-              return (
-                <TouchableOpacity
-                  key={mesocycle.id}
-                  style={[styles.mesocycleCard, { borderLeftColor: faza.boja }]}
-                  onPress={() => handleTimelinePress(mesocycle.startWeek)}
-                >
-                  <View style={styles.mesocycleCardHeader}>
-                    <Text style={styles.mesocycleCardIcon}>{faza.ikona}</Text>
-                    <View style={styles.mesocycleCardInfo}>
-                      <Text style={styles.mesocycleCardName}>{faza.naziv}</Text>
-                      <Text style={styles.mesocycleCardWeeks}>
-                        Tjedan {mesocycle.startWeek} - {mesocycle.startWeek + mesocycle.durationWeeks - 1} ({mesocycle.durationWeeks}t)
+            mesocycles
+              .sort((a, b) => a.startWeek - b.startWeek)
+              .map((m) => {
+                const faza = getFaza(m.type);
+                return (
+                  <TouchableOpacity
+                    key={m.id}
+                    style={styles.listItem}
+                    onPress={() => handleWeekPress(m.startWeek)}
+                  >
+                    <View style={[styles.listItemColor, { backgroundColor: faza.boja }]} />
+                    <View style={styles.listItemContent}>
+                      <Text style={styles.listItemName}>{faza.naziv}</Text>
+                      <Text style={styles.listItemWeeks}>
+                        T{m.startWeek} - T{m.startWeek + m.durationWeeks - 1}
                       </Text>
                     </View>
-                    <View style={[styles.mesocycleCardBadge, { backgroundColor: faza.boja }]}>
-                      <Text style={styles.mesocycleCardBadgeText}>{faza.nazivKratki}</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })
+                    <Text style={styles.listItemDuration}>{m.durationWeeks}t</Text>
+                  </TouchableOpacity>
+                );
+              })
           )}
         </ScrollView>
 
-        {/* Modal za odabir faze */}
-        {renderFazaModal()}
+        {/* Modal */}
+        <Modal
+          visible={showModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Tjedan {selectedWeek}</Text>
+                <TouchableOpacity onPress={() => setShowModal(false)}>
+                  <Text style={styles.modalClose}>X</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <ScrollView style={styles.modalList}>
+                {FAZE.map((faza) => (
+                  <TouchableOpacity
+                    key={faza.tip}
+                    style={styles.modalItem}
+                    onPress={() => addFaza(faza)}
+                  >
+                    <View style={[styles.modalItemColor, { backgroundColor: faza.boja }]} />
+                    <View style={styles.modalItemContent}>
+                      <Text style={styles.modalItemName}>{faza.naziv}</Text>
+                      <Text style={styles.modalItemDesc}>
+                        {faza.ponavljanja} rep · {faza.intenzitet}
+                      </Text>
+                    </View>
+                    <Text style={styles.modalItemWeeks}>{faza.tjedanaMin}-{faza.tjedanaMax}t</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
       </LinearGradient>
     </View>
   );
 }
 
+// ============================================
+// STYLES
+// ============================================
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   gradient: { flex: 1 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  
+  // Header
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 60,
-    paddingBottom: 10,
+    paddingBottom: 12,
   },
-  backText: { color: '#8B5CF6', fontSize: 16, fontWeight: '600' },
-  title: { color: '#FFF', fontSize: 24, fontWeight: '700' },
-  infoText: { fontSize: 20 },
-  clientName: { 
-    color: '#AAA', 
-    fontSize: 16, 
-    textAlign: 'center', 
-    marginBottom: 10 
-  },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { color: '#FFF', marginTop: 10, fontSize: 16 },
+  backButton: { width: 70 },
+  backText: { color: '#71717A', fontSize: 16 },
+  headerCenter: { alignItems: 'center' },
+  year: { color: '#FFF', fontSize: 28, fontWeight: '200', letterSpacing: 4 },
+  clientName: { color: '#52525B', fontSize: 13, marginTop: 2 },
+  headerRight: { width: 70 },
   
-  // Legenda
-  legenda: {
-    paddingHorizontal: 15,
-    marginBottom: 15,
+  // Help
+  helpSection: {
+    alignItems: 'center',
+    paddingBottom: 16,
   },
-  legendaTitle: {
-    color: '#FFF',
+  helpText: {
+    color: '#52525B',
+    fontSize: 13,
+  },
+  helpTextSub: {
+    color: '#3F3F46',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  helpTextActive: {
+    color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 10,
+    fontWeight: '500',
   },
-  legendaGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  legendaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#2A2A2A',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  legendaColor: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 6,
-  },
-  legendaIcon: { fontSize: 14 },
-  legendaLabel: { color: '#FFF', fontSize: 12, fontWeight: '500' },
   
-  // Timeline
+  // Timeline Container
   timelineContainer: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
+    marginHorizontal: 12,
     borderRadius: 12,
-    marginHorizontal: 15,
-    padding: 15,
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 5,
-  },
-  sectionSubtitle: {
-    color: '#888',
-    fontSize: 12,
-    marginBottom: 15,
-  },
-  timelineScroll: {
-    paddingBottom: 10,
+    overflow: 'hidden',
   },
   timeline: {
-    width: 52 * WEEK_WIDTH,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
   },
-  monthHeader: {
-    flexDirection: 'row',
-    height: 30,
-    marginBottom: 5,
-  },
-  monthCell: {
-    position: 'absolute',
-    height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#333',
-    borderRadius: 4,
-    marginRight: 2,
-  },
-  monthText: {
-    color: '#FFF',
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  weekNumbersRow: {
-    flexDirection: 'row',
-    height: 25,
-    marginBottom: 5,
-  },
-  weekNumberCell: {
-    width: WEEK_WIDTH,
-    height: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#222',
-    borderWidth: 0.5,
-    borderColor: '#444',
-  },
-  weekNumberText: {
-    color: '#666',
-    fontSize: 9,
-  },
-  timelineTrack: {
-    height: TIMELINE_HEIGHT,
-    backgroundColor: '#1A1A1A',
-    borderRadius: 8,
+  
+  // Month Ruler
+  monthRuler: {
+    height: 20,
     position: 'relative',
+    marginBottom: 4,
   },
-  mesocycleBlock: {
+  monthMark: {
     position: 'absolute',
-    top: 5,
-    height: TIMELINE_HEIGHT - 10,
-    borderRadius: 8,
-    flexDirection: 'column',
+    height: 20,
+    justifyContent: 'center',
+    borderLeftWidth: 1,
+    borderLeftColor: '#27272A',
+    paddingLeft: 4,
+  },
+  monthLabel: {
+    color: '#52525B',
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  
+  // Week Ruler
+  weekRuler: {
+    height: 16,
+    position: 'relative',
+    marginBottom: 8,
+  },
+  weekMark: {
+    position: 'absolute',
+    width: WEEK_WIDTH,
+    height: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 4,
   },
-  mesocycleIcon: {
-    fontSize: 16,
-  },
-  mesocycleLabel: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  mesocycleWeeks: {
-    color: 'rgba(255,255,255,0.7)',
+  weekLabel: {
+    color: '#3F3F46',
     fontSize: 9,
   },
   
-  // Lista
-  mesocyclesList: {
+  // Week Grid
+  weekGrid: {
+    flexDirection: 'row',
+    height: 24,
+    marginBottom: 8,
+  },
+  weekCell: {
+    width: WEEK_WIDTH - 2,
+    height: 24,
+    backgroundColor: '#27272A',
+    marginRight: 2,
+    borderRadius: 3,
+  },
+  weekCellOccupied: {
+    backgroundColor: '#3F3F46',
+  },
+  
+  // Track Area
+  trackArea: {
+    height: TRACK_HEIGHT,
+    position: 'relative',
+  },
+  
+  // Mesocycle Block
+  mesocycleBlock: {
+    position: 'absolute',
+    top: 0,
+    height: TRACK_HEIGHT,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  
+  // Drag Handles
+  handleLeft: {
+    width: HANDLE_WIDTH,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderTopLeftRadius: 8,
+    borderBottomLeftRadius: 8,
+  },
+  handleRight: {
+    width: HANDLE_WIDTH,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderTopRightRadius: 8,
+    borderBottomRightRadius: 8,
+  },
+  handleBar: {
+    width: 3,
+    height: 24,
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    borderRadius: 2,
+  },
+  
+  blockCenter: {
     flex: 1,
-    paddingHorizontal: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+  },
+  blockLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  blockWeeks: {
+    fontSize: 11,
+    marginLeft: 6,
+  },
+  
+  // Legend
+  legend: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  legendColor: {
+    width: 12,
+    height: 12,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+  legendText: {
+    color: '#52525B',
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  
+  // List
+  listSection: {
+    flex: 1,
+    paddingHorizontal: 12,
+  },
+  listTitle: {
+    color: '#3F3F46',
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 1,
+    marginBottom: 8,
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 30,
+    paddingVertical: 32,
   },
-  emptyIcon: { fontSize: 48, marginBottom: 10 },
-  emptyText: { color: '#FFF', fontSize: 18, fontWeight: '600', marginBottom: 5 },
-  emptySubtext: { color: '#888', fontSize: 14, textAlign: 'center' },
-  mesocycleCard: {
-    backgroundColor: '#2A2A2A',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
-    borderLeftWidth: 4,
-  },
-  mesocycleCardHeader: {
+  emptyText: { color: '#3F3F46', fontSize: 14, fontWeight: '500' },
+  emptySubtext: { color: '#27272A', fontSize: 12, marginTop: 4 },
+  
+  listItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#18181B',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 6,
   },
-  mesocycleCardIcon: { fontSize: 28, marginRight: 12 },
-  mesocycleCardInfo: { flex: 1 },
-  mesocycleCardName: { color: '#FFF', fontSize: 16, fontWeight: '600' },
-  mesocycleCardWeeks: { color: '#AAA', fontSize: 13, marginTop: 2 },
-  mesocycleCardBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 6,
+  listItemColor: {
+    width: 4,
+    height: 32,
+    borderRadius: 2,
+    marginRight: 12,
   },
-  mesocycleCardBadgeText: { color: '#FFF', fontSize: 12, fontWeight: '700' },
+  listItemContent: {
+    flex: 1,
+  },
+  listItemName: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  listItemWeeks: {
+    color: '#52525B',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  listItemDuration: {
+    color: '#3F3F46',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   
   // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    backgroundColor: 'rgba(0,0,0,0.9)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: '80%',
+    maxHeight: '65%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#27272A',
   },
   modalTitle: {
     color: '#FFF',
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 20,
+    fontSize: 16,
+    fontWeight: '600',
   },
-  fazaList: {
-    maxHeight: 400,
+  modalClose: {
+    color: '#52525B',
+    fontSize: 18,
+    fontWeight: '600',
+    padding: 4,
   },
-  fazaOption: {
-    backgroundColor: '#333',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 10,
-    borderLeftWidth: 4,
+  modalList: {
+    padding: 12,
   },
-  fazaOptionHeader: {
+  modalItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  fazaOptionIcon: { fontSize: 24, marginRight: 10 },
-  fazaOptionName: { color: '#FFF', fontSize: 18, fontWeight: '600' },
-  fazaOptionDesc: { color: '#AAA', fontSize: 14, marginBottom: 10 },
-  fazaOptionParams: {
-    flexDirection: 'row',
-    gap: 15,
-  },
-  fazaParam: { color: '#888', fontSize: 12 },
-  modalCloseButton: {
-    backgroundColor: '#444',
+    backgroundColor: '#27272A',
     borderRadius: 10,
-    padding: 15,
-    alignItems: 'center',
-    marginTop: 15,
+    padding: 14,
+    marginBottom: 6,
   },
-  modalCloseText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
+  modalItemColor: {
+    width: 6,
+    height: 40,
+    borderRadius: 3,
+    marginRight: 14,
+  },
+  modalItemContent: {
+    flex: 1,
+  },
+  modalItemName: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  modalItemDesc: {
+    color: '#71717A',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  modalItemWeeks: {
+    color: '#52525B',
+    fontSize: 12,
+  },
 });
+
+
+
+
+
+
+
+

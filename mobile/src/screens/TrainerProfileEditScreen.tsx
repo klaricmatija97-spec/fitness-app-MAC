@@ -240,7 +240,7 @@ export default function TrainerProfileEditScreen({ authToken, onBack, onSaved }:
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#000', '#1C1C1E']} style={styles.gradient}>
+      <LinearGradient colors={['#000', '#18181B']} style={styles.gradient}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onBack}>
@@ -270,7 +270,7 @@ export default function TrainerProfileEditScreen({ authToken, onBack, onSaved }:
               <Switch
                 value={profile.isPublic}
                 onValueChange={(value) => setProfile({ ...profile, isPublic: value })}
-                trackColor={{ false: '#3A3A3C', true: '#34C759' }}
+                trackColor={{ false: '#3F3F46', true: '#34C759' }}
                 thumbColor="#FFF"
               />
             </View>
@@ -284,7 +284,7 @@ export default function TrainerProfileEditScreen({ authToken, onBack, onSaved }:
               value={profile.name}
               onChangeText={(text) => setProfile({ ...profile, name: text })}
               placeholder="Ivan Horvat"
-              placeholderTextColor="#48484A"
+              placeholderTextColor="#52525B"
             />
 
             <Text style={styles.inputLabel}>Motto / Slogan</Text>
@@ -293,7 +293,7 @@ export default function TrainerProfileEditScreen({ authToken, onBack, onSaved }:
               value={profile.motto}
               onChangeText={(text) => setProfile({ ...profile, motto: text })}
               placeholder="Tvoj inspirativni slogan..."
-              placeholderTextColor="#48484A"
+              placeholderTextColor="#52525B"
               maxLength={100}
             />
 
@@ -303,7 +303,7 @@ export default function TrainerProfileEditScreen({ authToken, onBack, onSaved }:
               value={profile.bio}
               onChangeText={(text) => setProfile({ ...profile, bio: text })}
               placeholder="Opiši sebe, svoju filozofiju treninga, iskustvo..."
-              placeholderTextColor="#48484A"
+              placeholderTextColor="#52525B"
               multiline
               numberOfLines={4}
               textAlignVertical="top"
@@ -317,7 +317,7 @@ export default function TrainerProfileEditScreen({ authToken, onBack, onSaved }:
                   value={profile.location}
                   onChangeText={(text) => setProfile({ ...profile, location: text })}
                   placeholder="Zagreb"
-                  placeholderTextColor="#48484A"
+                  placeholderTextColor="#52525B"
                 />
               </View>
               <View style={styles.halfInput}>
@@ -327,7 +327,7 @@ export default function TrainerProfileEditScreen({ authToken, onBack, onSaved }:
                   value={profile.yearsOfExperience.toString()}
                   onChangeText={(text) => setProfile({ ...profile, yearsOfExperience: parseInt(text) || 0 })}
                   placeholder="5"
-                  placeholderTextColor="#48484A"
+                  placeholderTextColor="#52525B"
                   keyboardType="numeric"
                 />
               </View>
@@ -337,9 +337,9 @@ export default function TrainerProfileEditScreen({ authToken, onBack, onSaved }:
             <Text style={styles.sectionTitle}>TIP TRENINGA</Text>
             <View style={styles.trainingTypeRow}>
               {[
-                { value: 'online', label: '💻 Online' },
-                { value: 'in_person', label: '🏋️ Uživo' },
-                { value: 'both', label: '💻🏋️ Oboje' },
+                { value: 'online', label: ' Online' },
+                { value: 'in_person', label: ' Uživo' },
+                { value: 'both', label: ' Oboje' },
               ].map((type) => (
                 <TouchableOpacity
                   key={type.value}
@@ -369,7 +369,7 @@ export default function TrainerProfileEditScreen({ authToken, onBack, onSaved }:
                   value={profile.hourlyRate?.toString() || ''}
                   onChangeText={(text) => setProfile({ ...profile, hourlyRate: parseFloat(text) || null })}
                   placeholder="40"
-                  placeholderTextColor="#48484A"
+                  placeholderTextColor="#52525B"
                   keyboardType="numeric"
                 />
               </View>
@@ -444,7 +444,7 @@ export default function TrainerProfileEditScreen({ authToken, onBack, onSaved }:
                 value={newCertName}
                 onChangeText={setNewCertName}
                 placeholder="Naziv certifikata (npr. ISSA CPT)"
-                placeholderTextColor="#48484A"
+                placeholderTextColor="#52525B"
               />
               <View style={styles.certRow}>
                 <TextInput
@@ -452,14 +452,14 @@ export default function TrainerProfileEditScreen({ authToken, onBack, onSaved }:
                   value={newCertIssuer}
                   onChangeText={setNewCertIssuer}
                   placeholder="Izdavač (npr. ISSA)"
-                  placeholderTextColor="#48484A"
+                  placeholderTextColor="#52525B"
                 />
                 <TextInput
                   style={[styles.input, styles.certInputSmall]}
                   value={newCertYear}
                   onChangeText={setNewCertYear}
                   placeholder="Godina"
-                  placeholderTextColor="#48484A"
+                  placeholderTextColor="#52525B"
                   keyboardType="numeric"
                   maxLength={4}
                 />
@@ -481,7 +481,7 @@ export default function TrainerProfileEditScreen({ authToken, onBack, onSaved }:
                 socialLinks: { ...profile.socialLinks, instagram: text } 
               })}
               placeholder="@username"
-              placeholderTextColor="#48484A"
+              placeholderTextColor="#52525B"
               autoCapitalize="none"
             />
 
@@ -494,7 +494,7 @@ export default function TrainerProfileEditScreen({ authToken, onBack, onSaved }:
                 socialLinks: { ...profile.socialLinks, youtube: text } 
               })}
               placeholder="Naziv kanala"
-              placeholderTextColor="#48484A"
+              placeholderTextColor="#52525B"
             />
 
             <Text style={styles.inputLabel}>Web stranica</Text>
@@ -506,7 +506,7 @@ export default function TrainerProfileEditScreen({ authToken, onBack, onSaved }:
                 socialLinks: { ...profile.socialLinks, website: text } 
               })}
               placeholder="https://..."
-              placeholderTextColor="#48484A"
+              placeholderTextColor="#52525B"
               autoCapitalize="none"
               keyboardType="url"
             />
@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  loadingText: { color: '#8E8E93', marginTop: 16 },
+  loadingText: { color: '#71717A', marginTop: 16 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -538,12 +538,12 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2C2C2E',
+    borderBottomColor: '#27272A',
   },
-  cancelText: { color: '#0A84FF', fontSize: 17 },
+  cancelText: { color: '#FFFFFF', fontSize: 17 },
   title: { color: '#FFF', fontSize: 17, fontWeight: '600' },
-  saveText: { color: '#0A84FF', fontSize: 17, fontWeight: '600' },
-  saveTextDisabled: { color: '#48484A' },
+  saveText: { color: '#FFFFFF', fontSize: 17, fontWeight: '600' },
+  saveTextDisabled: { color: '#52525B' },
   keyboardView: { flex: 1 },
   content: { flex: 1, padding: 16 },
 
@@ -552,17 +552,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#18181B',
     padding: 16,
     borderRadius: 12,
     marginBottom: 24,
   },
   publicLabel: { color: '#FFF', fontSize: 16, fontWeight: '600' },
-  publicHint: { color: '#8E8E93', fontSize: 13, marginTop: 2 },
+  publicHint: { color: '#71717A', fontSize: 13, marginTop: 2 },
 
   // Section
   sectionTitle: {
-    color: '#8E8E93',
+    color: '#71717A',
     fontSize: 12,
     fontWeight: '600',
     letterSpacing: 1,
@@ -571,9 +571,9 @@ const styles = StyleSheet.create({
   },
 
   // Inputs
-  inputLabel: { color: '#8E8E93', fontSize: 13, marginBottom: 6 },
+  inputLabel: { color: '#71717A', fontSize: 13, marginBottom: 6 },
   input: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#18181B',
     color: '#FFF',
     padding: 14,
     borderRadius: 10,
@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
   },
   trainingTypeButton: {
     flex: 1,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#18181B',
     padding: 14,
     borderRadius: 10,
     alignItems: 'center',
@@ -605,9 +605,9 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   trainingTypeButtonActive: {
-    borderColor: '#0A84FF',
+    borderColor: '#FFFFFF',
   },
-  trainingTypeText: { color: '#8E8E93', fontSize: 14 },
+  trainingTypeText: { color: '#71717A', fontSize: 14 },
   trainingTypeTextActive: { color: '#FFF', fontWeight: '600' },
 
   // Currency
@@ -617,15 +617,15 @@ const styles = StyleSheet.create({
   },
   currencyButton: {
     flex: 1,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#18181B',
     padding: 14,
     borderRadius: 10,
     alignItems: 'center',
   },
   currencyButtonActive: {
-    backgroundColor: '#0A84FF',
+    backgroundColor: '#27272A',
   },
-  currencyText: { color: '#8E8E93', fontSize: 14 },
+  currencyText: { color: '#71717A', fontSize: 14 },
   currencyTextActive: { color: '#FFF', fontWeight: '600' },
 
   // Tags
@@ -635,50 +635,50 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tag: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#18181B',
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#2C2C2E',
+    borderColor: '#27272A',
   },
   tagActive: {
-    backgroundColor: '#0A84FF',
-    borderColor: '#0A84FF',
+    backgroundColor: '#27272A',
+    borderColor: '#FFFFFF',
   },
-  tagText: { color: '#8E8E93', fontSize: 14 },
+  tagText: { color: '#71717A', fontSize: 14 },
   tagTextActive: { color: '#FFF', fontWeight: '500' },
 
   // Certifications
   certItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#18181B',
     padding: 14,
     borderRadius: 10,
     marginBottom: 8,
   },
   certInfo: { flex: 1 },
   certName: { color: '#FFF', fontSize: 15, fontWeight: '500' },
-  certIssuer: { color: '#8E8E93', fontSize: 13, marginTop: 2 },
+  certIssuer: { color: '#71717A', fontSize: 13, marginTop: 2 },
   certRemove: { color: '#FF453A', fontSize: 18, padding: 4 },
   addCertForm: {
-    backgroundColor: '#1C1C1E',
+    backgroundColor: '#18181B',
     padding: 14,
     borderRadius: 12,
     marginTop: 8,
   },
-  certInput: { marginBottom: 8, backgroundColor: '#2C2C2E' },
+  certInput: { marginBottom: 8, backgroundColor: '#27272A' },
   certRow: { flexDirection: 'row', gap: 8 },
-  certInputHalf: { flex: 2, backgroundColor: '#2C2C2E' },
-  certInputSmall: { flex: 1, backgroundColor: '#2C2C2E' },
+  certInputHalf: { flex: 2, backgroundColor: '#27272A' },
+  certInputSmall: { flex: 1, backgroundColor: '#27272A' },
   addCertButton: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: '#27272A',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 4,
   },
-  addCertButtonText: { color: '#0A84FF', fontSize: 15, fontWeight: '500' },
+  addCertButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '500' },
 });
 

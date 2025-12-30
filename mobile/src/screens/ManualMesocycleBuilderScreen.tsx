@@ -397,7 +397,7 @@ export default function ManualMesocycleBuilderScreen({ programId, onComplete, on
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#1A1A1A', '#2D2D2D']}
+        colors={['#0A0A0A', '#171717']}
         style={styles.gradient}
       >
         {/* Header */}
@@ -434,7 +434,7 @@ export default function ManualMesocycleBuilderScreen({ programId, onComplete, on
                 value={name}
                 onChangeText={setName}
                 placeholder="npr. Akumulacija - Visok volumen"
-                placeholderTextColor="#666"
+                placeholderTextColor="#52525B"
               />
               
               <Text style={styles.label}>Tip mezociklusa</Text>
@@ -541,12 +541,12 @@ export default function ManualMesocycleBuilderScreen({ programId, onComplete, on
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder="Pretraži vježbe..."
-                placeholderTextColor="#666"
+                placeholderTextColor="#52525B"
               />
               
               {/* Exercise List */}
               {loading ? (
-                <ActivityIndicator size="large" color="#8B5CF6" />
+                <ActivityIndicator size="large" color="#FFFFFF" />
               ) : (
                 <FlatList
                   data={filteredExercises.slice(0, 50)}
@@ -703,7 +703,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   cancelText: {
-    color: '#8B5CF6',
+    color: '#FFFFFF',
     fontSize: 16,
   },
   title: {
@@ -728,7 +728,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   progressStepActive: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
   },
   content: {
     flex: 1,
@@ -745,7 +745,7 @@ const styles = StyleSheet.create({
   },
   stepDescription: {
     fontSize: 14,
-    color: '#999',
+    color: '#71717A',
     marginBottom: 24,
   },
   label: {
@@ -756,7 +756,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 16,
     color: '#FFF',
@@ -773,16 +773,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderWidth: 1,
     borderColor: '#333',
   },
   typeButtonActive: {
-    backgroundColor: '#8B5CF6',
-    borderColor: '#8B5CF6',
+    backgroundColor: '#27272A',
+    borderColor: '#FFFFFF',
   },
   typeText: {
-    color: '#999',
+    color: '#71717A',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -798,18 +798,18 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 12,
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderWidth: 1,
     borderColor: '#333',
     alignItems: 'center',
     justifyContent: 'center',
   },
   numberButtonActive: {
-    backgroundColor: '#8B5CF6',
-    borderColor: '#8B5CF6',
+    backgroundColor: '#27272A',
+    borderColor: '#FFFFFF',
   },
   numberText: {
-    color: '#999',
+    color: '#71717A',
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -817,7 +817,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
   sessionCard: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -832,10 +832,10 @@ const styles = StyleSheet.create({
   },
   sessionExercises: {
     fontSize: 14,
-    color: '#999',
+    color: '#71717A',
   },
   exerciseCard: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -850,15 +850,15 @@ const styles = StyleSheet.create({
   },
   exerciseDetails: {
     fontSize: 14,
-    color: '#999',
+    color: '#71717A',
   },
   selectedExerciseCard: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#8B5CF6',
+    borderColor: '#FFFFFF',
   },
   selectedExerciseName: {
     fontSize: 16,
@@ -868,7 +868,7 @@ const styles = StyleSheet.create({
   },
   selectedExerciseDetails: {
     fontSize: 14,
-    color: '#999',
+    color: '#71717A',
     marginBottom: 8,
   },
   removeButton: {
@@ -876,7 +876,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: '#FF4444',
+    backgroundColor: '#71717A',
   },
   removeButtonText: {
     color: '#FFF',
@@ -884,14 +884,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   summaryCard: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 20,
     marginBottom: 24,
   },
   summaryLabel: {
     fontSize: 14,
-    color: '#999',
+    color: '#71717A',
     marginBottom: 4,
   },
   summaryValue: {
@@ -901,7 +901,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   nextButton: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -913,7 +913,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   backButton: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -925,7 +925,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   saveButton: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -942,7 +942,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: '#0A0A0A',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
@@ -955,7 +955,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalCloseButton: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',

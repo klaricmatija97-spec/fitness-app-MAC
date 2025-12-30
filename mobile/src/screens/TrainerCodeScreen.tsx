@@ -103,7 +103,7 @@ export default function TrainerCodeScreen({ authToken, onBack }: Props) {
     
     try {
       await Share.share({
-        message: `Pridruži mi se na fitness aplikaciji! 💪\n\nMoj kod za povezivanje: ${trainerCode}\n\nSkini aplikaciju i unesi ovaj kod da se povežeš sa mnom kao svojim trenerom.`,
+        message: `Pridruži mi se na fitness aplikaciji! \n\nMoj kod za povezivanje: ${trainerCode}\n\nSkini aplikaciju i unesi ovaj kod da se povežeš sa mnom kao svojim trenerom.`,
         title: 'Pozivnica za fitness aplikaciju',
       });
     } catch (error) {
@@ -114,9 +114,9 @@ export default function TrainerCodeScreen({ authToken, onBack }: Props) {
   if (loading) {
     return (
       <View style={styles.container}>
-        <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+        <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#8B5CF6" />
+            <ActivityIndicator size="large" color="#FFFFFF" />
             <Text style={styles.loadingText}>Učitavanje koda...</Text>
           </View>
         </LinearGradient>
@@ -126,7 +126,7 @@ export default function TrainerCodeScreen({ authToken, onBack }: Props) {
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+      <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
         {/* Header */}
         <View style={styles.header}>
           {onBack && (
@@ -142,7 +142,7 @@ export default function TrainerCodeScreen({ authToken, onBack }: Props) {
         <View style={styles.content}>
           {/* Icon */}
           <View style={styles.iconContainer}>
-            <Text style={styles.icon}>🎫</Text>
+            <Text style={styles.icon}></Text>
           </View>
 
           {/* Title */}
@@ -165,7 +165,7 @@ export default function TrainerCodeScreen({ authToken, onBack }: Props) {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.copyButton} onPress={handleCopyCode}>
-              <Text style={styles.copyIcon}>📋</Text>
+              <Text style={styles.copyIcon}></Text>
               <Text style={styles.copyButtonText}>Kopiraj</Text>
             </TouchableOpacity>
           </View>
@@ -177,16 +177,16 @@ export default function TrainerCodeScreen({ authToken, onBack }: Props) {
             disabled={regenerating}
           >
             {regenerating ? (
-              <ActivityIndicator color="#888" size="small" />
+              <ActivityIndicator color="#71717A" size="small" />
             ) : (
-              <Text style={styles.regenerateText}>🔄 Generiraj novi kod</Text>
+              <Text style={styles.regenerateText}> Generiraj novi kod</Text>
             )}
           </TouchableOpacity>
         </View>
 
         {/* Instructions */}
         <View style={styles.instructions}>
-          <Text style={styles.instructionsTitle}>📱 Kako klijent koristi kod:</Text>
+          <Text style={styles.instructionsTitle}> Kako klijent koristi kod:</Text>
           <View style={styles.step}>
             <Text style={styles.stepNumber}>1</Text>
             <Text style={styles.stepText}>Klijent skine aplikaciju</Text>
@@ -204,7 +204,7 @@ export default function TrainerCodeScreen({ authToken, onBack }: Props) {
             <Text style={styles.stepText}>Unese tvoj kod: {trainerCode}</Text>
           </View>
           <View style={styles.step}>
-            <Text style={styles.stepNumber}>✅</Text>
+            <Text style={styles.stepNumber}></Text>
             <Text style={styles.stepText}>Pojavi se u tvojoj listi klijenata!</Text>
           </View>
         </View>
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 10,
   },
-  backText: { color: '#8B5CF6', fontSize: 16, fontWeight: '600' },
+  backText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   headerTitle: { color: '#FFF', fontSize: 18, fontWeight: '600' },
   placeholder: { width: 80 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -253,12 +253,12 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 15,
-    color: '#AAA',
+    color: '#A1A1AA',
     textAlign: 'center',
     marginBottom: 30,
   },
   codeContainer: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     borderRadius: 20,
     paddingVertical: 25,
     paddingHorizontal: 40,
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   shareButton: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#22C55E',
+    backgroundColor: '#3F3F46',
     borderRadius: 14,
     padding: 16,
     alignItems: 'center',
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   regenerateText: {
-    color: '#888',
+    color: '#71717A',
     fontSize: 14,
   },
   instructions: {
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     color: '#FFF',
     fontSize: 14,
     fontWeight: '700',
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   stepText: {
-    color: '#CCC',
+    color: '#D4D4D8',
     fontSize: 14,
     flex: 1,
   },

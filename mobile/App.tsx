@@ -78,6 +78,16 @@ export default function App() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedClientName, setSelectedClientName] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedPhaseData, setSelectedPhaseData] = useState<{
+    phaseType: string;
+    phaseName: string;
+    startWeek: number;
+    endWeek: number;
+    durationWeeks: number;
+    mesocycleId: string;
+    ponavljanja: string;
+    intenzitet: string;
+  } | null>(null);
   const [connectedTrainerId, setConnectedTrainerId] = useState<string | null>(null);
   const [connectedTrainerName, setConnectedTrainerName] = useState<string | null>(null);
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
@@ -301,8 +311,18 @@ export default function App() {
     setShowAnnualPlanBuilder(true);
   };
 
-  const handleGenerateProgram = (clientId: string) => {
+  const handleGenerateProgram = (clientId: string, phaseData?: {
+    phaseType: string;
+    phaseName: string;
+    startWeek: number;
+    endWeek: number;
+    durationWeeks: number;
+    mesocycleId: string;
+    ponavljanja: string;
+    intenzitet: string;
+  }) => {
     setSelectedClientId(clientId);
+    setSelectedPhaseData(phaseData || null);
     setShowTrainerClientDetail(false);
     setShowAnnualPlanBuilder(false);
     setShowTrainingGenerator(true);
@@ -511,10 +531,6 @@ export default function App() {
         year={selectedYear}
         onBack={handleBackFromAnnualPlan}
         onGenerateProgram={handleGenerateProgram}
-        onManualBuilder={handleManualBuilder}
-        onMesocyclePress={(mesocycleId) => {
-          // Opcije za mezociklus se prikazuju u Alert dialogu unutar AnnualPlanBuilderScreen
-        }}
       />
     );
   }
@@ -720,14 +736,24 @@ export default function App() {
 
   // Generator treninga ekran
   if (showTrainingGenerator) {
-    // Provjeri da li dolazi iz trainer home ili iz meal plan
-    const onCancelHandler = showTrainerHome ? handleBackFromTrainingToTrainerHome : handleBackToMealPlan;
+    // Provjeri da li dolazi iz annual plan (ima phaseData) ili iz trainer home
+    const onCancelHandler = selectedPhaseData 
+      ? () => {
+          setSelectedPhaseData(null);
+          setShowTrainingGenerator(false);
+          setShowAnnualPlanBuilder(true);
+        }
+      : (showTrainerHome ? handleBackFromTrainingToTrainerHome : handleBackToMealPlan);
     
     return (
       <TrainerProgramBuilderScreen
         authToken={TRAINER_TOKEN}
         clientId={selectedClientId || undefined}
-        onComplete={handleTrainingComplete}
+        phaseData={selectedPhaseData || undefined}
+        onComplete={(programId) => {
+          setSelectedPhaseData(null);
+          handleTrainingComplete(programId);
+        }}
         onCancel={onCancelHandler}
       />
     );

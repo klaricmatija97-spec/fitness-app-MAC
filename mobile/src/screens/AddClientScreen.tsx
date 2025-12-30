@@ -141,7 +141,7 @@ export default function AddClientScreen({ authToken, onComplete, onCancel }: Pro
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+      <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
@@ -170,7 +170,7 @@ export default function AddClientScreen({ authToken, onComplete, onCancel }: Pro
                   value={formData.name}
                   onChangeText={(text) => setFormData({ ...formData, name: text })}
                   placeholder="Ivan Horvat"
-                  placeholderTextColor="#666"
+                  placeholderTextColor="#52525B"
                   editable={!loading}
                   autoCapitalize="words"
                 />
@@ -184,7 +184,7 @@ export default function AddClientScreen({ authToken, onComplete, onCancel }: Pro
                   value={formData.email}
                   onChangeText={(text) => setFormData({ ...formData, email: text })}
                   placeholder="ivan.horvat@example.com"
-                  placeholderTextColor="#666"
+                  placeholderTextColor="#52525B"
                   editable={!loading}
                   autoCapitalize="none"
                   keyboardType="email-address"
@@ -200,7 +200,7 @@ export default function AddClientScreen({ authToken, onComplete, onCancel }: Pro
                   value={formData.phone}
                   onChangeText={(text) => setFormData({ ...formData, phone: text })}
                   placeholder="+385 91 234 5678"
-                  placeholderTextColor="#666"
+                  placeholderTextColor="#52525B"
                   editable={!loading}
                   keyboardType="phone-pad"
                   autoComplete="tel"
@@ -215,7 +215,7 @@ export default function AddClientScreen({ authToken, onComplete, onCancel }: Pro
                   value={formData.notes}
                   onChangeText={(text) => setFormData({ ...formData, notes: text })}
                   placeholder="Dodatne informacije o klijentu..."
-                  placeholderTextColor="#666"
+                  placeholderTextColor="#52525B"
                   editable={!loading}
                   multiline
                   numberOfLines={4}
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#333',
   },
   cancelText: {
-    color: '#8B5CF6',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 16,
     color: '#FFF',
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   submitButton: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   helperText: {
-    color: '#666',
+    color: '#52525B',
     fontSize: 12,
     textAlign: 'center',
     marginTop: 16,

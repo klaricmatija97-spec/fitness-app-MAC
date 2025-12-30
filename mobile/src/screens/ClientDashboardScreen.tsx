@@ -158,9 +158,9 @@ export default function ClientDashboardScreen({
   if (loading) {
     return (
       <View style={styles.container}>
-        <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+        <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#8B5CF6" />
+            <ActivityIndicator size="large" color="#FFFFFF" />
             <Text style={styles.loadingText}>Učitavanje...</Text>
           </View>
         </LinearGradient>
@@ -170,7 +170,7 @@ export default function ClientDashboardScreen({
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+      <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
         {/* Header */}
         <View style={styles.header}>
           {onBack && (
@@ -206,14 +206,14 @@ export default function ClientDashboardScreen({
             </View>
           ) : (
             <View style={styles.noTrainerCard}>
-              <Text style={styles.noTrainerIcon}>👤</Text>
+              <Text style={styles.noTrainerIcon}></Text>
               <Text style={styles.noTrainerText}>Nemaš povezanog trenera</Text>
             </View>
           )}
 
           {/* Today's Workout */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📅 Današnji trening</Text>
+            <Text style={styles.sectionTitle}> Današnji trening</Text>
             
             {data?.todayWorkout ? (
               <TouchableOpacity 
@@ -228,8 +228,8 @@ export default function ClientDashboardScreen({
                     data.todayWorkout.status === 'in_progress' && styles.statusInProgress,
                   ]}>
                     <Text style={styles.workoutStatusText}>
-                      {data.todayWorkout.status === 'completed' ? '✅ Završeno' :
-                       data.todayWorkout.status === 'in_progress' ? '🏃 U tijeku' :
+                      {data.todayWorkout.status === 'completed' ? ' Završeno' :
+                       data.todayWorkout.status === 'in_progress' ? ' U tijeku' :
                        '⏳ Čeka'}
                     </Text>
                   </View>
@@ -239,7 +239,7 @@ export default function ClientDashboardScreen({
                     ⏱️ {data.todayWorkout.estimatedDuration} min
                   </Text>
                   <Text style={styles.workoutMetaText}>
-                    💪 {data.todayWorkout.exerciseCount} vježbi
+                     {data.todayWorkout.exerciseCount} vježbi
                   </Text>
                 </View>
                 <TouchableOpacity 
@@ -253,7 +253,7 @@ export default function ClientDashboardScreen({
               </TouchableOpacity>
             ) : (
               <View style={styles.noWorkoutCard}>
-                <Text style={styles.noWorkoutIcon}>🎉</Text>
+                <Text style={styles.noWorkoutIcon}></Text>
                 <Text style={styles.noWorkoutText}>Nema treninga za danas!</Text>
                 <Text style={styles.noWorkoutSubtext}>Uživaj u odmoru ili čekaj da trener kreira program.</Text>
               </View>
@@ -263,7 +263,7 @@ export default function ClientDashboardScreen({
           {/* Program Info */}
           {data?.program && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>📋 Aktivni program</Text>
+              <Text style={styles.sectionTitle}> Aktivni program</Text>
               <View style={styles.programCard}>
                 <Text style={styles.programName}>{data.program.name}</Text>
                 <View style={styles.programProgress}>
@@ -285,7 +285,7 @@ export default function ClientDashboardScreen({
 
           {/* Stats */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📊 Tvoj napredak</Text>
+            <Text style={styles.sectionTitle}> Tvoj napredak</Text>
             <View style={styles.statsGrid}>
               <View style={styles.statCard}>
                 <Text style={styles.statValue}>{data?.stats.completedWorkouts || 0}</Text>
@@ -297,7 +297,7 @@ export default function ClientDashboardScreen({
               </View>
               <View style={styles.statCard}>
                 <Text style={styles.statValue}>{data?.stats.streak || 0}</Text>
-                <Text style={styles.statLabel}>Dana u nizu 🔥</Text>
+                <Text style={styles.statLabel}>Dana u nizu </Text>
               </View>
             </View>
           </View>
@@ -305,7 +305,7 @@ export default function ClientDashboardScreen({
           {/* Empty state if no program */}
           {!data?.program && data?.trainer && (
             <View style={styles.emptyProgramCard}>
-              <Text style={styles.emptyIcon}>📝</Text>
+              <Text style={styles.emptyIcon}></Text>
               <Text style={styles.emptyTitle}>Čekamo program</Text>
               <Text style={styles.emptyText}>
                 Tvoj trener {data.trainer.name} još nije kreirao program za tebe. 
@@ -318,13 +318,13 @@ export default function ClientDashboardScreen({
           <View style={styles.actionButtons}>
             {onViewProgress && (
               <TouchableOpacity style={styles.actionButton} onPress={onViewProgress}>
-                <Text style={styles.actionButtonIcon}>📊</Text>
+                <Text style={styles.actionButtonIcon}></Text>
                 <Text style={styles.actionButtonText}>Moj napredak</Text>
               </TouchableOpacity>
             )}
             {onSettings && (
               <TouchableOpacity style={styles.actionButton} onPress={onSettings}>
-                <Text style={styles.actionButtonIcon}>🔔</Text>
+                <Text style={styles.actionButtonIcon}></Text>
                 <Text style={styles.actionButtonText}>Notifikacije</Text>
               </TouchableOpacity>
             )}
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 15,
   },
-  backText: { color: '#8B5CF6', fontSize: 16, fontWeight: '600' },
+  backText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   title: { color: '#FFF', fontSize: 20, fontWeight: '700' },
   placeholder: { width: 60 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
   
   // Trainer Card
   trainerCard: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#3F3F46',
     borderRadius: 16,
     padding: 16,
     flexDirection: 'row',
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   noTrainerIcon: { fontSize: 40, marginBottom: 10 },
-  noTrainerText: { color: '#AAA', fontSize: 16 },
+  noTrainerText: { color: '#A1A1AA', fontSize: 16 },
   
   // Section
   section: { marginBottom: 25 },
@@ -397,11 +397,11 @@ const styles = StyleSheet.create({
   
   // Workout Card
   workoutCard: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 16,
     padding: 20,
     borderLeftWidth: 4,
-    borderLeftColor: '#8B5CF6',
+    borderLeftColor: '#FFFFFF',
   },
   workoutHeader: {
     flexDirection: 'row',
@@ -416,13 +416,13 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 8,
   },
-  statusCompleted: { backgroundColor: '#22C55E' },
+  statusCompleted: { backgroundColor: '#3F3F46' },
   statusInProgress: { backgroundColor: '#F59E0B' },
   workoutStatusText: { color: '#FFF', fontSize: 12, fontWeight: '600' },
   workoutMeta: { flexDirection: 'row', gap: 20, marginBottom: 16 },
-  workoutMetaText: { color: '#AAA', fontSize: 14 },
+  workoutMetaText: { color: '#A1A1AA', fontSize: 14 },
   startButton: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     borderRadius: 12,
     padding: 14,
     alignItems: 'center',
@@ -430,18 +430,18 @@ const styles = StyleSheet.create({
   startButtonText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
   
   noWorkoutCard: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 16,
     padding: 30,
     alignItems: 'center',
   },
   noWorkoutIcon: { fontSize: 48, marginBottom: 12 },
   noWorkoutText: { color: '#FFF', fontSize: 18, fontWeight: '600', marginBottom: 8 },
-  noWorkoutSubtext: { color: '#888', fontSize: 14, textAlign: 'center' },
+  noWorkoutSubtext: { color: '#71717A', fontSize: 14, textAlign: 'center' },
   
   // Program Card
   programCard: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 16,
     padding: 20,
   },
@@ -454,8 +454,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 8,
   },
-  progressFill: { height: '100%', backgroundColor: '#8B5CF6' },
-  progressText: { color: '#AAA', fontSize: 13 },
+  progressFill: { height: '100%', backgroundColor: '#27272A' },
+  progressText: { color: '#A1A1AA', fontSize: 13 },
   
   // Stats
   statsGrid: {
@@ -464,19 +464,19 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
   },
-  statValue: { color: '#8B5CF6', fontSize: 24, fontWeight: '700' },
-  statLabel: { color: '#888', fontSize: 11, marginTop: 4, textAlign: 'center' },
+  statValue: { color: '#FFFFFF', fontSize: 24, fontWeight: '700' },
+  statLabel: { color: '#71717A', fontSize: 11, marginTop: 4, textAlign: 'center' },
   
   // Empty Program
   emptyProgramCard: {
     backgroundColor: 'rgba(139, 92, 246, 0.1)',
     borderWidth: 1,
-    borderColor: '#8B5CF6',
+    borderColor: '#FFFFFF',
     borderStyle: 'dashed',
     borderRadius: 16,
     padding: 30,
@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
   },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyTitle: { color: '#FFF', fontSize: 18, fontWeight: '600', marginBottom: 8 },
-  emptyText: { color: '#AAA', fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  emptyText: { color: '#A1A1AA', fontSize: 14, textAlign: 'center', lineHeight: 20 },
   
   // Action Buttons
   actionButtons: {
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',

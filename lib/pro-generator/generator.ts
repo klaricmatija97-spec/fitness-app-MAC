@@ -36,6 +36,13 @@ import {
   ZAGRIJAVANJE_SABLONE,
   MEZOCIKLUS_TIPOVI,
   PROGRESIJA_MODELI,
+  // Pliometrija
+  PLIOMETRIJSKE_VJEZBE,
+  PLIOMETRIJA_PARAMETRI,
+  getPliometrijskeVjezbeZaRazinu,
+  // Kardio
+  KARDIO_PROGRAMI,
+  HIIT_PROTOKOL_IFT,
 } from './constants';
 import { filtrirajVjezbe, dohvatiVjezbeZaGrupu, pronadiAlternative } from './exercise-loader';
 
@@ -514,15 +521,23 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
 // HELPER FUNKCIJE
 // ============================================
 
+/**
+ * Generira naziv programa prema IFT metodici
+ */
 function generirajNazivPrograma(cilj: string, split: TipSplita, razina: string): string {
   const ciljNazivi: Record<string, string> = {
+    // IFT ciljevi (Tablica 23)
+    jakost: 'Jakost',
+    snaga: 'Snaga/Power',
     hipertrofija: 'Hipertrofija',
+    izdrzljivost: 'Izdržljivost',
+    rekreacija_zdravlje: 'Rekreacija',
+    // Legacy podrška
     maksimalna_snaga: 'Maksimalna snaga',
     misicna_izdrzljivost: 'Mišićna izdržljivost',
-    rekreacija_zdravlje: 'Rekreacija',
   };
   const splitNazivi = SPLIT_KONFIGURACIJE[split].naziv;
-  return `${ciljNazivi[cilj]} - ${splitNazivi}`;
+  return `${ciljNazivi[cilj] || cilj} - ${splitNazivi}`;
 }
 
 function generirajOpisPrograma(input: GeneratorInput, splitConfig: typeof SPLIT_KONFIGURACIJE[TipSplita]): string {
@@ -531,30 +546,54 @@ function generirajOpisPrograma(input: GeneratorInput, splitConfig: typeof SPLIT_
          `${splitConfig.opisHr}`;
 }
 
+/**
+ * Generira naziv mezociklusa prema IFT fazama
+ */
 function generirajNazivMezociklusa(tip: string, redniBroj: number): string {
   const tipNazivi: Record<string, string> = {
+    // Klasična periodizacija
     akumulacija: 'Faza akumulacije',
     intenzifikacija: 'Faza intenzifikacije',
     realizacija: 'Faza realizacije',
     deload: 'Deload faza',
+    // IFT specifične faze
+    hipertrofija: 'Faza hipertrofije',
+    jakost: 'Faza jakosti',
+    snaga: 'Faza snage/power',
+    izdrzljivost: 'Faza izdržljivosti',
+    priprema: 'Faza pripreme',
+    tranzicija: 'Faza tranzicije',
+    natjecanje: 'Natjecateljska faza',
   };
   return `${tipNazivi[tip] || tip} #${redniBroj}`;
 }
 
+/**
+ * Generira naziv treninga prema IFT metodici
+ * Uključuje GPN (Guranje/Povlačenje/Noge) split
+ */
 function generirajNazivTreninga(tipTreninga: string, redniBroj: number): string {
   const tipNazivi: Record<string, string> = {
-    full_body_a: 'Full Body A',
-    full_body_b: 'Full Body B',
-    full_body_c: 'Full Body C',
+    // Full Body
+    full_body_a: 'Cijelo tijelo A',
+    full_body_b: 'Cijelo tijelo B',
+    full_body_c: 'Cijelo tijelo C',
+    // Upper/Lower
     upper_a: 'Gornji dio A',
     upper_b: 'Gornji dio B',
     upper_c: 'Gornji dio C',
     lower_a: 'Donji dio A',
     lower_b: 'Donji dio B',
     lower_c: 'Donji dio C',
+    // GPN Split (IFT Tablica 25)
+    guranje: 'Vježbe Guranja',    // Prsa, ramena, triceps
+    povlacenje: 'Vježbe Povlačenja',  // Leđa, biceps
+    noge: 'Vježbe za noge',
+    // Legacy PPL
     push: 'Push dan',
     pull: 'Pull dan',
     legs: 'Legs dan',
+    // Body Part Split
     prsa: 'Prsa',
     prsa_triceps: 'Prsa + Triceps',
     ledja: 'Leđa',
@@ -562,8 +601,9 @@ function generirajNazivTreninga(tipTreninga: string, redniBroj: number): string 
     ramena: 'Ramena',
     ruke: 'Ruke',
     arms: 'Ruke',
-    noge: 'Noge',
     weak_points: 'Slabe točke',
+    // Kardio
+    kardio: 'Kardio vježbanje',
   };
   return tipNazivi[tipTreninga] || `Trening ${redniBroj}`;
 }
@@ -1125,6 +1165,165 @@ function odrediTipMezociklusa(weekStart: number, ukupnoTjedana: number): string 
   if (postotak < 0.5) return 'volume';
   if (postotak < 0.8) return 'intensity';
   return 'peak';
+}
+
+// ============================================
+// PLIOMETRIJA GENERIRANJE - IFT METODIKA
+// ============================================
+
+import type { PliometrijskaSesija, PliometrijskaVjezbaSesije, KardioSesija } from './types';
+
+/**
+ * Generira pliometrijsku sesiju za fazu SNAGA/POWER
+ * Koristi se prije glavnog treninga snage
+ */
+export function generirajPliometrijskuSesiju(
+  razina: 'pocetnik' | 'srednji' | 'napredni',
+  weekId: string,
+  danUTjednu: number,
+): PliometrijskaSesija {
+  const parametri = PLIOMETRIJA_PARAMETRI[razina];
+  const dostupneVjezbe = getPliometrijskeVjezbeZaRazinu(razina);
+  
+  // Odaberi 3-4 vježbe ovisno o razini
+  const brojVjezbi = razina === 'pocetnik' ? 3 : razina === 'srednji' ? 4 : 5;
+  const odabraneVjezbe: PliometrijskaVjezbaSesije[] = [];
+  
+  let ukupniKontakti = 0;
+  const maxKontakti = (parametri.ukupniKontakti.min + parametri.ukupniKontakti.max) / 2;
+  
+  // Miješaj vježbe i odaberi
+  const shuffled = [...dostupneVjezbe].sort(() => Math.random() - 0.5);
+  
+  for (let i = 0; i < Math.min(brojVjezbi, shuffled.length); i++) {
+    const vjezba = shuffled[i];
+    const serije = Math.round((parametri.serije.min + parametri.serije.max) / 2);
+    const ponavljanja = Math.round((parametri.ponavljanja.min + parametri.ponavljanja.max) / 2);
+    const odmor = Math.round((parametri.odmorSekunde.min + parametri.odmorSekunde.max) / 2);
+    
+    // Provjeri da ne prelazimo maksimum kontakata
+    const kontaktiVjezbe = serije * ponavljanja;
+    if (ukupniKontakti + kontaktiVjezbe > maxKontakti * 1.2) break;
+    
+    ukupniKontakti += kontaktiVjezbe;
+    
+    odabraneVjezbe.push({
+      id: uuidv4(),
+      vjezbaId: vjezba.id,
+      naziv: vjezba.naziv,
+      nazivHr: vjezba.nazivHr,
+      serije,
+      ponavljanja,
+      odmorSekunde: odmor,
+      tip: vjezba.tip,
+      misicneGrupe: vjezba.misicneGrupe,
+      napomene: vjezba.opis,
+    });
+  }
+  
+  return {
+    id: uuidv4(),
+    weekId,
+    danUTjednu,
+    naziv: `Pliometrija - ${razina}`,
+    ukupniKontakti,
+    vjezbe: odabraneVjezbe,
+    razina,
+    napomene: `Ukupno ${ukupniKontakti} kontakata. Odmor ${parametri.odmorSekunde.min}-${parametri.odmorSekunde.max} sec između serija.`,
+  };
+}
+
+// ============================================
+// KARDIO GENERIRANJE - IFT METODIKA
+// ============================================
+
+/**
+ * Generira kardio sesiju prema IFT metodici
+ */
+export function generirajKardioSesiju(
+  tip: 'kontinuirani' | 'intervalni' | 'hiit',
+  weekId: string,
+  danUTjednu: number,
+  trajanje?: number,
+): KardioSesija {
+  if (tip === 'hiit') {
+    // HIIT protokol iz IFT skripte
+    const protokol = HIIT_PROTOKOL_IFT;
+    return {
+      id: uuidv4(),
+      weekId,
+      danUTjednu,
+      naziv: protokol.naziv,
+      tipKardio: 'hiit',
+      trajanje: 25,  // približno trajanje
+      intenzitetSF: { min: 80, max: 90 },
+      tempo: protokol.tempo,
+      intervalRada: protokol.struktura.intervalRada,
+      intervalOdmora: protokol.struktura.intervalOdmora,
+      brojIntervala: protokol.struktura.intervalaPoSeriji,
+      brojSerija: protokol.struktura.serije,
+      odmorIzmeduSerija: protokol.struktura.odmorIzmeduSerija,
+      hiitVjezbe: protokol.primjerVjezbi,
+      oprema: 'bez opreme',
+      napomene: `${protokol.struktura.serije} serije x ${protokol.struktura.intervalaPoSeriji} intervala (${protokol.struktura.intervalRada}s rad / ${protokol.struktura.intervalOdmora}s odmor)`,
+    };
+  }
+  
+  // Kontinuirani ili intervalni
+  const program = KARDIO_PROGRAMI.find(p => p.tip === tip);
+  if (!program) {
+    // Fallback na lagano trčanje
+    return {
+      id: uuidv4(),
+      weekId,
+      danUTjednu,
+      naziv: 'Lagano trčanje',
+      tipKardio: 'kontinuirani',
+      trajanje: trajanje || 25,
+      intenzitetSF: { min: 60, max: 70 },
+      tempo: '10 km/h umjereni tempo',
+      oprema: 'traka ili vanjski',
+    };
+  }
+  
+  return {
+    id: uuidv4(),
+    weekId,
+    danUTjednu,
+    naziv: program.naziv,
+    tipKardio: program.tip,
+    trajanje: trajanje || Math.round((program.trajanje.min + program.trajanje.max) / 2),
+    intenzitetSF: program.intenzitetSF,
+    tempo: program.tempo,
+    intervalRada: program.intervalRada,
+    intervalOdmora: program.intervalOdmora,
+    brojIntervala: program.brojIntervala,
+    napomene: program.opis,
+  };
+}
+
+/**
+ * Određuje treba li dodati pliometriju u trening na temelju cilja i faze
+ */
+export function trebaDodatiPliometriju(cilj: string, fazaMezociklusa: string): boolean {
+  // Pliometrija se koristi u fazama snage/power
+  const pliometrijskeFaze = ['snaga', 'jakost', 'realizacija', 'natjecanje', 'priprema'];
+  const pliometrijskiCiljevi = ['snaga', 'jakost'];
+  
+  return pliometrijskeFaze.includes(fazaMezociklusa) || pliometrijskiCiljevi.includes(cilj);
+}
+
+/**
+ * Određuje treba li dodati kardio na temelju cilja i tjednog plana
+ */
+export function trebaDodatiKardio(cilj: string, treninziTjedno: number): boolean {
+  // Kardio se preporuča za izdržljivost i rekreaciju
+  const kardioPreporukaZaCilj = ['izdrzljivost', 'rekreacija_zdravlje'].includes(cilj);
+  
+  // Također ako ima dovoljno dana odmora (manje od 5 treninga)
+  const imaProstora = treninziTjedno <= 4;
+  
+  return kardioPreporukaZaCilj || imaProstora;
 }
 
 // ============================================

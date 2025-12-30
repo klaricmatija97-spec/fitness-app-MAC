@@ -122,8 +122,8 @@ export default function TrainerHomeScreen({ authToken, onClientPress, onNewClien
 
   function getStatusColor(status: string): string {
     switch (status) {
-      case 'draft': return '#FFA500';
-      case 'active': return '#4CAF50';
+      case 'draft': return '#A1A1AA';
+      case 'active': return '#3F3F46';
       case 'archived': return '#757575';
       default: return '#757575';
     }
@@ -154,9 +154,9 @@ export default function TrainerHomeScreen({ authToken, onClientPress, onNewClien
   if (loading) {
     return (
       <View style={styles.container}>
-        <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+        <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#8B5CF6" />
+            <ActivityIndicator size="large" color="#FFFFFF" />
             <Text style={styles.loadingText}>Učitavanje...</Text>
           </View>
         </LinearGradient>
@@ -168,15 +168,15 @@ export default function TrainerHomeScreen({ authToken, onClientPress, onNewClien
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#1A1A1A', '#2D2D2D']} style={styles.gradient}>
+      <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <TouchableOpacity style={styles.headerIconButton} onPress={onEditProfile}>
-              <Text style={styles.headerIconText}>👤</Text>
+              <Text style={styles.headerIconText}>P</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.headerIconButton} onPress={onShowCode}>
-              <Text style={styles.headerIconText}>🎫</Text>
+              <Text style={styles.headerIconText}>#</Text>
             </TouchableOpacity>
           </View>
           <Text style={styles.title}>Klijenti</Text>
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerIconButton: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   codeButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#3F3F46',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   newButton: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 12,
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 12,
-    color: '#999',
+    color: '#71717A',
   },
   filterContainer: {
     flexDirection: 'row',
@@ -384,13 +384,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
   },
   filterButtonActive: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
   },
   filterText: {
-    color: '#999',
+    color: '#71717A',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
   clientCard: {
-    backgroundColor: '#2A2A2A',
+    backgroundColor: '#18181B',
     borderRadius: 12,
     padding: 16,
     marginHorizontal: 20,
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
   },
   clientEmail: {
     fontSize: 12,
-    color: '#999',
+    color: '#71717A',
     marginBottom: 8,
   },
   programInfo: {
@@ -456,14 +456,14 @@ const styles = StyleSheet.create({
   },
   programName: {
     fontSize: 12,
-    color: '#CCC',
+    color: '#D4D4D8',
     flex: 1,
   },
   attentionBadge: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#FF4444',
+    backgroundColor: '#71717A',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -478,19 +478,19 @@ const styles = StyleSheet.create({
   adherenceValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#8B5CF6',
+    color: '#FFFFFF',
     marginBottom: 4,
   },
   adherenceLabel: {
     fontSize: 10,
-    color: '#999',
+    color: '#71717A',
   },
   emptyContainer: {
     padding: 40,
     alignItems: 'center',
   },
   emptyText: {
-    color: '#999',
+    color: '#71717A',
     fontSize: 16,
   },
   loadingContainer: {
@@ -499,7 +499,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#999',
+    color: '#71717A',
     marginTop: 16,
     fontSize: 16,
   },
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 20,
     right: 20,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#27272A',
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderRadius: 24,
