@@ -1,11 +1,18 @@
-// Learn more https://docs.expo.dev/guides/customizing-metro
 const { getDefaultConfig } = require('expo/metro-config');
+const path = require('path');
 
-/** @type {import('expo/metro-config').MetroConfig} */
-const config = getDefaultConfig(__dirname);
+const projectRoot = __dirname;
 
-// Ensure TypeScript files are resolved
-config.resolver.sourceExts.push('ts', 'tsx');
+const config = getDefaultConfig(projectRoot);
+
+// Only look in the mobile folder for node_modules
+config.resolver.nodeModulesPaths = [
+  path.resolve(projectRoot, 'node_modules'),
+];
+
+// Watch only the mobile folder
+config.watchFolders = [projectRoot];
 
 module.exports = config;
+
 

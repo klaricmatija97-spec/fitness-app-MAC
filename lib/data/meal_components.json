@@ -1571,9 +1571,9 @@
       "preparationTip": "6. Zobene pahuljice stavi u lonac s mlijekom i kuhaj na srednjoj temperaturi 5-7 minuta uz neprestano miješanje dok ne postanu kremaste.\n\n7. Skini s vatre, ostavi 1-2 minute da se ohlade, zatim umiješaj whey protein prah (VAŽNO: ne dodavaj dok su vrela - proteini se denaturiraju!).\n\n8. Dodaj narezanu bananu i ribanu jabuku s cimetom na vrh prije serviranja.\n\n9. Mlijeko popij uz doručak za dodatne proteine i hidrataciju.",
       "components": [
         {
-          "food": "Semolina",
+          "food": "Oats",
           "grams": 60,
-          "displayName": "Griz"
+          "displayName": "Griz (fine zobene)"
         },
         {
           "food": "Milk",

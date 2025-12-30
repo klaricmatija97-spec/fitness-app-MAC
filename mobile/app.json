@@ -1,10 +1,9 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "CORPEX",
+    "slug": "corpex-mobile",
     "version": "1.0.0",
-    "sdkVersion": "54.0.0",
-    "main": "index.ts",
+    "entryPoint": "./index.ts",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

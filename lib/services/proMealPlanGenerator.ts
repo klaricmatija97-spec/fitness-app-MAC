@@ -762,12 +762,8 @@ async function generateFallbackMeal(
         updated_at: new Date().toISOString(),
         mealSlot: undefined,
       };
-      // CRITICAL: Koristi displayName iz meal_components.json ako postoji
-      const originalComponent = selectedMeal.components.find(c => c.food === component.food);
-      const displayName = originalComponent?.displayName || getCroatianFoodName(component.food);
+      const displayName = getCroatianFoodName(component.food);
       const displayText = `${displayName} (${component.grams}g)`;
-      // Ažuriraj placeholderFood.name s displayName
-      placeholderFood.name = displayName;
       componentDetails.push({ food: placeholderFood, grams: component.grams, units: undefined, displayText });
       continue;
     }
@@ -886,14 +882,11 @@ async function generateFallbackMealFromMealOption(
     carbs += (food.carbs_per_100g || 0) * ratio;
     fat += (food.fat_per_100g || 0) * ratio;
     
-    // CRITICAL: Koristi displayName iz meal_components.json ako postoji
-    const originalComponent = mealOption.components.find(c => c.food === component.food);
-    const displayName = originalComponent?.displayName || getCroatianFoodName(component.food);
+    // Koristi hrvatski naziv namirnice
+    const displayName = getCroatianFoodName(component.food);
     const units = grams >= 50 ? Math.round(grams / 50) : undefined;
     const displayText = units ? `${units}x ${displayName}` : `${grams}g ${displayName}`;
     
-    // Ažuriraj food.name s displayName
-    food.name = displayName;
     componentDetails.push({ food, grams, units, displayText });
     usedToday.add(food.id);
   }
@@ -2076,59 +2069,8 @@ async function buildCompositeMealForSlot(
 
   // Provjeri da li su sve namirnice dostupne i izračunaj makroe
   let calories = 0, protein = 0, carbs = 0, fat = 0;
-  // CRITICAL: componentDetails se UVJEK resetira za svako novo jelo - NIKADA ne koristi shared/global array
   let componentDetails: Array<{ food: Food; grams: number; units?: number; displayText: string }> = [];
   const missingFoods: string[] = []; // Samo za logging - NIKADA ne koristi se za preskakanje jela
-  
-  // GUARD: Osiguraj da selectedMeal.components postoji i nije prazan
-  if (!selectedMeal.components || selectedMeal.components.length === 0) {
-    console.error(`❌ Jelo "${selectedMeal.name}" nema komponenti u meal_components.json`);
-    return null;
-  }
-  
-  // DEBUG: Feature flag za debug logging - DEFINIRAJ PRIJE KORIŠTENJA!
-  const DEBUG_MEAL_COMPONENTS = process.env.DEBUG_MEAL_COMPONENTS === 'true' || process.env.DEBUG === 'true';
-  
-  // GUARD: Spremi originalne komponente za validaciju na kraju
-  // CRITICAL: Koristi structuredClone za potpuni deep copy - osigurava da se originalComponents ne mutira
-  // CRITICAL: Kreiraj originalComponents s displayName iz meal_components.json
-  // displayName je JEDINI IZVOR ISTINE za prikaz naziva sastojaka
-  // CRITICAL: Kreiraj originalComponents s displayName iz meal_components.json
-  // displayName je JEDINI IZVOR ISTINE za prikaz naziva sastojaka
-  const originalComponents = structuredClone(selectedMeal.components).map(c => {
-    // CRITICAL: displayName se mora učitati iz ComponentDefinition, ne iz (c as any)
-    // ComponentDefinition ima displayName?: string polje
-    const displayName = c.displayName || (c as any).displayName;
-    
-    // DEBUG: Logiraj za mlijeko da vidimo što se događa
-    if ((c.food.toLowerCase().includes('milk') || c.food.toLowerCase().includes('mlijeko')) && DEBUG_MEAL_COMPONENTS) {
-      console.log(`🔍 DEBUG MLIJEKO u originalComponents za "${selectedMeal.name}":`);
-      console.log(`   c.food: "${c.food}"`);
-      console.log(`   c.displayName: "${c.displayName}"`);
-      console.log(`   (c as any).displayName: "${(c as any).displayName}"`);
-      console.log(`   final displayName: "${displayName}"`);
-    }
-    
-    return {
-      food: c.food.toLowerCase().trim(), 
-      grams: c.grams,
-      // CRITICAL: displayName iz meal_components.json - ako postoji, koristi ga; inače koristi c.food kao fallback
-      displayName: displayName && displayName.trim() !== '' ? displayName : c.food,
-      // Spremi originalni food key (s originalnim case-om) za lookup funkcije
-      originalFoodKey: c.food,
-      // CRITICAL: Spremi originalni displayName iz meal_components.json (bez fallback-a)
-      // Ovo je JEDINI IZVOR ISTINE za prikaz naziva sastojaka
-      originalDisplayName: displayName && displayName.trim() !== '' ? displayName : undefined,
-      // DEBUG: Spremi i originalni food key za debug
-      originalFood: c.food
-    };
-  });
-  const originalComponentFoods = new Set(originalComponents.map(c => c.food));
-  
-  if (DEBUG_MEAL_COMPONENTS) {
-    console.log(`\n🔍 DEBUG MEAL COMPONENTS - ${selectedMeal.name}:`);
-    console.log(`   Original components iz meal_components.json:`, originalComponents.map(c => `${c.food} (${c.grams}g, displayName: ${c.displayName})`));
-  }
 
   // EDAMAM-ONLY MODE: Koristi Edamam API za izračun makronutrijenata
   // ONEMOGUĆENO za brzinu - koristi samo USDA podatke (kao web generator)
@@ -2139,8 +2081,7 @@ async function buildCompositeMealForSlot(
     // PRAVILO: meal_components.json je JEDINI izvor istine za sastojke
     // Koristi Edamam API SAMO za nutritivne vrijednosti
     // SVE komponente iz meal_components.json se koriste, čak i ako nemaju nutritivne podatke
-    // CRITICAL: Koristi originalComponents (deep copy) umjesto selectedMeal.components
-    const ingredientComponents = originalComponents
+    const ingredientComponents = selectedMeal.components
       .filter(c => !c.food.toLowerCase().includes('water') && !c.food.toLowerCase().includes('voda'))
       .map(c => {
         const food = findFoodByName(allFoods, c.food);
@@ -2186,14 +2127,11 @@ async function buildCompositeMealForSlot(
           actualGrams = units * gramsPerUnit;
         }
 
-        // CRITICAL: Koristi displayName iz meal_components.json ako postoji, inače koristi translateFoodName
-        const displayName = c.displayName || translateFoodName(food.name);
-        
         return {
           food,
           grams: actualGrams,
           units,
-          foodName: displayName, // Koristi displayName iz meal_components.json
+          foodName: translateFoodName(food.name),
         };
       });
 
@@ -2216,12 +2154,8 @@ async function buildCompositeMealForSlot(
           fat = edamamData.fat;
 
           // Kreiraj component details
-          // CRITICAL: Koristi foodName koji je već postavljen iz displayName iz meal_components.json
           componentDetails = ingredientComponents.map(c => ({
-            food: {
-              ...c.food,
-              name: c.foodName, // Koristi displayName iz meal_components.json za name polje
-            },
+            food: c.food,
             grams: c.grams,
             units: c.units,
             displayText: c.units 
@@ -2254,18 +2188,14 @@ async function buildCompositeMealForSlot(
     if (componentDetails.length === 0) {
       // USDA MODE - koristi foods-database.ts SAMO za nutritivne vrijednosti
       // VAŽNO: meal_components.json je JEDINI izvor istine za sastojke
-      // CRITICAL: Koristi originalComponents (deep copy) umjesto selectedMeal.components
-      for (const c of originalComponents) {
+      for (const c of selectedMeal.components) {
       // Preskoči vodu (voda nema nutritivne vrijednosti)
       if (c.food.toLowerCase().includes('water') || c.food.toLowerCase().includes('voda')) {
         continue;
       }
       
       // Koristi findNamirnica iz foods-database.ts SAMO za nutritivne vrijednosti
-      // FIX: c.food je već lowercase, ali FOOD_ALIASES koristi originalni case (npr. "Buckwheat")
-      // Pronađi originalni food key iz selectedMeal.components prije lowercase konverzije
-      const originalFoodKey = (selectedMeal.components.find(comp => comp.food.toLowerCase().trim() === c.food)?.food) || c.food;
-      const namirnica = findNamirnica(originalFoodKey) || findNamirnica(c.food);
+      const namirnica = findNamirnica(c.food);
       
       // PRAVILO: Ako namirnica ne postoji u foods-database, koristi 0 vrijednosti
       // Jelo se I DALJE prikazuje sa svim sastojcima iz meal_components.json
@@ -2279,21 +2209,8 @@ async function buildCompositeMealForSlot(
         console.warn(`⚠️ Namirnica "${c.food}" nije pronađena u foods-database.ts za template "${selectedMeal.name}" - koristim 0 vrijednosti`);
         // Kreiraj placeholder Food objekt s 0 vrijednostima
         // Pronađi displayName iz originalne definicije ako postoji
-        // CRITICAL: Koristi originalComponents (deep copy) umjesto selectedMeal.components
-        const originalComponent = originalComponents.find(comp => comp.food === c.food);
-        // CRITICAL: Prvo provjeri originalDisplayName (izravno iz meal_components.json)
-        let displayName = (originalComponent as any)?.originalDisplayName || (originalComponent as any)?.displayName || c.food;
-        
-        // CRITICAL: Za mlijeko provjeri da li se koristi pravilni displayName (npr. "Mlijeko 1.2%", "Mlijeko 3.2%")
-        const isMilkMissing = c.food.toLowerCase().includes('milk') || c.food.toLowerCase().includes('mlijeko');
-        if (isMilkMissing && (!displayName || displayName === c.food || !displayName.match(/\d+\.\d+%/))) {
-          // Ako nema displayName za mlijeko ili je displayName isti kao food key, to je problem
-          console.error(`❌ KRITIČAN PROBLEM: Mlijeko nema displayName za "${c.food}" u jelu "${selectedMeal.name}"`);
-          console.error(`   originalComponent?.displayName: "${originalComponent?.displayName}"`);
-          console.error(`   originalComponent?.originalDisplayName: "${(originalComponent as any)?.originalDisplayName}"`);
-          console.error(`   originalComponents:`, originalComponents.map(oc => `${oc.food} -> ${oc.displayName} (original: ${(oc as any).originalDisplayName})`));
-        }
-        
+        const originalComponent = selectedMeal.components.find(comp => comp.food === c.food);
+        const displayName = (originalComponent as any)?.displayName || c.food;
         foodForDetails = {
           id: `missing-${c.food.toLowerCase().replace(/\s+/g, '-')}`,
           name: displayName,
@@ -2311,14 +2228,7 @@ async function buildCompositeMealForSlot(
           updated_at: new Date().toISOString(),
           mealSlot: undefined,
         };
-        
-        // CRITICAL: Za mlijeko prikazuj u ml umjesto grama
-        if (isMilkMissing) {
-          const milliliters = Math.round(actualGrams); // 1g = 1ml za mlijeko
-          displayText = `${displayName} (${milliliters}ml)`;
-        } else {
-          displayText = `${displayName} (${actualGrams}g)`;
-        }
+        displayText = `${displayName} (${actualGrams}g)`;
       } else {
         // Namirnica postoji - izračunaj makroe
         // Provjeri da li je namirnica već korištena (samo logiraj, ne preskači jelo)
@@ -2326,110 +2236,28 @@ async function buildCompositeMealForSlot(
           console.warn(`⚠️ Namirnica "${c.food}" već korištena danas, ali i dalje je u jelu`);
         }
 
-        // CRITICAL: Koristi displayName iz meal_components.json - JEDINI IZVOR ISTINE za nazive sastojaka
-        // Ovo osigurava da se koriste točni nazivi iz naziva jela (npr. "Pileći dimcek" umjesto "Piletina", "Mlijeko 1.2%" umjesto "Mlijeko", "Heljda (kuhana)" umjesto "Buckwheat")
-        // FIX: c.food je već lowercase iz originalComponents (linija 2092), tako da možemo direktno tražiti
-        let originalComponent = originalComponents.find(comp => comp.food === c.food);
-        
-        // DEBUG: Ako se ne pronađe originalComponent, pokušaj pronaći po drugim kriterijima
-        if (!originalComponent && (c.food.includes('milk') || c.food.includes('smoked chicken') || c.food.includes('buckwheat'))) {
-          console.error(`❌ Nije pronađen originalComponent za "${c.food}" u jelu "${selectedMeal.name}"`);
-          console.error(`   c.food: "${c.food}"`);
-          console.error(`   originalComponents:`, originalComponents.map(oc => `${oc.food} -> ${oc.displayName}`));
-          console.error(`   selectedMeal.components:`, selectedMeal.components.map((comp: any) => `${comp.food} -> ${(comp as any).displayName}`));
-          // Pokušaj pronaći po djelomičnom podudaranju
-          originalComponent = originalComponents.find(comp => 
-            comp.food.toLowerCase().includes(c.food.toLowerCase()) || 
-            c.food.toLowerCase().includes(comp.food.toLowerCase())
-          );
-          if (originalComponent) {
-            console.log(`   ✅ Pronađen originalComponent po djelomičnom podudaranju: "${originalComponent.food} -> ${originalComponent.displayName}"`);
-          }
-        }
-        
-        // CRITICAL: UVJEK koristi displayName iz meal_components.json ako postoji i nije prazan
-        // displayName je JEDINI IZVOR ISTINE za prikaz naziva sastojaka
-        // Provjeri da li je mlijeko
-        const isMilk = c.food.toLowerCase().includes('milk') || c.food.toLowerCase().includes('mlijeko') || 
-                      namirnica.category === 'dairy' && (c.food.toLowerCase().includes('milk') || namirnica.name.toLowerCase().includes('mlijeko'));
-        
-        // CRITICAL: Za mlijeko UVJEK koristi displayName iz meal_components.json (ima verzije: 1.2%, 3.2%, itd.)
-        // Za ostale namirnice, koristi displayName ako postoji, inače namirnica.name
-        let displayName: string;
-        
-        // DEBUG: Logiraj za mlijeko da vidimo što se događa
-        if (isMilk) {
-          console.log(`🔍 DEBUG MLIJEKO za "${c.food}" u jelu "${selectedMeal.name}":`);
-          console.log(`   originalComponent:`, originalComponent);
-          console.log(`   originalComponent?.displayName: "${originalComponent?.displayName}"`);
-          console.log(`   originalComponent?.originalDisplayName: "${(originalComponent as any)?.originalDisplayName}"`);
-          console.log(`   c.food: "${c.food}"`);
-          console.log(`   originalComponents:`, originalComponents.map(oc => `${oc.food} -> ${oc.displayName} (original: ${(oc as any).originalDisplayName})`));
-        }
-        
-        // CRITICAL: Prvo provjeri originalDisplayName (izravno iz meal_components.json)
-        if (originalComponent && (originalComponent as any).originalDisplayName && (originalComponent as any).originalDisplayName.trim() !== '') {
-          // Ako postoji originalDisplayName iz meal_components.json, koristi ga
-          displayName = (originalComponent as any).originalDisplayName;
-          if (isMilk || c.food.includes('buckwheat') || c.food.includes('smoked chicken')) {
-            console.log(`✅ Koristi se originalDisplayName "${displayName}" iz meal_components.json za "${c.food}" u jelu "${selectedMeal.name}"`);
-          }
-        } else if (originalComponent?.displayName && originalComponent.displayName.trim() !== '' && 
-                   originalComponent.displayName !== c.food && originalComponent.displayName.toLowerCase() !== c.food.toLowerCase()) {
-          // Ako postoji displayName (koji nije isti kao food key), koristi ga
-          displayName = originalComponent.displayName;
-          if (isMilk || c.food.includes('buckwheat') || c.food.includes('smoked chicken')) {
-            console.log(`✅ Koristi se displayName "${displayName}" iz meal_components.json za "${c.food}" u jelu "${selectedMeal.name}"`);
-          }
-        } else {
-          // Ako nema displayName, koristi namirnica.name (bez "Cekin" ako postoji)
-          displayName = namirnica.name.replace(/\s*Cekin\s*/gi, '').trim();
-          
-          // DEBUG: Logiraj ako se koristi namirnica.name umjesto displayName
-          if (isMilk || c.food.includes('smoked chicken') || c.food.includes('buckwheat')) {
-            console.error(`❌ PROBLEM: Koristi se namirnica.name "${displayName}" umjesto displayName za "${c.food}" u jelu "${selectedMeal.name}"`);
-            console.error(`   originalComponent:`, originalComponent);
-            console.error(`   originalComponent?.displayName: "${originalComponent?.displayName}"`);
-            console.error(`   originalComponent?.originalDisplayName: "${(originalComponent as any)?.originalDisplayName}"`);
-            console.error(`   namirnica.name: "${namirnica.name}"`);
-            console.error(`   c.food: "${c.food}"`);
-            console.error(`   selectedMeal.components:`, selectedMeal.components.map((comp: any) => `${comp.food} -> ${comp.displayName}`));
-          }
-        }
-        
-        // finalDisplayName je jednostavno displayName (već je postavljen gore)
-        const finalDisplayName = displayName;
-        
         // Izračunaj makroe - koristi clampToPortionLimits i calculateMacrosForGrams
         // Ako je jaja, koristi units
         if (c.food.toLowerCase().includes('egg')) {
           const gramsPerUnit = 60; // default 60g po jajetu
           units = Math.round(c.grams / gramsPerUnit);
           actualGrams = units * gramsPerUnit;
-          displayText = `${finalDisplayName} (${units} kom ≈ ${actualGrams}g)`;
-        } else if (c.food.toLowerCase().includes('milk') || c.food.toLowerCase().includes('mlijeko') || 
-                   namirnica.category === 'dairy' && (c.food.toLowerCase().includes('milk') || finalDisplayName?.toLowerCase().includes('mlijeko'))) {
-          // FIX: Tekućine (mlijeko) prikazuj u ml umjesto grama
-          // Mlijeko ima gustoću približno 1g/ml, tako da 200g = 200ml
-          actualGrams = clampToPortionLimits(c.food, c.grams, userGoal);
-          const milliliters = Math.round(actualGrams); // 1g = 1ml za mlijeko
-          // CRITICAL: Koristi finalDisplayName umjesto displayName za mlijeko
-          displayText = `${finalDisplayName} (${milliliters}ml)`;
+          const foodName = namirnica.name; // Koristi hrvatski naziv iz foods-database
+          displayText = `${foodName} (${units} kom ≈ ${actualGrams}g)`;
         } else {
           // Normalno s gramima - koristi clampToPortionLimits
           actualGrams = clampToPortionLimits(c.food, c.grams, userGoal);
-          // CRITICAL: Koristi finalDisplayName umjesto displayName
-          displayText = `${finalDisplayName} (${actualGrams}g)`;
+          const foodName = namirnica.name; // Koristi hrvatski naziv iz foods-database
+          displayText = `${foodName} (${actualGrams}g)`;
         }
 
         // Koristi calculateMacrosForGramsWithFallback (s opcijskim Edamam fallback-om)
         macros = await calculateMacrosForGramsWithFallback(namirnica, actualGrams, c.food);
         
-        // Spremi Food objekt za kompatibilnost
-        // CRITICAL: Koristi finalDisplayName iz meal_components.json za name polje
+        // Spremi Food objekt za kompatibilnost (koristi namirnica podatke)
         foodForDetails = {
           id: namirnica.id,
-          name: finalDisplayName, // Koristi displayName iz meal_components.json, ne namirnica.name
+          name: namirnica.name,
           calories_per_100g: namirnica.caloriesPer100g,
           protein_per_100g: namirnica.proteinPer100g,
           carbs_per_100g: namirnica.carbsPer100g,
@@ -2460,37 +2288,7 @@ async function buildCompositeMealForSlot(
       carbs += macros.carbs;
       fat += macros.fat;
       
-      // CRITICAL: Spremi originalni food key za lookup funkcije (findNamirnica, clampToPortionLimits)
-      // displayName se koristi samo za prikaz
-      // originalFoodKey je već definiran gore (linija 2240) za findNamirnica, koristimo istu varijablu
-      // Za lookup funkcije koristimo originalni food key (s originalnim case-om), ne lowercase verziju
-      
-      // GUARD: Provjeri da li sastojak postoji u originalComponents PRIJE dodavanja
-      const existsInOriginal = originalComponents.some(oc => 
-        oc.food === c.food || 
-        oc.food.toLowerCase().trim() === c.food.toLowerCase().trim() ||
-        (oc as any).originalFoodKey?.toLowerCase().trim() === originalFoodKey.toLowerCase().trim()
-      );
-      
-      if (!existsInOriginal) {
-        console.error(`❌ KRITIČAN BUG: Pokušavam dodati sastojak "${c.food}" (originalFoodKey: "${originalFoodKey}") koji ne postoji u originalComponents za jelo "${selectedMeal.name}"`);
-        console.error(`   originalComponents:`, originalComponents.map(oc => `${oc.food} (originalFoodKey: ${(oc as any).originalFoodKey})`));
-        console.error(`   c.food: "${c.food}"`);
-        console.error(`   originalFoodKey: "${originalFoodKey}"`);
-        // PRESKOČI ovaj sastojak - ne dodavaj ga!
-        continue;
-      }
-      
-      componentDetails.push({ 
-        food: {
-          ...foodForDetails,
-          // Spremi originalni food key u dodatno polje za lookup funkcije
-          originalFoodKey: originalFoodKey,
-        } as Food & { originalFoodKey?: string },
-        grams: actualGrams, 
-        units, 
-        displayText 
-      });
+      componentDetails.push({ food: foodForDetails, grams: actualGrams, units, displayText });
       }
     }
   }
@@ -2498,7 +2296,7 @@ async function buildCompositeMealForSlot(
   // Debug logging za "Grčki jogurt s voćem i bademima"
   if (selectedMeal.name.toLowerCase().includes('grčki jogurt') && selectedMeal.name.toLowerCase().includes('voćem') && selectedMeal.name.toLowerCase().includes('badem')) {
     console.log(`🔍 DEBUG "Grčki jogurt s voćem i bademima":`);
-    console.log(`   Originalne komponente iz JSON:`, originalComponents.map(c => `${c.food} (${c.grams}g)`));
+    console.log(`   Originalne komponente iz JSON:`, selectedMeal.components.map(c => `${c.food} (${c.grams}g)`));
     console.log(`   componentDetails nakon obrade:`, componentDetails.map(c => `${c.food.name} (${c.grams}g) - ${c.displayText}`));
     if (missingFoods.length > 0) {
       console.log(`   ⚠️ Komponente bez nutritivnih podataka (koriste 0):`, missingFoods);
@@ -2526,49 +2324,22 @@ async function buildCompositeMealForSlot(
   // Prilagodi gramaže faktorom i ponovno izračunaj makroe (kao web generator)
   let adjustedCalories = 0, adjustedProtein = 0, adjustedCarbs = 0, adjustedFat = 0;
   const adjustedComponentDetails = await Promise.all(componentDetails.map(async c => {
-    // CRITICAL: Koristi displayName iz c.food.name (koji je već postavljen iz meal_components.json displayName)
-    // Ne koristi namirnica.name jer bi to moglo biti drugačiji naziv (npr. "Piletina" umjesto "Pileći dimcek")
-    const displayName = c.food.name; // Već je postavljen iz meal_components.json displayName
-    
-    // CRITICAL: Koristi originalni food key za lookup funkcije, ne displayName
-    // displayName je samo za prikaz (npr. "Pršut"), ali findNamirnica treba originalni key (npr. "Ham")
-    const originalFoodKey = (c.food as any).originalFoodKey || c.food.name;
-    const adjustedGrams = clampToPortionLimits(originalFoodKey, c.grams * factor, userGoal);
-    const namirnica = findNamirnica(originalFoodKey);
+    const adjustedGrams = clampToPortionLimits(c.food.name, c.grams * factor, userGoal);
+    const namirnica = findNamirnica(c.food.name);
     if (!namirnica) return c;
     
-    const macros = await calculateMacrosForGramsWithFallback(namirnica, adjustedGrams, originalFoodKey);
+    const macros = await calculateMacrosForGramsWithFallback(namirnica, adjustedGrams, c.food.name);
     adjustedCalories += macros.calories;
     adjustedProtein += macros.protein;
     adjustedCarbs += macros.carbs;
     adjustedFat += macros.fat;
     
-    // FIX: Za tekućine (mlijeko) prikazuj u ml umjesto grama
-    // CRITICAL: displayName je već postavljen iz meal_components.json (npr. "Mlijeko 1.2%", "Pileći dimcek")
-    let displayTextFinal: string;
-    const isMilkAdjusted = originalFoodKey.toLowerCase().includes('milk') || originalFoodKey.toLowerCase().includes('mlijeko') || 
-                           namirnica.category === 'dairy' && (displayName?.toLowerCase().includes('mlijeko') || originalFoodKey.toLowerCase().includes('milk'));
-    
-    if (c.units) {
-      displayTextFinal = `${displayName} (${c.units} kom ≈ ${adjustedGrams}g)`;
-    } else if (isMilkAdjusted) {
-      // Tekućine (mlijeko) prikazuj u ml umjesto grama
-      // CRITICAL: displayName već sadrži verziju (npr. "Mlijeko 1.2%", "Mlijeko 3.2%")
-      const milliliters = Math.round(adjustedGrams); // 1g = 1ml za mlijeko
-      displayTextFinal = `${displayName} (${milliliters}ml)`;
-    } else {
-      displayTextFinal = `${displayName} (${adjustedGrams}g)`;
-    }
-    
     return {
       ...c,
       grams: adjustedGrams,
-      displayText: displayTextFinal,
-      // CRITICAL: Zadrži originalni food key za lookup funkcije
-      food: {
-        ...c.food,
-        originalFoodKey: originalFoodKey,
-      } as Food & { originalFoodKey?: string },
+      displayText: c.units 
+        ? `${namirnica.name} (${c.units} kom ≈ ${adjustedGrams}g)`
+        : `${namirnica.name} (${adjustedGrams}g)`,
     };
   }));
   
@@ -2651,46 +2422,13 @@ async function buildCompositeMealForSlot(
       total: 0.8
     },
     componentsString: componentsString,
-      componentDetails: componentDetails.map(c => {
-      // CRITICAL: c.food.name je već postavljen iz displayName iz meal_components.json
-      // Ne koristi translateFoodName jer bi to moglo promijeniti naziv (npr. "Pileći dimcek" -> "Piletina", "Mlijeko 1.2%" -> "Mlijeko")
-      let finalFoodName = c.food.name; // Već je displayName iz meal_components.json
-      
-      // CRITICAL: Za mlijeko provjeri da li se koristi pravilni displayName (npr. "Mlijeko 1.2%", "Mlijeko 3.2%")
-      // Ako je samo "Mlijeko" bez verzije, to je problem - trebalo bi biti "Mlijeko 1.2%" ili "Mlijeko 3.2%"
-      const isMilkInResponse = finalFoodName?.toLowerCase().includes('mlijeko') || 
-                               finalFoodName?.toLowerCase().includes('milk');
-      if (isMilkInResponse && !finalFoodName?.match(/\d+\.\d+%/)) {
-        // Ako je mlijeko ali nema verzije (npr. samo "Mlijeko"), to je problem
-        console.error(`❌ KRITIČAN PROBLEM: Mlijeko nema verziju u finalnom response-u za "${finalFoodName}" u jelu "${selectedMeal.name}"`);
-        console.error(`   c.food.name: "${c.food.name}"`);
-        console.error(`   c.displayText: "${c.displayText}"`);
-        console.error(`   (c.food as any).originalFoodKey: "${(c.food as any).originalFoodKey}"`);
-        // Pokušaj pronaći displayName iz displayText (npr. "Mlijeko 1.2% (200ml)" -> "Mlijeko 1.2%")
-        const displayTextMatch = c.displayText?.match(/^(Mlijeko\s+\d+\.\d+%[^(]*)/);
-        if (displayTextMatch) {
-          finalFoodName = displayTextMatch[1].trim();
-          console.log(`   ✅ Korigiran finalFoodName na "${finalFoodName}" iz displayText`);
-        }
-      }
-      
-      // DEBUG: Logiraj ako se ne koristi displayName pravilno
-      if (finalFoodName?.toLowerCase().includes('buckwheat') || finalFoodName?.toLowerCase().includes('flour') || 
-          finalFoodName?.toLowerCase().includes('piletina') && !finalFoodName?.toLowerCase().includes('dimcek')) {
-        console.warn(`⚠️ Mogući problem s displayName za "${finalFoodName}" u jelu "${selectedMeal.name}"`);
-        console.warn(`   c.food.name: "${c.food.name}"`);
-        console.warn(`   c.displayText: "${c.displayText}"`);
-        console.warn(`   (c.food as any).originalFoodKey: "${(c.food as any).originalFoodKey}"`);
-      }
-      
-      return {
-        foodName: finalFoodName, // Već je displayName iz meal_components.json (npr. "Mlijeko 1.2%", "Pileći dimcek")
-        name: finalFoodName, // Već je displayName iz meal_components.json
-        grams: c.grams, // Already adjusted above, don't multiply by factor again
-        units: c.units,
-        displayText: c.displayText // Već sadrži pravilne jedinice (ml za mlijeko, g za ostalo)
-      };
-    }),
+      componentDetails: componentDetails.map(c => ({
+      foodName: translateFoodName(c.food.name), // Koristi hrvatski prijevod
+      name: translateFoodName(c.food.name), // Dodaj i 'name' za kompatibilnost
+      grams: c.grams, // Already adjusted above, don't multiply by factor again
+      units: c.units,
+      displayText: c.displayText
+    })),
     // Dodaj description i preparationTip direktno na jelo (za mobilnu aplikaciju) - validirano gore
     description: finalDescription,
     preparationTip: finalPreparationTip,
@@ -2701,171 +2439,6 @@ async function buildCompositeMealForSlot(
     preparationTip?: string;
   };
 
-  // GUARD/ASSERT: Provjeri da finalIngredients sadrži samo food ključeve iz selectedMeal.components
-  // Ovo se UVJEK provjerava, ne samo u dev modu
-  // DEBUG_MEAL_COMPONENTS je već definiran gore u funkciji
-  
-  // Util funkcija za validaciju komponenti
-  const assertComponentsMatchTemplate = (
-    original: Array<{ food: string; grams: number; displayName?: string }>,
-    final: Array<{ food: Food; grams: number; units?: number; displayText: string }>,
-    mealName: string
-  ): { extra: string[]; missing: string[]; isValid: boolean } => {
-    const originalFoods = new Set(original.map(c => c.food.toLowerCase().trim()));
-    const finalFoods = new Set(final.map(c => {
-      const foodName = (c.food.name || (c as any).foodName || '').toLowerCase().trim();
-      return foodName;
-    }));
-    
-    // Provjeri extra sastojke
-    const extra: string[] = [];
-    for (const finalFood of finalFoods) {
-      if (finalFood.includes('water') || finalFood.includes('voda')) continue;
-      
-      const hasMatch = Array.from(originalFoods).some(origFood => {
-        if (origFood === finalFood) return true;
-        const origWords = origFood.split(/\s+/);
-        const finalWords = finalFood.split(/\s+/);
-        return origWords.some(ow => finalWords.some(fw => ow.includes(fw) || fw.includes(ow)));
-      });
-      
-      if (!hasMatch) {
-        extra.push(finalFood);
-      }
-    }
-    
-    // Provjeri missing sastojke
-    const missing = Array.from(originalFoods).filter(origFood => {
-      if (origFood.includes('water') || origFood.includes('voda')) return false;
-      return !Array.from(finalFoods).some(finalFood => {
-        if (origFood === finalFood) return true;
-        const origWords = origFood.split(/\s+/);
-        const finalWords = finalFood.split(/\s+/);
-        return origWords.some(ow => finalWords.some(fw => ow.includes(fw) || fw.includes(ow)));
-      });
-    });
-    
-    return { extra, missing, isValid: extra.length === 0 && missing.length === 0 };
-  };
-  
-  // Provjeri gramaže - osiguraj da nisu eksplodirale
-  const validateGrams = (components: Array<{ grams: number }>, mealName: string): { isValid: boolean; errors: string[] } => {
-    const errors: string[] = [];
-    const MAX_REASONABLE_GRAMS = 500; // Maksimalna razumna gramaža po komponenti
-    
-    for (const comp of components) {
-      if (isNaN(comp.grams) || comp.grams < 0) {
-        errors.push(`Invalid grams: ${comp.grams}`);
-      }
-      if (comp.grams > MAX_REASONABLE_GRAMS) {
-        errors.push(`Grams too high: ${comp.grams}g (max: ${MAX_REASONABLE_GRAMS}g)`);
-      }
-    }
-    
-    return { isValid: errors.length === 0, errors };
-  };
-  
-  // Validiraj komponente
-  const validation = assertComponentsMatchTemplate(originalComponents, componentDetails, selectedMeal.name);
-  const gramsValidation = validateGrams(componentDetails, selectedMeal.name);
-  
-  // DEBUG logging
-  if (DEBUG_MEAL_COMPONENTS || !validation.isValid || !gramsValidation.isValid) {
-    console.log(`\n🔍 DEBUG MEAL COMPONENTS - ${selectedMeal.name}:`);
-    console.log(`   Original components:`, originalComponents.map(c => `${c.food} (${c.grams}g)`));
-    console.log(`   Final components:`, componentDetails.map(c => `${c.food.name} (${c.grams}g)`));
-    if (validation.extra.length > 0) {
-      console.error(`   ❌ EXTRA sastojci:`, validation.extra);
-    }
-    if (validation.missing.length > 0) {
-      console.warn(`   ⚠️ MISSING sastojci:`, validation.missing);
-    }
-    if (gramsValidation.errors.length > 0) {
-      console.error(`   ❌ GRAMS errors:`, gramsValidation.errors);
-    }
-  }
-  
-  // Ako postoje extra sastojci, to je KRITIČAN BUG - UKLONI IH!
-  if (validation.extra.length > 0) {
-    const errorMsg = `❌ GUARD FAILED za "${selectedMeal.name}":\n` +
-      `   Extra sastojci (ne postoje u meal_components.json): ${validation.extra.join(', ')}\n` +
-      `   Originalne komponente: ${Array.from(new Set(originalComponents.map(c => c.food))).join(', ')}\n` +
-      `   Finalne komponente: ${Array.from(new Set(componentDetails.map(c => c.food.name))).join(', ')}\n` +
-      `   componentDetails: ${JSON.stringify(componentDetails.map(c => ({ 
-        name: c.food.name, 
-        foodName: (c as any).foodName,
-        grams: c.grams 
-      })), null, 2)}`;
-    
-    console.error(errorMsg);
-    
-    // CRITICAL: UKLONI extra sastojke - koristi SAMO one iz originalComponents
-    // Kreiraj Set originalnih food ključeva (lowercase) za brzu provjeru
-    const originalFoodKeys = new Set(originalComponents.map(c => c.food.toLowerCase().trim()));
-    
-    // Filtriraj componentDetails - zadrži SAMO sastojke koji postoje u originalComponents
-    componentDetails = componentDetails.filter(c => {
-      const foodName = (c.food.name || (c as any).foodName || '').toLowerCase().trim();
-      const originalFoodKey = ((c.food as any).originalFoodKey || '').toLowerCase().trim();
-      
-      // Provjeri da li postoji u originalComponents
-      const existsInOriginal = originalFoodKeys.has(foodName) || 
-                               originalFoodKeys.has(originalFoodKey) ||
-                               Array.from(originalFoodKeys).some(origFood => {
-                                 if (origFood === foodName || origFood === originalFoodKey) return true;
-                                 const origWords = origFood.split(/\s+/);
-                                 const finalWords = foodName.split(/\s+/);
-                                 return origWords.some(ow => finalWords.some(fw => ow.includes(fw) || fw.includes(ow)));
-                               });
-      
-      if (!existsInOriginal) {
-        console.error(`   ❌ UKLANJAM extra sastojak: "${foodName}" (originalFoodKey: "${originalFoodKey}")`);
-        return false;
-      }
-      return true;
-    });
-    
-    console.log(`   ✅ Nakon uklanjanja extra sastojaka, componentDetails ima ${componentDetails.length} sastojaka`);
-    console.log(`   ✅ Finalni sastojci: ${componentDetails.map(c => c.food.name).join(', ')}`);
-    
-    // FAIL-SAFE: Reset na originalComponents (uvijek, bez obzira na mod)
-    // Ne bacamo error jer bi to uzrokovalo 500 u produkciji
-    // Umjesto toga, logiramo i resetiramo na originalComponents
-    console.error(`⚠️ FAIL-SAFE: Resetujem componentDetails na originalComponents za "${selectedMeal.name}"`);
-    
-    // SAMO ako je STRICT_VALIDATION eksplicitno uključen, baci error
-    // Ovo je za CI/testove, ne za normalan dev/prod rad
-    if (process.env.STRICT_VALIDATION === 'true') {
-      throw new Error(`CRITICAL: Extra sastojci dodani u "${selectedMeal.name}": ${validation.extra.join(', ')}`);
-    }
-    // Ne resetiram ovdje jer bi to moglo pokvariti makroe - bolje je baciti error
-  }
-  
-  // Provjeri gramaže
-  if (!gramsValidation.isValid) {
-    const errorMsg = `❌ GRAMS VALIDATION FAILED za "${selectedMeal.name}": ${gramsValidation.errors.join(', ')}`;
-    console.error(errorMsg);
-    
-    // SAMO ako je STRICT_VALIDATION eksplicitno uključen, baci error
-    // Ovo je za CI/testove, ne za normalan dev/prod rad
-    if (process.env.STRICT_VALIDATION === 'true') {
-      throw new Error(errorMsg);
-    }
-  }
-  
-  // Missing components su warning, ne error (možda se neki sastojak ne može pronaći)
-  if (validation.missing.length > 0) {
-    console.warn(`⚠️ GUARD WARNING za "${selectedMeal.name}": Nedostaju sastojci: ${validation.missing.join(', ')}`);
-  }
-  
-  // LOGGING: Ispiši mealId/mealName, originalComponentsFromJson, finalComponentsSentToUI
-  const DEBUG_COMPONENTS = process.env.DEBUG_MEAL_COMPONENTS === 'true' || process.env.DEBUG === 'true';
-  if (DEBUG_COMPONENTS) {
-    console.log(`\n📋 MEAL COMPONENTS LOGGING - ${selectedMeal.name} (${baseMeal.id}):`);
-    console.log(`   Original components from JSON:`, originalComponents.map(c => `${c.food} (${c.grams}g, displayName: ${c.displayName})`));
-    console.log(`   Final components sent to UI:`, componentDetails.map(c => `${c.food.name} (${c.grams}g, displayText: ${c.displayText})`));
-  }
-  
   // Vrati osnovno jelo - Edamam validacija će se pozvati nakon kreiranja
   return baseMeal;
 }
@@ -2965,34 +2538,20 @@ async function validateAndCorrectMealWithEdamam(
           : 1;
         
         // Prilagodi gramaže prema Edamam podacima
-        // GUARD: NIKADA ne dodavaj nove sastojke - samo prilagodi gramaže postojećih
         if ((meal as any).componentDetails && (meal as any).componentDetails.length > 0) {
-          // Spremi originalni broj komponenti za validaciju
-          const originalCount = (meal as any).componentDetails.length;
           (meal as any).componentDetails = (meal as any).componentDetails.map((c: any) => ({
             ...c,
             grams: Math.round(c.grams * calorieScale * 10) / 10, // Prilagodi gramaže
             displayText: `${c.foodName} (${Math.round(c.grams * calorieScale * 10) / 10}g)`
           }));
-          
-          // GUARD: Provjeri da nije dodan/uklonjen sastojak
-          if ((meal as any).componentDetails.length !== originalCount) {
-            console.error(`❌ validateAndCorrectMealWithEdamam: Broj komponenti se promijenio za "${meal.name}" (${originalCount} -> ${(meal as any).componentDetails.length})`);
-          }
         }
         
-        // Ažuriraj meta.components (samo gramaže, ne dodavaj nove)
+        // Ažuriraj meta.components
         if ((meal.meta as any)?.components) {
-          const originalMetaCount = (meal.meta as any).components.length;
           (meal.meta as any).components = (meal.meta as any).components.map((c: any) => ({
             ...c,
             grams: Math.round(c.grams * calorieScale * 10) / 10
           }));
-          
-          // GUARD: Provjeri da nije dodan/uklonjen sastojak
-          if ((meal.meta as any).components.length !== originalMetaCount) {
-            console.error(`❌ validateAndCorrectMealWithEdamam: Broj meta.components se promijenio za "${meal.name}" (${originalMetaCount} -> ${(meal.meta as any).components.length})`);
-          }
         }
         
         // Koristi Edamam podatke (točniji)
@@ -3647,24 +3206,6 @@ function scaleAllMealsToTarget(
   const CALORIE_TOLERANCE = 10; // ±10 kcal (strože za preciznije rezultate)
   const MACRO_TOLERANCE = 0.015; // ±1.5% (strože)
   
-  // LOGGING: Ispiši originalne komponente prije scaling-a
-  const DEBUG_SCALING = process.env.DEBUG_MEAL_COMPONENTS === 'true' || process.env.DEBUG === 'true';
-  if (DEBUG_SCALING) {
-    console.log(`\n🔧 SCALE ALL MEALS TO TARGET - START:`);
-    for (const [mealType, meal] of Object.entries(meals)) {
-      console.log(`   ${mealType} (${meal.name}):`, meal.components.map((c: any) => `${c.food || c.name} (${c.grams}g)`).join(', '));
-    }
-  }
-  
-  // GUARD: Spremi originalne komponente za svako jelo (za invariant provjeru)
-  const originalMealComponents: Record<string, Array<{ food: string; grams: number }>> = {};
-  for (const [mealType, meal] of Object.entries(meals)) {
-    originalMealComponents[mealType] = (meal.components || []).map((c: any) => ({
-      food: c.food || c.name || '', // Originalni food key
-      grams: c.grams || 0
-    }));
-  }
-  
   let currentMeals = { ...meals };
 
   for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
@@ -3753,46 +3294,10 @@ function scaleAllMealsToTarget(
     const scaledMeals: Record<string, any> = {};
 
     for (const [mealType, meal] of Object.entries(currentMeals)) {
-      // GUARD: Provjeri da li meal.components ima isti broj komponenti kao originalMealComponents
-      const originalComponents = originalMealComponents[mealType] || [];
-      if (meal.components.length !== originalComponents.length) {
-        const errorMsg = `❌ CRITICAL: Broj komponenti se promijenio u scaleAllMealsToTarget za "${meal.name}" (${mealType}): ${originalComponents.length} -> ${meal.components.length}`;
-        console.error(errorMsg);
-        console.error(`   Originalne komponente:`, originalComponents.map(c => `${c.food} (${c.grams}g)`).join(', '));
-        console.error(`   Trenutne komponente:`, meal.components.map((c: any) => `${c.food || c.name} (${c.grams}g)`).join(', '));
-        
-        // UVIJEK baci error u dev modu, ili ako je STRICT_VALIDATION uključen
-        const isDev = process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';
-        if (isDev || process.env.STRICT_VALIDATION === 'true') {
-          throw new Error(errorMsg);
-        }
-        // Fallback: koristi originalne komponente
-        meal.components = originalComponents.map(oc => ({
-          food: oc.food,
-          grams: oc.grams,
-          calories: 0,
-          protein: 0,
-          carbs: 0,
-          fat: 0,
-        }));
-      }
-      
-      const scaledComponents = meal.components.map((comp: any, idx: number) => {
-        // CRITICAL: Koristi originalni food key iz originalMealComponents, ne comp.food ili comp.name
-        // comp.food ili comp.name može biti displayName umjesto originalnog food key-a
-        const originalComp = originalComponents[idx];
-        const foodKey = originalComp?.food || comp.food || comp.name || '';
-        
-        // GUARD: Provjeri da li se food key poklapa s originalnim
-        if (originalComp && foodKey !== originalComp.food) {
-          console.warn(`⚠️ Food key mismatch u scaleAllMealsToTarget za "${meal.name}" (${mealType}) na indeksu ${idx}: "${foodKey}" vs "${originalComp.food}"`);
-        }
-        
+      const scaledComponents = meal.components.map((comp: any) => {
+        const foodKey = comp.food || comp.name || '';
         const namirnica = findNamirnica(foodKey);
-        if (!namirnica) {
-          console.warn(`⚠️ Namirnica "${foodKey}" nije pronađena u scaleAllMealsToTarget za "${meal.name}" (${mealType})`);
-          return comp;
-        }
+        if (!namirnica) return comp;
 
         // Odredi kategoriju i primijeni odgovarajući faktor
         let scaleFactor = 1.0;
@@ -3808,28 +3313,7 @@ function scaleAllMealsToTarget(
           scaleFactor = Math.max(0.6, Math.min(1.6, combinedFactor));
         }
 
-        // CRITICAL: Osiguraj da se gramaže ne eksplodiraju - koristi original grams kao bazu, ne već skalirane
-        // Provjeri da li comp.grams nije već prevelik (možda je već skaliran)
-        const baseGrams = comp.grams;
-        const scaledGrams = baseGrams * scaleFactor;
-        
-        // GUARD: Ako je scaledGrams prevelik, logiraj i ograniči
-        const MAX_REASONABLE_GRAMS = 500;
-        if (scaledGrams > MAX_REASONABLE_GRAMS) {
-          console.warn(`⚠️ Scaled grams too high for ${foodKey}: ${scaledGrams}g (base: ${baseGrams}g, factor: ${scaleFactor})`);
-        }
-        
-        const newGrams = clampToPortionLimits(foodKey, scaledGrams, goalType);
-        
-        // GUARD: Provjeri da li je newGrams razuman nakon clampToPortionLimits
-        if (newGrams > MAX_REASONABLE_GRAMS) {
-          console.error(`❌ CRITICAL: clampToPortionLimits vratio preveliku gramažu za ${foodKey}: ${newGrams}g (base: ${baseGrams}g, scaled: ${scaledGrams}g)`);
-          // Reset na original grams ako je prevelik
-          const originalGrams = baseGrams;
-          const clampedGrams = Math.min(originalGrams, MAX_REASONABLE_GRAMS);
-          console.warn(`⚠️ Resetting to safe value: ${clampedGrams}g`);
-        }
-        
+        const newGrams = clampToPortionLimits(foodKey, comp.grams * scaleFactor, goalType);
         const macros = calculateMacrosForGrams(namirnica, newGrams);
 
         return {
@@ -3854,40 +3338,6 @@ function scaleAllMealsToTarget(
       
       const totalCalories = Math.round(scaledTotals.protein * 4 + scaledTotals.carbs * 4 + scaledTotals.fat * 9);
 
-      // GUARD: Provjeri invariant - finalne komponente moraju imati isti food key set kao originalne
-      const finalFoodKeys = new Set(scaledComponents.map((c: any) => (c.food || c.name || '').toLowerCase().trim()));
-      const originalFoodKeys = new Set(originalComponents.map(c => c.food.toLowerCase().trim()));
-      
-      // Provjeri extra sastojke
-      const extraFoods = Array.from(finalFoodKeys).filter(food => !originalFoodKeys.has(food));
-      if (extraFoods.length > 0) {
-        const errorMsg = `❌ CRITICAL: Extra sastojci dodani u scaleAllMealsToTarget za "${meal.name}" (${mealType}): ${extraFoods.join(', ')}`;
-        console.error(errorMsg);
-        console.error(`   Originalne komponente:`, Array.from(originalFoodKeys).join(', '));
-        console.error(`   Finalne komponente:`, Array.from(finalFoodKeys).join(', '));
-        
-        // UVIJEK baci error u dev modu, ili ako je STRICT_VALIDATION uključen
-        const isDev = process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';
-        if (isDev || process.env.STRICT_VALIDATION === 'true') {
-          throw new Error(errorMsg);
-        }
-        // Fallback: koristi samo originalne komponente
-        scaledComponents.length = 0;
-        scaledComponents.push(...originalComponents.map(oc => {
-          const namirnica = findNamirnica(oc.food);
-          if (!namirnica) return { food: oc.food, grams: oc.grams, calories: 0, protein: 0, carbs: 0, fat: 0 };
-          const macros = calculateMacrosForGrams(namirnica, oc.grams);
-          return {
-            food: oc.food,
-            grams: oc.grams,
-            calories: Math.round(macros.calories),
-            protein: Math.round(macros.protein * 10) / 10,
-            carbs: Math.round(macros.carbs * 10) / 10,
-            fat: Math.round(macros.fat * 10) / 10,
-          };
-        }));
-      }
-      
       scaledMeals[mealType] = {
         ...meal,
         components: scaledComponents,
@@ -3901,14 +3351,6 @@ function scaleAllMealsToTarget(
     }
 
     currentMeals = scaledMeals;
-  }
-  
-  // LOGGING: Ispiši finalne komponente nakon scaling-a
-  if (DEBUG_SCALING) {
-    console.log(`\n🔧 SCALE ALL MEALS TO TARGET - END:`);
-    for (const [mealType, meal] of Object.entries(currentMeals)) {
-      console.log(`   ${mealType} (${meal.name}):`, meal.components.map((c: any) => `${c.food || c.name} (${c.grams}g)`).join(', '));
-    }
   }
 
   return currentMeals;
@@ -4839,32 +4281,15 @@ async function generateWeeklyProMealPlanInternal(
           if (!meal) continue;
           
           // Konvertiraj u GeneratedMeal format
-          // CRITICAL: Koristi originalni food key za lookup funkcije, ne displayName
-          // GUARD: Spremi originalne komponente za invariant provjeru
-          const originalComponentDetailsForScaling = (meal as any).componentDetails || [];
-          const components = originalComponentDetailsForScaling.map((c: any) => {
-            // CRITICAL: originalFoodKey je JEDINI izvor istine za food key
-            // displayName (foodName) se koristi samo za prikaz
-            const originalFoodKey = (c.food as any)?.originalFoodKey || 
-                                   (c as any).originalFoodKey || 
-                                   c.food?.name || 
-                                   c.foodName || 
-                                   c.name || 
-                                   '';
-            const displayName = c.foodName || c.name || c.food?.name || '';
-            
-            return {
-              name: displayName, // displayName za prikaz
-              food: originalFoodKey, // originalni food key za lookup (JEDINI IZVOR ISTINE)
-              grams: c.grams || 0,
-              calories: 0,
-              protein: 0,
-              carbs: 0,
-              fat: 0,
-              // Spremi originalni food key za guard provjeru
-              _originalFoodKey: originalFoodKey,
-            };
-          });
+          const components = (meal as any).componentDetails?.map((c: any) => ({
+            name: c.foodName || c.name || '',
+            food: c.food?.name || '',
+            grams: c.grams || 0,
+            calories: 0,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+          })) || [];
           
           // Izračunaj makroe za komponente (koristi Edamam fallback ako je uključen)
           const mealComponents = await Promise.all(components.map(async (comp: any) => {
@@ -4891,20 +4316,6 @@ async function generateWeeklyProMealPlanInternal(
           
           const totalCalories = Math.round(mealTotals.protein * 4 + mealTotals.carbs * 4 + mealTotals.fat * 9);
           
-          // GUARD: Provjeri invariant - mealComponents mora imati isti broj komponenti kao originalComponentDetailsForScaling
-          if (mealComponents.length !== originalComponentDetailsForScaling.length) {
-            const errorMsg = `❌ CRITICAL: Broj komponenti se promijenio prije scaleAllMealsToTarget za "${meal.name}" (${slot}): ${originalComponentDetailsForScaling.length} -> ${mealComponents.length}`;
-            console.error(errorMsg);
-            console.error(`   Originalne komponente:`, originalComponentDetailsForScaling.map((c: any) => `${c.foodName || c.name || c.food?.name} (${c.grams}g)`).join(', '));
-            console.error(`   Meal komponente:`, mealComponents.map((c: any) => `${c.food || c.name} (${c.grams}g)`).join(', '));
-            
-            // UVIJEK baci error u dev modu, ili ako je STRICT_VALIDATION uključen
-            const isDev = process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';
-            if (isDev || process.env.STRICT_VALIDATION === 'true') {
-              throw new Error(errorMsg);
-            }
-          }
-          
           mealsForScaling[slot] = {
             id: meal.id,
             name: meal.name,
@@ -4917,8 +4328,6 @@ async function generateWeeklyProMealPlanInternal(
               carbs: Math.round(mealTotals.carbs * 10) / 10,
               fat: Math.round(mealTotals.fat * 10) / 10,
             },
-            // Spremi originalne komponente za guard provjeru
-            _originalComponentDetails: originalComponentDetailsForScaling,
           };
         }
         
@@ -4942,65 +4351,7 @@ async function generateWeeklyProMealPlanInternal(
           if (!originalMeal) continue;
           
           // Ažuriraj makroe i komponente
-          // CRITICAL: originalComponentDetails je JEDINI izvor istine - samo skaliraj gramaže, ne dodavaj nove sastojke
           const originalComponentDetails = (originalMeal as any).componentDetails || [];
-          
-          // GUARD: Osiguraj da originalComponentDetails nije prazan
-          if (originalComponentDetails.length === 0) {
-            console.error(`❌ originalComponentDetails je prazan za "${originalMeal.name}" - preskačem skaliranje`);
-            scaledDayMeals[slot] = originalMeal;
-            continue;
-          }
-          
-          // GUARD: Osiguraj da scaledMeal.components ima isti broj komponenti kao originalComponentDetails
-          if (scaledMeal.components.length !== originalComponentDetails.length) {
-            console.error(`❌ BROJ KOMPONENTI SE PROMIJENIO za "${originalMeal.name}": ${originalComponentDetails.length} -> ${scaledMeal.components.length}`);
-            console.error(`   Originalne komponente:`, originalComponentDetails.map((c: any) => c.foodName || c.name || c.food?.name).join(', '));
-            console.error(`   Skalirane komponente:`, scaledMeal.components.map((c: any) => c.name || c.food).join(', '));
-            
-            // U dev modu, baci error ako je STRICT_VALIDATION uključen
-            if (process.env.STRICT_VALIDATION === 'true') {
-              throw new Error(`Broj komponenti se promijenio za "${originalMeal.name}": ${originalComponentDetails.length} -> ${scaledMeal.components.length}`);
-            }
-            
-            // Fallback: koristi originalne komponente s novim makroima
-            scaledDayMeals[slot] = {
-              ...originalMeal,
-              calories: scaledMeal.totals.calories,
-              protein: scaledMeal.totals.protein,
-              carbs: scaledMeal.totals.carbs,
-              fat: scaledMeal.totals.fat,
-            } as ScoredMeal;
-            continue;
-          }
-          
-          // CRITICAL FIX: Koristi originalComponentDetails kao bazu, samo skaliraj gramaže iz scaledMeal.components
-          // GUARD: Osiguraj da scaledMeal.components ima isti broj komponenti kao originalComponentDetails
-          if (scaledMeal.components.length !== originalComponentDetails.length) {
-            const errorMsg = `❌ CRITICAL: Broj komponenti se promijenio za "${originalMeal.name}" u scaling funkciji: ${originalComponentDetails.length} -> ${scaledMeal.components.length}\n` +
-              `   Originalne komponente: ${originalComponentDetails.map((c: any) => c.foodName || c.name || c.food?.name).join(', ')}\n` +
-              `   Skalirane komponente: ${scaledMeal.components.map((c: any) => c.name || c.food).join(', ')}`;
-            
-            console.error(errorMsg);
-            
-            // UVIJEK baci error u dev modu, ili ako je STRICT_VALIDATION uključen
-            const isDev = process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';
-            if (isDev || process.env.STRICT_VALIDATION === 'true') {
-              throw new Error(errorMsg);
-            }
-            
-            // Fallback: koristi originalne komponente s novim makroima
-            scaledDayMeals[slot] = {
-              ...originalMeal,
-              calories: scaledMeal.totals.calories,
-              protein: scaledMeal.totals.protein,
-              carbs: scaledMeal.totals.carbs,
-              fat: scaledMeal.totals.fat,
-            } as ScoredMeal;
-            continue;
-          }
-          
-          // Mapiraj scaledMeal.components na originalComponentDetails po redoslijedu (jer bi trebali biti isti)
           const updatedMeal: any = {
             ...originalMeal,
             calories: scaledMeal.totals.calories,
@@ -5009,99 +4360,19 @@ async function generateWeeklyProMealPlanInternal(
             fat: scaledMeal.totals.fat,
             description: scaledMeal.description,
             preparationTip: scaledMeal.preparationTip,
-            componentDetails: originalComponentDetails.map((originalComp: any, idx: number) => {
-              // Pronađi odgovarajuću skaliranu komponentu po indeksu (trebali bi biti isti redoslijed)
-              const scaledComp = scaledMeal.components[idx];
-              
-              // GUARD: Provjeri da li se nazivi poklapaju (case-insensitive)
-              const originalName = (originalComp.foodName || originalComp.name || originalComp.food?.name || '').toLowerCase().trim();
-              const scaledName = (scaledComp?.name || scaledComp?.food || '').toLowerCase().trim();
-              
-              // CRITICAL: Ako se nazivi ne poklapaju, to je BUG
-              if (scaledComp && originalName && scaledName) {
-                const origWords = originalName.split(/\s+/);
-                const scaledWords = scaledName.split(/\s+/);
-                const hasMatch = origWords.some(ow => scaledWords.some(sw => ow.includes(sw) || sw.includes(ow)));
-                
-                if (!hasMatch && originalName !== scaledName) {
-                  const errorMsg = `❌ CRITICAL: Nazivi komponenti se ne poklapaju za "${originalMeal.name}" na indeksu ${idx}: "${originalName}" vs "${scaledName}"`;
-                  console.error(errorMsg);
-                  
-                  // UVIJEK baci error u dev modu, ili ako je STRICT_VALIDATION uključen
-                  const isDev = process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';
-                  if (isDev || process.env.STRICT_VALIDATION === 'true') {
-                    throw new Error(errorMsg);
-                  }
-                }
-              }
-              
-              // Koristi originalComp kao bazu, samo ažuriraj gramaže iz scaledComp
-              // CRITICAL: NIKADA ne dodavaj nove sastojke - samo skaliraj postojeće
-              let finalGrams = scaledComp?.grams || originalComp.grams;
-              
-              // GUARD: Provjeri da li su gramaže razumne (ne eksplodirale)
-              const MAX_REASONABLE_GRAMS = 500;
-              if (finalGrams > MAX_REASONABLE_GRAMS) {
-                console.error(`❌ CRITICAL: Scaled grams too high za "${originalMeal.name}" - ${originalComp.foodName || originalComp.name}: ${finalGrams}g (original: ${originalComp.grams}g)`);
-                // Reset na original grams ako je prevelik
-                finalGrams = Math.min(originalComp.grams, MAX_REASONABLE_GRAMS);
-                console.warn(`⚠️ Resetting to safe value: ${finalGrams}g`);
-              }
-              
-              // Provjeri da li je grams NaN ili negativan
-              if (isNaN(finalGrams) || finalGrams < 0) {
-                console.error(`❌ CRITICAL: Invalid grams za "${originalMeal.name}" - ${originalComp.foodName || originalComp.name}: ${finalGrams}`);
-                finalGrams = originalComp.grams || 0;
-              }
-              
+            componentDetails: scaledMeal.components.map((comp: any) => {
+              const originalComp = originalComponentDetails.find((c: any) => 
+                (c.foodName || c.name) === comp.name || Math.abs((c.grams || 0) - comp.grams) < 5
+              );
               return {
-                ...originalComp,
-                grams: finalGrams, // Koristi validirane skalirane gramaže
-                displayText: originalComp.units 
-                  ? `${originalComp.foodName || originalComp.name} (${originalComp.units} kom ≈ ${finalGrams}g)`
-                  : `${originalComp.foodName || originalComp.name} (${finalGrams}g)`,
+                food: originalComp?.food || { id: '', name: comp.food } as Food,
+                grams: comp.grams,
+                units: originalComp?.units,
+                displayText: `${comp.name} (${comp.grams}g)`,
+                foodName: comp.name,
               };
             }),
           };
-          
-          // GUARD: Provjeri da li se nakon scaling-a pojavljuju extra sastojci
-          // Koristi originalComponentDetails kao izvor istine (već je validiran u buildCompositeMealForSlot)
-          const finalComponentDetails = updatedMeal.componentDetails || [];
-          const finalComponentFoods = new Set(finalComponentDetails.map((c: any) => {
-            const foodName = (c.foodName || c.name || c.food?.name || '').toLowerCase().trim();
-            return foodName;
-          }));
-          
-          const originalComponentFoods = new Set(originalComponentDetails.map((c: any) => {
-            const foodName = (c.foodName || c.name || c.food?.name || '').toLowerCase().trim();
-            return foodName;
-          }));
-          
-          // Provjeri extra sastojke (sastojci koji nisu u originalComponentDetails)
-          const extraAfterScaling = Array.from(finalComponentFoods).filter(finalFood => {
-            if (finalFood.includes('water') || finalFood.includes('voda')) return false;
-            return !Array.from(originalComponentFoods).some(origFood => {
-              if (origFood === finalFood) return true;
-              const origWords = origFood.split(/\s+/);
-              const finalWords = finalFood.split(/\s+/);
-              return origWords.some(ow => finalWords.some(fw => ow.includes(fw) || fw.includes(ow)));
-            });
-          });
-          
-          if (extraAfterScaling.length > 0) {
-            const errorMsg = `❌ CRITICAL: Extra sastojci nakon scaling-a za "${originalMeal.name}": ${extraAfterScaling.join(', ')}\n` +
-              `   Originalne komponente: ${Array.from(originalComponentFoods).join(', ')}\n` +
-              `   Finalne komponente: ${Array.from(finalComponentFoods).join(', ')}`;
-            
-            console.error(errorMsg);
-            
-            // UVIJEK baci error u dev modu, ili ako je STRICT_VALIDATION uključen
-            const isDev = process.env.NODE_ENV === 'development' || process.env.DEBUG === 'true';
-            if (isDev || process.env.STRICT_VALIDATION === 'true') {
-              throw new Error(errorMsg);
-            }
-          }
-          
           scaledDayMeals[slot] = updatedMeal as ScoredMeal;
         }
         
@@ -5148,49 +4419,11 @@ async function generateWeeklyProMealPlanInternal(
             
             const originalComponentDetails = (meal as any).componentDetails || [];
             const additionalScaledComponents = originalComponentDetails.map((comp: any) => {
-              // CRITICAL: Koristi originalni food key, ne displayName
-              // originalFoodKey je JEDINI izvor istine za food key
-              const foodKey = (comp.food as any)?.originalFoodKey || 
-                             (comp as any).originalFoodKey || 
-                             comp.food?.name || 
-                             comp.foodName || 
-                             comp.name || 
-                             '';
+              const foodKey = comp.foodName || comp.name || '';
               const namirnica = findNamirnica(foodKey);
-              if (!namirnica) {
-                console.warn(`⚠️ Namirnica "${foodKey}" nije pronađena u additionalScaledComponents za "${meal.name}" (${slot})`);
-                return comp;
-              }
+              if (!namirnica) return comp;
               
               const newGrams = clampToPortionLimits(foodKey, comp.grams * limitedFactor, userGoal);
-              
-              // GUARD: Provjeri da li su gramaže razumne (ne eksplodirale)
-              const MAX_REASONABLE_GRAMS = 600; // Povećano s 500 na 600 za veće obroke
-              if (newGrams > MAX_REASONABLE_GRAMS) {
-                console.error(`❌ CRITICAL: Additional scaled grams too high za "${meal.name}" (${slot}) - ${comp.foodName || comp.name}: ${newGrams}g (original: ${comp.grams}g, factor: ${limitedFactor})`);
-                // Reset na original grams ako je prevelik
-                const safeGrams = Math.min(comp.grams, MAX_REASONABLE_GRAMS);
-                console.warn(`⚠️ Resetting to safe value: ${safeGrams}g`);
-                const macros = calculateMacrosForGrams(namirnica, safeGrams);
-                return {
-                  ...comp,
-                  grams: safeGrams,
-                  displayText: `${comp.foodName || comp.name} (${safeGrams}g)`,
-                };
-              }
-              
-              // Provjeri da li je grams NaN ili negativan
-              if (isNaN(newGrams) || newGrams < 0) {
-                console.error(`❌ CRITICAL: Invalid grams za "${meal.name}" (${slot}) - ${comp.foodName || comp.name}: ${newGrams}`);
-                const safeGrams = comp.grams || 0;
-                const macros = calculateMacrosForGrams(namirnica, safeGrams);
-                return {
-                  ...comp,
-                  grams: safeGrams,
-                  displayText: `${comp.foodName || comp.name} (${safeGrams}g)`,
-                };
-              }
-              
               const macros = calculateMacrosForGrams(namirnica, newGrams);
               
               return {
@@ -5352,41 +4585,9 @@ async function generateWeeklyProMealPlanInternal(
             }
             
             const finalScaledComponents = originalComponentDetails.map((comp: any) => {
-              // CRITICAL: Koristi originalni food key, ne displayName
-              // originalFoodKey je JEDINI izvor istine za food key
-              const foodKey = (comp.food as any)?.originalFoodKey || 
-                             (comp as any).originalFoodKey || 
-                             comp.food?.name || 
-                             comp.foodName || 
-                             comp.name || 
-                             '';
+              const foodKey = comp.foodName || comp.name || '';
               const baseGrams = comp.grams * limitedFinalFactor;
               const finalGrams = clampToPortionLimits(foodKey, baseGrams * extraFactor, userGoal);
-              
-              // GUARD: Provjeri da li su gramaže razumne (ne eksplodirale)
-              const MAX_REASONABLE_GRAMS = 600; // Povećano s 500 na 600 za veće obroke
-              if (finalGrams > MAX_REASONABLE_GRAMS) {
-                console.error(`❌ CRITICAL: Final scaled grams too high za "${meal.name}" (${slot}) - ${comp.foodName || comp.name}: ${finalGrams}g (original: ${comp.grams}g, factor: ${limitedFinalFactor}, extra: ${extraFactor})`);
-                // Reset na original grams ako je prevelik
-                const safeGrams = Math.min(comp.grams, MAX_REASONABLE_GRAMS);
-                console.warn(`⚠️ Resetting to safe value: ${safeGrams}g`);
-                return {
-                  ...comp,
-                  grams: safeGrams,
-                  displayText: `${comp.foodName || comp.name} (${safeGrams}g)`,
-                };
-              }
-              
-              // Provjeri da li je grams NaN ili negativan
-              if (isNaN(finalGrams) || finalGrams < 0) {
-                console.error(`❌ CRITICAL: Invalid grams za "${meal.name}" (${slot}) - ${comp.foodName || comp.name}: ${finalGrams}`);
-                const safeGrams = comp.grams || 0;
-                return {
-                  ...comp,
-                  grams: safeGrams,
-                  displayText: `${comp.foodName || comp.name} (${safeGrams}g)`,
-                };
-              }
               
               return {
                 ...comp,
@@ -5402,18 +4603,9 @@ async function generateWeeklyProMealPlanInternal(
             let finalMealFat = 0;
             
             for (const comp of finalScaledComponents) {
-              // CRITICAL: Koristi originalni food key, ne displayName
-              const foodKey = (comp.food as any)?.originalFoodKey || 
-                             (comp as any).originalFoodKey || 
-                             comp.food?.name || 
-                             comp.foodName || 
-                             comp.name || 
-                             '';
+              const foodKey = comp.foodName || comp.name || '';
               const namirnica = findNamirnica(foodKey);
-              if (!namirnica) {
-                console.warn(`⚠️ Namirnica "${foodKey}" nije pronađena u finalScaledComponents za "${meal.name}" (${slot})`);
-                continue;
-              }
+              if (!namirnica) continue;
               
               const macros = await calculateMacrosForGramsWithFallback(namirnica, comp.grams, foodKey);
               finalMealCalories += macros.calories;

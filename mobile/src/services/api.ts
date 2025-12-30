@@ -8,9 +8,6 @@
 
 // Koristi localhost za development (Expo Go na istom WiFi-u)
 // Za production, koristi environment varijablu ili postavi pravi URL
-// AUTO-DETECT: Koristi trenutnu LAN IP adresu (može se promijeniti ako se prebaciš na drugu mrežu)
-const LAN_IP = '172.20.10.10'; // Ažurirano: koristi ifconfig | grep "inet " | grep -v 127.0.0.1 za pronalazak
-
 const getApiBaseUrl = () => {
   // Check if we're in development mode
   // In React Native/Expo, __DEV__ is a global boolean
@@ -21,6 +18,7 @@ const getApiBaseUrl = () => {
   if (isDev) {
     // Development - koristi LAN IP za pristup s mobilnog uređaja
     // Zamijeni sa svojom LAN IP adresom ako je drugačija
+    const LAN_IP = '192.168.1.11'; // Automatski detektiraj ili postavi ručno
     return `http://${LAN_IP}:3000`;
   }
   // Production - TODO: Postavi pravi URL
@@ -31,7 +29,7 @@ const getApiBaseUrl = () => {
   return apiUrl;
 };
 
-const API_BASE_URL = getApiBaseUrl();
+export const API_BASE_URL = getApiBaseUrl();
 
 export interface LoginRequest {
   username: string;
@@ -187,7 +185,7 @@ export async function getCalculations(clientId: string, token: string) {
 
 /**
  * Generate weekly meal plan
- * Koristi LOKALNI generator (bez Supabase) - šalje direktne kalkulacije
+ * Supports both authenticated (with userId) and unauthenticated (with direct calculations) modes
  */
 export async function generateWeeklyMealPlan(
   clientId: string | null,
@@ -213,41 +211,50 @@ export async function generateWeeklyMealPlan(
       'Content-Type': 'application/json',
     };
 
-    // Token je opcionalan za lokalni generator
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    // LOKALNI GENERATOR: Uvijek koristi directCalculations
-    if (!directCalculations) {
-      throw new Error('directCalculations je obavezan za lokalni generator');
+    const body: any = {};
+    
+    if (clientId && !directCalculations) {
+      // Authenticated mode - use userId
+      body.userId = clientId;
+    } else if (directCalculations) {
+      // Unauthenticated mode - use direct calculations
+      body.calculations = directCalculations;
+      console.log('📤 Sending direct calculations:', directCalculations);
+    } else {
+      throw new Error('Either clientId or directCalculations must be provided');
     }
 
-    const body = {
-      calculations: directCalculations,
-      preferences: directCalculations.preferences,
-    };
-    console.log('📤 Sending calculations to LOCAL generator:', directCalculations);
-
-    // Koristi LOKALNI endpoint (bez Supabase)
-    const requestUrl = `${API_BASE_URL}/api/meal-plan/local`;
+    const requestUrl = `${API_BASE_URL}/api/meal-plan/pro/weekly`;
     console.log('📤 API Request:', {
       url: requestUrl,
       method: 'POST',
       body: JSON.stringify(body),
       headers,
+      API_BASE_URL: API_BASE_URL,
     });
 
     let response: Response;
     try {
       console.log('🌐 Attempting to connect to:', requestUrl);
+      console.log('📤 API_BASE_URL value:', API_BASE_URL);
       console.log('📤 Request body:', JSON.stringify(body, null, 2));
+      
+      // Timeout handling (fallback za starije React Native verzije)
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 60000) : null;
       
       response = await fetch(requestUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify(body),
+        ...(controller && { signal: controller.signal }),
       });
+      
+      if (timeoutId) clearTimeout(timeoutId);
       
       console.log('✅ Response received:', {
         status: response.status,
@@ -263,47 +270,22 @@ export async function generateWeeklyMealPlan(
       });
       
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-        throw new Error(`Request timeout - server nije odgovorio.\n\nProvjeri:\n1. Je li Next.js server pokrenut? (npm run dev)\n2. Je li server dostupan na http://${LAN_IP}:3000?`);
+        throw new Error(`Request timeout - server nije odgovorio u roku od 60 sekundi. Provjeri je li server pokrenut na ${API_BASE_URL}`);
       }
       
-      throw new Error(`❌ Ne mogu se spojiti na server!\n\nProvjeri:\n1. Pokreni server: npm run dev\n2. Je li telefon na istoj WiFi mreži?\n3. Server URL: http://${LAN_IP}:3000`);
+      // Detaljniji error message
+      const errorMsg = fetchError instanceof Error ? fetchError.message : String(fetchError);
+      throw new Error(`Network error: ${errorMsg}. URL: ${requestUrl}. Provjeri: 1) Je li server pokrenut? 2) Je li mobilni uređaj na istoj WiFi mreži? 3) Je li LAN IP točan (trenutno: ${API_BASE_URL})?`);
     }
 
     if (!response.ok) {
-      // Pokušaj parsirati kao JSON prvo, ako ne uspije, koristi tekst
-      let errorMessage = `API error: ${response.status}`;
-      try {
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorData.error || JSON.stringify(errorData);
-          console.error('❌ API Error Response (JSON):', {
-            status: response.status,
-            statusText: response.statusText,
-            body: errorData,
-          });
-        } else {
-          // Ako nije JSON, pokušaj parsirati kao tekst (ali ograniči duljinu)
-          const errorText = await response.text();
-          const truncatedText = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
-          errorMessage = `API error: ${response.status} - ${truncatedText}`;
-          console.error('❌ API Error Response (Text/HTML):', {
-            status: response.status,
-            statusText: response.statusText,
-            bodyLength: errorText.length,
-            bodyPreview: truncatedText,
-          });
-        }
-      } catch (parseError) {
-        // Ako ni JSON ni tekst ne mogu biti parsirani, koristi default poruku
-        console.error('❌ API Error Response (Parse failed):', {
-          status: response.status,
-          statusText: response.statusText,
-          parseError: parseError instanceof Error ? parseError.message : String(parseError),
-        });
-        errorMessage = `API error: ${response.status} - Unable to parse error response`;
-      }
-      throw new Error(errorMessage);
+      const errorText = await response.text();
+      console.error('❌ API Error Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+      });
+      throw new Error(`API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();

@@ -182,29 +182,6 @@ export const NAMIRNICE: Namirnica[] = [
     category: 'dairy',
   },
   {
-    id: 'milk_1_2',
-    name: 'Mlijeko 1.2%',
-    nameEn: 'Milk 1.2%',
-    // USDA FDC 322228: Milk, lowfat, fluid, 1% milkfat (koristimo za 1.2%)
-    // Hrvatsko mlijeko 1.2% ima slične vrijednosti kao USDA 1% milkfat
-    proteinPer100g: 3.4,
-    carbsPer100g: 5.2,
-    fatsPer100g: 1.2,
-    caloriesPer100g: calcKcal(3.4, 5.2, 1.2), // 44 kcal
-    category: 'dairy',
-  },
-  {
-    id: 'milk_3_2',
-    name: 'Mlijeko 3.2%',
-    nameEn: 'Milk 3.2%',
-    // USDA FDC 171265: Milk, whole, 3.25% milkfat
-    proteinPer100g: 3.2,
-    carbsPer100g: 4.8,
-    fatsPer100g: 3.2,
-    caloriesPer100g: calcKcal(3.2, 4.8, 3.2), // 61 kcal
-    category: 'dairy',
-  },
-  {
     id: 'milk_low_fat',
     name: 'Mlijeko 1.5%',
     nameEn: 'Milk',
@@ -306,19 +283,6 @@ export const NAMIRNICE: Namirnica[] = [
     carbsPer100g: 23.7,
     fatsPer100g: 1.0,
     caloriesPer100g: calcKcal(3.7, 23.7, 1.0), // 119 kcal
-    category: 'carb',
-  },
-  {
-    id: 'semolina_cooked',
-    name: 'Griz (kuhani)',
-    nameEn: 'Semolina',
-    // Semolina (griz) cooked - proizvod od pšenice, kuhan s omjerom 1:3-4
-    // Suhi griz: ~374 kcal/100g, 8g P, 75g C, 1.5g F
-    // Kuhani griz (1:3 omjer): ~125 kcal/100g
-    proteinPer100g: 3.5,
-    carbsPer100g: 25.0,
-    fatsPer100g: 0.4,
-    caloriesPer100g: calcKcal(3.5, 25.0, 0.4), // 125 kcal
     category: 'carb',
   },
 
@@ -1400,9 +1364,7 @@ export const FOOD_ALIASES: Record<string, string> = {
   'Cottage cheese': 'cottage_cheese',
   'Cream cheese light': 'cream_cheese_light',
   'Cream cheese': 'cream_cheese_light',
-  'Milk': 'milk_1_2', // Default: Mlijeko 1.2% (najčešće korišteno)
-  'Milk 1.2%': 'milk_1_2',
-  'Milk 3.2%': 'milk_3_2',
+  'Milk': 'milk_low_fat',
   'Sour cream': 'sour_cream',
   
   // Ugljikohidrati
@@ -1415,9 +1377,6 @@ export const FOOD_ALIASES: Record<string, string> = {
   'Potato': 'potato_boiled',
   'Rice': 'rice_cooked',
   'Buckwheat': 'buckwheat_cooked',
-  'Semolina': 'semolina_cooked',
-  'Griz': 'semolina_cooked',
-  'Griz (kuhani)': 'semolina_cooked',
   'Honey': 'honey',
   'Med': 'honey',
   'Jam': 'jam',

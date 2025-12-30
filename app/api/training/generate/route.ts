@@ -1,70 +1,195 @@
-import { createServiceClient } from "@/lib/supabase";
-import { NextResponse } from "next/server";
-import { z } from "zod";
+/**
+ * PRO Training Generator API
+ * ==========================
+ * POST /api/training/generate
+ * 
+ * Generira kompletan program treninga prema IFT metodici
+ * Sprema u Supabase tablice:
+ * - training_plans
+ * - training_mesocycles
+ * - training_weeks
+ * - training_sessions
+ * - training_session_exercises
+ */
 
-const generateSchema = z.object({
-  clientId: z.string().uuid(),
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import {
+  buildProgram,
+  spremiProgram,
+  dohvatiLogove,
+  type GeneratorInput,
+} from '@/lib/pro-generator';
+
+// ============================================
+// VALIDACIJA SCHEMA
+// ============================================
+
+const GeneratorInputSchema = z.object({
+  // Obavezni parametri
+  clientId: z.string().uuid({ message: 'clientId mora biti validan UUID' }),
+  cilj: z.enum(['hipertrofija', 'maksimalna_snaga', 'misicna_izdrzljivost', 'rekreacija_zdravlje'], {
+    message: 'cilj mora biti: hipertrofija, maksimalna_snaga, misicna_izdrzljivost ili rekreacija_zdravlje',
+  }),
+  razina: z.enum(['pocetnik', 'srednji', 'napredni'], {
+    message: 'razina mora biti: pocetnik, srednji ili napredni',
+  }),
+  treninziTjedno: z.number().int().min(2, { message: 'treninziTjedno mora biti najmanje 2' }).max(6, { message: 'treninziTjedno mora biti najviše 6' }),
+  trajanjeTjedana: z.number().int().min(4, { message: 'trajanjeTjedana mora biti najmanje 4' }).max(12, { message: 'trajanjeTjedana mora biti najviše 12' }),
+  
+  // Opcionalni parametri
+  trenerId: z.string().uuid().optional(),
+  splitTip: z.enum(['full_body', 'upper_lower', 'push_pull_legs', 'body_part_split']).optional(),
+  dostupnaOprema: z.array(z.string()).optional(),
+  izbjegavajVjezbe: z.array(z.string()).optional(),
+  fokusiraneGrupe: z.array(z.string()).optional(),
+  ozljede: z.array(z.string()).optional(),
+  maksCiljanoTrajanje: z.number().int().min(30).max(120).optional(),
+  napomeneTrenera: z.string().max(1000).optional(),
 });
 
-export async function POST(request: Request) {
+// ============================================
+// POST HANDLER
+// ============================================
+
+export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
-    const { clientId } = generateSchema.parse(await request.json());
-    const supabase = createServiceClient();
+    // 1. Parsiraj i validiraj body
+    const body = await request.json();
     
-    // Dohvati podatke klijenta
-    const { data: client } = await supabase
-      .from("clients")
-      .select("*")
-      .eq("id", clientId)
-      .single();
-
-    if (!client) {
-      return NextResponse.json({ ok: false, message: "Klijent nije pronađen" }, { status: 404 });
+    const parseResult = GeneratorInputSchema.safeParse(body);
+    if (!parseResult.success) {
+      const errors = parseResult.error.issues.map(e => ({
+        polje: e.path.join('.'),
+        poruka: e.message,
+      }));
+      
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Validacija nije prošla',
+          detalji: errors,
+        },
+        { status: 400 }
+      );
     }
-
-    // Generiraj osnovni plan treninga (pojednostavljena verzija)
-    const exercises = generateExercisesForGoals(client.goals || [], client.activities || []);
     
-    const { data: plan, error } = await supabase
-      .from("training_plans")
-      .insert({
-        client_id: clientId,
-        plan_name: "Personalizirani Plan",
-        exercises: exercises,
-        warmup_type: "bodyweight", // Default
-        estimated_calories_burned: 300,
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return NextResponse.json({ ok: true, ...plan });
+    const input: GeneratorInput = parseResult.data;
+    
+    console.log(`[API] Generiram program za klijenta ${input.clientId}`, {
+      cilj: input.cilj,
+      razina: input.razina,
+      treninziTjedno: input.treninziTjedno,
+      trajanjeTjedana: input.trajanjeTjedana,
+    });
+    
+    // 2. Generiraj program
+    const program = await buildProgram(input);
+    
+    // 3. Spremi u bazu
+    const saveResult = await spremiProgram(program);
+    
+    if (!saveResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Greška pri spremanju programa',
+          detalji: saveResult.error,
+        },
+        { status: 500 }
+      );
+    }
+    
+    // 4. Dohvati logove (za debug)
+    const logovi = process.env.DEBUG_TRAINING_GENERATOR === 'true' ? dohvatiLogove() : [];
+    
+    const endTime = Date.now();
+    const trajanje = endTime - startTime;
+    
+    console.log(`[API] Program uspješno generiran i spremljen`, {
+      programId: saveResult.programId,
+      trajanje: `${trajanje}ms`,
+      brojMezociklusa: program.mezociklusi.length,
+      ukupnoTreninga: program.mezociklusi.reduce((sum, m) => 
+        sum + m.tjedni.reduce((tSum, t) => tSum + t.treninzi.length, 0), 0
+      ),
+    });
+    
+    // 5. Vrati odgovor
+    return NextResponse.json({
+      success: true,
+      data: {
+        programId: saveResult.programId,
+        naziv: program.planName,
+        cilj: program.cilj,
+        razina: program.razina,
+        splitTip: program.splitTip,
+        ukupnoTjedana: program.ukupnoTjedana,
+        treninziTjedno: program.treninziTjedno,
+        brojMezociklusa: program.mezociklusi.length,
+        validacija: program.validacijaRezultat,
+        generatorVerzija: program.generatorVerzija,
+      },
+      meta: {
+        trajanje: `${trajanje}ms`,
+        logovi: logovi.length > 0 ? logovi : undefined,
+      },
+    });
+    
   } catch (error) {
-    console.error("[training/generate] error", error);
+    console.error('[API] Greška:', error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Nepoznata greška';
+    
     return NextResponse.json(
-      { ok: false, message: error instanceof Error ? error.message : "Greška" },
-      { status: 400 }
+      {
+        success: false,
+        error: 'Interna greška servera',
+        detalji: errorMessage,
+      },
+      { status: 500 }
     );
   }
 }
 
-function generateExercisesForGoals(goals: string[], activities: string[]): any[] {
-  // Osnovni set vježbi - u produkciji bi bio sofisticiraniji
-  const baseExercises = [
-    { name: "Čučnjevi", sets: 3, reps: 12, rest: 60, alternative: "Čučnjevi sa vlastitim tijelom" },
-    { name: "Sklekovi", sets: 3, reps: 10, rest: 45, alternative: "Sklekovi na koljenima" },
-    { name: "Trbušnjaci", sets: 3, reps: 15, rest: 30, alternative: "Trbušnjaci s nogama u zraku" },
-  ];
+// ============================================
+// GET HANDLER - Info o endpointu
+// ============================================
 
-  if (goals.includes("gain-muscle") || goals.includes("power")) {
-    return [
-      ...baseExercises,
-      { name: "Mrtvo dizanje", sets: 4, reps: 8, rest: 90, alternative: "Rumunsko mrtvo dizanje" },
-      { name: "Bench press", sets: 4, reps: 8, rest: 90, alternative: "Sklekovi" },
-    ];
-  }
-
-  return baseExercises;
+export async function GET() {
+  return NextResponse.json({
+    endpoint: 'POST /api/training/generate',
+    opis: 'PRO Training Generator - Generira kompletan program treninga prema IFT metodici',
+    verzija: '1.0.0',
+    parametri: {
+      obavezni: {
+        clientId: 'UUID - ID klijenta za kojeg se generira program',
+        cilj: 'enum - hipertrofija | maksimalna_snaga | misicna_izdrzljivost | rekreacija_zdravlje',
+        razina: 'enum - pocetnik | srednji | napredni',
+        treninziTjedno: 'number - 2-6 treninga tjedno',
+        trajanjeTjedana: 'number - 4-12 tjedana',
+      },
+      opcionalni: {
+        trenerId: 'UUID - ID trenera koji kreira program',
+        splitTip: 'enum - full_body | upper_lower | push_pull_legs | body_part_split',
+        dostupnaOprema: 'string[] - Lista dostupne opreme',
+        izbjegavajVjezbe: 'string[] - ID-evi vježbi za izbjegavanje',
+        fokusiraneGrupe: 'string[] - Prioritetne mišićne grupe',
+        ozljede: 'string[] - Ozljede za izbjegavanje',
+        maksCiljanoTrajanje: 'number - Max minuta po treningu (30-120)',
+        napomeneTrenera: 'string - Napomene trenera (max 1000 znakova)',
+      },
+    },
+    primjer: {
+      clientId: '550e8400-e29b-41d4-a716-446655440000',
+      cilj: 'hipertrofija',
+      razina: 'srednji',
+      treninziTjedno: 4,
+      trajanjeTjedana: 8,
+      splitTip: 'upper_lower',
+      napomeneTrenera: 'Fokus na snagu',
+    },
+  });
 }
-

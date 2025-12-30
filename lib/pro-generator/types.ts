@@ -1,0 +1,487 @@
+/**
+ * PRO Training Generator - Tipovi
+ * ================================
+ * Svi TypeScript tipovi za PRO generator treninga
+ * Usklađeno sa Supabase shemom (supabase-pro-training-schema.sql)
+ */
+
+// ============================================
+// ENUMI I OSNOVNI TIPOVI
+// ============================================
+
+/** Cilj treninga */
+export type CiljTreninga = 
+  | 'hipertrofija'          // Povećanje mišićne mase
+  | 'maksimalna_snaga'       // 1RM fokus
+  | 'misicna_izdrzljivost'   // Visoka ponavljanja, kraći odmori
+  | 'rekreacija_zdravlje';   // Održavanje forme
+
+/** Razina korisnika */
+export type RazinaKorisnika = 
+  | 'pocetnik'   // < 1 godina treninga
+  | 'srednji'    // 1-3 godine
+  | 'napredni';  // 3+ godina
+
+/** Tip splita */
+export type TipSplita = 
+  | 'full_body'         // Cijelo tijelo svaki trening
+  | 'upper_lower'       // Gore/Dolje alternacija
+  | 'push_pull_legs'    // Push/Pull/Legs rotacija
+  | 'body_part_split';  // Izolirani dijelovi (samo napredni)
+
+/** Status programa */
+export type StatusPrograma = 'draft' | 'aktivan' | 'pauziran' | 'zavrsen';
+
+/** Tip mezociklusa - IFT faze */
+export type TipMezociklusa = 
+  | 'akumulacija'      // Visok volumen, umjeren intenzitet
+  | 'intenzifikacija'  // Niži volumen, visok intenzitet
+  | 'realizacija'      // Peak performance
+  | 'deload'           // Oporavak
+  // IFT specifične faze
+  | 'hipertrofija'     // Fokus na mišićnu masu (8-12 rep)
+  | 'jakost'           // Maksimalna snaga (1-5 rep)
+  | 'snaga'            // Power/eksplozivnost (3-6 rep eksplozivno)
+  | 'izdrzljivost'     // Mišićna izdržljivost (15-25 rep)
+  | 'priprema'         // Priprema za natjecanje
+  | 'tranzicija'       // Aktivni odmor između sezona
+  | 'natjecanje';      // Natjecateljska faza
+
+/** Tip progresije */
+export type TipProgresije = 'linearna' | 'valna' | 'dvostruka';
+
+/** Mišićna grupa */
+export type MisicnaGrupa = 
+  | 'chest' | 'prsa'
+  | 'back' | 'ledja'
+  | 'shoulders' | 'ramena'
+  | 'biceps' | 'triceps'
+  | 'forearms' | 'podlaktice'
+  | 'quadriceps' | 'cetveroglavi'
+  | 'hamstrings' | 'straznja_loza'
+  | 'glutes' | 'gluteusi'
+  | 'calves' | 'listovi'
+  | 'abdominals' | 'trbusnjaci'
+  | 'traps' | 'trapezi'
+  | 'lats' | 'siroke_misice_ledja'
+  | 'lower_back' | 'donja_ledja'
+  | 'adductors' | 'primicaci'
+  | 'abductors' | 'odmicaci';
+
+/** Obrazac pokreta */
+export type ObrazacPokreta = 
+  | 'horizontal_push'   // Bench press, push-up
+  | 'horizontal_pull'   // Row varijante
+  | 'vertical_push'     // OHP, ramena
+  | 'vertical_pull'     // Pull-up, lat pulldown
+  | 'squat'             // Čučanj varijante
+  | 'hinge'             // Deadlift, RDL
+  | 'lunge'             // Iskorak varijante
+  | 'carry'             // Farmer walk
+  | 'rotation'          // Core rotacije
+  | 'isolation';        // Izolacijske vježbe
+
+/** Tip opreme */
+export type TipOpreme = 
+  | 'body only' | 'tezina_tijela'
+  | 'barbell' | 'sipka'
+  | 'dumbbell' | 'bucice'
+  | 'kettlebells' | 'girje'
+  | 'cable' | 'kabel'
+  | 'machine' | 'sprava'
+  | 'bands' | 'gume'
+  | 'medicine ball' | 'medicinka'
+  | 'exercise ball' | 'lopta'
+  | 'foam roll' | 'valjak'
+  | 'ez_curl_bar'
+  | 'other' | 'ostalo';
+
+// ============================================
+// VJEŽBA IZ LIBRARY-JA
+// ============================================
+
+/** Vježba iz exercise library-ja (wrkout-database.json) */
+export interface VjezbaLibrary {
+  id: string;
+  name: string;
+  force: 'push' | 'pull' | 'static' | null;
+  level: 'beginner' | 'intermediate' | 'expert';
+  mechanic: 'compound' | 'isolation' | null;
+  equipment: string | null;
+  primaryMuscles: string[];
+  secondaryMuscles: string[];
+  instructions: string[];
+  category: 'strength' | 'stretching' | 'plyometrics' | 'strongman' | 'powerlifting' | 'cardio' | 'olympic_weightlifting';
+}
+
+/** Proširena vježba s HR prijevodima i IFT parametrima */
+export interface VjezbaProširena extends VjezbaLibrary {
+  naziv_hr: string;
+  oprema_hr: string;
+  primarne_grupe_hr: string[];
+  sekundarne_grupe_hr: string[];
+  obrazac_pokreta: ObrazacPokreta;
+  preporuceni_rep_range: string;
+  preporuceni_setovi_tjedno: { min: number; max: number };
+}
+
+// ============================================
+// INPUT ZA GENERATOR
+// ============================================
+
+/** Ulazni parametri za generiranje programa */
+export interface GeneratorInput {
+  // Obavezni parametri
+  clientId: string;
+  cilj: CiljTreninga;
+  razina: RazinaKorisnika;
+  treninziTjedno: number;      // 2-6
+  trajanjeTjedana: number;     // 4-12
+  
+  // Opcionalni parametri
+  trenerId?: string;
+  splitTip?: TipSplita;        // Ako nije zadan, automatski se odabire
+  dostupnaOprema?: string[];   // Filtriranje vježbi po opremi
+  izbjegavajVjezbe?: string[]; // ID-evi vježbi koje treba izbjeći
+  fokusiraneGrupe?: string[];  // Prioritetne mišićne grupe
+  ozljede?: string[];          // Ozljede za izbjegavanje
+  maksCiljanoTrajanje?: number; // Minuta po treningu
+  napomeneTrenera?: string;
+}
+
+/** Rezultat validacije inputa */
+export interface ValidacijaRezultat {
+  valjan: boolean;
+  greske: string[];
+  upozorenja: string[];
+}
+
+// ============================================
+// PROGRAM STRUKTURA (OUTPUT)
+// ============================================
+
+/** Glavni program */
+export interface TreningProgram {
+  id: string;
+  clientId: string;
+  trenerId?: string;
+  
+  // Konfiguracija
+  planName: string;
+  cilj: CiljTreninga;
+  razina: RazinaKorisnika;
+  splitTip: TipSplita;
+  ukupnoTjedana: number;
+  treninziTjedno: number;
+  
+  // Meta
+  opis: string;
+  status: StatusPrograma;
+  datumPocetka?: Date;
+  datumZavrsetka?: Date;
+  generatorVerzija: string;
+  validacijaRezultat?: ValidacijaRezultat;
+  napomeneTrenera?: string;
+  
+  // Struktura
+  mezociklusi: Mezociklus[];
+  
+  // Timestamps
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** Mezociklus (faza programa) */
+export interface Mezociklus {
+  id: string;
+  programId: string;
+  redniBroj: number;
+  naziv: string;
+  tip: TipMezociklusa;
+  trajanjeTjedana: number;
+  fokusOpis: string;
+  
+  // Volumen kontrola po mišićnoj grupi (setovi tjedno)
+  pocetniVolumenPoGrupi: Record<string, number>;
+  zavrsniVolumenPoGrupi: Record<string, number>;
+  
+  // Intenzitet (% 1RM ili RPE)
+  pocetniIntenzitetPostotak: number;
+  zavrsniIntenzitetPostotak: number;
+  
+  // Progresija
+  tipProgresije: TipProgresije;
+  
+  // Meta
+  napomeneTreneru?: string;
+  
+  // Struktura
+  tjedni: Tjedan[];
+}
+
+/** Tjedan unutar mezociklusa */
+export interface Tjedan {
+  id: string;
+  mezociklusId: string;
+  tjedanBroj: number;
+  jeDeload: boolean;
+  volumenModifikator: number;      // 1.0 = 100%, 0.6 = 60% za deload
+  intenzitetModifikator: number;
+  napomene?: string;
+  
+  // Struktura
+  treninzi: TrenigSesija[];
+}
+
+/** Pojedinačni trening */
+export interface TrenigSesija {
+  id: string;
+  weekId: string;
+  danUTjednu: number;              // 1-7 (pon-ned)
+  naziv: string;                   // npr. "Push dan A"
+  tipTreninga: string;             // npr. "push", "pull", "legs", "full_body"
+  procijenjanoTrajanje: number;    // minuta
+  
+  // Struktura treninga
+  zagrijavanje: ZagrijavanjeBlok;
+  glavniDio: VjezbaSesije[];
+  zavrsniDio: ZavrsniBlok;
+  
+  // Meta
+  napomene?: string;
+  trenerLocked: boolean;
+}
+
+/** Zagrijavanje */
+export interface ZagrijavanjeBlok {
+  opceZagrijavanje: {
+    tip: 'trcanje' | 'bicikl' | 'veslo' | 'skipping';
+    trajanje: number;  // minuta
+    intenzitet: 'lagan' | 'umjeren';
+  };
+  specificnoZagrijavanje: {
+    vjezbe: string[];  // npr. ["arm_circles", "hip_circles"]
+    trajanje: number;
+  };
+}
+
+/** Završni dio */
+export interface ZavrsniBlok {
+  core?: {
+    vjezbe: VjezbaSesije[];
+    trajanje: number;
+  };
+  kondicija?: {
+    tip: string;
+    trajanje: number;
+    intenzitet: string;
+  };
+  istezanje?: {
+    vjezbe: string[];
+    trajanje: number;
+  };
+}
+
+/** Pojedinačna vježba u sesiji */
+export interface VjezbaSesije {
+  id: string;
+  sessionId: string;
+  redniBroj: number;
+  
+  // Referenca na library
+  exerciseLibraryId: string;
+  naziv: string;
+  nazivEn: string;
+  
+  // Propisani parametri
+  setovi: number;
+  ponavljanja: string;            // npr. "8-12" ili "5"
+  odmorSekunde: number;
+  tempo?: string;                 // npr. "3-1-2-0" (spuštanje-pauza-dizanje-pauza)
+  rir?: number;                   // Reps In Reserve (0-5)
+  rpe?: number;                   // Rate of Perceived Exertion (5-10)
+  postotak1RM?: number;           // % od 1RM
+  
+  // Meta
+  tipVjezbe: 'compound' | 'isolation';
+  obrazacPokreta: ObrazacPokreta;
+  primarneGrupe: string[];
+  sekundarneGrupe: string[];
+  oprema: string;
+  
+  // Zamjene
+  alternativneVjezbe: string[];   // ID-evi alternativa
+  napomene?: string;
+  
+  // Superset
+  jeSuperser: boolean;
+  superserPartnerId?: string;
+  
+  // Trener override
+  trenerOverride: boolean;
+  originalnaVjezbaId?: string;
+}
+
+// ============================================
+// PARAMETRI PO CILJU I RAZINI
+// ============================================
+
+/** Parametri treninga ovisno o cilju */
+export interface CiljParametri {
+  setovi: { min: number; max: number };
+  ponavljanja: { min: number; max: number };
+  odmorSekunde: { min: number; max: number };
+  rirRaspon: { min: number; max: number };
+  intenzitetRaspon: { min: number; max: number };  // % 1RM
+  volumenPoGrupi: { min: number; max: number };    // setovi tjedno
+  tempoPreporuka?: string;
+}
+
+/** Parametri po razini korisnika */
+export interface RazinaParametri {
+  maksBrojVjezbiPoTreningu: number;
+  maksBrojSetovaPoTreningu: number;
+  minOdmorIzmedjuSetova: number;
+  dozvoljeneTehnikeNapredne: boolean;
+  preporuceniSplitovi: TipSplita[];
+}
+
+// ============================================
+// LOGGING
+// ============================================
+
+/** Log entry za generator_logs tablicu */
+export interface GeneratorLog {
+  id: string;
+  programId: string;
+  tip: 'info' | 'warning' | 'error' | 'debug';
+  poruka: string;
+  podaci?: Record<string, unknown>;
+  createdAt: Date;
+}
+
+// ============================================
+// SUPABASE MODELI (za insert/select)
+// ============================================
+
+/** Supabase training_plans row */
+export interface DBTrainingPlan {
+  id?: string;
+  client_id: string;
+  trener_id?: string;
+  plan_name: string;
+  cilj: CiljTreninga;
+  razina: RazinaKorisnika;
+  split_tip: TipSplita;
+  ukupno_tjedana: number;
+  treninzi_tjedno: number;
+  opis?: string;
+  status: StatusPrograma;
+  datum_pocetka?: string;
+  datum_zavrsetka?: string;
+  je_template: boolean;
+  template_id?: string;
+  validacija_rezultat?: ValidacijaRezultat;
+  napomene_trenera?: string;
+  generator_verzija: string;
+  exercises?: unknown; // Legacy JSONB polje
+  warmup_type?: string;
+  estimated_calories_burned?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** Supabase training_mesocycles row */
+export interface DBMezociklus {
+  id?: string;
+  program_id: string;
+  redni_broj: number;
+  naziv: string;
+  tip: TipMezociklusa;
+  trajanje_tjedana: number;
+  fokus_opis?: string;
+  pocetni_volumen_po_grupi?: Record<string, number>;
+  zavrsni_volumen_po_grupi?: Record<string, number>;
+  pocetni_intenzitet_postotak: number;
+  zavrsni_intenzitet_postotak: number;
+  tip_progresije: TipProgresije;
+  napomene_treneru?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** Supabase training_weeks row */
+export interface DBTjedan {
+  id?: string;
+  mesocycle_id: string;
+  tjedan_broj: number;
+  je_deload: boolean;
+  volumen_modifikator: number;
+  intenzitet_modifikator: number;
+  napomene?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** Supabase training_sessions row */
+export interface DBSesija {
+  id?: string;
+  week_id: string;
+  dan_u_tjednu: number;
+  naziv: string;
+  tip_treninga?: string;
+  procijenjeno_trajanje_min: number;
+  zagrijavanje?: ZagrijavanjeBlok;
+  zavrsni_dio?: ZavrsniBlok;
+  napomene?: string;
+  trener_locked: boolean;
+  stvarno_trajanje_min?: number;
+  izvrseno_na?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** Supabase training_session_exercises row */
+export interface DBVjezbaSesije {
+  id?: string;
+  session_id: string;
+  redni_broj: number;
+  exercise_library_id: string;
+  naziv: string;
+  naziv_en?: string;
+  setovi: number;
+  ponavljanja: string;
+  odmor_sekunde: number;
+  tempo?: string;
+  rir?: number;
+  rpe?: number;
+  postotak_1rm?: number;
+  tip_vjezbe?: 'compound' | 'isolation';
+  obrazac_pokreta?: string;
+  primarne_grupe?: string[];
+  sekundarne_grupe?: string[];
+  oprema?: string;
+  alternativne_vjezbe?: string[];
+  napomene?: string;
+  je_superser: boolean;
+  superser_partner_id?: string;
+  trener_override: boolean;
+  originalna_vjezba_id?: string;
+  stvarni_setovi?: number;
+  stvarna_ponavljanja?: string;
+  koristeno_opterecenje?: string;
+  napomene_izvrsenja?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// ============================================
+// EXPORT SVE
+// ============================================
+
+export type {
+  CiljTreninga as ProgramGoal,
+  RazinaKorisnika as UserLevel,
+  TipSplita as SplitType,
+};
+

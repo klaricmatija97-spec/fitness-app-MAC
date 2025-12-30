@@ -32,9 +32,10 @@ interface LoginScreenProps {
   onLoginSuccess?: () => void;
   onSkipLogin?: () => void;
   onBack?: () => void;
+  onTrainerMode?: () => void;
 }
 
-export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack }: LoginScreenProps) {
+export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTrainerMode }: LoginScreenProps) {
   const [currentBgImage, setCurrentBgImage] = useState(0);
   const [isLoginMode, setIsLoginMode] = useState(true);
   
@@ -317,6 +318,18 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack }: Log
                   </Text>
                 </TouchableOpacity>
 
+                {/* Trainer mode button */}
+                {onTrainerMode && (
+                  <TouchableOpacity
+                    style={styles.trainerButton}
+                    onPress={onTrainerMode}
+                  >
+                    <Text style={styles.trainerButtonText}>
+                      💪 Trener mod
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
                 {/* Skip login */}
                 {onSkipLogin && (
                   <TouchableOpacity
@@ -441,6 +454,18 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack }: Log
                     ← Već imaš račun? Prijavi se
                   </Text>
                 </TouchableOpacity>
+
+                {/* Trainer mode button */}
+                {onTrainerMode && (
+                  <TouchableOpacity
+                    style={styles.trainerButton}
+                    onPress={onTrainerMode}
+                  >
+                    <Text style={styles.trainerButtonText}>
+                      💪 Trener mod
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
                 {/* Skip login */}
                 {onSkipLogin && (
@@ -584,6 +609,23 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.4)',
     fontSize: 12,
     letterSpacing: 1.2,
+  },
+  trainerButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 8,
+    backgroundColor: 'rgba(139, 92, 246, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.5)',
+    borderRadius: 8,
+  },
+  trainerButtonText: {
+    color: 'rgba(139, 92, 246, 1)',
+    fontSize: 13,
+    letterSpacing: 1.2,
+    fontWeight: '600',
   },
   skipButton: {
     paddingVertical: 12,

@@ -31,8 +31,10 @@ export interface RemapRequest {
 
 export interface RemapResult {
   ingredientIndex: number;
+  originalIngredient: IngredientWithSemantics;
   selectedSuggestion: EdamamSuggestion;
-  remappedIngredient: IngredientWithSemantics;
+  suggestedMatches?: EdamamSuggestion[];
+  remappedIngredient?: IngredientWithSemantics;
 }
 
 // ============================================
