@@ -254,7 +254,7 @@ export default function TrainerProfileScreen({ trainerId, trainerCode, authToken
         {/* Hero Section */}
         <View style={styles.heroSection}>
           <LinearGradient
-            colors={['#18181B', '#27272A', '#18181B']}
+            colors={['#1C1C1E', '#2C2C2E', '#1C1C1E']}
             style={styles.heroGradient}
           >
             {/* Back Button */}
@@ -315,8 +315,8 @@ export default function TrainerProfileScreen({ trainerId, trainerCode, authToken
             )}
             <View style={styles.pill}>
               <Text style={styles.pillText}>
-                {profile.trainingType === 'online' ? ' Online' : 
-                 profile.trainingType === 'in_person' ? ' Uživo' : ' Online i uživo'}
+                {profile.trainingType === 'online' ? '💻 Online' : 
+                 profile.trainingType === 'in_person' ? '🏋️ Uživo' : '💻🏋️ Online i uživo'}
               </Text>
             </View>
             {profile.hourlyRate && (
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#71717A',
+    color: '#8E8E93',
     marginTop: 16,
     fontSize: 16,
   },
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   backButtonText: {
-    color: '#FFFFFF',
+    color: '#0A84FF',
     fontSize: 17,
   },
   
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   navBackText: {
-    color: '#FFFFFF',
+    color: '#0A84FF',
     fontSize: 32,
     fontWeight: '300',
   },
@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   heroBackText: {
-    color: '#FFFFFF',
+    color: '#0A84FF',
     fontSize: 17,
   },
   avatarContainer: {
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#3F3F46',
+    backgroundColor: '#3A3A3C',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
@@ -577,11 +577,11 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#27272A',
+    backgroundColor: '#0A84FF',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: '#18181B',
+    borderColor: '#1C1C1E',
   },
   verifiedText: {
     color: '#FFF',
@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   motto: {
-    color: '#71717A',
+    color: '#8E8E93',
     fontSize: 14,
     fontStyle: 'italic',
     marginTop: 4,
@@ -617,14 +617,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   statLabel: {
-    color: '#71717A',
+    color: '#8E8E93',
     fontSize: 12,
     marginTop: 2,
   },
   statDivider: {
     width: 1,
     height: 30,
-    backgroundColor: '#3F3F46',
+    backgroundColor: '#3A3A3C',
   },
 
   // Content
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   pill: {
-    backgroundColor: '#18181B',
+    backgroundColor: '#1C1C1E',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 16,
@@ -653,7 +653,7 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   sectionTitle: {
-    color: '#71717A',
+    color: '#8E8E93',
     fontSize: 12,
     fontWeight: '600',
     letterSpacing: 1,
@@ -670,7 +670,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tag: {
-    backgroundColor: '#27272A',
+    backgroundColor: '#2C2C2E',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
   certItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#18181B',
+    backgroundColor: '#1C1C1E',
     padding: 14,
     borderRadius: 12,
     marginBottom: 8,
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#27272A',
+    backgroundColor: '#2C2C2E',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -708,7 +708,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   certIssuer: {
-    color: '#71717A',
+    color: '#8E8E93',
     fontSize: 13,
     marginTop: 2,
   },
@@ -717,7 +717,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   reviewCard: {
-    backgroundColor: '#18181B',
+    backgroundColor: '#1C1C1E',
     padding: 16,
     borderRadius: 12,
     marginBottom: 10,
@@ -734,16 +734,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   reviewStars: {
-    color: '#FFFFFF',
+    color: '#FFD60A',
     fontSize: 14,
   },
   reviewText: {
-    color: '#D4D4D8',
+    color: '#D1D1D6',
     fontSize: 14,
     lineHeight: 20,
   },
   reviewDate: {
-    color: '#52525B',
+    color: '#48484A',
     fontSize: 12,
     marginTop: 8,
   },
@@ -752,13 +752,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   socialButton: {
-    backgroundColor: '#18181B',
+    backgroundColor: '#1C1C1E',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
   },
   socialButtonText: {
-    color: '#FFFFFF',
+    color: '#0A84FF',
     fontSize: 15,
     fontWeight: '500',
   },
@@ -773,10 +773,10 @@ const styles = StyleSheet.create({
     paddingBottom: 34,
     backgroundColor: 'rgba(0,0,0,0.95)',
     borderTopWidth: 1,
-    borderTopColor: '#18181B',
+    borderTopColor: '#1C1C1E',
   },
   ctaButton: {
-    backgroundColor: '#27272A',
+    backgroundColor: '#0A84FF',
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: 'center',

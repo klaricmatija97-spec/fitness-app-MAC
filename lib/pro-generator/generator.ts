@@ -180,6 +180,7 @@ export function odaberiOptimalniSplit(input: GeneratorInput): TipSplita {
 
 export async function buildProgram(input: GeneratorInput): Promise<TreningProgram> {
   ocistiLogove();
+  resetVjezbaTracker(input.clientId); // Reset tracker za novi program
   log('info', 'Početak generiranja programa', { input });
   
   // 1. Validiraj input
@@ -420,7 +421,276 @@ async function buildSessions(input: BuildSessionsInput): Promise<TrenigSesija[]>
 }
 
 // ============================================
-// SELECT EXERCISES
+// PRAĆENJE KORIŠTENIH VJEŽBI (ROTACIJA)
+// ============================================
+
+/**
+ * Globalni tracker korištenih vježbi za sprječavanje ponavljanja
+ * Ključ: exercise ID, Vrijednost: { weekNumber, sessionNumber, timesUsed }
+ */
+interface VjezbaUsage {
+  weekNumber: number;
+  sessionNumber: number;
+  timesUsed: number;
+}
+
+let koristeneVjezbeTracker: Map<string, VjezbaUsage> = new Map();
+let currentProgramId: string | null = null;
+
+/**
+ * Resetira tracker za novi program
+ */
+export function resetVjezbaTracker(programId?: string): void {
+  koristeneVjezbeTracker = new Map();
+  currentProgramId = programId || null;
+  log('debug', 'Tracker vježbi resetiran');
+}
+
+/**
+ * Označava vježbu kao korištenu
+ */
+function oznaciVjezbuKaoKoristenu(vjezbaId: string, weekNumber: number, sessionNumber: number): void {
+  const existing = koristeneVjezbeTracker.get(vjezbaId);
+  if (existing) {
+    koristeneVjezbeTracker.set(vjezbaId, {
+      weekNumber,
+      sessionNumber,
+      timesUsed: existing.timesUsed + 1,
+    });
+  } else {
+    koristeneVjezbeTracker.set(vjezbaId, { weekNumber, sessionNumber, timesUsed: 1 });
+  }
+}
+
+/**
+ * Provjerava je li vježba već korištena u ovom tjednu
+ */
+function jeVjezbaKoristenaUTjednu(vjezbaId: string, weekNumber: number): boolean {
+  const usage = koristeneVjezbeTracker.get(vjezbaId);
+  return usage !== undefined && usage.weekNumber === weekNumber;
+}
+
+/**
+ * Dohvaća prioritet vježbe (manje korištene = viši prioritet)
+ */
+function getPrioritetVjezbe(vjezbaId: string): number {
+  const usage = koristeneVjezbeTracker.get(vjezbaId);
+  if (!usage) return 100; // Nekorištena vježba ima najviši prioritet
+  return Math.max(0, 100 - usage.timesUsed * 20); // Svako korištenje smanjuje prioritet
+}
+
+// ============================================
+// IFT METODIKA - STRUKTURA TRENINGA
+// ============================================
+
+/**
+ * IFT Tablica 24 - Struktura vježbi unutar treninga
+ * 
+ * Redoslijed: Compound vježbe PRVO (viši intenzitet) → Isolation NA KRAJU (niži intenzitet)
+ * 
+ * Primjer hipertrofija (donji dio):
+ * 1. Goblet čučanj     - 4x8-10, 75% - COMPOUND
+ * 2. Hip thrust        - 4x8-10, 75% - COMPOUND
+ * 3. Rumunjsko mrtvo   - 3x10-12, 70% - COMPOUND
+ * 4. Iskorak u stranu  - 3x10-12, 70% - COMPOUND
+ * 5. Nožna ekstenzija  - 3x12-15, 60% - ISOLATION (trenažer)
+ * 6. Nožna fleksija    - 3x12-15, 60% - ISOLATION (trenažer)
+ */
+
+/**
+ * Konfiguracija za strukturu treninga prema IFT metodici
+ */
+interface IFTTreningStruktura {
+  // Broj vježbi po tipu
+  brojCompoundVjezbi: number;
+  brojIsolationVjezbi: number;
+  
+  // Parametri za compound vježbe (početak treninga)
+  compoundIntenzitet: number;      // % 1RM
+  compoundSetovi: number;
+  compoundPonavljanja: { min: number; max: number };
+  
+  // Parametri za isolation vježbe (kraj treninga)
+  isolationIntenzitet: number;     // % 1RM
+  isolationSetovi: number;
+  isolationPonavljanja: { min: number; max: number };
+  
+  // Prioritetni obrasci pokreta
+  obrazciPokretaPrioritet: string[];
+  
+  // Dozvoljene kategorije vježbi
+  preferiraneKategorije: string[];
+  izbjegavajKategorije: string[];
+  
+  // Oprema preferencija
+  preferiraSlobodneUtege: boolean;  // za compound
+  preferirajTrenazere: boolean;      // za isolation
+}
+
+/**
+ * IFT Metodika - Konfiguracija treninga prema cilju
+ * Izvor: Tablica 23 i Tablica 24 iz IFT skripte
+ */
+function getIFTStruktura(cilj: string, fazaMezociklusa: string, razina: string): IFTTreningStruktura {
+  
+  // =============================================
+  // JAKOST - IFT Tablica 23: 3-8 serija, 1-5 pon, 90-100% 1RM
+  // Fokus: Compound vježbe sa slobodnim utezima
+  // =============================================
+  if (cilj === 'jakost' || fazaMezociklusa === 'jakost' || fazaMezociklusa === 'realizacija') {
+    return {
+      brojCompoundVjezbi: 4,           // Većina treninga je compound
+      brojIsolationVjezbi: 1,          // Minimalno isolation
+      compoundIntenzitet: 90,          // 90-100% 1RM
+      compoundSetovi: 5,               // 3-8 serija
+      compoundPonavljanja: { min: 1, max: 5 },
+      isolationIntenzitet: 70,
+      isolationSetovi: 3,
+      isolationPonavljanja: { min: 6, max: 8 },
+      obrazciPokretaPrioritet: ['squat', 'hinge', 'horizontal_push', 'vertical_pull', 'vertical_push'],
+      preferiraneKategorije: ['strength', 'powerlifting'],
+      izbjegavajKategorije: ['stretching', 'cardio', 'plyometrics'],
+      preferiraSlobodneUtege: true,
+      preferirajTrenazere: false,
+    };
+  }
+  
+  // =============================================
+  // SNAGA/POWER - IFT Tablica 23: 3-6 serija, 6-8 pon, 80-90% 1RM
+  // Fokus: Eksplozivne compound vježbe
+  // =============================================
+  if (cilj === 'snaga' || fazaMezociklusa === 'snaga') {
+    return {
+      brojCompoundVjezbi: 4,
+      brojIsolationVjezbi: 1,
+      compoundIntenzitet: 85,          // 80-90% 1RM
+      compoundSetovi: 4,               // 3-6 serija
+      compoundPonavljanja: { min: 6, max: 8 },
+      isolationIntenzitet: 65,
+      isolationSetovi: 3,
+      isolationPonavljanja: { min: 8, max: 10 },
+      obrazciPokretaPrioritet: ['squat', 'hinge', 'vertical_push', 'horizontal_push', 'vertical_pull'],
+      preferiraneKategorije: ['strength', 'olympic weightlifting', 'plyometrics'],
+      izbjegavajKategorije: ['stretching'],
+      preferiraSlobodneUtege: true,
+      preferirajTrenazere: false,
+    };
+  }
+  
+  // =============================================
+  // HIPERTROFIJA - IFT Tablica 23: 3-5 serija, 8-12 pon, 65-80% 1RM
+  // Izvor: Tablica 24 pokazuje 67% compound, 33% isolation
+  // Struktura: Compound na početku (75%), Isolation na kraju (60%)
+  // =============================================
+  if (cilj === 'hipertrofija' || fazaMezociklusa === 'hipertrofija' || fazaMezociklusa === 'akumulacija') {
+    // Prilagodi broj vježbi prema razini
+    const brojVjezbi = razina === 'pocetnik' ? 5 : razina === 'srednji' ? 6 : 7;
+    const compoundBroj = Math.ceil(brojVjezbi * 0.67);  // ~67% compound (Tablica 24)
+    const isolationBroj = brojVjezbi - compoundBroj;
+    
+    return {
+      brojCompoundVjezbi: compoundBroj,
+      brojIsolationVjezbi: isolationBroj,
+      compoundIntenzitet: 75,          // 65-80% 1RM, sredina
+      compoundSetovi: 4,               // 3-5 serija
+      compoundPonavljanja: { min: 8, max: 12 },
+      isolationIntenzitet: 60,         // Niži intenzitet za isolation
+      isolationSetovi: 3,
+      isolationPonavljanja: { min: 12, max: 15 },
+      obrazciPokretaPrioritet: ['horizontal_push', 'horizontal_pull', 'squat', 'hinge', 'vertical_push', 'vertical_pull'],
+      preferiraneKategorije: ['strength'],
+      izbjegavajKategorije: ['cardio', 'strongman'],
+      preferiraSlobodneUtege: true,    // Compound sa slobodnim utezima
+      preferirajTrenazere: true,       // Isolation na trenažerima (sigurnije)
+    };
+  }
+  
+  // =============================================
+  // IZDRŽLJIVOST - IFT Tablica 23: 2+ serija, 12+ pon, do 60% 1RM
+  // Fokus: Više isolation, kraći odmori
+  // =============================================
+  if (cilj === 'izdrzljivost' || fazaMezociklusa === 'izdrzljivost') {
+    return {
+      brojCompoundVjezbi: 2,           // Manje compound
+      brojIsolationVjezbi: 4,          // Više isolation
+      compoundIntenzitet: 60,          // Do 60% 1RM
+      compoundSetovi: 3,
+      compoundPonavljanja: { min: 12, max: 15 },
+      isolationIntenzitet: 50,
+      isolationSetovi: 2,
+      isolationPonavljanja: { min: 15, max: 25 },
+      obrazciPokretaPrioritet: ['horizontal_push', 'horizontal_pull', 'squat', 'isolation'],
+      preferiraneKategorije: ['strength'],
+      izbjegavajKategorije: ['powerlifting', 'strongman'],
+      preferiraSlobodneUtege: false,
+      preferirajTrenazere: true,       // Trenažeri za sigurnost kod visokih ponavljanja
+    };
+  }
+  
+  // =============================================
+  // DELOAD - Smanjeni volumen i intenzitet za oporavak
+  // =============================================
+  if (fazaMezociklusa === 'deload' || fazaMezociklusa === 'tranzicija') {
+    return {
+      brojCompoundVjezbi: 2,
+      brojIsolationVjezbi: 2,
+      compoundIntenzitet: 55,
+      compoundSetovi: 2,
+      compoundPonavljanja: { min: 10, max: 12 },
+      isolationIntenzitet: 45,
+      isolationSetovi: 2,
+      isolationPonavljanja: { min: 12, max: 15 },
+      obrazciPokretaPrioritet: ['horizontal_push', 'horizontal_pull', 'squat'],
+      preferiraneKategorije: ['strength'],
+      izbjegavajKategorije: ['powerlifting', 'strongman', 'plyometrics'],
+      preferiraSlobodneUtege: false,
+      preferirajTrenazere: true,
+    };
+  }
+  
+  // =============================================
+  // DEFAULT - Rekreacija/Zdravlje
+  // =============================================
+  return {
+    brojCompoundVjezbi: 3,
+    brojIsolationVjezbi: 2,
+    compoundIntenzitet: 65,
+    compoundSetovi: 3,
+    compoundPonavljanja: { min: 10, max: 12 },
+    isolationIntenzitet: 55,
+    isolationSetovi: 2,
+    isolationPonavljanja: { min: 12, max: 15 },
+    obrazciPokretaPrioritet: ['horizontal_push', 'horizontal_pull', 'squat', 'hinge'],
+    preferiraneKategorije: ['strength'],
+    izbjegavajKategorije: ['strongman', 'powerlifting'],
+    preferiraSlobodneUtege: true,
+    preferirajTrenazere: true,
+  };
+}
+
+/**
+ * Izračunava progresivni intenzitet unutar treninga
+ * IFT Tablica 24: Intenzitet pada kroz trening (75% → 70% → 60%)
+ */
+function izracunajProgresivniIntenzitet(
+  pozicijaVjezbe: number, 
+  ukupnoVjezbi: number, 
+  bazniIntenzitet: number,
+  jeIsolation: boolean
+): number {
+  // Compound vježbe: viši intenzitet na početku
+  // Isolation vježbe: niži intenzitet
+  if (jeIsolation) {
+    return bazniIntenzitet - 15; // Isolation je ~15% niži
+  }
+  
+  // Progresivno smanjenje kroz compound vježbe
+  const pad = (pozicijaVjezbe / ukupnoVjezbi) * 10; // Do 10% pada
+  return Math.round(bazniIntenzitet - pad);
+}
+
+// ============================================
+// SELECT EXERCISES - IFT METODIKA ALGORITAM
 // ============================================
 
 interface SelectExercisesInput extends BuildSessionsInput {
@@ -429,6 +699,26 @@ interface SelectExercisesInput extends BuildSessionsInput {
   redniBrojTreninga: number;
 }
 
+/**
+ * Glavni algoritam za odabir vježbi prema IFT metodici
+ * 
+ * IFT Struktura treninga (Tablica 24):
+ * =====================================
+ * 1. COMPOUND vježbe PRVO - viši intenzitet (75% 1RM), više setova (4)
+ * 2. COMPOUND vježbe SREDINA - srednji intenzitet (70% 1RM), manje setova (3)
+ * 3. ISOLATION vježbe NA KRAJU - niži intenzitet (60% 1RM), više ponavljanja
+ * 
+ * Rotacija vježbi:
+ * ================
+ * - Praćenje korištenih vježbi kroz tjedan (izbjegava ponavljanje)
+ * - Prioritet za nekorištene vježbe
+ * - Varijabilnost između tjedana
+ * 
+ * Oprema (IFT preporuka):
+ * =======================
+ * - Slobodni utezi za compound (aktiviraju sinergiste i stabilizatore)
+ * - Trenažeri za isolation (sigurniji, bolji za izolaciju)
+ */
 export async function selectExercises(input: SelectExercisesInput): Promise<VjezbaSesije[]> {
   const { 
     misicneGrupe, 
@@ -439,82 +729,267 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
     jeDeload,
     volumenModifikator,
     intenzitetModifikator,
+    tjedanBroj,
+    redniBrojTreninga,
+    mezociklusTip,
   } = input;
   
-  const razinaParam = RAZINA_PARAMETRI[razina];
+  // Dohvati IFT strukturu za ovaj cilj/fazu
+  const iftStruktura = getIFTStruktura(cilj, mezociklusTip, razina);
   const ciljParam = CILJ_PARAMETRI[cilj];
-  const vjezbe: VjezbaSesije[] = [];
-  
-  // Mapiranje razine na library level
   const libraryLevel = mapRazinuNaLevel(razina);
   
-  // Broj vježbi po mišićnoj grupi (prilagođen za deload)
-  const vjezbiPoGrupi = jeDeload ? 1 : Math.ceil(razinaParam.maksBrojVjezbiPoTreningu / misicneGrupe.length);
+  // Deload smanjuje broj vježbi
+  const targetCompound = jeDeload ? 2 : iftStruktura.brojCompoundVjezbi;
+  const targetIsolation = jeDeload ? 1 : iftStruktura.brojIsolationVjezbi;
+  const ukupnoVjezbiTarget = targetCompound + targetIsolation;
   
-  let redniBroj = 1;
+  log('debug', `IFT Struktura za ${cilj}/${mezociklusTip}:`, {
+    targetCompound,
+    targetIsolation,
+    compoundIntenzitet: iftStruktura.compoundIntenzitet,
+    isolationIntenzitet: iftStruktura.isolationIntenzitet,
+  });
+  
+  // =============================================
+  // FAZA 1: Prikupi sve kandidate po mišićnim grupama
+  // =============================================
+  const sviCompoundKandidati: VjezbaProširena[] = [];
+  const sviIsolationKandidati: VjezbaProširena[] = [];
   
   for (const grupa of misicneGrupe) {
-    // Dohvati vježbe za ovu grupu
     const kandidati = await dohvatiVjezbeZaGrupu(grupa, {
       oprema: dostupnaOprema,
       razina: libraryLevel,
-      maksVjezbi: 10,
+      maksVjezbi: 25, // Veći pool za bolju rotaciju
       prioritetCompound: true,
     });
     
-    // Filtriraj izbjegavane vježbe
-    const filtrirani = izbjegavajVjezbe 
-      ? kandidati.filter(v => !izbjegavajVjezbe.includes(v.id))
-      : kandidati;
+    // Filtriraj
+    const filtrirani = kandidati.filter(v => {
+      if (izbjegavajVjezbe?.includes(v.id)) return false;
+      if (iftStruktura.izbjegavajKategorije.includes(v.category)) return false;
+      return true;
+    });
     
-    // Odaberi vježbe (compound prvo, zatim isolation)
-    const compoundVjezbe = filtrirani.filter(v => v.mechanic === 'compound');
-    const isolationVjezbe = filtrirani.filter(v => v.mechanic === 'isolation');
-    
-    // Odaberi compound vježbu (ako postoji)
-    if (compoundVjezbe.length > 0 && redniBroj <= razinaParam.maksBrojVjezbiPoTreningu) {
-      const odabranaVjezba = odaberiVjezbu(compoundVjezbe, vjezbe);
-      if (odabranaVjezba) {
-        vjezbe.push(kreirajVjezbuSesije(
-          odabranaVjezba, 
-          redniBroj++, 
-          ciljParam,
-          jeDeload,
-          volumenModifikator,
-          intenzitetModifikator,
-        ));
-      }
-    }
-    
-    // Dodaj isolation vježbe ako ima mjesta
-    const preostaloMjesta = Math.min(vjezbiPoGrupi - 1, razinaParam.maksBrojVjezbiPoTreningu - vjezbe.length);
-    for (let i = 0; i < preostaloMjesta && i < isolationVjezbe.length; i++) {
-      const odabranaVjezba = odaberiVjezbu(isolationVjezbe.slice(i), vjezbe);
-      if (odabranaVjezba) {
-        vjezbe.push(kreirajVjezbuSesije(
-          odabranaVjezba,
-          redniBroj++,
-          ciljParam,
-          jeDeload,
-          volumenModifikator,
-          intenzitetModifikator,
-        ));
+    // Razdvoji compound i isolation
+    for (const v of filtrirani) {
+      if (v.mechanic === 'compound') {
+        if (!sviCompoundKandidati.some(x => x.id === v.id)) {
+          sviCompoundKandidati.push(v);
+        }
+      } else {
+        if (!sviIsolationKandidati.some(x => x.id === v.id)) {
+          sviIsolationKandidati.push(v);
+        }
       }
     }
   }
   
-  // Sortiraj: compound vježbe prvo
-  vjezbe.sort((a, b) => {
-    if (a.tipVjezbe === 'compound' && b.tipVjezbe !== 'compound') return -1;
-    if (a.tipVjezbe !== 'compound' && b.tipVjezbe === 'compound') return 1;
-    return a.redniBroj - b.redniBroj;
-  });
+  // =============================================
+  // FAZA 2: Sortiraj kandidate prema IFT prioritetima
+  // =============================================
   
-  // Ponovno dodijeli redne brojeve
-  vjezbe.forEach((v, i) => { v.redniBroj = i + 1; });
+  const sortirajPoIFTPrioritetu = (vjezbe: VjezbaProširena[]): VjezbaProširena[] => {
+    return [...vjezbe].sort((a, b) => {
+      // 1. Prioritet: Nekorištene vježbe u ovom tjednu
+      const koristenaA = jeVjezbaKoristenaUTjednu(a.id, tjedanBroj) ? 0 : 50;
+      const koristenaB = jeVjezbaKoristenaUTjednu(b.id, tjedanBroj) ? 0 : 50;
+      
+      // 2. Prioritet: Manje korištene vježbe ukupno
+      const frekvencijaA = getPrioritetVjezbe(a.id);
+      const frekvencijaB = getPrioritetVjezbe(b.id);
+      
+      // 3. Prioritet: Obrazac pokreta prema fazi
+      const obrazacIdxA = iftStruktura.obrazciPokretaPrioritet.indexOf(a.obrazac_pokreta);
+      const obrazacIdxB = iftStruktura.obrazciPokretaPrioritet.indexOf(b.obrazac_pokreta);
+      const obrazacPrioritetA = obrazacIdxA >= 0 ? (10 - obrazacIdxA) : 0;
+      const obrazacPrioritetB = obrazacIdxB >= 0 ? (10 - obrazacIdxB) : 0;
+      
+      // 4. Prioritet: Preferirane kategorije
+      const kategorijaBonusA = iftStruktura.preferiraneKategorije.includes(a.category) ? 10 : 0;
+      const kategorijaBonusB = iftStruktura.preferiraneKategorije.includes(b.category) ? 10 : 0;
+      
+      // 5. Prioritet: Oprema (slobodni utezi vs trenažeri)
+      let opremaBonusA = 0;
+      let opremaBonusB = 0;
+      if (iftStruktura.preferiraSlobodneUtege) {
+        opremaBonusA = ['sipka', 'bucice', 'girje'].includes(a.oprema_hr) ? 5 : 0;
+        opremaBonusB = ['sipka', 'bucice', 'girje'].includes(b.oprema_hr) ? 5 : 0;
+      }
+      
+      const scoreA = koristenaA + frekvencijaA + obrazacPrioritetA + kategorijaBonusA + opremaBonusA;
+      const scoreB = koristenaB + frekvencijaB + obrazacPrioritetB + kategorijaBonusB + opremaBonusB;
+      
+      return scoreB - scoreA;
+    });
+  };
   
-  log('debug', `Odabrano ${vjezbe.length} vježbi za trening`);
+  const sortiraniCompound = sortirajPoIFTPrioritetu(sviCompoundKandidati);
+  const sortiraniIsolation = sortirajPoIFTPrioritetu(sviIsolationKandidati);
+  
+  // =============================================
+  // FAZA 3: Odaberi vježbe s ponderiranom nasumičnošću
+  // =============================================
+  
+  const vjezbe: VjezbaSesije[] = [];
+  const odabraniIdevi = new Set<string>();
+  let redniBroj = 1;
+  
+  /**
+   * Odabir s ponderiranom nasumičnošću
+   * Top kandidati imaju veću šansu, ali nije deterministički
+   */
+  const odaberiSPonderom = (kandidati: VjezbaProširena[], brojZaOdabir: number): VjezbaProširena[] => {
+    const odabrani: VjezbaProširena[] = [];
+    const dostupni = kandidati.filter(k => !odabraniIdevi.has(k.id));
+    
+    for (let i = 0; i < brojZaOdabir && dostupni.length > 0; i++) {
+      // Uzmi top 5 kandidata za ponderiranu selekciju
+      const topN = Math.min(5, dostupni.length);
+      const topKandidati = dostupni.slice(0, topN);
+      
+      // Ponderi: 40%, 25%, 18%, 10%, 7%
+      const weights = [0.40, 0.25, 0.18, 0.10, 0.07];
+      const totalWeight = weights.slice(0, topN).reduce((a, b) => a + b, 0);
+      
+      let random = Math.random() * totalWeight;
+      let odabranaVjezba: VjezbaProširena | null = null;
+      
+      for (let j = 0; j < topN; j++) {
+        random -= weights[j];
+        if (random <= 0) {
+          odabranaVjezba = topKandidati[j];
+          break;
+        }
+      }
+      
+      if (!odabranaVjezba) odabranaVjezba = topKandidati[0];
+      
+      odabrani.push(odabranaVjezba);
+      odabraniIdevi.add(odabranaVjezba.id);
+      
+      // Ukloni iz dostupnih
+      const idx = dostupni.indexOf(odabranaVjezba);
+      if (idx > -1) dostupni.splice(idx, 1);
+    }
+    
+    return odabrani;
+  };
+  
+  // =============================================
+  // FAZA 4: Kreiraj vježbe s IFT parametrima
+  // =============================================
+  
+  // COMPOUND VJEŽBE - početak treninga, viši intenzitet
+  const odabraneCompound = odaberiSPonderom(sortiraniCompound, targetCompound);
+  
+  for (let i = 0; i < odabraneCompound.length; i++) {
+    const vjezba = odabraneCompound[i];
+    
+    // Progresivni intenzitet: pada kroz trening (Tablica 24: 75% → 70%)
+    const intenzitetProgresija = izracunajProgresivniIntenzitet(
+      i, 
+      odabraneCompound.length, 
+      iftStruktura.compoundIntenzitet,
+      false
+    );
+    
+    // Setovi: prva polovina ima više setova
+    const setovi = i < odabraneCompound.length / 2 
+      ? iftStruktura.compoundSetovi 
+      : iftStruktura.compoundSetovi - 1;
+    
+    vjezbe.push(kreirajVjezbuSesijeIFT(
+      vjezba,
+      redniBroj++,
+      {
+        setovi: jeDeload ? 2 : Math.max(2, setovi),
+        ponavljanja: iftStruktura.compoundPonavljanja,
+        intenzitet: jeDeload ? intenzitetProgresija - 20 : intenzitetProgresija,
+        odmorSekunde: ciljParam.odmorSekunde,
+        tempo: ciljParam.tempoPreporuka,
+        rir: ciljParam.rirRaspon,
+      },
+      volumenModifikator,
+      intenzitetModifikator,
+    ));
+    
+    oznaciVjezbuKaoKoristenu(vjezba.id, tjedanBroj, redniBrojTreninga);
+  }
+  
+  // ISOLATION VJEŽBE - kraj treninga, niži intenzitet
+  const odabraneIsolation = odaberiSPonderom(sortiraniIsolation, targetIsolation);
+  
+  for (let i = 0; i < odabraneIsolation.length; i++) {
+    const vjezba = odabraneIsolation[i];
+    
+    vjezbe.push(kreirajVjezbuSesijeIFT(
+      vjezba,
+      redniBroj++,
+      {
+        setovi: jeDeload ? 2 : iftStruktura.isolationSetovi,
+        ponavljanja: iftStruktura.isolationPonavljanja,
+        intenzitet: jeDeload ? iftStruktura.isolationIntenzitet - 15 : iftStruktura.isolationIntenzitet,
+        odmorSekunde: { min: ciljParam.odmorSekunde.min, max: Math.min(90, ciljParam.odmorSekunde.max) },
+        tempo: ciljParam.tempoPreporuka,
+        rir: { min: ciljParam.rirRaspon.min + 1, max: ciljParam.rirRaspon.max + 1 },
+      },
+      volumenModifikator,
+      intenzitetModifikator,
+    ));
+    
+    oznaciVjezbuKaoKoristenu(vjezba.id, tjedanBroj, redniBrojTreninga);
+  }
+  
+  log('info', `IFT Odabrano ${vjezbe.length} vježbi: ${odabraneCompound.length} compound + ${odabraneIsolation.length} isolation`);
+  
   return vjezbe;
+}
+
+/**
+ * Kreira vježbu sesije s IFT parametrima
+ */
+function kreirajVjezbuSesijeIFT(
+  vjezba: VjezbaProširena,
+  redniBroj: number,
+  params: {
+    setovi: number;
+    ponavljanja: { min: number; max: number };
+    intenzitet: number;
+    odmorSekunde: { min: number; max: number };
+    tempo: string;
+    rir: { min: number; max: number };
+  },
+  volumenMod: number,
+  intenzitetMod: number,
+): VjezbaSesije {
+  const ponavljanjaStr = `${params.ponavljanja.min}-${params.ponavljanja.max}`;
+  const rir = Math.round((params.rir.min + params.rir.max) / 2);
+  const odmor = Math.round((params.odmorSekunde.min + params.odmorSekunde.max) / 2);
+  
+  return {
+    id: uuidv4(),
+    sessionId: '',
+    redniBroj,
+    exerciseLibraryId: vjezba.id,
+    naziv: vjezba.naziv_hr,
+    nazivEn: vjezba.name,
+    setovi: Math.round(params.setovi * volumenMod),
+    ponavljanja: ponavljanjaStr,
+    odmorSekunde: odmor,
+    tempo: params.tempo,
+    rir: Math.min(5, Math.max(0, rir)),
+    postotak1RM: Math.round(params.intenzitet * intenzitetMod),
+    tipVjezbe: (vjezba.mechanic as 'compound' | 'isolation') || 'isolation',
+    obrazacPokreta: vjezba.obrazac_pokreta,
+    primarneGrupe: vjezba.primarne_grupe_hr,
+    sekundarneGrupe: vjezba.sekundarne_grupe_hr,
+    oprema: vjezba.oprema_hr,
+    alternativneVjezbe: [],
+    jeSuperser: false,
+    trenerOverride: false,
+  };
 }
 
 // ============================================
@@ -699,6 +1174,63 @@ function mapRazinuNaLevel(razina: string): ('beginner' | 'intermediate' | 'exper
   }
 }
 
+// Legacy interface za backward kompatibilnost
+interface FazaOdabirParametri {
+  prioritetCompound: number;
+  prioritetIsolation: number;
+  preferiraneKategorije: string[];
+  izbjegavajKategorije: string[];
+  maksBrojVjezbiPoGrupi: number;
+  obrazciPokretaPrioritet: string[];
+}
+
+/**
+ * @deprecated Koristi novu IFT-based selectExercises funkciju
+ * Napredni odabir vježbe s rotacijom i prioritizacijom prema fazi
+ */
+function odaberiVjezbuNapredni(
+  kandidati: VjezbaProširena[], 
+  vecOdabrane: VjezbaSesije[], 
+  tjedanBroj: number,
+  fazaParams: FazaOdabirParametri
+): VjezbaProširena | null {
+  // Izbjegni duplikate u ovoj sesiji
+  const odabraniIdevi = new Set(vecOdabrane.map(v => v.exerciseLibraryId));
+  let dostupne = kandidati.filter(k => !odabraniIdevi.has(k.id));
+  
+  if (dostupne.length === 0) return null;
+  
+  // Sortiraj po prioritetu (nekorištene prvo, preferirane kategorije)
+  dostupne.sort((a, b) => {
+    const prioritetA = getPrioritetVjezbe(a.id);
+    const prioritetB = getPrioritetVjezbe(b.id);
+    
+    // Bonus za preferirane kategorije
+    const katBonusA = fazaParams.preferiraneKategorije.includes(a.category) ? 10 : 0;
+    const katBonusB = fazaParams.preferiraneKategorije.includes(b.category) ? 10 : 0;
+    
+    return (prioritetB + katBonusB) - (prioritetA + katBonusA);
+  });
+  
+  // Odaberi s ponderiranom nasumičnošću (top 3 imaju najveću šansu)
+  const topKandidati = dostupne.slice(0, Math.min(3, dostupne.length));
+  const weights = topKandidati.map((_, i) => Math.pow(0.6, i)); // 60%, 36%, 22%...
+  const totalWeight = weights.reduce((a, b) => a + b, 0);
+  
+  let random = Math.random() * totalWeight;
+  for (let i = 0; i < topKandidati.length; i++) {
+    random -= weights[i];
+    if (random <= 0) {
+      return topKandidati[i];
+    }
+  }
+  
+  return topKandidati[0] || dostupne[0];
+}
+
+/**
+ * @deprecated Koristi odaberiVjezbuNapredni umjesto ove funkcije
+ */
 function odaberiVjezbu(kandidati: VjezbaProširena[], vecOdabrane: VjezbaSesije[]): VjezbaProširena | null {
   // Izbjegni duplikate
   const odabraniIdevi = new Set(vecOdabrane.map(v => v.exerciseLibraryId));
@@ -874,6 +1406,7 @@ export async function fillProgramGaps(input: HybridGeneratorInput): Promise<{
 }> {
   const supabase = createServiceClient();
   ocistiLogove();
+  resetVjezbaTracker(input.programId); // Reset tracker za hybrid generator
   log('info', 'Pokrećem hybrid generator', { programId: input.programId });
   
   let dodanoMezociklusa = 0;
