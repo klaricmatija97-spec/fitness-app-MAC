@@ -597,6 +597,9 @@ interface IFTTreningStruktura {
   // Oprema preferencija
   preferiraSlobodneUtege: boolean;  // za compound
   preferirajTrenazere: boolean;      // za isolation
+  
+  // NOVO: Specifične vježbe za fazu (prioritizirane po imenu)
+  prioritetneVjezbe?: string[];
 }
 
 /**
@@ -607,7 +610,7 @@ function getIFTStruktura(cilj: string, fazaMezociklusa: string, razina: string):
   
   // =============================================
   // JAKOST - IFT Tablica 23: 3-8 serija, 1-5 pon, 90-100% 1RM
-  // Fokus: Compound vježbe sa slobodnim utezima
+  // Fokus: Compound vježbe sa slobodnim utezima - "BIG 3" prioritet
   // =============================================
   if (cilj === 'jakost' || fazaMezociklusa === 'jakost' || fazaMezociklusa === 'realizacija') {
     return {
@@ -619,11 +622,14 @@ function getIFTStruktura(cilj: string, fazaMezociklusa: string, razina: string):
       isolationIntenzitet: 70,
       isolationSetovi: 3,
       isolationPonavljanja: { min: 6, max: 8 },
-      obrazciPokretaPrioritet: ['squat', 'hinge', 'horizontal_push', 'vertical_pull', 'vertical_push'],
-      preferiraneKategorije: ['strength', 'powerlifting'],
+      // JAKOST: squat i hinge (deadlift) su prioritet - "big 3" fokus
+      obrazciPokretaPrioritet: ['squat', 'hinge', 'horizontal_push', 'vertical_push'],
+      preferiraneKategorije: ['strength'],
       izbjegavajKategorije: ['stretching', 'cardio', 'plyometrics'],
       preferiraSlobodneUtege: true,
       preferirajTrenazere: false,
+      // NOVO: Specifične vježbe za jakost (prioritiziraj "big 3")
+      prioritetneVjezbe: ['barbell squat', 'deadlift', 'bench press', 'overhead press', 'barbell row'],
     };
   }
   
@@ -641,11 +647,14 @@ function getIFTStruktura(cilj: string, fazaMezociklusa: string, razina: string):
       isolationIntenzitet: 65,
       isolationSetovi: 3,
       isolationPonavljanja: { min: 8, max: 10 },
-      obrazciPokretaPrioritet: ['squat', 'hinge', 'vertical_push', 'horizontal_push', 'vertical_pull'],
-      preferiraneKategorije: ['strength', 'olympic weightlifting', 'plyometrics'],
+      // SNAGA: Eksplozivni pokreti - squat/hinge sa bržim tempom
+      obrazciPokretaPrioritet: ['squat', 'hinge', 'vertical_push', 'horizontal_push'],
+      preferiraneKategorije: ['strength', 'plyometrics'],
       izbjegavajKategorije: ['stretching'],
       preferiraSlobodneUtege: true,
       preferirajTrenazere: false,
+      // NOVO: Eksplozivne varijante
+      prioritetneVjezbe: ['power clean', 'push press', 'jump squat', 'box jump', 'hang clean', 'snatch'],
     };
   }
   
@@ -669,17 +678,20 @@ function getIFTStruktura(cilj: string, fazaMezociklusa: string, razina: string):
       isolationIntenzitet: 60,         // Niži intenzitet za isolation
       isolationSetovi: 3,
       isolationPonavljanja: { min: 12, max: 15 },
-      obrazciPokretaPrioritet: ['horizontal_push', 'horizontal_pull', 'squat', 'hinge', 'vertical_push', 'vertical_pull'],
+      // HIPERTROFIJA: Svi obrasci podjednako - veća raznolikost
+      obrazciPokretaPrioritet: ['horizontal_push', 'horizontal_pull', 'squat', 'hinge', 'vertical_push', 'vertical_pull', 'isolation'],
       preferiraneKategorije: ['strength'],
       izbjegavajKategorije: ['cardio', 'strongman'],
       preferiraSlobodneUtege: true,    // Compound sa slobodnim utezima
       preferirajTrenazere: true,       // Isolation na trenažerima (sigurnije)
+      // NOVO: Varijacije za maksimalni hipertrofijski stimulus
+      prioritetneVjezbe: ['incline bench press', 'cable fly', 'dumbbell row', 'leg curl', 'lateral raise', 'preacher curl'],
     };
   }
   
   // =============================================
   // IZDRŽLJIVOST - IFT Tablica 23: 2+ serija, 12+ pon, do 60% 1RM
-  // Fokus: Više isolation, kraći odmori
+  // Fokus: Više isolation, kraći odmori, sigurnije vježbe
   // =============================================
   if (cilj === 'izdrzljivost' || fazaMezociklusa === 'izdrzljivost') {
     return {
@@ -691,11 +703,14 @@ function getIFTStruktura(cilj: string, fazaMezociklusa: string, razina: string):
       isolationIntenzitet: 50,
       isolationSetovi: 2,
       isolationPonavljanja: { min: 15, max: 25 },
-      obrazciPokretaPrioritet: ['horizontal_push', 'horizontal_pull', 'squat', 'isolation'],
+      // IZDRŽLJIVOST: Isolation prioritet, sigurnije vježbe
+      obrazciPokretaPrioritet: ['isolation', 'horizontal_push', 'horizontal_pull', 'squat'],
       preferiraneKategorije: ['strength'],
       izbjegavajKategorije: ['powerlifting', 'strongman'],
       preferiraSlobodneUtege: false,
       preferirajTrenazere: true,       // Trenažeri za sigurnost kod visokih ponavljanja
+      // NOVO: Machine i cable vježbe za izdržljivost (sigurnije za visoke rep rangeove)
+      prioritetneVjezbe: ['leg press', 'cable row', 'machine chest press', 'leg extension', 'cable curl', 'machine shoulder press'],
     };
   }
   
@@ -895,7 +910,22 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
         opremaBonusB = ['trenazer', 'kabel', 'masina'].some(op => b.oprema_hr?.includes(op)) ? 15 : 0;
       }
       
-      // 6. BONUS: Powerlifting vježbe za jakost (dodatni prioritet)
+      // 6. BONUS: Prioritetne vježbe za trenutnu fazu (NOVO - najjači prioritet)
+      let prioritetnaVjezbaBonusA = 0;
+      let prioritetnaVjezbaBonusB = 0;
+      if (iftStruktura.prioritetneVjezbe && iftStruktura.prioritetneVjezbe.length > 0) {
+        // Provjeri da li je vježba u listi prioritetnih za ovu fazu
+        const jePrioritetnaA = iftStruktura.prioritetneVjezbe.some(pv => 
+          a.name.toLowerCase().includes(pv.toLowerCase())
+        );
+        const jePrioritetnaB = iftStruktura.prioritetneVjezbe.some(pv => 
+          b.name.toLowerCase().includes(pv.toLowerCase())
+        );
+        prioritetnaVjezbaBonusA = jePrioritetnaA ? 40 : 0; // Visok bonus za prioritetne vježbe
+        prioritetnaVjezbaBonusB = jePrioritetnaB ? 40 : 0;
+      }
+      
+      // 7. BONUS: Powerlifting vježbe za jakost (dodatni prioritet)
       let powerliftingBonusA = 0;
       let powerliftingBonusB = 0;
       if (cilj === 'jakost' || mezociklusTip === 'jakost') {
@@ -913,8 +943,8 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
         powerliftingBonusB = jePowerliftingB ? 20 : 0;
       }
       
-      const scoreA = koristenaA + frekvencijaA + obrazacPrioritetA + kategorijaBonusA + opremaBonusA + powerliftingBonusA;
-      const scoreB = koristenaB + frekvencijaB + obrazacPrioritetB + kategorijaBonusB + opremaBonusB + powerliftingBonusB;
+      const scoreA = koristenaA + frekvencijaA + obrazacPrioritetA + kategorijaBonusA + opremaBonusA + powerliftingBonusA + prioritetnaVjezbaBonusA;
+      const scoreB = koristenaB + frekvencijaB + obrazacPrioritetB + kategorijaBonusB + opremaBonusB + powerliftingBonusB + prioritetnaVjezbaBonusB;
       
       return scoreB - scoreA;
     });
