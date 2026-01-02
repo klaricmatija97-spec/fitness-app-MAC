@@ -88,6 +88,9 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState<any>(null);
+  const [workoutLogs, setWorkoutLogs] = useState<any[]>([]);
+  const [workoutLogsLoading, setWorkoutLogsLoading] = useState(false);
+  const [showWorkoutLogs, setShowWorkoutLogs] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -102,6 +105,10 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
       const result = await response.json();
       if (result.success) {
         setData(result.data);
+        // Učitaj workout logs ako postoji program
+        if (result.data.program?.id) {
+          loadWorkoutLogs(result.data.program.id);
+        }
       }
     } catch (error) {
       console.error('Error loading client detail:', error);
@@ -110,9 +117,33 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
     }
   }
 
+  async function loadWorkoutLogs(programId?: string) {
+    setWorkoutLogsLoading(true);
+    try {
+      const url = programId
+        ? `${API_BASE_URL}/api/trainer/client/${clientId}/workout-logs?programId=${programId}&limit=10`
+        : `${API_BASE_URL}/api/trainer/client/${clientId}/workout-logs?limit=10`;
+      
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${authToken}` },
+      });
+      const result = await response.json();
+      if (result.success) {
+        setWorkoutLogs(result.data.logs || []);
+      }
+    } catch (error) {
+      console.error('Error loading workout logs:', error);
+    } finally {
+      setWorkoutLogsLoading(false);
+    }
+  }
+
   async function handleRefresh() {
     setRefreshing(true);
     await loadData();
+    if (data?.program?.id) {
+      await loadWorkoutLogs(data.program.id);
+    }
     setRefreshing(false);
   }
 
@@ -532,20 +563,145 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
               <Text style={styles.cardTitle}>Nedavne sesije</Text>
               {data.recentSessions.map((session: any, index: number) => (
                 <View key={index} style={styles.sessionItem}>
-                  <Text style={styles.sessionName}>{session.name}</Text>
+                  <Text style={styles.sessionName}>{session.sessionName || session.name}</Text>
                   <Text style={styles.sessionDate}>
-                    {new Date(session.date).toLocaleDateString('hr-HR')}
+                    {new Date(session.date || session.started_at).toLocaleDateString('hr-HR')}
                   </Text>
                   <View
                     style={[
                       styles.sessionStatusBadge,
-                      session.status === 'completed' && styles.sessionStatusCompleted,
+                      (session.status === 'completed' || session.adherence > 80) && styles.sessionStatusCompleted,
+                      session.status === 'partial' && styles.sessionStatusPartial,
+                      session.status === 'skipped' && styles.sessionStatusSkipped,
                     ]}
                   >
-                    <Text style={styles.sessionStatusText}>{session.status}</Text>
+                    <Text style={styles.sessionStatusText}>
+                      {session.status === 'completed' ? 'Završeno' :
+                       session.status === 'partial' ? 'Djelomično' :
+                       session.status === 'skipped' ? 'Preskočeno' : session.status}
+                    </Text>
                   </View>
+                  {session.adherence !== undefined && (
+                    <Text style={styles.sessionAdherence}>
+                      {session.adherence.toFixed(0)}% adherence
+                    </Text>
+                  )}
                 </View>
               ))}
+            </View>
+          )}
+
+          {/* Workout Logs - Detaljni pregled */}
+          {data.program && (
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>Workout Logs</Text>
+                <TouchableOpacity
+                  onPress={() => setShowWorkoutLogs(!showWorkoutLogs)}
+                  style={styles.toggleButton}
+                >
+                  <Text style={styles.toggleButtonText}>
+                    {showWorkoutLogs ? 'Sakrij' : 'Prikaži'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              
+              {workoutLogsLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" style={{ marginVertical: 20 }} />
+              ) : workoutLogs.length === 0 ? (
+                <Text style={styles.emptyText}>Nema workout logs</Text>
+              ) : showWorkoutLogs ? (
+                <>
+                  {workoutLogs.map((log: any, index: number) => (
+                    <View key={log.id || index} style={styles.workoutLogItem}>
+                      <View style={styles.workoutLogHeader}>
+                        <View>
+                          <Text style={styles.workoutLogDate}>
+                            {new Date(log.started_at).toLocaleDateString('hr-HR', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </Text>
+                          <Text style={styles.workoutLogTime}>
+                            {new Date(log.started_at).toLocaleTimeString('hr-HR', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })} - {log.duration_minutes} min
+                          </Text>
+                        </View>
+                        <View
+                          style={[
+                            styles.workoutLogStatusBadge,
+                            log.status === 'completed' && styles.workoutLogStatusCompleted,
+                            log.status === 'partial' && styles.workoutLogStatusPartial,
+                            log.status === 'skipped' && styles.workoutLogStatusSkipped,
+                          ]}
+                        >
+                          <Text style={styles.workoutLogStatusText}>
+                            {log.status === 'completed' ? '✓' :
+                             log.status === 'partial' ? '~' : '✕'}
+                          </Text>
+                        </View>
+                      </View>
+                      
+                      <View style={styles.workoutLogStats}>
+                        <View style={styles.workoutLogStat}>
+                          <Text style={styles.workoutLogStatValue}>
+                            {log.completed_exercises}/{log.total_exercises}
+                          </Text>
+                          <Text style={styles.workoutLogStatLabel}>Vježbe</Text>
+                        </View>
+                        <View style={styles.workoutLogStat}>
+                          <Text style={styles.workoutLogStatValue}>
+                            {log.completed_sets}/{log.total_sets}
+                          </Text>
+                          <Text style={styles.workoutLogStatLabel}>Setovi</Text>
+                        </View>
+                        <View style={styles.workoutLogStat}>
+                          <Text style={styles.workoutLogStatValue}>
+                            {log.adherence_score?.toFixed(0) || 0}%
+                          </Text>
+                          <Text style={styles.workoutLogStatLabel}>Adherence</Text>
+                        </View>
+                        {log.total_volume > 0 && (
+                          <View style={styles.workoutLogStat}>
+                            <Text style={styles.workoutLogStatValue}>
+                              {log.total_volume.toFixed(0)}kg
+                            </Text>
+                            <Text style={styles.workoutLogStatLabel}>Volumen</Text>
+                          </View>
+                        )}
+                      </View>
+                      
+                      {log.session?.split_name && (
+                        <Text style={styles.workoutLogSessionName}>
+                          {log.session.split_name}
+                        </Text>
+                      )}
+                      
+                      {log.client_notes && (
+                        <Text style={styles.workoutLogNotes}>
+                          📝 {log.client_notes}
+                        </Text>
+                      )}
+                    </View>
+                  ))}
+                  
+                  {workoutLogs.length >= 10 && (
+                    <TouchableOpacity
+                      style={styles.loadMoreButton}
+                      onPress={() => loadWorkoutLogs(data.program?.id)}
+                    >
+                      <Text style={styles.loadMoreButtonText}>Učitaj više</Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              ) : (
+                <Text style={styles.emptyText}>
+                  {workoutLogs.length} workout log(s) dostupno
+                </Text>
+              )}
             </View>
           )}
 
@@ -794,6 +950,119 @@ const styles = StyleSheet.create({
   flaggedReason: { fontSize: 12, color: '#A1A1AA', marginBottom: 4 },
   flaggedNotes: { fontSize: 12, color: '#D4D4D8' },
   
+  // Card Header
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  toggleButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#27272A',
+    borderRadius: 6,
+  },
+  toggleButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  
+  // Workout Logs
+  workoutLogItem: {
+    backgroundColor: '#27272A',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+  },
+  workoutLogHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  workoutLogDate: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  workoutLogTime: {
+    fontSize: 12,
+    color: '#71717A',
+  },
+  workoutLogStatusBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#3F3F46',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  workoutLogStatusCompleted: {
+    backgroundColor: '#22C55E',
+  },
+  workoutLogStatusPartial: {
+    backgroundColor: '#F59E0B',
+  },
+  workoutLogStatusSkipped: {
+    backgroundColor: '#DC2626',
+  },
+  workoutLogStatusText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  workoutLogStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#3F3F46',
+  },
+  workoutLogStat: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  workoutLogStatValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  workoutLogStatLabel: {
+    fontSize: 10,
+    color: '#71717A',
+  },
+  workoutLogSessionName: {
+    fontSize: 12,
+    color: '#A1A1AA',
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  workoutLogNotes: {
+    fontSize: 12,
+    color: '#D4D4D8',
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#3F3F46',
+  },
+  loadMoreButton: {
+    marginTop: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    backgroundColor: '#27272A',
+    borderRadius: 8,
+  },
+  loadMoreButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  
   // Sessions
   sessionItem: {
     flexDirection: 'row',
@@ -811,8 +1080,15 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
   },
-  sessionStatusCompleted: { backgroundColor: '#3F3F46' },
+  sessionStatusCompleted: { backgroundColor: '#22C55E' },
+  sessionStatusPartial: { backgroundColor: '#F59E0B' },
+  sessionStatusSkipped: { backgroundColor: '#DC2626' },
   sessionStatusText: { color: '#FFF', fontSize: 10, fontWeight: '600' },
+  sessionAdherence: {
+    fontSize: 11,
+    color: '#71717A',
+    marginTop: 4,
+  },
   
   // Actions
   actionsContainer: { marginBottom: 40 },
