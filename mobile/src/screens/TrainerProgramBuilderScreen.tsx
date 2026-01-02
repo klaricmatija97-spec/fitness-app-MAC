@@ -1434,6 +1434,9 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                     });
                     
                     // Spremi sve programe
+                    console.log(`📊 [Step3] Spremam ${allPrograms.length} faza u allGeneratedPrograms:`, 
+                      allPrograms.map(p => `${p.phaseName} (${p.duration}tj)`)
+                    );
                     setAllGeneratedPrograms(allPrograms);
                     setCurrentPhaseIndex(0);
                     
@@ -1444,9 +1447,13 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                     setCurrentWeekIndex(0);
                     setStep(5); // Idi direktno na pregled
                     
+                    const navigationTip = allPrograms.length > 1 
+                      ? `\n\n💡 Imaš ${allPrograms.length} faze! Koristi strelice < > za navigaciju između faza.`
+                      : '\n\n📌 Dodaj više faza na lentu vremena za navigaciju između faza.';
+                    
                     Alert.alert(
                       'Rezultati generiranja',
-                      resultMessage + `\n\n💡 Koristi strelice < > za navigaciju između faza i tjedana.`,
+                      resultMessage + navigationTip,
                       [{ text: 'OK' }]
                     );
                   } else {
