@@ -28,6 +28,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { allExercises, muscleGroupCategories, LibraryExercise } from '../data/exercises';
 import { API_BASE_URL } from '../services/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -2661,69 +2662,39 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
 
     const currentSession = currentWeek.sessions[addExerciseSessionIndex];
     
-    // Katalog vježbi - grupirano po mišićnim grupama
-    const exerciseCatalog: { category: string; exercises: Omit<Exercise, 'isLocked'>[] }[] = [
-      {
-        category: 'Prsa',
-        exercises: [
-          { id: 'add-1', name: 'Bench Press', nameEn: 'Bench Press', sets: 3, repsMin: 8, repsMax: 12, restSeconds: 90, rir: 2, equipment: 'barbell', primaryMuscles: ['prsa'], secondaryMuscles: ['triceps', 'ramena'] },
-          { id: 'add-2', name: 'Incline Dumbbell Press', nameEn: 'Incline Dumbbell Press', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 75, rir: 2, equipment: 'dumbbell', primaryMuscles: ['prsa'], secondaryMuscles: ['triceps', 'ramena'] },
-          { id: 'add-3', name: 'Cable Fly', nameEn: 'Cable Fly', sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60, rir: 1, equipment: 'cable', primaryMuscles: ['prsa'], secondaryMuscles: [] },
-          { id: 'add-4', name: 'Dips', nameEn: 'Dips', sets: 3, repsMin: 8, repsMax: 12, restSeconds: 90, rir: 2, equipment: 'bodyweight', primaryMuscles: ['prsa'], secondaryMuscles: ['triceps'] },
-        ]
-      },
-      {
-        category: 'Leđa',
-        exercises: [
-          { id: 'add-5', name: 'Lat Pulldown', nameEn: 'Lat Pulldown', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 75, rir: 2, equipment: 'cable', primaryMuscles: ['latissimus'], secondaryMuscles: ['biceps'] },
-          { id: 'add-6', name: 'Barbell Row', nameEn: 'Barbell Row', sets: 3, repsMin: 8, repsMax: 10, restSeconds: 90, rir: 2, equipment: 'barbell', primaryMuscles: ['latissimus', 'trapezius'], secondaryMuscles: ['biceps'] },
-          { id: 'add-7', name: 'Seated Cable Row', nameEn: 'Seated Cable Row', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 75, rir: 2, equipment: 'cable', primaryMuscles: ['latissimus'], secondaryMuscles: ['biceps', 'trapezius'] },
-          { id: 'add-8', name: 'Pull-ups', nameEn: 'Pull-ups', sets: 3, repsMin: 6, repsMax: 10, restSeconds: 90, rir: 2, equipment: 'bodyweight', primaryMuscles: ['latissimus'], secondaryMuscles: ['biceps'] },
-        ]
-      },
-      {
-        category: 'Ramena',
-        exercises: [
-          { id: 'add-9', name: 'Overhead Press', nameEn: 'Overhead Press', sets: 3, repsMin: 8, repsMax: 10, restSeconds: 90, rir: 2, equipment: 'barbell', primaryMuscles: ['ramena'], secondaryMuscles: ['triceps'] },
-          { id: 'add-10', name: 'Lateral Raise', nameEn: 'Lateral Raise', sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60, rir: 1, equipment: 'dumbbell', primaryMuscles: ['ramena'], secondaryMuscles: [] },
-          { id: 'add-11', name: 'Face Pull', nameEn: 'Face Pull', sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60, rir: 1, equipment: 'cable', primaryMuscles: ['ramena', 'trapezius'], secondaryMuscles: [] },
-          { id: 'add-12', name: 'Rear Delt Fly', nameEn: 'Rear Delt Fly', sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60, rir: 1, equipment: 'dumbbell', primaryMuscles: ['ramena'], secondaryMuscles: [] },
-        ]
-      },
-      {
-        category: 'Noge',
-        exercises: [
-          { id: 'add-13', name: 'Squat', nameEn: 'Squat', sets: 4, repsMin: 6, repsMax: 8, restSeconds: 120, rir: 2, equipment: 'barbell', primaryMuscles: ['kvadriceps', 'gluteus'], secondaryMuscles: ['hamstrings'] },
-          { id: 'add-14', name: 'Romanian Deadlift', nameEn: 'Romanian Deadlift', sets: 3, repsMin: 8, repsMax: 10, restSeconds: 90, rir: 2, equipment: 'barbell', primaryMuscles: ['hamstrings', 'gluteus'], secondaryMuscles: ['leđa'] },
-          { id: 'add-15', name: 'Leg Press', nameEn: 'Leg Press', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 90, rir: 2, equipment: 'machine', primaryMuscles: ['kvadriceps'], secondaryMuscles: ['gluteus'] },
-          { id: 'add-16', name: 'Leg Curl', nameEn: 'Leg Curl', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 60, rir: 1, equipment: 'machine', primaryMuscles: ['hamstrings'], secondaryMuscles: [] },
-          { id: 'add-17', name: 'Calf Raise', nameEn: 'Calf Raise', sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60, rir: 1, equipment: 'machine', primaryMuscles: ['listovi'], secondaryMuscles: [] },
-        ]
-      },
-      {
-        category: 'Ruke',
-        exercises: [
-          { id: 'add-18', name: 'Barbell Curl', nameEn: 'Barbell Curl', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 60, rir: 1, equipment: 'barbell', primaryMuscles: ['biceps'], secondaryMuscles: [] },
-          { id: 'add-19', name: 'Tricep Pushdown', nameEn: 'Tricep Pushdown', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 60, rir: 1, equipment: 'cable', primaryMuscles: ['triceps'], secondaryMuscles: [] },
-          { id: 'add-20', name: 'Hammer Curl', nameEn: 'Hammer Curl', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 60, rir: 1, equipment: 'dumbbell', primaryMuscles: ['biceps'], secondaryMuscles: ['podlaktica'] },
-          { id: 'add-21', name: 'Skull Crusher', nameEn: 'Skull Crusher', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 60, rir: 1, equipment: 'barbell', primaryMuscles: ['triceps'], secondaryMuscles: [] },
-        ]
-      },
-      {
-        category: 'Core',
-        exercises: [
-          { id: 'add-22', name: 'Plank', nameEn: 'Plank', sets: 3, repsMin: 30, repsMax: 60, restSeconds: 60, rir: 0, equipment: 'bodyweight', primaryMuscles: ['trbuh'], secondaryMuscles: [] },
-          { id: 'add-23', name: 'Cable Crunch', nameEn: 'Cable Crunch', sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60, rir: 1, equipment: 'cable', primaryMuscles: ['trbuh'], secondaryMuscles: [] },
-          { id: 'add-24', name: 'Hanging Leg Raise', nameEn: 'Hanging Leg Raise', sets: 3, repsMin: 10, repsMax: 15, restSeconds: 60, rir: 1, equipment: 'bodyweight', primaryMuscles: ['trbuh'], secondaryMuscles: [] },
-        ]
-      },
-    ];
+    // Konvertiraj LibraryExercise u Exercise format
+    const convertToExercise = (libEx: LibraryExercise): Omit<Exercise, 'isLocked'> => {
+      // Default parametri ovisno o tipu vježbe
+      const isCompound = libEx.type === 'compound';
+      return {
+        id: libEx.id,
+        name: libEx.nameHr, // Koristimo hrvatski naziv
+        nameEn: libEx.name,
+        sets: isCompound ? 4 : 3,
+        repsMin: isCompound ? 6 : 10,
+        repsMax: isCompound ? 10 : 15,
+        restSeconds: isCompound ? 90 : 60,
+        rir: 2,
+        equipment: libEx.equipmentHr,
+        primaryMuscles: [libEx.muscleGroupHr],
+        secondaryMuscles: [],
+      };
+    };
+
+    // Grupiraj vježbe po mišićnoj grupi koristeći pravu bazu
+    const exerciseCatalog = muscleGroupCategories.map(cat => ({
+      category: cat.nameHr,
+      exercises: allExercises
+        .filter(ex => ex.muscleGroup === cat.id)
+        .map(convertToExercise)
+    })).filter(cat => cat.exercises.length > 0);
 
     // Filtriraj vježbe po pretrazi
     const filteredCatalog = exerciseCatalog.map(cat => ({
       ...cat,
       exercises: cat.exercises.filter(ex => 
         ex.name.toLowerCase().includes(addExerciseFilter.toLowerCase()) ||
+        ex.nameEn.toLowerCase().includes(addExerciseFilter.toLowerCase()) ||
         ex.primaryMuscles.some(m => m.toLowerCase().includes(addExerciseFilter.toLowerCase()))
       )
     })).filter(cat => cat.exercises.length > 0);
