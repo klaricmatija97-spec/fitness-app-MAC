@@ -58,18 +58,28 @@ export default function AddClientScreen({ authToken, onComplete, onCancel }: Pro
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/trainer/clients`, {
+      const requestUrl = `${API_BASE_URL}/api/trainer/clients`;
+      const requestBody = {
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        phone: formData.phone.trim() || null,
+        notes: formData.notes.trim() || null,
+      };
+
+      console.log('📤 Adding client:', {
+        url: requestUrl,
+        API_BASE_URL: API_BASE_URL,
+        body: requestBody,
+        hasToken: !!authToken,
+      });
+
+      const response = await fetch(requestUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: formData.name.trim(),
-          email: formData.email.trim().toLowerCase(),
-          phone: formData.phone.trim() || null,
-          notes: formData.notes.trim() || null,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       // Provjeri da li je response OK
@@ -131,8 +141,26 @@ export default function AddClientScreen({ authToken, onComplete, onCancel }: Pro
         console.error('Error adding client:', result);
       }
     } catch (error) {
-      console.error('Error adding client:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Nepoznata greška';
+      console.error('❌ Error adding client:', error);
+      console.error('Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        API_BASE_URL: API_BASE_URL,
+      });
+
+      let errorMessage = 'Nepoznata greška';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Network request failed') || error.message.includes('fetch')) {
+          errorMessage = `Nije moguće povezati se sa serverom.\n\nProvjeri:\n1. Je li server pokrenut?\n2. Je li mobilni uređaj na istoj WiFi mreži?\n3. Je li API URL točan?\n\nTrenutni URL: ${API_BASE_URL}`;
+        } else if (error.message.includes('timeout')) {
+          errorMessage = `Server nije odgovorio u roku od 60 sekundi.\n\nProvjeri je li server pokrenut na: ${API_BASE_URL}`;
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
       Alert.alert('Greška', `Nije moguće dodati klijenta: ${errorMessage}`);
     } finally {
       setLoading(false);

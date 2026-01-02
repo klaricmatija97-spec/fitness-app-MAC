@@ -18,9 +18,12 @@ const CreateClientSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
+    console.log('[trainer/clients] POST request received');
+    
     // Provjeri autentifikaciju
     const auth = requireTrainer(request);
     if (!auth) {
+      console.error('[trainer/clients] Unauthorized - no auth');
       return NextResponse.json(
         {
           success: false,
@@ -31,7 +34,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('[trainer/clients] Trainer authenticated:', auth.userId);
+
     const body = await request.json();
+    console.log('[trainer/clients] Request body:', body);
     const parseResult = CreateClientSchema.safeParse(body);
 
     if (!parseResult.success) {
