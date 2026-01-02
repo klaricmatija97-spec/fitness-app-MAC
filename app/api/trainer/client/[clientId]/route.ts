@@ -178,29 +178,53 @@ export async function GET(
       }));
 
       // Dohvati flagged exercises iz workout_logs (pain/difficulty reports)
-      const { data: flaggedExercisesData } = await supabase
-        .from('workout_log_exercises')
-        .select(`
-          id,
-          exercise_name,
-          pain_reported,
-          difficulty_reported,
-          difficulty_level,
-          workout_log:workout_logs(started_at, program_id)
-        `)
-        .or('pain_reported.eq.true,difficulty_reported.eq.true')
-        .eq('workout_log.program_id', program.id)
-        .order('workout_log.started_at', { ascending: false })
-        .limit(10);
+      // Prvo dohvati workout_logs za ovaj program
+      const { data: programLogs } = await supabase
+        .from('workout_logs')
+        .select('id, started_at')
+        .eq('program_id', program.id)
+        .order('started_at', { ascending: false })
+        .limit(50); // Dohvati zadnjih 50 logova
 
-      flaggedExercises = (flaggedExercisesData || []).map(ex => ({
-        id: ex.id,
-        exerciseName: ex.exercise_name,
-        painReported: ex.pain_reported,
-        difficultyReported: ex.difficulty_reported,
-        difficultyLevel: ex.difficulty_level,
-        date: (ex.workout_log as any)?.started_at,
-      }));
+      const logIds = programLogs?.map(log => log.id) || [];
+      const logsMap = new Map(programLogs?.map(log => [log.id, log.started_at]) || []);
+
+      if (logIds.length > 0) {
+        const { data: flaggedExercisesData } = await supabase
+          .from('workout_log_exercises')
+          .select(`
+            id,
+            exercise_name,
+            pain_reported,
+            difficulty_reported,
+            difficulty_level,
+            client_notes,
+            workout_log_id
+          `)
+          .in('workout_log_id', logIds)
+          .or('pain_reported.eq.true,difficulty_reported.eq.true')
+          .limit(10);
+
+        flaggedExercises = (flaggedExercisesData || []).map(ex => {
+          let reason = '';
+          if (ex.pain_reported) reason += 'Bol';
+          if (ex.difficulty_reported) {
+            if (reason) reason += ' + ';
+            reason += `Teškoća (${ex.difficulty_level || 'N/A'}/10)`;
+          }
+          
+          return {
+            id: ex.id,
+            exerciseName: ex.exercise_name,
+            painReported: ex.pain_reported,
+            difficultyReported: ex.difficulty_reported,
+            difficultyLevel: ex.difficulty_level,
+            notes: ex.client_notes,
+            reason: reason || 'Problem pri izvođenju',
+            date: logsMap.get(ex.workout_log_id),
+          };
+        });
+      }
     }
 
     // Izračunaj BMI ako imamo podatke
