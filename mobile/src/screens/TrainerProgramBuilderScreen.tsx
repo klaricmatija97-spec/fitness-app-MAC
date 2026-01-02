@@ -804,15 +804,16 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
   // ============================================
 
   function renderStepIndicator() {
-    // Pojednostavljeni koraci: Klijent → Godišnji plan → Pregled → Spremi
-    const steps = ['Klijent', 'Godišnji plan', 'Pregled', 'Spremi'];
+    // Koraci: Klijent → Postavke → Plan → Pregled → Spremi
+    const steps = ['Klijent', 'Postavke', 'Plan', 'Pregled', 'Spremi'];
     
     // Mapiraj trenutni step na indeks
     let currentStepIndex = 0;
     if (step === 1) currentStepIndex = 0;
-    else if (step === 3 || step === '3A') currentStepIndex = 1;
-    else if (step === 4 || step === 5) currentStepIndex = 2;
-    else if (step === 7) currentStepIndex = 3;
+    else if (step === 2) currentStepIndex = 1;
+    else if (step === 3 || step === '3A') currentStepIndex = 2;
+    else if (step === 4 || step === 5) currentStepIndex = 3;
+    else if (step === 7) currentStepIndex = 4;
     
     return (
       <View style={styles.stepIndicator}>
@@ -870,10 +871,10 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
 
         <TouchableOpacity
           style={[styles.primaryButton, !selectedClient && styles.buttonDisabled]}
-          onPress={() => selectedClient && setStep(3)}
+          onPress={() => selectedClient && setStep(2)}
           disabled={!selectedClient}
         >
-          <Text style={styles.primaryButtonText}>Nastavi na lentu vremena →</Text>
+          <Text style={styles.primaryButtonText}>Nastavi na postavke →</Text>
         </TouchableOpacity>
       </ScrollView>
     );
@@ -1007,9 +1008,11 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
         </View>
 
         <View style={styles.buttonRow}>
-          {/* Uvijek isti flow - vrati se na lentu vremena */}
+          <TouchableOpacity style={styles.secondaryButton} onPress={() => setStep(1)}>
+            <Text style={styles.secondaryButtonText}>← Natrag</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.primaryButton} onPress={() => setStep(3)}>
-            <Text style={styles.primaryButtonText}>← Natrag na lentu vremena</Text>
+            <Text style={styles.primaryButtonText}>Nastavi na lentu vremena →</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -2885,6 +2888,7 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
 
         {/* Step Content */}
         {step === 1 && renderStep1()}
+        {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
         {step === '3A' && renderStep3A()}
         {step === 4 && renderStep4()}
