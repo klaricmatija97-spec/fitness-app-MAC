@@ -1034,7 +1034,6 @@ export default function App() {
         onLoginSuccess={handleLoginSuccess} 
         onSkipLogin={handleSkipLogin} 
         onBack={handleBackToWelcome} 
-        onTrainerMode={handleShowTrainerMode}
         onTrainerRegister={handleShowTrainerRegister}
       />
     </Animated.View>
