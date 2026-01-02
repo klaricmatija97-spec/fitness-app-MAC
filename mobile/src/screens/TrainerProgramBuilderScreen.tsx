@@ -1228,6 +1228,17 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                     const phaseDuration = phase.endWeek - phase.startWeek + 1;
                     const phaseTypeInfo = MESOCYCLE_TYPES.find(m => m.value === phase.type);
                     
+                    // Provjeri validaciju trajanja (API zahtijeva 4-12 tjedana)
+                    if (phaseDuration < 4 || phaseDuration > 12) {
+                      console.warn(`⚠️ [Step3] Phase ${i + 1} skipped: duration ${phaseDuration} is outside valid range (4-12 weeks)`);
+                      Alert.alert(
+                        'Upozorenje',
+                        `Faza ${i + 1} (${phaseTypeInfo?.label || phase.type}) ima ${phaseDuration} tjedana. API zahtijeva 4-12 tjedana. Preskačem ovu fazu.`,
+                        [{ text: 'OK' }]
+                      );
+                      continue;
+                    }
+                    
                     // Mapiraj tip faze na goal (API očekuje specifične vrijednosti)
                     const phaseGoal = 
                       phase.type === 'hipertrofija' ? 'hipertrofija' :
@@ -1236,20 +1247,41 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                       phase.type === 'izdrzljivost' ? 'misicna_izdrzljivost' :
                       'hipertrofija';
                     
+                    // Provjeri da li imamo sve potrebne podatke
+                    if (!selectedClient?.id) {
+                      console.error('❌ [Step3] Missing client ID');
+                      continue;
+                    }
+                    
+                    // Provjeri da li ima odabrane opreme
+                    const selectedEquipment = equipment.filter(e => e.selected).map(e => e.id);
+                    if (selectedEquipment.length === 0) {
+                      console.warn('⚠️ [Step3] No equipment selected, using defaults');
+                    }
+                    
+                    const requestBody = {
+                      clientId: selectedClient.id,
+                      cilj: phaseGoal,
+                      razina: level || 'srednji',
+                      treninziTjedno: trainingFrequency || 4,
+                      trajanjeTjedana: phaseDuration,
+                      splitTip: splitType || 'upper_lower',
+                      dostupnaOprema: selectedEquipment.length > 0 ? selectedEquipment : ['sipka', 'bucice', 'sprava'],
+                      // Poveži s prethodnom fazom
+                      ...(annualProgramId && { annualProgramId }),
+                      ...(previousProgramId && { previousProgramId }),
+                      phaseOrder: i + 1,
+                      totalPhases: sortedPhases.length,
+                    };
+                    
                     console.log(`🎯 [Step3] Generating phase ${i + 1}/${sortedPhases.length}:`, {
                       type: phase.type,
                       goal: phaseGoal,
                       duration: phaseDuration,
                       startWeek: phase.startWeek,
                       endWeek: phase.endWeek,
-                      previousProgramId,
+                      requestBody: { ...requestBody, annualProgramId: requestBody.annualProgramId || 'none', previousProgramId: requestBody.previousProgramId || 'none' },
                     });
-                    
-                    // Provjeri da li imamo sve potrebne podatke
-                    if (!selectedClient?.id) {
-                      console.error('❌ [Step3] Missing client ID');
-                      continue;
-                    }
                     
                     // Generiraj program za ovu fazu
                     const response = await fetch(`${API_BASE_URL}/api/training/generate`, {
@@ -1258,20 +1290,7 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                         'Authorization': `Bearer ${authToken}`,
                         'Content-Type': 'application/json',
                       },
-                      body: JSON.stringify({
-                        clientId: selectedClient.id,
-                        cilj: phaseGoal,
-                        razina: level || 'srednji',
-                        treninziTjedno: trainingFrequency || 4,
-                        trajanjeTjedana: phaseDuration,
-                        splitTip: splitType || 'upper_lower',
-                        dostupnaOprema: equipment.filter(e => e.selected).map(e => e.id),
-                        // Poveži s prethodnom fazom
-                        annualProgramId: annualProgramId || undefined,
-                        previousProgramId: previousProgramId || undefined,
-                        phaseOrder: i + 1,
-                        totalPhases: sortedPhases.length,
-                      }),
+                      body: JSON.stringify(requestBody),
                     });
                     
                     if (response.ok) {
