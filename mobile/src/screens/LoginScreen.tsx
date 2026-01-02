@@ -33,9 +33,16 @@ interface LoginScreenProps {
   onSkipLogin?: () => void;
   onBack?: () => void;
   onTrainerRegister?: () => void;
+  onTrainerLoginSuccess?: (trainerData: {
+    id: string;
+    name: string;
+    email: string;
+    trainerCode: string;
+    accessToken: string;
+  }) => void;
 }
 
-export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTrainerRegister }: LoginScreenProps) {
+export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTrainerRegister, onTrainerLoginSuccess }: LoginScreenProps) {
   const [currentBgImage, setCurrentBgImage] = useState(0);
   const [isLoginMode, setIsLoginMode] = useState(true);
   
@@ -131,16 +138,52 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
       
       const result = await login({ username, password });
       
-      if (result.ok && result.token && result.clientId) {
-        // Spremi token i clientId
-        await authStorage.saveToken(result.token);
-        await authStorage.saveClientId(result.clientId);
-        if (result.username) {
-          await authStorage.saveUsername(result.username);
+      if (result.ok && result.token) {
+        // Provjeri je li trener
+        if (result.userType === 'trainer' && result.userId) {
+          // Spremi trener podatke
+          await authStorage.saveToken(result.token);
+          await authStorage.saveTrainerId(result.userId);
+          if (result.username) {
+            await authStorage.saveUsername(result.username);
+          }
+          
+          setLoginLoading(false);
+          setLoginError(''); // Clear any error
+          
+          // Prikaži uspješnu poruku
+          console.log('[Login] Trainer login successful:', result.name);
+          
+          // Pozovi trener callback ako postoji
+          if (onTrainerLoginSuccess) {
+            onTrainerLoginSuccess({
+              id: result.userId,
+              name: result.name || '',
+              email: result.username || username,
+              trainerCode: result.trainerCode || '',
+              accessToken: result.token,
+            });
+          } else {
+            // Fallback na običan login success
+            onLoginSuccess?.();
+          }
+          return;
         }
         
-        setLoginLoading(false);
-        onLoginSuccess?.();
+        // Klijent login
+        if (result.clientId) {
+          await authStorage.saveToken(result.token);
+          await authStorage.saveClientId(result.clientId);
+          if (result.username) {
+            await authStorage.saveUsername(result.username);
+          }
+          
+          setLoginLoading(false);
+          onLoginSuccess?.();
+        } else {
+          setLoginError(result.message || 'Pogrešno korisničko ime ili lozinka');
+          setLoginLoading(false);
+        }
       } else {
         setLoginError(result.message || 'Pogrešno korisničko ime ili lozinka');
         setLoginLoading(false);

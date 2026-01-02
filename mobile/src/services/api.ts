@@ -56,6 +56,14 @@ export interface LoginResponse {
   clientId?: string;
   username?: string;
   message?: string;
+  // Trener podaci
+  userType?: 'client' | 'trainer';
+  userId?: string;
+  name?: string;
+  trainerCode?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  expiresIn?: number;
 }
 
 export interface RegisterRequest {

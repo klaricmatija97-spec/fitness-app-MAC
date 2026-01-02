@@ -94,6 +94,16 @@ export default function App() {
   const [connectedTrainerId, setConnectedTrainerId] = useState<string | null>(null);
   const [connectedTrainerName, setConnectedTrainerName] = useState<string | null>(null);
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
+  const [intakeFormData, setIntakeFormData] = useState<any>(null);
+  const [calculatorResults, setCalculatorResults] = useState<any>(null);
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  
+  // Generiraj client token (za javne korisnike)
+  // Koristimo pravi UUID format za klijenta
+  const CLIENT_ID = "c1234567-89ab-cdef-0123-456789abcdef"; // Mock client UUID
+  const CLIENT_TOKEN = typeof btoa !== 'undefined' 
+    ? btoa(`${CLIENT_ID}:${Date.now()}`)
+    : "YzEyMzQ1NjctODlhYi1jZGVmLTAxMjMtNDU2Nzg5YWJjZGVmOjE3MzY3MDQ2NzUwNTk=";
 
   // Provjeri je li klijent već povezan s trenerom
   const checkTrainerConnection = useCallback(async () => {
@@ -128,16 +138,6 @@ export default function App() {
       checkTrainerConnection();
     }
   }, [showMealPlan]);
-  const [intakeFormData, setIntakeFormData] = useState<any>(null);
-  const [calculatorResults, setCalculatorResults] = useState<any>(null);
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  
-  // Generiraj client token (za javne korisnike)
-  // Koristimo pravi UUID format za klijenta
-  const CLIENT_ID = "c1234567-89ab-cdef-0123-456789abcdef"; // Mock client UUID
-  const CLIENT_TOKEN = typeof btoa !== 'undefined' 
-    ? btoa(`${CLIENT_ID}:${Date.now()}`)
-    : "YzEyMzQ1NjctODlhYi1jZGVmLTAxMjMtNDU2Nzg5YWJjZGVmOjE3MzY3MDQ2NzUwNTk=";
 
   const handleGetStarted = () => {
     // Smooth transition animacija
@@ -549,11 +549,11 @@ export default function App() {
   }
 
   // Manual Mesocycle Builder ekran
-  if (showManualBuilder && selectedClientId) {
+  if (showManualBuilder && selectedClientId && selectedProgramId) {
     return (
       <ManualMesocycleBuilderScreen
-        programId={selectedProgramId || undefined}
-        onComplete={(programId) => {
+        programId={selectedProgramId}
+        onComplete={(programId: string) => {
           setSelectedProgramId(programId);
           handleBackFromManualBuilder();
         }}
@@ -611,7 +611,7 @@ export default function App() {
                   break;
               }
               
-              const requestBody = {
+              const requestBody: Record<string, unknown> = {
                 klijentId: cId,
                 cilj: cilj,
                 razina: 'srednji', // FIXED: bilo je 'srednja', treba biti 'srednji'
@@ -626,7 +626,7 @@ export default function App() {
               
               console.log(`[App] Request body:`, JSON.stringify(requestBody));
               
-              const response = await fetch(`${API_BASE_URL}/api/training/generate`, {
+              const response: Response = await fetch(`${API_BASE_URL}/api/training/generate`, {
                 method: 'POST',
                 headers: {
                   'Authorization': `Bearer ${TRAINER_TOKEN}`,
@@ -648,7 +648,7 @@ export default function App() {
                 continue;
               }
               
-              const data = await response.json();
+              const data: { success?: boolean; data?: { programId?: string }; error?: string } = await response.json();
               
               if (data.success && data.data?.programId) {
                 console.log(`[App] Successfully generated ${phase.phaseName}: ${data.data.programId}`);
@@ -767,7 +767,7 @@ export default function App() {
         onAdjustProgram={(clientId) => {
           setSelectedClientId(clientId);
           setShowTrainerClientResults(false);
-          setShowTrainerProgramBuilder(true);
+          setShowTrainingGenerator(true);
         }}
       />
     );
@@ -1035,6 +1035,7 @@ export default function App() {
         onSkipLogin={handleSkipLogin} 
         onBack={handleBackToWelcome} 
         onTrainerRegister={handleShowTrainerRegister}
+        onTrainerLoginSuccess={handleTrainerRegisterSuccess}
       />
     </Animated.View>
   );
