@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS workout_logs (
   client_id UUID NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
   program_id UUID REFERENCES training_programs(id) ON DELETE SET NULL,
   session_id UUID REFERENCES program_sessions(id) ON DELETE SET NULL,
-  week_id UUID REFERENCES program_weeks(id) ON DELETE SET NULL,
   mesocycle_id UUID REFERENCES mesocycles(id) ON DELETE SET NULL,
+  week_number INTEGER, -- Week number iz program_sessions (ne postoji program_weeks tablica)
   
   -- Vrijeme
   started_at TIMESTAMPTZ NOT NULL,
@@ -136,6 +136,8 @@ COMMENT ON TABLE workout_log_sets IS 'Detalji o svakom setu u completed workout 
 CREATE INDEX IF NOT EXISTS idx_workout_logs_client_id ON workout_logs(client_id);
 CREATE INDEX IF NOT EXISTS idx_workout_logs_program_id ON workout_logs(program_id);
 CREATE INDEX IF NOT EXISTS idx_workout_logs_session_id ON workout_logs(session_id);
+CREATE INDEX IF NOT EXISTS idx_workout_logs_mesocycle_id ON workout_logs(mesocycle_id);
+CREATE INDEX IF NOT EXISTS idx_workout_logs_week_number ON workout_logs(week_number);
 CREATE INDEX IF NOT EXISTS idx_workout_logs_started_at ON workout_logs(started_at DESC);
 CREATE INDEX IF NOT EXISTS idx_workout_logs_status ON workout_logs(status);
 CREATE INDEX IF NOT EXISTS idx_workout_logs_adherence ON workout_logs(adherence_score);

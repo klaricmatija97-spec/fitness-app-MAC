@@ -86,7 +86,8 @@ export async function POST(
       .select(`
         id,
         program_id,
-        week_id,
+        mesocycle_id,
+        week_number,
         split_name,
         day_of_week
       `)
@@ -128,13 +129,6 @@ export async function POST(
         { status: 403 }
       );
     }
-
-    // Dohvati week info za mesocycle_id
-    const { data: week } = await supabase
-      .from('program_weeks')
-      .select('mesocycle_id')
-      .eq('id', session.week_id)
-      .single();
 
     const startedAt = new Date(parseResult.data.startedAt);
     const completedAt = new Date(parseResult.data.completedAt);
@@ -182,8 +176,8 @@ export async function POST(
         client_id: userId,
         program_id: session.program_id,
         session_id: sessionId,
-        week_id: session.week_id,
-        mesocycle_id: week?.mesocycle_id || null,
+        mesocycle_id: session.mesocycle_id || null,
+        week_number: session.week_number || null,
         started_at: startedAt.toISOString(),
         completed_at: completedAt.toISOString(),
         duration_minutes: durationMinutes,
