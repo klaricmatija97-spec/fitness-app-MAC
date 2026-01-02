@@ -108,12 +108,8 @@ export async function spremiProgram(program: TreningProgram): Promise<{
       trainer_notes: program.napomeneTrenera || null,
       start_date: program.datumPocetka?.toISOString().split('T')[0] || null,
       end_date: program.datumZavrsetka?.toISOString().split('T')[0] || null,
-      // Povezivanje programa (za godišnji plan)
-      annual_program_id: program.annualProgramId || null,
-      previous_program_id: program.previousProgramId || null,
-      next_program_id: program.nextProgramId || null,
-      phase_order: program.phaseOrder || null,
-      total_phases: program.totalPhases || null,
+      // NOTE: Kolone za povezivanje programa (annual_program_id, previous_program_id, itd.)
+      // se mogu dodati kasnije nakon što se potvrdi da postoje u bazi
     };
     
     const { data: programData, error: programError } = await supabase
@@ -130,22 +126,10 @@ export async function spremiProgram(program: TreningProgram): Promise<{
     const programId = programData.id;
     console.log(`[Database] Program spremljen: ${programId}`);
     
-    // 2. Ako postoji previousProgramId, ažuriraj njegov next_program_id
-    if (program.previousProgramId) {
-      const { error: updateError } = await supabase
-        .from('training_programs')
-        .update({ next_program_id: programId })
-        .eq('id', program.previousProgramId);
-      
-      if (updateError) {
-        console.warn('[Database] Greška pri ažuriranju next_program_id:', updateError);
-        // Ne prekidaj proces, samo loguj upozorenje
-      } else {
-        console.log(`[Database] Ažuriran next_program_id na prethodnom programu: ${program.previousProgramId}`);
-      }
-    }
+    // NOTE: Povezivanje programa (previousProgramId → next_program_id) se može
+    // implementirati nakon što se potvrdi da kolone postoje u bazi
     
-    // 3. Spremi mezocikluse i tjedne
+    // 2. Spremi mezocikluse i tjedne
     cumulativeWeekOffset = 0; // Reset week counter
     for (const mezociklus of program.mezociklusi) {
       await spremiMezociklus(programId, mezociklus);
