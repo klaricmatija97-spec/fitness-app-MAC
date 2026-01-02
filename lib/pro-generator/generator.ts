@@ -859,34 +859,57 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
   
   const sortirajPoIFTPrioritetu = (vjezbe: VjezbaProširena[]): VjezbaProširena[] => {
     return [...vjezbe].sort((a, b) => {
-      // 1. Prioritet: Nekorištene vježbe u ovom tjednu
-      const koristenaA = jeVjezbaKoristenaUTjednu(a.id, tjedanBroj) ? 0 : 50;
-      const koristenaB = jeVjezbaKoristenaUTjednu(b.id, tjedanBroj) ? 0 : 50;
+      // 1. Prioritet: Nekorištene vježbe u ovom tjednu (smanjen utjecaj)
+      const koristenaA = jeVjezbaKoristenaUTjednu(a.id, tjedanBroj) ? 0 : 30;
+      const koristenaB = jeVjezbaKoristenaUTjednu(b.id, tjedanBroj) ? 0 : 30;
       
-      // 2. Prioritet: Manje korištene vježbe ukupno
+      // 2. Prioritet: Manje korištene vježbe ukupno (smanjen utjecaj)
       const frekvencijaA = getPrioritetVjezbe(a.id);
       const frekvencijaB = getPrioritetVjezbe(b.id);
       
-      // 3. Prioritet: Obrazac pokreta prema fazi
+      // 3. Prioritet: Obrazac pokreta prema fazi (POJAČAN - najvažniji za fazu)
       const obrazacIdxA = iftStruktura.obrazciPokretaPrioritet.indexOf(a.obrazac_pokreta);
       const obrazacIdxB = iftStruktura.obrazciPokretaPrioritet.indexOf(b.obrazac_pokreta);
-      const obrazacPrioritetA = obrazacIdxA >= 0 ? (10 - obrazacIdxA) : 0;
-      const obrazacPrioritetB = obrazacIdxB >= 0 ? (10 - obrazacIdxB) : 0;
+      // Prvi obrazac = 30 bodova, drugi = 25, treći = 20, itd.
+      const obrazacPrioritetA = obrazacIdxA >= 0 ? (30 - obrazacIdxA * 5) : -10; // Penaliziraj ako nije u prioritetima
+      const obrazacPrioritetB = obrazacIdxB >= 0 ? (30 - obrazacIdxB * 5) : -10;
       
-      // 4. Prioritet: Preferirane kategorije
-      const kategorijaBonusA = iftStruktura.preferiraneKategorije.includes(a.category) ? 10 : 0;
-      const kategorijaBonusB = iftStruktura.preferiraneKategorije.includes(b.category) ? 10 : 0;
+      // 4. Prioritet: Preferirane kategorije (POJAČAN)
+      const kategorijaBonusA = iftStruktura.preferiraneKategorije.includes(a.category) ? 25 : 0;
+      const kategorijaBonusB = iftStruktura.preferiraneKategorije.includes(b.category) ? 25 : 0;
       
-      // 5. Prioritet: Oprema (slobodni utezi vs trenažeri)
+      // 5. Prioritet: Oprema (slobodni utezi vs trenažeri) (POJAČAN)
       let opremaBonusA = 0;
       let opremaBonusB = 0;
       if (iftStruktura.preferiraSlobodneUtege) {
-        opremaBonusA = ['sipka', 'bucice', 'girje'].includes(a.oprema_hr) ? 5 : 0;
-        opremaBonusB = ['sipka', 'bucice', 'girje'].includes(b.oprema_hr) ? 5 : 0;
+        opremaBonusA = ['sipka', 'bucice', 'girje'].includes(a.oprema_hr) ? 15 : 0;
+        opremaBonusB = ['sipka', 'bucice', 'girje'].includes(b.oprema_hr) ? 15 : 0;
+      } else if (iftStruktura.preferirajTrenazere) {
+        // Za izdržljivost/deload - preferiraj trenažere
+        opremaBonusA = ['trenazer', 'kabel', 'masina'].some(op => a.oprema_hr?.includes(op)) ? 15 : 0;
+        opremaBonusB = ['trenazer', 'kabel', 'masina'].some(op => b.oprema_hr?.includes(op)) ? 15 : 0;
       }
       
-      const scoreA = koristenaA + frekvencijaA + obrazacPrioritetA + kategorijaBonusA + opremaBonusA;
-      const scoreB = koristenaB + frekvencijaB + obrazacPrioritetB + kategorijaBonusB + opremaBonusB;
+      // 6. BONUS: Powerlifting vježbe za jakost (dodatni prioritet)
+      let powerliftingBonusA = 0;
+      let powerliftingBonusB = 0;
+      if (cilj === 'jakost' || mezociklusTip === 'jakost') {
+        // Big 3 i powerlifting varijante
+        const powerliftingVjezbe = ['squat', 'bench press', 'deadlift', 'overhead press'];
+        const jePowerliftingA = powerliftingVjezbe.some(pv => 
+          a.name.toLowerCase().includes(pv.toLowerCase()) || 
+          a.name_hr?.toLowerCase().includes(pv.toLowerCase())
+        );
+        const jePowerliftingB = powerliftingVjezbe.some(pv => 
+          b.name.toLowerCase().includes(pv.toLowerCase()) || 
+          b.name_hr?.toLowerCase().includes(pv.toLowerCase())
+        );
+        powerliftingBonusA = jePowerliftingA ? 20 : 0;
+        powerliftingBonusB = jePowerliftingB ? 20 : 0;
+      }
+      
+      const scoreA = koristenaA + frekvencijaA + obrazacPrioritetA + kategorijaBonusA + opremaBonusA + powerliftingBonusA;
+      const scoreB = koristenaB + frekvencijaB + obrazacPrioritetB + kategorijaBonusB + opremaBonusB + powerliftingBonusB;
       
       return scoreB - scoreA;
     });
