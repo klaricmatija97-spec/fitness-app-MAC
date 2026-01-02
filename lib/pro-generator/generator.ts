@@ -919,6 +919,24 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
   const sortiraniIsolation = sortirajPoIFTPrioritetu(sviIsolationKandidati);
   
   // =============================================
+  // VALIDACIJA: Provjeri da ima dovoljno kandidata
+  // =============================================
+  
+  if (sortiraniCompound.length < targetCompound) {
+    log('warning', `Nedovoljno compound vježbi: traženo ${targetCompound}, dostupno ${sortiraniCompound.length}`, {
+      misicneGrupe,
+      dostupnaOprema,
+    });
+  }
+  
+  if (sortiraniIsolation.length < targetIsolation) {
+    log('warning', `Nedovoljno isolation vježbi: traženo ${targetIsolation}, dostupno ${sortiraniIsolation.length}`, {
+      misicneGrupe,
+      dostupnaOprema,
+    });
+  }
+  
+  // =============================================
   // FAZA 3: Odaberi vježbe s ponderiranom nasumičnošću
   // =============================================
   
@@ -934,7 +952,16 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
     const odabrani: VjezbaProširena[] = [];
     const dostupni = kandidati.filter(k => !odabraniIdevi.has(k.id));
     
-    for (let i = 0; i < brojZaOdabir && dostupni.length > 0; i++) {
+    // Ako nema dovoljno kandidata, uzmi sve dostupne
+    const stvarniBrojZaOdabir = Math.min(brojZaOdabir, dostupni.length);
+    
+    if (stvarniBrojZaOdabir < brojZaOdabir) {
+      log('warning', `Nedovoljno kandidata: traženo ${brojZaOdabir}, dostupno ${dostupni.length}`, {
+        tip: kandidati[0]?.mechanic || 'unknown',
+      });
+    }
+    
+    for (let i = 0; i < stvarniBrojZaOdabir && dostupni.length > 0; i++) {
       // Uzmi top 5 kandidata za ponderiranu selekciju
       const topN = Math.min(5, dostupni.length);
       const topKandidati = dostupni.slice(0, topN);
@@ -1054,28 +1081,83 @@ function kreirajVjezbuSesijeIFT(
   volumenMod: number,
   intenzitetMod: number,
 ): VjezbaSesije {
-  const ponavljanjaStr = `${params.ponavljanja.min}-${params.ponavljanja.max}`;
-  const rir = Math.round((params.rir.min + params.rir.max) / 2);
-  const odmor = Math.round((params.odmorSekunde.min + params.odmorSekunde.max) / 2);
+  // ============================================
+  // VALIDACIJA I NORMALIZACIJA PARAMETARA
+  // ============================================
+  
+  // 1. Ponavljanja - provjeri da min <= max
+  const ponavljanjaMin = Math.max(1, Math.min(params.ponavljanja.min, params.ponavljanja.max));
+  const ponavljanjaMax = Math.max(ponavljanjaMin, params.ponavljanja.max);
+  const ponavljanjaStr = `${ponavljanjaMin}-${ponavljanjaMax}`;
+  
+  // 2. RIR - validiraj raspon 0-5
+  const rirSrednja = Math.round((params.rir.min + params.rir.max) / 2);
+  const rirValidiran = Math.min(5, Math.max(0, rirSrednja));
+  
+  // 3. Odmor - validiraj da nije negativan i da je razuman (max 600 sekundi = 10 min)
+  const odmorSrednja = Math.round((params.odmorSekunde.min + params.odmorSekunde.max) / 2);
+  const odmorValidiran = Math.min(600, Math.max(0, odmorSrednja));
+  
+  // 4. Setovi - validiraj da nije 0 ili negativan, min 1 set
+  const setoviSModifikatorom = params.setovi * volumenMod;
+  const setoviValidirani = Math.max(1, Math.round(setoviSModifikatorom));
+  
+  // 5. Postotak 1RM - validiraj raspon 0-120% (120% za neke napredne tehnike)
+  const postotak1RMSModifikatorom = params.intenzitet * intenzitetMod;
+  const postotak1RMValidiran = Math.min(120, Math.max(0, Math.round(postotak1RMSModifikatorom)));
+  
+  // 6. Log upozorenja za ekstremne vrijednosti (za debugging)
+  if (DEBUG) {
+    if (setoviValidirani !== Math.round(setoviSModifikatorom)) {
+      log('warning', `Setovi prilagođeni: ${Math.round(setoviSModifikatorom)} → ${setoviValidirani}`, {
+        vjezba: vjezba.naziv_hr,
+        volumenMod,
+        originalSetovi: params.setovi,
+      });
+    }
+    if (postotak1RMValidiran !== Math.round(postotak1RMSModifikatorom)) {
+      log('warning', `Postotak 1RM prilagođen: ${Math.round(postotak1RMSModifikatorom)}% → ${postotak1RMValidiran}%`, {
+        vjezba: vjezba.naziv_hr,
+        intenzitetMod,
+        originalIntenzitet: params.intenzitet,
+      });
+    }
+    if (odmorValidiran !== odmorSrednja) {
+      log('warning', `Odmor prilagođen: ${odmorSrednja}s → ${odmorValidiran}s`, {
+        vjezba: vjezba.naziv_hr,
+      });
+    }
+  }
+  
+  // Validacija obaveznih podataka vježbe
+  if (!vjezba.id) {
+    log('error', 'Vježba nema ID', { vjezba });
+    throw new Error('Vježba mora imati ID');
+  }
+  
+  if (!vjezba.naziv_hr && !vjezba.name) {
+    log('error', 'Vježba nema naziv', { vjezbaId: vjezba.id });
+    throw new Error(`Vježba ${vjezba.id} mora imati naziv (hr ili en)`);
+  }
   
   return {
     id: uuidv4(),
     sessionId: '',
     redniBroj,
     exerciseLibraryId: vjezba.id,
-    naziv: vjezba.naziv_hr,
-    nazivEn: vjezba.name,
-    setovi: Math.round(params.setovi * volumenMod),
+    naziv: vjezba.naziv_hr || vjezba.name || 'Nepoznata vježba',
+    nazivEn: vjezba.name || vjezba.naziv_hr || 'Unknown exercise',
+    setovi: setoviValidirani,
     ponavljanja: ponavljanjaStr,
-    odmorSekunde: odmor,
-    tempo: params.tempo,
-    rir: Math.min(5, Math.max(0, rir)),
-    postotak1RM: Math.round(params.intenzitet * intenzitetMod),
+    odmorSekunde: odmorValidiran,
+    tempo: params.tempo || '2/0/2/0', // Default tempo ako nije zadan
+    rir: rirValidiran,
+    postotak1RM: postotak1RMValidiran,
     tipVjezbe: (vjezba.mechanic as 'compound' | 'isolation') || 'isolation',
-    obrazacPokreta: vjezba.obrazac_pokreta,
-    primarneGrupe: vjezba.primarne_grupe_hr,
-    sekundarneGrupe: vjezba.sekundarne_grupe_hr,
-    oprema: vjezba.oprema_hr,
+    obrazacPokreta: vjezba.obrazac_pokreta || 'unknown',
+    primarneGrupe: vjezba.primarne_grupe_hr || [],
+    sekundarneGrupe: vjezba.sekundarne_grupe_hr || [],
+    oprema: vjezba.oprema_hr || 'Nepoznata oprema',
     alternativneVjezbe: [],
     jeSuperser: false,
     trenerOverride: false,
