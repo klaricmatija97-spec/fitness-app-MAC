@@ -645,8 +645,15 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
   // ============================================
 
   function renderStepIndicator() {
-    const steps = ['Klijent', 'Postavke', 'Način', 'Plan', 'Pregled', 'Objava'];
-    const currentStepIndex = typeof step === 'number' ? step - 1 : 2;
+    // Pojednostavljeni koraci: Klijent → Godišnji plan → Pregled → Spremi
+    const steps = ['Klijent', 'Godišnji plan', 'Pregled', 'Spremi'];
+    
+    // Mapiraj trenutni step na indeks
+    let currentStepIndex = 0;
+    if (step === 1) currentStepIndex = 0;
+    else if (step === 3 || step === '3A') currentStepIndex = 1;
+    else if (step === 4 || step === 5) currentStepIndex = 2;
+    else if (step === 7) currentStepIndex = 3;
     
     return (
       <View style={styles.stepIndicator}>
@@ -2486,7 +2493,6 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
 
         {/* Step Content */}
         {step === 1 && renderStep1()}
-        {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
         {step === '3A' && renderStep3A()}
         {step === 4 && renderStep4()}
