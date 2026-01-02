@@ -135,58 +135,36 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Generiraj trainer code
-      const trainerCode = generateTrainerCode();
-
-      // Kreiraj trenera automatski
-      const { data: trainer, error: trainerError } = await supabase
-        .from("trainers")
-        .insert({
-          name: invite.name,
-          email: invite.email,
-          phone: invite.phone,
-          password_hash: invite.password_hash,
-          trainer_code: trainerCode,
-          created_at: new Date().toISOString(),
-        })
-        .select("id, name, email, trainer_code")
-        .single();
-
-      if (trainerError) {
-        console.error("[AdminInvites] Error creating trainer:", trainerError);
-        return NextResponse.json(
-          { ok: false, message: "Greška pri kreiranju trenera: " + trainerError.message },
-          { status: 500 }
-        );
-      }
-
-      // Ažuriraj invite status
-      await supabase
+      // Ažuriraj invite status na "approved" (račun se kreira tek kad trener upiše kod)
+      const { data: updatedInvite, error: updateError } = await supabase
         .from("trainer_invites")
         .update({
-          status: "used",
-          used_at: new Date().toISOString(),
+          status: "approved",
+          approved_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), // 48h
           approved_by: "admin",
-          trainer_id: trainer.id,
           admin_notes: adminNotes || invite.admin_notes,
         })
-        .eq("id", inviteId);
+        .eq("id", inviteId)
+        .select()
+        .single();
 
-      // Pošalji email s potvrdom
-      const emailSent = await sendWelcomeEmail(
+      if (updateError) throw updateError;
+
+      // Pošalji email s kodom
+      const emailSent = await sendApprovalEmailWithCode(
         invite.email,
         invite.name,
-        trainerCode
+        updatedInvite.invite_code
       );
 
       return NextResponse.json({
         ok: true,
-        message: `Trener kreiran! ${emailSent ? "Email poslan." : "Email NIJE poslan."}`,
-        trainer: {
-          id: trainer.id,
-          name: trainer.name,
-          email: trainer.email,
-          trainerCode: trainer.trainer_code,
+        message: `Zahtjev odobren! ${emailSent ? "Email s kodom poslan." : "Email NIJE poslan."}`,
+        invite: {
+          email: updatedInvite.email,
+          name: updatedInvite.name,
+          invite_code: updatedInvite.invite_code,
         },
         emailSent,
       });
@@ -222,6 +200,70 @@ export async function POST(request: NextRequest) {
 }
 
 // Email funkcije (koriste Resend)
+async function sendApprovalEmailWithCode(email: string, name: string, inviteCode: string): Promise<boolean> {
+  const resendApiKey = process.env.RESEND_API_KEY || 're_LAVdTSto_LkTanz66kQLWD88SgAVnCPzH';
+  
+  if (!resendApiKey) {
+    console.warn("[Email] RESEND_API_KEY nije postavljen");
+    return false;
+  }
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: process.env.EMAIL_FROM || "onboarding@resend.dev",
+        to: email,
+        subject: "Corpex - Vaš aktivacijski kod",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #8B5CF6;">🎉 Zahtjev odobren!</h1>
+            <p>Pozdrav ${name},</p>
+            <p>Vaš zahtjev za pristup Corpex platformi je <strong>odobren</strong>!</p>
+            
+            <div style="background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); 
+                        padding: 30px; border-radius: 12px; text-align: center; margin: 30px 0;">
+              <p style="color: rgba(255,255,255,0.8); margin: 0 0 10px 0; font-size: 14px;">Vaš aktivacijski kod:</p>
+              <h2 style="color: white; font-size: 32px; letter-spacing: 4px; margin: 0;">
+                ${inviteCode}
+              </h2>
+            </div>
+            
+            <p><strong>Sljedeći korak:</strong></p>
+            <ol>
+              <li>Otvorite Corpex aplikaciju</li>
+              <li>Kliknite "Registracija trenera"</li>
+              <li>Unesite ovaj kod da aktivirate račun</li>
+            </ol>
+            
+            <p style="color: #888; font-size: 13px;">⚠️ Kod vrijedi 48 sati.</p>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #666; font-size: 12px;">Corpex tim</p>
+          </div>
+        `,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("[Email] Resend error:", error);
+      return false;
+    }
+
+    console.log(`[Email] Approval email sent to ${email}`);
+    return true;
+
+  } catch (error) {
+    console.error("[Email] Error sending approval email:", error);
+    return false;
+  }
+}
+
 async function sendWelcomeEmail(email: string, name: string, trainerCode: string): Promise<boolean> {
   const resendApiKey = process.env.RESEND_API_KEY || 're_LAVdTSto_LkTanz66kQLWD88SgAVnCPzH';
   
