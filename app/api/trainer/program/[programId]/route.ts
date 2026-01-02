@@ -1,143 +1,181 @@
 /**
- * Trainer Program API
- * ===================
- * GET /api/trainer/program/:programId
+ * GET /api/trainer/program/[programId]
  * 
- * Dohvaća program details za trainera (flat structure)
+ * Dohvaća kompletan program s tjednima, sesijama i vježbama
+ * Za prikaz u TrainerProgramBuilderScreen (view mode)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase';
-import { requireTrainer } from '@/lib/api/auth-helpers';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ programId: string }> }
 ) {
+  const { programId } = await params;
+  
   try {
-    // Provjeri autentifikaciju
-    const auth = requireTrainer(request);
-    if (!auth) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Unauthorized',
-          code: 'UNAUTHORIZED',
-        },
-        { status: 401 }
-      );
-    }
-
-    const { programId } = await params;
     const supabase = createServiceClient();
-
-    // Dohvati program
+    
+    // 1. Dohvati osnovne podatke o programu
     const { data: program, error: programError } = await supabase
       .from('training_programs')
-      .select('*')
+      .select(`
+        id,
+        name,
+        client_id,
+        trainer_id,
+        goal,
+        level,
+        duration_weeks,
+        split_type,
+        status,
+        current_week,
+        created_at,
+        updated_at,
+        annual_program_id,
+        previous_program_id,
+        next_program_id,
+        phase_order,
+        total_phases
+      `)
       .eq('id', programId)
       .single();
-
+    
     if (programError || !program) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Program not found',
-          code: 'NOT_FOUND',
-        },
-        { status: 404 }
-      );
+      return NextResponse.json({
+        success: false,
+        error: 'Program nije pronađen',
+      }, { status: 404 });
     }
-
-    // TODO: Provjeri da trainer ima pristup ovom programu
-    // Za MVP, pretpostavljamo da svaki trainer ima pristup
-
-    // Dohvati client info
-    let clientName = null;
-    if (program.client_id) {
-      const { data: client } = await supabase
-        .from('clients')
-        .select('name')
-        .eq('id', program.client_id)
-        .single();
-      clientName = client?.name || null;
-    }
-
-    // Dohvati mesocycles
-    const { data: mesocycles } = await supabase
+    
+    // 2. Dohvati mezocikluse
+    const { data: mesocycles, error: mesocyclesError } = await supabase
       .from('mesocycles')
-      .select('id, name, focus as type, week_start, week_end, order_index, is_manual')
+      .select('*')
       .eq('program_id', programId)
-      .order('order_index');
-
-    // Dohvati sessions
-    const { data: sessions } = await supabase
+      .order('week_number', { ascending: true });
+    
+    // 3. Dohvati sesije s vježbama
+    const { data: sessions, error: sessionsError } = await supabase
       .from('program_sessions')
-      .select('id, mesocycle_id, week_number, day_of_week, split_name as name, is_manual')
+      .select(`
+        id,
+        program_id,
+        week_number,
+        day_number,
+        name,
+        focus,
+        notes,
+        session_exercises (
+          id,
+          exercise_name,
+          exercise_id,
+          sets,
+          reps_min,
+          reps_max,
+          rest_seconds,
+          rir,
+          tempo,
+          notes,
+          order_index,
+          equipment,
+          primary_muscles,
+          secondary_muscles
+        )
+      `)
       .eq('program_id', programId)
-      .order('week_number')
-      .order('day_of_week');
-
-    // Izračunaj exercises count po sesiji
-    const sessionsWithCount = await Promise.all(
-      (sessions || []).map(async (session) => {
-        const { count } = await supabase
-          .from('session_exercises')
-          .select('id', { count: 'exact', head: true })
-          .eq('session_id', session.id);
-
-        return {
-          ...session,
-          exercisesCount: count || 0,
-        };
-      })
-    );
-
-    // Dohvati exercises (flat structure)
-    const { data: exercises } = await supabase
-      .from('session_exercises')
-      .select(
-        'id, session_id, exercise_id as exerciseId, exercise_name as name, exercise_name_hr as nameHr, order_index as orderIndex, sets, reps_target as repsTarget, tempo, rest_seconds as restSeconds, target_rpe as targetRPE, target_rir as targetRIR, is_locked as isLocked, is_manual as isManual'
-      )
-      .in(
-        'session_id',
-        (sessions || []).map((s) => s.id)
-      )
-      .order('session_id')
-      .order('order_index');
-
+      .order('week_number', { ascending: true })
+      .order('day_number', { ascending: true });
+    
+    if (sessionsError) {
+      console.error('[Program API] Error fetching sessions:', sessionsError);
+    }
+    
+    // 4. Grupiraj sesije po tjednima
+    const weeks: any[] = [];
+    const sessionsByWeek = new Map<number, any[]>();
+    
+    (sessions || []).forEach((session: any) => {
+      const weekNum = session.week_number;
+      if (!sessionsByWeek.has(weekNum)) {
+        sessionsByWeek.set(weekNum, []);
+      }
+      sessionsByWeek.get(weekNum)!.push({
+        id: session.id,
+        name: session.name,
+        dayNumber: session.day_number,
+        focus: session.focus,
+        notes: session.notes,
+        exercises: (session.session_exercises || [])
+          .sort((a: any, b: any) => a.order_index - b.order_index)
+          .map((ex: any) => ({
+            id: ex.id,
+            name: ex.exercise_name,
+            nameEn: ex.exercise_name,
+            sets: ex.sets,
+            repsMin: ex.reps_min,
+            repsMax: ex.reps_max,
+            restSeconds: ex.rest_seconds,
+            rir: ex.rir,
+            tempo: ex.tempo,
+            equipment: ex.equipment,
+            primaryMuscles: ex.primary_muscles || [],
+            secondaryMuscles: ex.secondary_muscles || [],
+            isLocked: false,
+          })),
+      });
+    });
+    
+    // Kreiraj weeks array
+    for (let weekNum = 1; weekNum <= (program.duration_weeks || 4); weekNum++) {
+      const weekSessions = sessionsByWeek.get(weekNum) || [];
+      const mesocycle = (mesocycles || []).find((m: any) => m.week_number === weekNum);
+      
+      weeks.push({
+        weekNumber: weekNum,
+        mesocycleType: mesocycle?.type || 'accumulation',
+        volumeModifier: mesocycle?.volume_modifier || 1.0,
+        intensityModifier: mesocycle?.intensity_modifier || 1.0,
+        sessions: weekSessions,
+      });
+    }
+    
+    // 5. Formatiraj odgovor u format koji TrainerProgramBuilderScreen očekuje
+    const formattedProgram = {
+      id: program.id,
+      name: program.name,
+      clientId: program.client_id,
+      trainerId: program.trainer_id,
+      goal: program.goal,
+      level: program.level,
+      durationWeeks: program.duration_weeks,
+      splitType: program.split_type,
+      status: program.status,
+      currentWeek: program.current_week || 1,
+      createdAt: program.created_at,
+      updatedAt: program.updated_at,
+      // Linking info
+      annualProgramId: program.annual_program_id,
+      previousProgramId: program.previous_program_id,
+      nextProgramId: program.next_program_id,
+      phaseOrder: program.phase_order,
+      totalPhases: program.total_phases,
+      // Program data
+      weeks: weeks,
+      mesocycles: mesocycles || [],
+    };
+    
     return NextResponse.json({
       success: true,
-      data: {
-        program: {
-          id: program.id,
-          name: program.name,
-          status: program.status,
-          goal: program.goal,
-          level: program.level,
-          splitType: program.split_type,
-          durationWeeks: program.duration_weeks,
-          sessionsPerWeek: program.sessions_per_week,
-          startDate: program.start_date,
-          endDate: program.end_date,
-          clientId: program.client_id,
-          clientName,
-        },
-        mesocycles: mesocycles || [],
-        sessions: sessionsWithCount,
-        exercises: exercises || [],
-      },
+      data: formattedProgram,
     });
+    
   } catch (error) {
-    console.error('[trainer/program] Unexpected error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        code: 'SERVER_ERROR',
-      },
-      { status: 500 }
-    );
+    console.error('[Program API] Error:', error);
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Greška pri dohvaćanju programa',
+    }, { status: 500 });
   }
 }
-

@@ -58,6 +58,7 @@ export default function App() {
   const [showTrainingGenerator, setShowTrainingGenerator] = useState(false);
   const [showTrainerHome, setShowTrainerHome] = useState(false);
   const [showTrainerClientDetail, setShowTrainerClientDetail] = useState(false);
+  const [viewProgramId, setViewProgramId] = useState<string | null>(null);
   const [showAnnualPlanBuilder, setShowAnnualPlanBuilder] = useState(false);
   const [showAddClient, setShowAddClient] = useState(false);
   const [showManualBuilder, setShowManualBuilder] = useState(false);
@@ -309,8 +310,18 @@ export default function App() {
     setSelectedClientName(clientName);
     setSelectedYear(new Date().getFullYear());
     setSelectedPhaseData(null); // Nema unaprijed definiranu fazu
+    setViewProgramId(null); // Resetiraj view mode
     setShowTrainerClientDetail(false);
     setShowTrainingGenerator(true); // Direktno na TrainerProgramBuilderScreen
+  };
+
+  const handleViewProgram = (programId: string, clientName: string) => {
+    // Otvori TrainerProgramBuilderScreen u view mode za pregled postojećeg programa
+    setSelectedClientName(clientName);
+    setViewProgramId(programId);
+    setSelectedPhaseData(null);
+    setShowTrainerClientDetail(false);
+    setShowTrainingGenerator(true);
   };
 
   const handleGenerateProgram = (clientId: string, phaseData?: {
@@ -663,6 +674,7 @@ export default function App() {
           setShowTrainerClientDetail(false);
           setShowTrainerClientResults(true);
         }}
+        onViewProgram={handleViewProgram}
       />
     );
   }
@@ -849,22 +861,31 @@ export default function App() {
 
   // Generator treninga ekran
   if (showTrainingGenerator) {
-    // Provjeri da li dolazi iz annual plan (ima phaseData) ili iz trainer home
-    const onCancelHandler = selectedPhaseData 
+    // Provjeri da li dolazi iz annual plan (ima phaseData), iz view mode, ili iz trainer home
+    const onCancelHandler = viewProgramId
       ? () => {
-          setSelectedPhaseData(null);
+          // View mode - vrati se na client detail
+          setViewProgramId(null);
           setShowTrainingGenerator(false);
-          setShowAnnualPlanBuilder(true);
+          setShowTrainerClientDetail(true);
         }
-      : (showTrainerHome ? handleBackFromTrainingToTrainerHome : handleBackToMealPlan);
+      : selectedPhaseData 
+        ? () => {
+            setSelectedPhaseData(null);
+            setShowTrainingGenerator(false);
+            setShowAnnualPlanBuilder(true);
+          }
+        : (showTrainerHome ? handleBackFromTrainingToTrainerHome : handleBackToMealPlan);
     
     return (
       <TrainerProgramBuilderScreen
         authToken={TRAINER_TOKEN}
         clientId={selectedClientId || undefined}
         phaseData={selectedPhaseData || undefined}
+        viewProgramId={viewProgramId || undefined}
         onComplete={(programId) => {
           setSelectedPhaseData(null);
+          setViewProgramId(null);
           handleTrainingComplete(programId);
         }}
         onCancel={onCancelHandler}

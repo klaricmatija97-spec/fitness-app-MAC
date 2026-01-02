@@ -62,6 +62,7 @@ interface Props {
   authToken: string;
   clientId?: string;
   phaseData?: PhaseData; // Ako dolazimo iz godišnjeg plana
+  viewProgramId?: string; // Ako pregledavamo postojeći program
   onComplete?: (programId: string) => void;
   onCancel?: () => void;
 }
@@ -228,7 +229,7 @@ const MESOCYCLE_TYPES: { value: MesocycleType; label: string; color: string; des
 // MAIN COMPONENT
 // ============================================
 
-export default function TrainerProgramBuilderScreen({ authToken, clientId, phaseData, onComplete, onCancel }: Props) {
+export default function TrainerProgramBuilderScreen({ authToken, clientId, phaseData, viewProgramId, onComplete, onCancel }: Props) {
   // Map phase type to goal
   const mapPhaseToGoal = (phaseType: string): ProgramGoal => {
     const mapping: Record<string, ProgramGoal> = {
@@ -324,6 +325,10 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
   // Program ID
   const [programId, setProgramId] = useState<string | null>(null);
 
+  // View mode state
+  const [isViewMode, setIsViewMode] = useState(!!viewProgramId);
+  const [viewModeLoading, setViewModeLoading] = useState(!!viewProgramId);
+
   // ============================================
   // EFFECTS
   // ============================================
@@ -336,9 +341,67 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
     }
   }, [clientId]);
 
+  // Load program in view mode
+  useEffect(() => {
+    if (viewProgramId) {
+      loadExistingProgram(viewProgramId);
+    }
+  }, [viewProgramId]);
+
   // ============================================
   // API CALLS
   // ============================================
+
+  async function loadExistingProgram(progId: string) {
+    setViewModeLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/trainer/program/${progId}`, {
+        headers: { 'Authorization': `Bearer ${authToken}` },
+      });
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        const programData = result.data;
+        
+        // Postavi program podatke
+        setFullProgram({
+          phaseType: programData.goal || 'hipertrofija',
+          phaseName: programData.name || 'Program',
+          totalWeeks: programData.durationWeeks || 4,
+          weeks: programData.weeks.map((w: any) => ({
+            weekNumber: w.weekNumber,
+            mesocycleType: w.mesocycleType || 'accumulation',
+            sessions: w.sessions.map((s: any) => ({
+              id: s.id,
+              name: s.name,
+              dayNumber: s.dayNumber,
+              focus: s.focus,
+              exercises: s.exercises || [],
+            })),
+          })),
+        });
+        
+        // Postavi ostale state varijable
+        setProgramId(programData.id);
+        setGoal(programData.goal || 'hipertrofija');
+        setLevel(programData.level || 'srednji');
+        setDurationWeeks(programData.durationWeeks || 4);
+        setSplitType(programData.splitType || 'upper_lower');
+        setCurrentWeekIndex(0);
+        
+        // Idi direktno na Step 5 (pregled programa)
+        setStep(5);
+        setIsViewMode(true);
+      } else {
+        Alert.alert('Greška', 'Nije moguće učitati program');
+      }
+    } catch (error) {
+      console.error('Error loading program:', error);
+      Alert.alert('Greška', 'Nije moguće učitati program');
+    } finally {
+      setViewModeLoading(false);
+    }
+  }
 
   async function loadClients() {
     try {
@@ -2519,18 +2582,18 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+        <View style={styles.customSplitModalContainer}>
+          <View style={styles.customSplitModalHeader}>
             <TouchableOpacity onPress={() => setShowCustomSplitBuilder(false)}>
-              <Text style={styles.modalCancelText}>Odustani</Text>
+              <Text style={styles.customSplitCancelText}>Odustani</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Custom Split Builder</Text>
+            <Text style={styles.customSplitModalTitle}>Custom Split Builder</Text>
             <TouchableOpacity onPress={saveCustomSplit}>
-              <Text style={styles.modalSaveText}>Spremi</Text>
+              <Text style={styles.customSplitSaveText}>Spremi</Text>
             </TouchableOpacity>
           </View>
           
-          <ScrollView style={styles.modalContent}>
+          <ScrollView style={styles.customSplitContent}>
             <TextInput
               style={styles.splitNameInput}
               placeholder="Naziv split-a (npr. Arnold Style)"
@@ -2538,7 +2601,7 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
               onChangeText={(text) => setLocalCustomSplit({ ...localCustomSplit, naziv: text })}
             />
             
-            <Text style={styles.modalSectionTitle}>Dani ({localCustomSplit.dani.length})</Text>
+            <Text style={styles.customSplitSectionTitle}>Dani ({localCustomSplit.dani.length})</Text>
             
             {localCustomSplit.dani.map((day, dayIndex) => (
               <View key={dayIndex} style={styles.customDayCard}>
@@ -2803,14 +2866,22 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onCancel}>
-            <Text style={styles.cancelText}>✕ Odustani</Text>
+            <Text style={styles.cancelText}>{isViewMode ? '← Natrag' : '✕ Odustani'}</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Novi Program</Text>
+          <Text style={styles.headerTitle}>{isViewMode ? 'Pregled programa' : 'Novi Program'}</Text>
           <View style={styles.placeholder} />
         </View>
 
-        {/* Step Indicator */}
-        {renderStepIndicator()}
+        {/* Loading indicator for view mode */}
+        {viewModeLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#22C55E" />
+            <Text style={styles.loadingText}>Učitavam program...</Text>
+          </View>
+        )}
+
+        {/* Step Indicator - hide in view mode */}
+        {!isViewMode && renderStepIndicator()}
 
         {/* Step Content */}
         {step === 1 && renderStep1()}
@@ -2847,6 +2918,19 @@ const styles = StyleSheet.create({
   cancelText: { color: '#71717A', fontSize: 16 },
   headerTitle: { color: '#FFF', fontSize: 18, fontWeight: '700' },
   placeholder: { width: 80 },
+
+  // Loading
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 100,
+  },
+  loadingText: {
+    color: '#71717A',
+    fontSize: 16,
+    marginTop: 16,
+  },
 
   // Step Indicator
   stepIndicator: {
@@ -4116,11 +4200,11 @@ const styles = StyleSheet.create({
   
   // Custom Split Builder
   customSplitInfo: { color: '#22C55E', fontSize: 12, marginTop: 4 },
-  modalContainer: {
+  customSplitModalContainer: {
     flex: 1,
     backgroundColor: '#0A0A0A',
   },
-  modalHeader: {
+  customSplitModalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -4130,10 +4214,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
-  modalTitle: { color: '#FFF', fontSize: 18, fontWeight: '700' },
-  modalCancelText: { color: '#71717A', fontSize: 16 },
-  modalSaveText: { color: '#22C55E', fontSize: 16, fontWeight: '600' },
-  modalContent: { flex: 1, padding: 20 },
+  customSplitModalTitle: { color: '#FFF', fontSize: 18, fontWeight: '700' },
+  customSplitCancelText: { color: '#71717A', fontSize: 16 },
+  customSplitSaveText: { color: '#22C55E', fontSize: 16, fontWeight: '600' },
+  customSplitContent: { flex: 1, padding: 20 },
   splitNameInput: {
     backgroundColor: '#27272A',
     borderRadius: 12,
@@ -4142,7 +4226,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 20,
   },
-  modalSectionTitle: {
+  customSplitSectionTitle: {
     color: '#FFF',
     fontSize: 18,
     fontWeight: '700',

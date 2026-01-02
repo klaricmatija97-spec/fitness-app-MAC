@@ -82,9 +82,10 @@ interface Props {
   onAnnualPlanPress?: (clientId: string, clientName: string) => void;
   onGenerateProgram?: (clientId: string) => void;
   onViewResults?: (clientId: string, clientName: string) => void;
+  onViewProgram?: (programId: string, clientName: string) => void;
 }
 
-export default function TrainerClientDetailScreen({ authToken, clientId, onBack, onAnnualPlanPress, onGenerateProgram, onViewResults }: Props) {
+export default function TrainerClientDetailScreen({ authToken, clientId, onBack, onAnnualPlanPress, onGenerateProgram, onViewResults, onViewProgram }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState<any>(null);
@@ -507,8 +508,15 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
           {/* PROGRAM INFO */}
           {/* ============================================ */}
           {data.program && (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Trenutni program</Text>
+            <TouchableOpacity 
+              style={styles.card}
+              onPress={() => onViewProgram?.(data.program.id, data.client?.name || 'Klijent')}
+              activeOpacity={0.7}
+            >
+              <View style={styles.programCardHeader}>
+                <Text style={styles.cardTitle}>Trenutni program</Text>
+                <Text style={styles.viewProgramLink}>Pregledaj →</Text>
+              </View>
               <Text style={styles.cardValue}>{data.program.name}</Text>
               <View style={styles.statusBadge}>
                 <Text style={styles.statusText}>{data.program.status}</Text>
@@ -516,7 +524,7 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
               <Text style={styles.cardLabel}>
                 Tjedan {data.program.currentWeek} / {data.program.totalWeeks}
               </Text>
-            </View>
+            </TouchableOpacity>
           )}
 
           {/* ============================================ */}
@@ -786,6 +794,19 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 14, color: '#FFFFFF', marginBottom: 12, fontWeight: '600' },
   cardValue: { fontSize: 20, fontWeight: 'bold', color: '#FFF', marginBottom: 8 },
   cardLabel: { fontSize: 14, color: '#D4D4D8', marginTop: 4 },
+  
+  // Program card
+  programCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  viewProgramLink: {
+    fontSize: 13,
+    color: '#60A5FA',
+    fontWeight: '600',
+  },
   
   // Info rows
   infoRow: {
