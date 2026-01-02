@@ -531,6 +531,113 @@ export default function App() {
         year={selectedYear}
         onBack={handleBackFromAnnualPlan}
         onGenerateProgram={handleGenerateProgram}
+        onGenerateAllPhases={async (clientId, phases, onComplete) => {
+          console.log('[App] Generating all phases:', phases.length);
+          const results: {phaseType: string; phaseName: string; programId: string | null; success: boolean; error?: string}[] = [];
+          let previousProgramId: string | null = null;
+          
+          for (let i = 0; i < phases.length; i++) {
+            const phase = phases[i];
+            console.log(`[App] Generating phase ${i + 1}/${phases.length}: ${phase.phaseName}`);
+            
+            // Skip kratke faze (manje od 4 tjedna) - API ih ne podržava
+            if (phase.durationWeeks < 4) {
+              console.log(`[App] Skipping ${phase.phaseName} - too short (${phase.durationWeeks} weeks)`);
+              results.push({
+                phaseType: phase.phaseType,
+                phaseName: phase.phaseName,
+                programId: null,
+                success: false,
+                error: `Faza prekratka (${phase.durationWeeks} tj.) - minimum je 4 tjedna`,
+              });
+              continue;
+            }
+            
+            try {
+              // Mapiraj phaseType na cilj
+              let cilj: string;
+              switch (phase.phaseType) {
+                case 'jakost':
+                case 'snaga':
+                  cilj = 'maksimalna_snaga';
+                  break;
+                case 'izdrzljivost':
+                  cilj = 'misicna_izdrzljivost';
+                  break;
+                case 'hipertrofija':
+                default:
+                  cilj = 'hipertrofija';
+                  break;
+              }
+              
+              const response = await fetch(`${API_BASE_URL}/api/training/generate`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${TRAINER_TOKEN}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  klijentId: clientId,
+                  cilj: cilj,
+                  razina: 'srednja',
+                  frekvencija: 4,
+                  splitTip: 'upper_lower',
+                  trajanjeTjedana: phase.durationWeeks,
+                  dostupnaOprema: ['barbell', 'dumbbell', 'cable', 'machine'],
+                  previousProgramId: previousProgramId,
+                  phaseOrder: i + 1,
+                  totalPhases: phases.length,
+                }),
+              });
+              
+              if (!response.ok) {
+                const errorText = await response.text();
+                console.error(`[App] API error for ${phase.phaseName}:`, errorText);
+                results.push({
+                  phaseType: phase.phaseType,
+                  phaseName: phase.phaseName,
+                  programId: null,
+                  success: false,
+                  error: `API greška: ${response.status}`,
+                });
+                continue;
+              }
+              
+              const data = await response.json();
+              
+              if (data.success && data.data?.programId) {
+                console.log(`[App] Successfully generated ${phase.phaseName}: ${data.data.programId}`);
+                previousProgramId = data.data.programId;
+                results.push({
+                  phaseType: phase.phaseType,
+                  phaseName: phase.phaseName,
+                  programId: data.data.programId,
+                  success: true,
+                });
+              } else {
+                console.error(`[App] Generation failed for ${phase.phaseName}:`, data);
+                results.push({
+                  phaseType: phase.phaseType,
+                  phaseName: phase.phaseName,
+                  programId: null,
+                  success: false,
+                  error: data.error || 'Nepoznata greška',
+                });
+              }
+            } catch (error) {
+              console.error(`[App] Error generating ${phase.phaseName}:`, error);
+              results.push({
+                phaseType: phase.phaseType,
+                phaseName: phase.phaseName,
+                programId: null,
+                success: false,
+                error: error instanceof Error ? error.message : 'Network error',
+              });
+            }
+          }
+          
+          onComplete(results);
+        }}
       />
     );
   }

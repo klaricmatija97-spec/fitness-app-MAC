@@ -91,6 +91,15 @@ interface Props {
   year: number;
   onBack?: () => void;
   onGenerateProgram?: (clientId: string, phaseData: PhaseData) => void;
+  onGenerateAllPhases?: (clientId: string, phases: PhaseData[], onComplete: (results: GeneratedPhaseResult[]) => void) => void;
+}
+
+interface GeneratedPhaseResult {
+  phaseType: string;
+  phaseName: string;
+  programId: string | null;
+  success: boolean;
+  error?: string;
 }
 
 const MONTHS = ['Sij', 'Velj', 'Ožu', 'Tra', 'Svi', 'Lip', 'Srp', 'Kol', 'Ruj', 'Lis', 'Stu', 'Pro'];
@@ -103,8 +112,11 @@ export default function AnnualPlanBuilderScreen({
   year,
   onBack,
   onGenerateProgram,
+  onGenerateAllPhases,
 }: Props) {
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [generatingProgress, setGeneratingProgress] = useState<{current: number; total: number; phase: string} | null>(null);
   const [mesocycles, setMesocycles] = useState<Mesocycle[]>([]);
   const [annualProgramId, setAnnualProgramId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -362,6 +374,71 @@ export default function AnnualPlanBuilderScreen({
   }
 
   // ============================================
+  // GENERIRANJE SVIH FAZA
+  // ============================================
+  
+  function getTotalWeeks(): number {
+    return mesocycles.reduce((sum, m) => sum + m.durationWeeks, 0);
+  }
+  
+  async function handleGenerateAllPhases() {
+    if (mesocycles.length === 0) {
+      Alert.alert('Nema faza', 'Dodaj barem jednu fazu na lentu vremena prije generiranja.');
+      return;
+    }
+    
+    // Sortiraj faze po startWeek
+    const sortedMesocycles = [...mesocycles].sort((a, b) => a.startWeek - b.startWeek);
+    
+    // Konvertiraj u PhaseData format
+    const phases: PhaseData[] = sortedMesocycles.map((m) => {
+      const faza = getFaza(m.type);
+      return {
+        phaseType: m.type,
+        phaseName: faza.naziv,
+        startWeek: m.startWeek,
+        endWeek: m.startWeek + m.durationWeeks - 1,
+        durationWeeks: m.durationWeeks,
+        mesocycleId: m.id,
+        ponavljanja: faza.ponavljanja,
+        intenzitet: faza.intenzitet,
+      };
+    });
+    
+    if (onGenerateAllPhases) {
+      setGenerating(true);
+      setGeneratingProgress({ current: 0, total: phases.length, phase: phases[0]?.phaseName || '' });
+      
+      onGenerateAllPhases(clientId, phases, (results) => {
+        setGenerating(false);
+        setGeneratingProgress(null);
+        
+        // Prikaži rezultate
+        const successful = results.filter(r => r.success).length;
+        const failed = results.filter(r => !r.success).length;
+        
+        if (successful === results.length) {
+          Alert.alert(
+            '✅ Uspješno',
+            `Generirano ${successful} faza!`,
+            [{ text: 'Pogledaj', onPress: onBack }]
+          );
+        } else if (successful > 0) {
+          Alert.alert(
+            '⚠️ Djelomično uspješno',
+            `Generirano: ${successful}\nNeuspješno: ${failed}`,
+            [{ text: 'OK' }]
+          );
+        } else {
+          Alert.alert('❌ Greška', 'Nijedna faza nije generirana. Provjeri postavke i pokušaj ponovno.');
+        }
+      });
+    } else {
+      Alert.alert('Info', 'Generiranje programa nije dostupno.');
+    }
+  }
+
+  // ============================================
   // RENDER
   // ============================================
 
@@ -540,6 +617,30 @@ export default function AnnualPlanBuilderScreen({
             ))}
           </ScrollView>
         </View>
+
+        {/* Generate All Phases Button */}
+        {mesocycles.length > 0 && (
+          <TouchableOpacity
+            style={[styles.generateAllButton, generating && styles.generateAllButtonDisabled]}
+            onPress={handleGenerateAllPhases}
+            disabled={generating}
+          >
+            {generating ? (
+              <View style={styles.generatingContainer}>
+                <ActivityIndicator size="small" color="#000" />
+                <Text style={styles.generateAllButtonText}>
+                  {generatingProgress 
+                    ? `Generiram ${generatingProgress.current + 1}/${generatingProgress.total}: ${generatingProgress.phase}...`
+                    : 'Generiram...'}
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.generateAllButtonText}>
+                ⚡ GENERIRAJ SVE FAZE ({getTotalWeeks()} tj.)
+              </Text>
+            )}
+          </TouchableOpacity>
+        )}
 
         {/* Mesocycle List */}
         <ScrollView style={styles.listSection}>
@@ -806,6 +907,30 @@ const styles = StyleSheet.create({
     color: '#52525B',
     fontSize: 11,
     fontWeight: '500',
+  },
+  
+  // Generate All Button
+  generateAllButton: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 12,
+    marginVertical: 8,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  generateAllButtonDisabled: {
+    backgroundColor: '#71717A',
+  },
+  generateAllButtonText: {
+    color: '#000',
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  generatingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   
   // List
