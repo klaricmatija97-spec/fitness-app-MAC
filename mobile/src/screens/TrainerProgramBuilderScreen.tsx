@@ -940,27 +940,6 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
           ))}
         </View>
 
-        {/* Duration - samo ako NE dolazimo iz annual plana */}
-        {!fromAnnualPlan && (
-          <>
-            <Text style={styles.sectionTitle}>Trajanje programa</Text>
-            <Text style={styles.sectionNote}>Ili definiraj na lenti vremena u sljedećem koraku</Text>
-            <View style={styles.durationRow}>
-              {[4, 8, 12, 16].map((weeks) => (
-                <TouchableOpacity
-                  key={weeks}
-                  style={[styles.durationChip, durationWeeks === weeks && styles.durationChipSelected]}
-                  onPress={() => setDurationWeeks(weeks)}
-                >
-                  <Text style={[styles.durationText, durationWeeks === weeks && styles.durationTextSelected]}>
-                    {weeks} tj.
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </>
-        )}
-
         {/* Split Selection */}
         <Text style={styles.sectionTitle}>Split tip</Text>
         {SPLITS.map((s) => (
