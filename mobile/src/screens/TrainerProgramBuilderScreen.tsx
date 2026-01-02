@@ -2322,6 +2322,15 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
 
   // STEP 7: Publish
   function renderStep7() {
+    // Izračunaj ukupne statistike za sve faze
+    const totalWeeksAllPhases = allGeneratedPrograms.length > 0 
+      ? allGeneratedPrograms.reduce((sum, p) => sum + p.duration, 0)
+      : (fullProgram?.totalWeeks || durationWeeks);
+    
+    const totalSessionsAllPhases = allGeneratedPrograms.length > 0
+      ? allGeneratedPrograms.reduce((sum, p) => sum + (p.duration * (p.program?.weeks[0]?.sessions.length || 4)), 0)
+      : ((fullProgram?.totalWeeks || durationWeeks) * (fullProgram?.weeks[0]?.sessions.length || 4));
+    
     return (
       <ScrollView style={styles.stepContent}>
         <Text style={styles.stepTitle}>Spremi i objavi</Text>
@@ -2329,9 +2338,30 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
         <View style={styles.publishCard}>
           <Text style={styles.publishTitle}>Program je spreman!</Text>
           <Text style={styles.publishDescription}>
-            Program za {selectedClient?.name} je kreiran i spreman za objavu.
+            {allGeneratedPrograms.length > 1 
+              ? `Godišnji plan za ${selectedClient?.name} sa ${allGeneratedPrograms.length} fazama je kreiran i spreman za objavu.`
+              : `Program za ${selectedClient?.name} je kreiran i spreman za objavu.`
+            }
           </Text>
         </View>
+
+        {/* Prikaz SVIH faza ako ih ima više */}
+        {allGeneratedPrograms.length > 1 && (
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>📋 Faze programa</Text>
+            {allGeneratedPrograms.map((phase, index) => (
+              <View key={index} style={styles.phaseRow}>
+                <View style={styles.phaseNumberBadge}>
+                  <Text style={styles.phaseNumberText}>{index + 1}</Text>
+                </View>
+                <View style={styles.phaseDetails}>
+                  <Text style={styles.phaseName}>{phase.phaseName}</Text>
+                  <Text style={styles.phaseDuration}>{phase.duration} tjedana</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
 
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Detalji programa</Text>
@@ -2339,13 +2369,19 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
             <Text style={styles.summaryLabel}>Klijent:</Text>
             <Text style={styles.summaryValue}>{selectedClient?.name}</Text>
           </View>
+          {allGeneratedPrograms.length <= 1 && (
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Faza:</Text>
+              <Text style={styles.summaryValue}>{fullProgram?.phaseName || GOALS.find(g => g.value === goal)?.label}</Text>
+            </View>
+          )}
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Faza:</Text>
-            <Text style={styles.summaryValue}>{fullProgram?.phaseName || GOALS.find(g => g.value === goal)?.label}</Text>
+            <Text style={styles.summaryLabel}>Ukupno trajanje:</Text>
+            <Text style={styles.summaryValue}>{totalWeeksAllPhases} tjedana</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Trajanje:</Text>
-            <Text style={styles.summaryValue}>{fullProgram?.totalWeeks || durationWeeks} tjedana</Text>
+            <Text style={styles.summaryLabel}>Broj faza:</Text>
+            <Text style={styles.summaryValue}>{allGeneratedPrograms.length > 0 ? allGeneratedPrograms.length : 1}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Treninga tjedno:</Text>
@@ -2353,7 +2389,7 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Ukupno treninga:</Text>
-            <Text style={styles.summaryValue}>{(fullProgram?.totalWeeks || durationWeeks) * (fullProgram?.weeks[0]?.sessions.length || 4)}</Text>
+            <Text style={styles.summaryValue}>{totalSessionsAllPhases}</Text>
           </View>
         </View>
 
@@ -3493,6 +3529,43 @@ const styles = StyleSheet.create({
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
   summaryLabel: { color: '#A1A1AA', fontSize: 14 },
   summaryValue: { color: '#FFF', fontSize: 14, fontWeight: '600' },
+  
+  // Phase list in Step 7
+  phaseRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+  },
+  phaseNumberBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#3B82F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  phaseNumberText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  phaseDetails: {
+    flex: 1,
+  },
+  phaseName: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  phaseDuration: {
+    color: '#71717A',
+    fontSize: 13,
+    marginTop: 2,
+  },
 
   // Gender Note
   genderNote: {
