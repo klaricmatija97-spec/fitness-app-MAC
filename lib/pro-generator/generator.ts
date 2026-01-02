@@ -628,8 +628,8 @@ function getIFTStruktura(cilj: string, fazaMezociklusa: string, razina: string):
       izbjegavajKategorije: ['stretching', 'cardio', 'plyometrics'],
       preferiraSlobodneUtege: true,
       preferirajTrenazere: false,
-      // NOVO: Specifične vježbe za jakost (prioritiziraj "big 3")
-      prioritetneVjezbe: ['barbell squat', 'deadlift', 'bench press', 'overhead press', 'barbell row'],
+      // JAKOST: Ključne riječi za "big 3" i powerlifting vježbe
+      prioritetneVjezbe: ['squat', 'deadlift', 'bench press', 'press', 'row', 'pull up', 'chin up'],
     };
   }
   
@@ -653,8 +653,8 @@ function getIFTStruktura(cilj: string, fazaMezociklusa: string, razina: string):
       izbjegavajKategorije: ['stretching'],
       preferiraSlobodneUtege: true,
       preferirajTrenazere: false,
-      // NOVO: Eksplozivne varijante
-      prioritetneVjezbe: ['power clean', 'push press', 'jump squat', 'box jump', 'hang clean', 'snatch'],
+      // SNAGA: Eksplozivne i olympic varijante
+      prioritetneVjezbe: ['clean', 'snatch', 'push press', 'jump', 'box', 'thruster', 'jerk', 'explosive'],
     };
   }
   
@@ -684,8 +684,8 @@ function getIFTStruktura(cilj: string, fazaMezociklusa: string, razina: string):
       izbjegavajKategorije: ['cardio', 'strongman'],
       preferiraSlobodneUtege: true,    // Compound sa slobodnim utezima
       preferirajTrenazere: true,       // Isolation na trenažerima (sigurnije)
-      // NOVO: Varijacije za maksimalni hipertrofijski stimulus
-      prioritetneVjezbe: ['incline bench press', 'cable fly', 'dumbbell row', 'leg curl', 'lateral raise', 'preacher curl'],
+      // HIPERTROFIJA: Mix varijacija - incline, cable, dumbbell za izolaciju
+      prioritetneVjezbe: ['incline', 'cable', 'fly', 'curl', 'extension', 'lateral', 'rear delt', 'preacher', 'concentration'],
     };
   }
   
@@ -709,8 +709,8 @@ function getIFTStruktura(cilj: string, fazaMezociklusa: string, razina: string):
       izbjegavajKategorije: ['powerlifting', 'strongman'],
       preferiraSlobodneUtege: false,
       preferirajTrenazere: true,       // Trenažeri za sigurnost kod visokih ponavljanja
-      // NOVO: Machine i cable vježbe za izdržljivost (sigurnije za visoke rep rangeove)
-      prioritetneVjezbe: ['leg press', 'cable row', 'machine chest press', 'leg extension', 'cable curl', 'machine shoulder press'],
+      // IZDRŽLJIVOST: Machine i cable - sigurnije za visoke rep rangeove
+      prioritetneVjezbe: ['machine', 'cable', 'leg press', 'extension', 'pulldown', 'seated', 'smith'],
     };
   }
   
@@ -852,10 +852,42 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
       prioritetCompound: true,
     });
     
-    // Filtriraj
+    // Filtriraj - POJAČAN FILTER PO FAZI
     const filtrirani = kandidati.filter(v => {
       if (izbjegavajVjezbe?.includes(v.id)) return false;
       if (iftStruktura.izbjegavajKategorije.includes(v.category)) return false;
+      
+      // =============================================
+      // JAKOST/SNAGA: Preferiraj slobodne utege, izbjegavaj machine
+      // =============================================
+      if ((cilj === 'jakost' || cilj === 'maksimalna_snaga' || mezociklusTip === 'jakost') && v.mechanic === 'compound') {
+        // Za compound u jakost fazi - SAMO slobodni utezi
+        const slobodniUtezi = ['sipka', 'bucice', 'girje', 'barbell', 'dumbbell', 'kettlebell'];
+        const jeSlobodniUteg = slobodniUtezi.some(u => 
+          v.oprema_hr?.toLowerCase().includes(u) || 
+          v.equipment?.toLowerCase().includes(u)
+        );
+        // Machine compound vježbe nisu dobre za jakost
+        const jeMachine = v.equipment?.toLowerCase().includes('machine') || 
+                         v.oprema_hr?.toLowerCase().includes('sprava') ||
+                         v.oprema_hr?.toLowerCase().includes('trenazer');
+        if (jeMachine && !jeSlobodniUteg) return false;
+      }
+      
+      // =============================================
+      // IZDRŽLJIVOST: Preferiraj machine/cable (sigurnije za visoke rep)
+      // =============================================
+      if ((cilj === 'izdrzljivost' || cilj === 'misicna_izdrzljivost' || mezociklusTip === 'izdrzljivost')) {
+        // Za izdržljivost - penaliziraj heavy barbell vježbe
+        const teškiBarbell = ['deadlift', 'squat', 'clean', 'snatch'];
+        const jeTeškiBarbell = teškiBarbell.some(t => v.name.toLowerCase().includes(t));
+        // Ne izbacuj potpuno, ali preferiraj machine verzije
+        if (jeTeškiBarbell && v.mechanic === 'compound') {
+          // Provjeri ima li 'machine' ili 'leg press' alternativu
+          // Za sada samo logiraj, ne filtriraj
+        }
+      }
+      
       return true;
     });
     
@@ -910,7 +942,7 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
         opremaBonusB = ['trenazer', 'kabel', 'masina'].some(op => b.oprema_hr?.includes(op)) ? 15 : 0;
       }
       
-      // 6. BONUS: Prioritetne vježbe za trenutnu fazu (NOVO - najjači prioritet)
+      // 6. BONUS: Prioritetne vježbe za trenutnu fazu (POJAČAN - najjači prioritet)
       let prioritetnaVjezbaBonusA = 0;
       let prioritetnaVjezbaBonusB = 0;
       if (iftStruktura.prioritetneVjezbe && iftStruktura.prioritetneVjezbe.length > 0) {
@@ -921,8 +953,46 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
         const jePrioritetnaB = iftStruktura.prioritetneVjezbe.some(pv => 
           b.name.toLowerCase().includes(pv.toLowerCase())
         );
-        prioritetnaVjezbaBonusA = jePrioritetnaA ? 40 : 0; // Visok bonus za prioritetne vježbe
-        prioritetnaVjezbaBonusB = jePrioritetnaB ? 40 : 0;
+        prioritetnaVjezbaBonusA = jePrioritetnaA ? 60 : 0; // POJAČAN bonus
+        prioritetnaVjezbaBonusB = jePrioritetnaB ? 60 : 0;
+      }
+      
+      // 6b. BONUS: Oprema ovisno o fazi (NOVO - jako razlikovanje)
+      let opremaPoBonusA = 0;
+      let opremaPoBonusB = 0;
+      
+      // JAKOST: Barbell > Dumbbell > Machine
+      if (cilj === 'jakost' || cilj === 'maksimalna_snaga' || mezociklusTip === 'jakost') {
+        if (a.equipment?.toLowerCase().includes('barbell') || a.oprema_hr?.includes('sipka')) opremaPoBonusA = 50;
+        else if (a.equipment?.toLowerCase().includes('dumbbell') || a.oprema_hr?.includes('bucice')) opremaPoBonusA = 30;
+        else if (a.equipment?.toLowerCase().includes('machine')) opremaPoBonusA = -20;
+        
+        if (b.equipment?.toLowerCase().includes('barbell') || b.oprema_hr?.includes('sipka')) opremaPoBonusB = 50;
+        else if (b.equipment?.toLowerCase().includes('dumbbell') || b.oprema_hr?.includes('bucice')) opremaPoBonusB = 30;
+        else if (b.equipment?.toLowerCase().includes('machine')) opremaPoBonusB = -20;
+      }
+      
+      // IZDRŽLJIVOST: Machine > Cable > Free weights
+      if (cilj === 'izdrzljivost' || cilj === 'misicna_izdrzljivost' || mezociklusTip === 'izdrzljivost') {
+        if (a.equipment?.toLowerCase().includes('machine') || a.oprema_hr?.includes('sprava')) opremaPoBonusA = 50;
+        else if (a.equipment?.toLowerCase().includes('cable') || a.oprema_hr?.includes('kabel')) opremaPoBonusA = 40;
+        else if (a.equipment?.toLowerCase().includes('barbell')) opremaPoBonusA = -10;
+        
+        if (b.equipment?.toLowerCase().includes('machine') || b.oprema_hr?.includes('sprava')) opremaPoBonusB = 50;
+        else if (b.equipment?.toLowerCase().includes('cable') || b.oprema_hr?.includes('kabel')) opremaPoBonusB = 40;
+        else if (b.equipment?.toLowerCase().includes('barbell')) opremaPoBonusB = -10;
+      }
+      
+      // HIPERTROFIJA: Mix - dumbbell i cable su odlični za izolaciju
+      if (cilj === 'hipertrofija' || mezociklusTip === 'hipertrofija' || mezociklusTip === 'akumulacija') {
+        if (a.mechanic === 'isolation') {
+          if (a.equipment?.toLowerCase().includes('cable') || a.oprema_hr?.includes('kabel')) opremaPoBonusA = 30;
+          else if (a.equipment?.toLowerCase().includes('dumbbell')) opremaPoBonusA = 25;
+        }
+        if (b.mechanic === 'isolation') {
+          if (b.equipment?.toLowerCase().includes('cable') || b.oprema_hr?.includes('kabel')) opremaPoBonusB = 30;
+          else if (b.equipment?.toLowerCase().includes('dumbbell')) opremaPoBonusB = 25;
+        }
       }
       
       // 7. BONUS: Powerlifting vježbe za jakost (dodatni prioritet)
@@ -943,8 +1013,8 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
         powerliftingBonusB = jePowerliftingB ? 20 : 0;
       }
       
-      const scoreA = koristenaA + frekvencijaA + obrazacPrioritetA + kategorijaBonusA + opremaBonusA + powerliftingBonusA + prioritetnaVjezbaBonusA;
-      const scoreB = koristenaB + frekvencijaB + obrazacPrioritetB + kategorijaBonusB + opremaBonusB + powerliftingBonusB + prioritetnaVjezbaBonusB;
+      const scoreA = koristenaA + frekvencijaA + obrazacPrioritetA + kategorijaBonusA + opremaBonusA + powerliftingBonusA + prioritetnaVjezbaBonusA + opremaPoBonusA;
+      const scoreB = koristenaB + frekvencijaB + obrazacPrioritetB + kategorijaBonusB + opremaBonusB + powerliftingBonusB + prioritetnaVjezbaBonusB + opremaPoBonusB;
       
       return scoreB - scoreA;
     });
