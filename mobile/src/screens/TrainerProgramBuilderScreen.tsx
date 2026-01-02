@@ -235,10 +235,11 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
   };
 
   // Determine initial step based on whether we have phaseData
+  // UVIJEK prikazuj lentu vremena (Step 3) ako imamo klijenta
   const getInitialStep = (): Step => {
-    if (phaseData) return 2; // Skip to settings, step 3 is not needed
-    if (clientId) return 2;
-    return 1;
+    if (phaseData) return 3; // Idi direktno na lentu vremena
+    if (clientId) return 3;  // Idi direktno na lentu vremena
+    return 1; // Odabir klijenta
   };
 
   // Navigation
@@ -691,10 +692,10 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
 
         <TouchableOpacity
           style={[styles.primaryButton, !selectedClient && styles.buttonDisabled]}
-          onPress={() => selectedClient && setStep(2)}
+          onPress={() => selectedClient && setStep(3)}
           disabled={!selectedClient}
         >
-          <Text style={styles.primaryButtonText}>Nastavi →</Text>
+          <Text style={styles.primaryButtonText}>Nastavi na lentu vremena →</Text>
         </TouchableOpacity>
       </ScrollView>
     );
@@ -828,34 +829,10 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
         </View>
 
         <View style={styles.buttonRow}>
-          {fromAnnualPlan ? (
-            // Ako dolazimo iz godišnjeg plana, omogući povratak na lenti vremena
-            <>
-              <TouchableOpacity style={styles.secondaryButton} onPress={() => {
-                // Vrati na lenti vremena (Step 3)
-                setStep(3);
-              }}>
-                <Text style={styles.secondaryButtonText}>Natrag na lenti vremena</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.primaryButton} onPress={() => {
-                // Skip step 3, go directly to generate
-                initializeMesocyclesFromPhase();
-                setStep(4);
-              }}>
-                <Text style={styles.primaryButtonText}>Generiraj</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            // Normalni flow
-            <>
-              <TouchableOpacity style={styles.secondaryButton} onPress={() => setStep(1)}>
-                <Text style={styles.secondaryButtonText}>Natrag</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.primaryButton} onPress={() => setStep(3)}>
-                <Text style={styles.primaryButtonText}>Nastavi</Text>
-              </TouchableOpacity>
-            </>
-          )}
+          {/* Uvijek isti flow - vrati se na lentu vremena */}
+          <TouchableOpacity style={styles.primaryButton} onPress={() => setStep(3)}>
+            <Text style={styles.primaryButtonText}>← Natrag na lentu vremena</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     );
@@ -1203,8 +1180,11 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
 
         {/* Buttons */}
         <View style={styles.annualButtons}>
+          <TouchableOpacity style={styles.secondaryButton} onPress={() => setStep(1)}>
+            <Text style={styles.secondaryButtonText}>← Klijent</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.secondaryButton} onPress={() => setStep(2)}>
-            <Text style={styles.secondaryButtonText}>Natrag</Text>
+            <Text style={styles.secondaryButtonText}>⚙️ Postavke</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.primaryButton, annualPhases.length === 0 && styles.buttonDisabled]} 
