@@ -18,27 +18,22 @@ const getApiBaseUrl = () => {
     : true) as boolean;
   
   if (isDev) {
-    // Development - koristi LAN IP za pristup s mobilnog uređaja
-    // Za iOS Simulator ili Android Emulator, koristi localhost
-    // Za fizički uređaj, koristi LAN IP računala
+    // Development - UVIJEK koristi LAN IP za iOS (radi i na simulatoru i na fizičkom uređaju)
+    // Simulator može dosegnuti LAN IP bez problema
     
-    // Provjeri da li je simulator/emulator
-    const isSimulator = Platform.OS === 'ios' || Platform.OS === 'android';
+    // Tvoj LAN IP - AŽURIRAJ OVO AKO SE PROMIJENI!
+    const LAN_IP = '192.168.1.11';
     
-    // Za simulator/emulator koristi localhost (10.0.2.2 za Android emulator)
     if (Platform.OS === 'android') {
       // Android emulator koristi 10.0.2.2 za localhost računala
-      return 'http://10.0.2.2:3000';
-    } else if (Platform.OS === 'ios') {
-      // iOS simulator koristi localhost
-      return 'http://localhost:3000';
+      // Ali LAN IP također radi pa koristimo njega za konzistentnost
+      return `http://${LAN_IP}:3000`;
     }
     
-    // Za fizički uređaj, koristi LAN IP
-    // Zamijeni sa svojom LAN IP adresom ako je drugačija
-    const LAN_IP = '192.168.1.11'; // TODO: Automatski detektiraj ili postavi ručno
+    // iOS (simulator ili fizički uređaj) - uvijek koristi LAN IP
     return `http://${LAN_IP}:3000`;
   }
+  
   // Production - TODO: Postavi pravi URL
   // In Expo, environment variables prefixed with EXPO_PUBLIC_ are available at build time
   const apiUrl = typeof process !== 'undefined' && (process as any).env?.EXPO_PUBLIC_API_URL 
