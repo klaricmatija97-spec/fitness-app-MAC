@@ -246,11 +246,11 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
   };
 
   // Determine initial step based on whether we have phaseData
-  // UVIJEK prikazuj lentu vremena (Step 3) ako imamo klijenta
   const getInitialStep = (): Step => {
-    if (phaseData) return 3; // Idi direktno na lentu vremena
-    if (clientId) return 3;  // Idi direktno na lentu vremena
-    return 1; // Odabir klijenta
+    if (viewProgramId) return 5; // View mode - direktno na pregled
+    if (phaseData) return 3; // Iz godišnjeg plana s fazom - idi na lentu
+    if (clientId) return 2;  // Ima klijenta - idi na postavke (split, cilj, razina)
+    return 1; // Nema klijenta - odabir klijenta
   };
 
   // Navigation
