@@ -1221,21 +1221,24 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                   
                   // Generiraj sve faze i poveži ih
                   let previousProgramId: string | null = null;
-                  const generatedPrograms: Array<{ phaseType: string; programId: string; duration: number }> = [];
+                  const generatedPrograms: Array<{ phaseType: string; programId: string; duration: number; phaseName: string }> = [];
+                  const skippedPhases: Array<{ phaseType: string; reason: string; phaseName: string }> = [];
+                  const failedPhases: Array<{ phaseType: string; error: string; phaseName: string }> = [];
                   
                   for (let i = 0; i < sortedPhases.length; i++) {
                     const phase = sortedPhases[i];
                     const phaseDuration = phase.endWeek - phase.startWeek + 1;
                     const phaseTypeInfo = MESOCYCLE_TYPES.find(m => m.value === phase.type);
                     
-                    // Provjeri validaciju trajanja (API zahtijeva 4-12 tjedana)
-                    if (phaseDuration < 4 || phaseDuration > 12) {
-                      console.warn(`⚠️ [Step3] Phase ${i + 1} skipped: duration ${phaseDuration} is outside valid range (4-12 weeks)`);
-                      Alert.alert(
-                        'Upozorenje',
-                        `Faza ${i + 1} (${phaseTypeInfo?.label || phase.type}) ima ${phaseDuration} tjedana. API zahtijeva 4-12 tjedana. Preskačem ovu fazu.`,
-                        [{ text: 'OK' }]
-                      );
+                    // Provjeri validaciju trajanja (API sada podržava 1-16 tjedana)
+                    if (phaseDuration < 1 || phaseDuration > 16) {
+                      const reason = `Trajanje ${phaseDuration} tjedana je izvan raspona (1-16)`;
+                      skippedPhases.push({
+                        phaseType: phase.type,
+                        reason,
+                        phaseName: phaseTypeInfo?.label || phase.type,
+                      });
+                      console.warn(`⚠️ [Step3] Phase ${i + 1} skipped: ${reason}`);
                       continue;
                     }
                     
@@ -1301,10 +1304,16 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                           phaseType: phase.type,
                           programId: result.data.programId,
                           duration: phaseDuration,
+                          phaseName: phaseTypeInfo?.label || phase.type,
                         });
                         console.log(`✅ [Step3] Phase ${i + 1} generated:`, result.data.programId);
                       } else {
                         const errorMsg = result.error || result.message || 'Unknown error';
+                        failedPhases.push({
+                          phaseType: phase.type,
+                          error: errorMsg,
+                          phaseName: phaseTypeInfo?.label || phase.type,
+                        });
                         console.error(`❌ [Step3] Phase ${i + 1} generation failed:`, errorMsg, result);
                       }
                     } else {
@@ -1313,18 +1322,54 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                       try {
                         const errorData = await response.json();
                         errorDetails = errorData.error || errorData.detalji || JSON.stringify(errorData);
+                        failedPhases.push({
+                          phaseType: phase.type,
+                          error: typeof errorDetails === 'string' ? errorDetails : JSON.stringify(errorDetails),
+                          phaseName: phaseTypeInfo?.label || phase.type,
+                        });
                         console.error(`❌ [Step3] Failed to generate phase ${i + 1}:`, errorDetails);
                       } catch (e) {
+                        failedPhases.push({
+                          phaseType: phase.type,
+                          error: `${response.status} ${response.statusText}`,
+                          phaseName: phaseTypeInfo?.label || phase.type,
+                        });
                         console.error(`❌ [Step3] Failed to generate phase ${i + 1}:`, response.status, response.statusText);
                       }
                     }
                   }
                   
-                  console.log('🎯 [Step3] All phases generated:', generatedPrograms);
+                  console.log('🎯 [Step3] Generation complete:', {
+                    generated: generatedPrograms.length,
+                    skipped: skippedPhases.length,
+                    failed: failedPhases.length,
+                  });
                   
-                  // Prikaži prvu fazu za pregled
+                  // Prikaži rezultate generiranja
+                  let resultMessage = '';
                   if (generatedPrograms.length > 0) {
-                    const firstPhase = sortedPhases[0];
+                    resultMessage += `✅ Uspješno generirano: ${generatedPrograms.length} faza\n`;
+                    generatedPrograms.forEach((p, idx) => {
+                      resultMessage += `  ${idx + 1}. ${p.phaseName} (${p.duration} tj.)\n`;
+                    });
+                  }
+                  if (skippedPhases.length > 0) {
+                    resultMessage += `\n⚠️ Preskočeno: ${skippedPhases.length} faza\n`;
+                    skippedPhases.forEach((p, idx) => {
+                      resultMessage += `  ${idx + 1}. ${p.phaseName}: ${p.reason}\n`;
+                    });
+                  }
+                  if (failedPhases.length > 0) {
+                    resultMessage += `\n❌ Neuspješno: ${failedPhases.length} faza\n`;
+                    failedPhases.forEach((p, idx) => {
+                      resultMessage += `  ${idx + 1}. ${p.phaseName}: ${p.error}\n`;
+                    });
+                  }
+                  
+                  // Prikaži prvu fazu za pregled ako je bilo uspješnih
+                  if (generatedPrograms.length > 0) {
+                    const firstGeneratedPhase = generatedPrograms[0];
+                    const firstPhase = sortedPhases.find(p => p.type === firstGeneratedPhase.phaseType) || sortedPhases[0];
                     const phaseDuration = firstPhase.endWeek - firstPhase.startWeek + 1;
                     const phaseTypeInfo = MESOCYCLE_TYPES.find(m => m.value === firstPhase.type);
                     
@@ -1347,8 +1392,15 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                     setStep(5); // Idi direktno na pregled
                     
                     Alert.alert(
-                      'Programi generirani',
-                      `Uspješno generirano ${generatedPrograms.length} faza. Faze su povezane - klijent će moći prijeći na sljedeću fazu nakon završetka trenutne.`,
+                      'Rezultati generiranja',
+                      resultMessage || 'Nema rezultata',
+                      [{ text: 'OK' }]
+                    );
+                  } else {
+                    // Nema uspješno generiranih faza
+                    Alert.alert(
+                      'Greška',
+                      resultMessage || 'Nijedna faza nije uspješno generirana. Provjeri postavke i pokušaj ponovno.',
                       [{ text: 'OK' }]
                     );
                   }

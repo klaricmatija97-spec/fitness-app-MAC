@@ -35,7 +35,7 @@ const GeneratorInputSchema = z.object({
     message: 'razina mora biti: pocetnik, srednji ili napredni',
   }),
   treninziTjedno: z.number().int().min(2, { message: 'treninziTjedno mora biti najmanje 2' }).max(6, { message: 'treninziTjedno mora biti najviše 6' }),
-  trajanjeTjedana: z.number().int().min(4, { message: 'trajanjeTjedana mora biti najmanje 4' }).max(12, { message: 'trajanjeTjedana mora biti najviše 12' }),
+  trajanjeTjedana: z.number().int().min(1, { message: 'trajanjeTjedana mora biti najmanje 1' }).max(16, { message: 'trajanjeTjedana mora biti najviše 16' }),
   
   // Opcionalni parametri
   trenerId: z.string().uuid().optional(),
