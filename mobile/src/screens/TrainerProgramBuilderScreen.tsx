@@ -290,6 +290,16 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
   // Step 4-5: Generated Plan - ALL WEEKS
   const [fullProgram, setFullProgram] = useState<FullProgram | null>(null);
   const [currentWeekIndex, setCurrentWeekIndex] = useState(0); // Index u fullProgram.weeks
+  
+  // Multi-phase support - sve generirane faze
+  const [allGeneratedPrograms, setAllGeneratedPrograms] = useState<Array<{
+    phaseType: string;
+    phaseName: string;
+    programId: string;
+    duration: number;
+    program: FullProgram;
+  }>>([]);
+  const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0); // Trenutna faza
 
   // Step 6: Exercise Replacement
   const [showReplaceModal, setShowReplaceModal] = useState(false);
@@ -1401,34 +1411,42 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                     });
                   }
                   
-                  // Prikaži prvu fazu za pregled ako je bilo uspješnih
+                  // Prikaži sve faze za pregled ako je bilo uspješnih
                   if (generatedPrograms.length > 0) {
-                    const firstGeneratedPhase = generatedPrograms[0];
-                    const firstPhase = sortedPhases.find(p => p.type === firstGeneratedPhase.phaseType) || sortedPhases[0];
-                    const phaseDuration = firstPhase.endWeek - firstPhase.startWeek + 1;
-                    const phaseTypeInfo = MESOCYCLE_TYPES.find(m => m.value === firstPhase.type);
+                    // Kreiraj programe za sve generirane faze
+                    const allPrograms = generatedPrograms.map((gp, idx) => {
+                      const phase = sortedPhases.find(p => p.type === gp.phaseType) || sortedPhases[idx];
+                      const phaseDuration = phase ? (phase.endWeek - phase.startWeek + 1) : gp.duration;
+                      const phaseTypeInfo = MESOCYCLE_TYPES.find(m => m.value === gp.phaseType);
+                      const programPhaseType = gp.phaseType as MesocycleType;
+                      
+                      return {
+                        phaseType: gp.phaseType,
+                        phaseName: gp.phaseName,
+                        programId: gp.programId,
+                        duration: phaseDuration,
+                        program: generateMockFullProgram(
+                          programPhaseType,
+                          phaseTypeInfo?.label || gp.phaseName,
+                          phaseDuration
+                        ),
+                      };
+                    });
                     
-                    setDurationWeeks(phaseDuration);
-                    setGoal(firstPhase.type === 'hipertrofija' ? 'hipertrofija' :
-                           firstPhase.type === 'jakost' ? 'jakost' :
-                           firstPhase.type === 'snaga' ? 'snaga' :
-                           firstPhase.type === 'izdrzljivost' ? 'izdrzljivost' :
-                           'hipertrofija');
+                    // Spremi sve programe
+                    setAllGeneratedPrograms(allPrograms);
+                    setCurrentPhaseIndex(0);
                     
-                    const programPhaseType = firstPhase.type as MesocycleType;
-                    const program = generateMockFullProgram(
-                      programPhaseType,
-                      phaseTypeInfo?.label || firstPhase.type,
-                      phaseDuration
-                    );
-                    
-                    setFullProgram(program);
+                    // Postavi prvu fazu kao aktivnu
+                    const firstProgram = allPrograms[0];
+                    setFullProgram(firstProgram.program);
+                    setDurationWeeks(firstProgram.duration);
                     setCurrentWeekIndex(0);
                     setStep(5); // Idi direktno na pregled
                     
                     Alert.alert(
                       'Rezultati generiranja',
-                      resultMessage || 'Nema rezultata',
+                      resultMessage + `\n\n💡 Koristi strelice < > za navigaciju između faza i tjedana.`,
                       [{ text: 'OK' }]
                     );
                   } else {
@@ -1963,12 +1981,36 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
           <Text style={styles.programSubtitle}>{fullProgram.totalWeeks} tjedana</Text>
         </View>
 
+        {/* Phase indicator - ako ima više faza */}
+        {allGeneratedPrograms.length > 1 && (
+          <View style={styles.phaseIndicator}>
+            <Text style={styles.phaseIndicatorText}>
+              Faza {currentPhaseIndex + 1} / {allGeneratedPrograms.length}: {allGeneratedPrograms[currentPhaseIndex]?.phaseName}
+            </Text>
+          </View>
+        )}
+
         {/* Week Navigation */}
         <View style={styles.weekNavigation}>
           <TouchableOpacity 
-            style={[styles.weekNavBtn, currentWeekIndex === 0 && styles.weekNavBtnDisabled]}
-            onPress={() => currentWeekIndex > 0 && setCurrentWeekIndex(currentWeekIndex - 1)}
-            disabled={currentWeekIndex === 0}
+            style={[
+              styles.weekNavBtn, 
+              currentWeekIndex === 0 && currentPhaseIndex === 0 && styles.weekNavBtnDisabled
+            ]}
+            onPress={() => {
+              if (currentWeekIndex > 0) {
+                // Idi na prethodni tjedan u istoj fazi
+                setCurrentWeekIndex(currentWeekIndex - 1);
+              } else if (currentPhaseIndex > 0) {
+                // Idi na zadnji tjedan prethodne faze
+                const prevPhase = allGeneratedPrograms[currentPhaseIndex - 1];
+                setCurrentPhaseIndex(currentPhaseIndex - 1);
+                setFullProgram(prevPhase.program);
+                setDurationWeeks(prevPhase.duration);
+                setCurrentWeekIndex(prevPhase.program.weeks.length - 1);
+              }
+            }}
+            disabled={currentWeekIndex === 0 && currentPhaseIndex === 0}
           >
             <Text style={styles.weekNavBtnText}>{'<'}</Text>
           </TouchableOpacity>
@@ -1996,9 +2038,24 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
           </ScrollView>
           
           <TouchableOpacity 
-            style={[styles.weekNavBtn, currentWeekIndex === fullProgram.weeks.length - 1 && styles.weekNavBtnDisabled]}
-            onPress={() => currentWeekIndex < fullProgram.weeks.length - 1 && setCurrentWeekIndex(currentWeekIndex + 1)}
-            disabled={currentWeekIndex === fullProgram.weeks.length - 1}
+            style={[
+              styles.weekNavBtn, 
+              currentWeekIndex === fullProgram.weeks.length - 1 && currentPhaseIndex === allGeneratedPrograms.length - 1 && styles.weekNavBtnDisabled
+            ]}
+            onPress={() => {
+              if (currentWeekIndex < fullProgram.weeks.length - 1) {
+                // Idi na sljedeći tjedan u istoj fazi
+                setCurrentWeekIndex(currentWeekIndex + 1);
+              } else if (currentPhaseIndex < allGeneratedPrograms.length - 1) {
+                // Idi na prvi tjedan sljedeće faze
+                const nextPhase = allGeneratedPrograms[currentPhaseIndex + 1];
+                setCurrentPhaseIndex(currentPhaseIndex + 1);
+                setFullProgram(nextPhase.program);
+                setDurationWeeks(nextPhase.duration);
+                setCurrentWeekIndex(0);
+              }
+            }}
+            disabled={currentWeekIndex === fullProgram.weeks.length - 1 && currentPhaseIndex === allGeneratedPrograms.length - 1}
           >
             <Text style={styles.weekNavBtnText}>{'>'}</Text>
           </TouchableOpacity>
@@ -3399,6 +3456,21 @@ const styles = StyleSheet.create({
     color: '#71717A',
     fontSize: 14,
     marginTop: 2,
+  },
+
+  // Phase Indicator (multi-phase navigation)
+  phaseIndicator: {
+    backgroundColor: '#3B82F6',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  phaseIndicatorText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
 
   // Week Navigation
