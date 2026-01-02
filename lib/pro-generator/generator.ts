@@ -25,6 +25,8 @@ import type {
   TipMezociklusa,
   ValidacijaRezultat,
   VjezbaProširena,
+  VolumenTracking,
+  ProgresijaTjedna,
 } from './types';
 import {
   GENERATOR_VERSION,
@@ -33,6 +35,7 @@ import {
   SPLIT_KONFIGURACIJE,
   MEV_PO_GRUPI,
   MAV_PO_GRUPI,
+  MRV_PO_GRUPI,
   ZAGRIJAVANJE_SABLONE,
   MEZOCIKLUS_TIPOVI,
   PROGRESIJA_MODELI,
@@ -311,26 +314,38 @@ interface BuildWeeksInput extends BuildMesocyclesInput {
 }
 
 async function buildWeeks(input: BuildWeeksInput): Promise<Tjedan[]> {
-  const { brojTjedana, mezociklusTip, pocetniVolumen, zavrsniVolumen } = input;
+  const { brojTjedana, mezociklusTip, pocetniVolumen, zavrsniVolumen, razina } = input;
   const tjedni: Tjedan[] = [];
   
-  // Odredi je li zadnji tjedan deload (ako nije već deload mezociklus)
-  const zadnjiJeDeload = mezociklusTip !== 'deload' && brojTjedana >= 4;
+  // Odredi tip progresije ovisno o cilju i trajanju
+  // Kraći programi (4 tjedna) koriste linearnu, duži valnatu
+  const tipProgresije = brojTjedana >= 6 ? 'valna' : 'linearna';
+  
+  log('info', `Koristi se ${tipProgresije} progresija za ${brojTjedana} tjedana`);
   
   for (let i = 1; i <= brojTjedana; i++) {
-    const jeDeload = zadnjiJeDeload && i === brojTjedana;
+    // Koristi IFT valovitu progresiju
+    const progresija = izracunajValnuProgresiju(i, brojTjedana, tipProgresije);
+    const jeDeload = progresija.tipProgresije === 'deload';
     
-    // Izračunaj modifikatore za ovaj tjedan (linearna progresija)
-    const progresija = (i - 1) / Math.max(1, brojTjedana - 1);
-    const volumenMod = jeDeload ? 0.6 : 1.0 + (progresija * 0.1);
-    const intenzitetMod = jeDeload ? 0.7 : 1.0 + (progresija * 0.05);
+    const volumenMod = progresija.volumenMultiplikator;
+    const intenzitetMod = progresija.intenzitetMultiplikator;
     
-    // Interpoliraj volumen za ovaj tjedan
+    // Interpoliraj bazni volumen za ovaj tjedan, pa primijeni modifikator
+    const baznaProgresija = (i - 1) / Math.max(1, brojTjedana - 1);
     const volumenOvogTjedna: Record<string, number> = {};
+    
     for (const grupa of Object.keys(pocetniVolumen)) {
       const pocetni = pocetniVolumen[grupa];
       const zavrsni = zavrsniVolumen[grupa];
-      volumenOvogTjedna[grupa] = Math.round(pocetni + (zavrsni - pocetni) * progresija);
+      // Bazni volumen (linearna interpolacija) * valoviti modifikator
+      const bazniVolumen = pocetni + (zavrsni - pocetni) * baznaProgresija;
+      const volumenSModifikatorom = Math.round(bazniVolumen * volumenMod);
+      
+      // MEV/MRV validacija
+      const mev = MEV_PO_GRUPI[grupa] || 4;
+      const mrv = MRV_PO_GRUPI[grupa] || 20;
+      volumenOvogTjedna[grupa] = validacijaVolumenaMEVMRV(volumenSModifikatorom, mev, mrv, grupa);
     }
     
     // Kreiraj treninge za ovaj tjedan
@@ -343,6 +358,9 @@ async function buildWeeks(input: BuildWeeksInput): Promise<Tjedan[]> {
       intenzitetModifikator: intenzitetMod,
     });
     
+    // Izračunaj stvarni volumen tracking nakon što su treninzi generirani
+    const volumenTracking = izracunajUkupniVolumenTjedna(treninzi, razina);
+    
     const tjedan: Tjedan = {
       id: uuidv4(),
       mezociklusId: '', // Popunit će se kasnije
@@ -350,14 +368,22 @@ async function buildWeeks(input: BuildWeeksInput): Promise<Tjedan[]> {
       jeDeload,
       volumenModifikator: Math.round(volumenMod * 100) / 100,
       intenzitetModifikator: Math.round(intenzitetMod * 100) / 100,
-      napomene: jeDeload ? 'Deload tjedan - smanjen volumen i intenzitet za oporavak' : undefined,
+      napomene: progresija.opisFaze,
+      // NOVO: Tracking volumena po grupi
+      volumenPoGrupi: volumenTracking,
+      progresija,
       treninzi,
     };
     
     tjedni.push(tjedan);
+    
+    // Log volume tracking
+    const optimalniCount = volumenTracking.filter(v => v.status === 'optimalno').length;
+    const ukupniGrupe = volumenTracking.length;
+    log('debug', `Tjedan ${i}: ${optimalniCount}/${ukupniGrupe} grupa u optimalnom volumenu, mod: ${volumenMod.toFixed(2)}`);
   }
   
-  log('debug', `Kreirano ${tjedni.length} tjedana za mezociklus`);
+  log('debug', `Kreirano ${tjedni.length} tjedana za mezociklus s ${tipProgresije} progresijom`);
   return tjedni;
 }
 
@@ -1115,24 +1141,251 @@ function izracunajVolumenPoGrupi(
   razina: string, 
   tipMezociklusa: string
 ): { pocetni: Record<string, number>; zavrsni: Record<string, number> } {
-  const ciljParam = CILJ_PARAMETRI[cilj as keyof typeof CILJ_PARAMETRI];
   const mezociklusConfig = MEZOCIKLUS_TIPOVI.find(m => m.tip === tipMezociklusa)!;
   
   const pocetni: Record<string, number> = {};
   const zavrsni: Record<string, number> = {};
   
   for (const [grupa, mav] of Object.entries(MAV_PO_GRUPI)) {
+    const mev = MEV_PO_GRUPI[grupa] || 4;
+    const mrv = MRV_PO_GRUPI[grupa] || 20;
+    
     // Prilagodi volumen ovisno o razini
     const razinaMultiplier = razina === 'pocetnik' ? 0.7 : razina === 'srednji' ? 0.85 : 1.0;
     
     // Pocetni volumen = donja granica MAV * modifikator mezociklusa
-    pocetni[grupa] = Math.round(mav.min * razinaMultiplier * mezociklusConfig.volumenModifikator);
+    let pocetniRaw = Math.round(mav.min * razinaMultiplier * mezociklusConfig.volumenModifikator);
     
-    // Zavrsni volumen = gornja granica MAV * modifikator mezociklusa (s progresijom)
-    zavrsni[grupa] = Math.round(mav.max * razinaMultiplier * mezociklusConfig.volumenModifikator * 0.9);
+    // Zavrsni volumen = gornja granica MAV * modifikator mezociklusa
+    let zavrsniRaw = Math.round(mav.max * razinaMultiplier * mezociklusConfig.volumenModifikator * 0.9);
+    
+    // MEV/MRV validacija - osiguraj da je volumen u sigurnim granicama
+    pocetni[grupa] = validacijaVolumenaMEVMRV(pocetniRaw, mev, mrv, grupa);
+    zavrsni[grupa] = validacijaVolumenaMEVMRV(zavrsniRaw, mev, mrv, grupa);
   }
   
   return { pocetni, zavrsni };
+}
+
+// ============================================
+// MEV/MRV VALIDACIJA - IFT Metodika
+// ============================================
+
+/**
+ * Validira volumen i osigurava da ostane unutar MEV-MRV granica
+ * MEV = Minimalni Efektivni Volumen (ispod ovoga nema napretka)
+ * MRV = Maksimalni Oporavivi Volumen (iznad ovoga prevelik umor)
+ */
+function validacijaVolumenaMEVMRV(
+  volumen: number,
+  mev: number,
+  mrv: number,
+  grupa: string
+): number {
+  if (volumen < mev) {
+    log('warn', `Volumen za ${grupa} (${volumen}) ispod MEV (${mev}), povećano na MEV`);
+    return mev;
+  }
+  if (volumen > mrv) {
+    log('warn', `Volumen za ${grupa} (${volumen}) iznad MRV (${mrv}), smanjeno na MRV`);
+    return mrv;
+  }
+  return volumen;
+}
+
+/**
+ * Kreira VolumenTracking objekt za praćenje volumena po mišićnoj grupi
+ */
+function kreirajVolumenTracking(
+  grupa: string,
+  planirano: number,
+  razina: string
+): VolumenTracking {
+  const mev = MEV_PO_GRUPI[grupa] || 4;
+  const mav = MAV_PO_GRUPI[grupa] || { min: 8, max: 14 };
+  const mrv = MRV_PO_GRUPI[grupa] || 20;
+  
+  // Prilagodi za razinu
+  const razinaMultiplier = razina === 'pocetnik' ? 0.7 : razina === 'srednji' ? 0.85 : 1.0;
+  const adjustedMev = Math.round(mev * razinaMultiplier);
+  const adjustedMavMin = Math.round(mav.min * razinaMultiplier);
+  const adjustedMavMax = Math.round(mav.max * razinaMultiplier);
+  const adjustedMrv = Math.round(mrv * razinaMultiplier);
+  
+  // Odredi status
+  let status: VolumenTracking['status'];
+  if (planirano < adjustedMev) {
+    status = 'ispod_mev';
+  } else if (planirano <= adjustedMavMin) {
+    status = 'u_mev';
+  } else if (planirano <= adjustedMavMax) {
+    status = 'optimalno';
+  } else if (planirano <= adjustedMrv) {
+    status = 'blizu_mrv';
+  } else {
+    status = 'preko_mrv';
+  }
+  
+  return {
+    misicnaGrupa: grupa,
+    planirano,
+    ostvareno: 0, // Popunjava se nakon treninga
+    mev: adjustedMev,
+    mavMin: adjustedMavMin,
+    mavMax: adjustedMavMax,
+    mrv: adjustedMrv,
+    status,
+  };
+}
+
+// ============================================
+// VALOVITA PROGRESIJA - IFT Metodika
+// ============================================
+
+/**
+ * IFT Valovita progresija (Wave Loading)
+ * Umjesto konstantnog porasta, oscilira volumen i intenzitet:
+ * - Tjedan 1: Bazni (1.0)
+ * - Tjedan 2: Povećan (1.05-1.10)
+ * - Tjedan 3: Smanjen (0.90-0.95) - mini-deload
+ * - Tjedan 4: Peak (1.10-1.15)
+ * - Tjedan 5+: Deload (0.60)
+ */
+function izracunajValnuProgresiju(
+  tjedanBroj: number,
+  ukupnoTjedana: number,
+  tipProgresije: 'linearna' | 'valna' = 'valna'
+): ProgresijaTjedna {
+  const jeZadnjiTjedan = tjedanBroj === ukupnoTjedana && ukupnoTjedana >= 4;
+  const jeDeload = jeZadnjiTjedan;
+  
+  if (jeDeload) {
+    return {
+      tjedanBroj,
+      tipProgresije: 'deload',
+      volumenMultiplikator: 0.60,
+      intenzitetMultiplikator: 0.70,
+      opisFaze: 'Deload - oporavak',
+    };
+  }
+  
+  if (tipProgresije === 'linearna') {
+    // Linearna progresija (originalna logika)
+    const progresija = (tjedanBroj - 1) / Math.max(1, ukupnoTjedana - 1);
+    return {
+      tjedanBroj,
+      tipProgresije: 'linearna',
+      volumenMultiplikator: 1.0 + (progresija * 0.10),
+      intenzitetMultiplikator: 1.0 + (progresija * 0.05),
+      opisFaze: `Tjedan ${tjedanBroj} - progresija`,
+    };
+  }
+  
+  // VALOVITA PROGRESIJA (IFT preporučena)
+  // Koristi 4-tjedni val pattern koji se ponavlja
+  const pozicijaUValu = ((tjedanBroj - 1) % 4) + 1;
+  
+  switch (pozicijaUValu) {
+    case 1: // Bazni tjedan
+      return {
+        tjedanBroj,
+        tipProgresije: 'valna',
+        volumenMultiplikator: 1.00,
+        intenzitetMultiplikator: 1.00,
+        opisFaze: 'Akumulacija - bazni volumen',
+      };
+    case 2: // Povećan
+      return {
+        tjedanBroj,
+        tipProgresije: 'valna',
+        volumenMultiplikator: 1.08,
+        intenzitetMultiplikator: 1.03,
+        opisFaze: 'Akumulacija - povećan volumen',
+      };
+    case 3: // Mini-deload (smanjenje)
+      return {
+        tjedanBroj,
+        tipProgresije: 'valna',
+        volumenMultiplikator: 0.92,
+        intenzitetMultiplikator: 1.05,
+        opisFaze: 'Intenzifikacija - smanjen volumen, veći intenzitet',
+      };
+    case 4: // Peak
+      return {
+        tjedanBroj,
+        tipProgresije: 'valna',
+        volumenMultiplikator: 1.12,
+        intenzitetMultiplikator: 1.07,
+        opisFaze: 'Realizacija - peak',
+      };
+    default:
+      return {
+        tjedanBroj,
+        tipProgresije: 'valna',
+        volumenMultiplikator: 1.00,
+        intenzitetMultiplikator: 1.00,
+        opisFaze: 'Bazni',
+      };
+  }
+}
+
+/**
+ * Izračunava ukupni volumen po mišićnoj grupi za tjedan
+ * na temelju svih vježbi u svim treninzima tog tjedna
+ */
+function izracunajUkupniVolumenTjedna(
+  treninzi: TrenigSesija[],
+  razina: string
+): VolumenTracking[] {
+  const volumenPoGrupi: Record<string, number> = {};
+  
+  // Iteriraj kroz sve treninge i vježbe
+  for (const trening of treninzi) {
+    for (const vjezba of trening.glavniDio) {
+      // Primarne grupe dobivaju puni volumen
+      if (vjezba.primarneGrupe) {
+        for (const grupa of vjezba.primarneGrupe) {
+          const normGrupa = normalizacijaMisicneGrupe(grupa);
+          volumenPoGrupi[normGrupa] = (volumenPoGrupi[normGrupa] || 0) + vjezba.setovi;
+        }
+      }
+      // Sekundarne grupe dobivaju 50% volumena (stimulacija, ali ne puni stres)
+      if (vjezba.sekundarneGrupe) {
+        for (const grupa of vjezba.sekundarneGrupe) {
+          const normGrupa = normalizacijaMisicneGrupe(grupa);
+          volumenPoGrupi[normGrupa] = (volumenPoGrupi[normGrupa] || 0) + Math.round(vjezba.setovi * 0.5);
+        }
+      }
+    }
+  }
+  
+  // Kreiraj tracking objekte
+  const tracking: VolumenTracking[] = [];
+  for (const [grupa, setovi] of Object.entries(volumenPoGrupi)) {
+    tracking.push(kreirajVolumenTracking(grupa, setovi, razina));
+  }
+  
+  return tracking;
+}
+
+/**
+ * Normalizira nazive mišićnih grupa (hr/en) na standardni format
+ */
+function normalizacijaMisicneGrupe(grupa: string): string {
+  const mapiranje: Record<string, string> = {
+    'chest': 'prsa',
+    'back': 'ledja',
+    'shoulders': 'ramena',
+    'quadriceps': 'cetveroglavi',
+    'hamstrings': 'straznja_loza',
+    'glutes': 'gluteusi',
+    'calves': 'listovi',
+    'abdominals': 'trbusnjaci',
+    'core': 'trbusnjaci',
+    'abs': 'trbusnjaci',
+  };
+  const lower = grupa.toLowerCase().trim();
+  return mapiranje[lower] || lower;
 }
 
 function odrediDaneZaTrening(splitConfig: typeof SPLIT_KONFIGURACIJE[TipSplita], treninziTjedno: number): string[] {

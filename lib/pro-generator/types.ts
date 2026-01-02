@@ -229,6 +229,36 @@ export interface Mezociklus {
   tjedni: Tjedan[];
 }
 
+/** 
+ * Tracking volumena po mišićnoj grupi - IFT Metodika
+ * MEV = Minimalni Efektivni Volumen
+ * MAV = Maksimalni Adaptivni Volumen (optimalni raspon)
+ * MRV = Maksimalni Oporavivi Volumen (gornja granica)
+ */
+export interface VolumenTracking {
+  misicnaGrupa: string;
+  planirano: number;          // Planirani setovi
+  ostvareno: number;          // Stvarni setovi (nakon treninga)
+  mev: number;                // Minimum za napredak
+  mavMin: number;             // Donja granica optimalnog
+  mavMax: number;             // Gornja granica optimalnog
+  mrv: number;                // Maksimum za oporavak
+  status: 'ispod_mev' | 'u_mev' | 'optimalno' | 'blizu_mrv' | 'preko_mrv';
+}
+
+/**
+ * Tip progresije - IFT valovita vs linearna
+ * Valovita: oscilira volumen/intenzitet kroz tjedne
+ * Linearna: konstantni porast
+ */
+export interface ProgresijaTjedna {
+  tjedanBroj: number;
+  tipProgresije: 'linearna' | 'valna' | 'deload';
+  volumenMultiplikator: number;     // 0.6 - 1.15
+  intenzitetMultiplikator: number;  // 0.7 - 1.10
+  opisFaze: string;                 // "Akumulacija", "Intenzifikacija", "Deload"
+}
+
 /** Tjedan unutar mezociklusa */
 export interface Tjedan {
   id: string;
@@ -238,6 +268,10 @@ export interface Tjedan {
   volumenModifikator: number;      // 1.0 = 100%, 0.6 = 60% za deload
   intenzitetModifikator: number;
   napomene?: string;
+  
+  // NOVO: Tracking volumena po grupi
+  volumenPoGrupi?: VolumenTracking[];
+  progresija?: ProgresijaTjedna;
   
   // Struktura
   treninzi: TrenigSesija[];
