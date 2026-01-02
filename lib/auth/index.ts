@@ -28,3 +28,12 @@ export {
   type AuthResult,
 } from './middleware';
 
+export {
+  hashPassword,
+  verifyPassword,
+  checkPasswordStrength,
+  generateRandomPassword,
+  MIN_PASSWORD_LENGTH,
+  MAX_PASSWORD_LENGTH,
+} from './password';
+

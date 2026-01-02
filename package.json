@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "import:usda": "tsx scripts/importUsdaFoodsToSupabase.ts"
+    "import:usda": "tsx scripts/importUsdaFoodsToSupabase.ts",
+    "hash-passwords": "tsx scripts/hash-trainer-passwords.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.83.0",
