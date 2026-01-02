@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServiceClient } from "@/lib/supabase";
 import { z } from "zod";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import bcrypt from "bcryptjs";
 
 const RequestAccessSchema = z.object({
   name: z.string().min(2, "Ime mora imati najmanje 2 znaka"),
   email: z.string().email("Nevažeća email adresa"),
   phone: z.string().optional(),
+  password: z.string()
+    .min(8, "Lozinka mora imati najmanje 8 znakova")
+    .regex(/[A-Z]/, "Lozinka mora sadržavati barem jedno veliko slovo")
+    .regex(/[a-z]/, "Lozinka mora sadržavati barem jedno malo slovo")
+    .regex(/[0-9]/, "Lozinka mora sadržavati barem jedan broj"),
   message: z.string().optional(),
 });
 
@@ -26,7 +27,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, email, phone, message } = parseResult.data;
+    const { name, email, phone, password, message } = parseResult.data;
+
+    const supabase = createServiceClient();
+    
+    // Hashiraj lozinku odmah
+    const passwordHash = await bcrypt.hash(password, 10);
 
     // Provjeri postoji li već zahtjev s ovim emailom
     const { data: existingRequest } = await supabase
@@ -70,13 +76,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Kreiraj zahtjev za pristup
+    // Kreiraj zahtjev za pristup (s hashiranom lozinkom)
     const { data: invite, error } = await supabase
       .from("trainer_invites")
       .insert({
         name,
         email: email.toLowerCase(),
         phone: phone || null,
+        password_hash: passwordHash,
         admin_notes: message || null,
         status: "pending",
       })

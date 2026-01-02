@@ -135,4 +135,3 @@ ORDER BY expires_at ASC;
 
 -- 4. Označavanje kao iskorišten:
 -- UPDATE trainer_invites SET status = 'used', used_at = NOW(), trainer_id = '...' WHERE id = '...';
-

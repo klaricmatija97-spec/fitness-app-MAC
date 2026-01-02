@@ -1,15 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { createServiceClient } from "@/lib/supabase";
 
 // Jednostavna admin autentikacija (za produkciju koristiti bolji sustav)
 function isAdmin(request: NextRequest): boolean {
   const adminKey = request.headers.get("x-admin-key");
-  return adminKey === process.env.ADMIN_SECRET_KEY;
+  // Fallback za development ako env nije učitan
+  const envKey = process.env.ADMIN_SECRET_KEY || 'corpex-admin-2024';
+  console.log('[Admin] Received key:', adminKey);
+  console.log('[Admin] Expected key:', envKey);
+  return adminKey === envKey;
+}
+
+// Generiraj jedinstveni trainer code
+function generateTrainerCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
 }
 
 // GET - dohvati sve zahtjeve (pending, approved, etc.)
@@ -19,6 +28,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const supabase = createServiceClient();
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") || "pending";
 
@@ -62,11 +72,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!["approve", "reject"].includes(action)) {
+    if (!["approve", "reject", "resend_email"].includes(action)) {
       return NextResponse.json(
-        { ok: false, message: "action mora biti 'approve' ili 'reject'" },
+        { ok: false, message: "action mora biti 'approve', 'reject' ili 'resend_email'" },
         { status: 400 }
       );
+    }
+    
+    const supabase = createServiceClient();
+    
+    // Resend email za već odobrene zahtjeve
+    if (action === "resend_email") {
+      const { data: invite } = await supabase
+        .from("trainer_invites")
+        .select("*")
+        .eq("id", inviteId)
+        .eq("status", "approved")
+        .single();
+        
+      if (!invite) {
+        return NextResponse.json(
+          { ok: false, message: "Zahtjev nije pronađen ili nije odobren" },
+          { status: 404 }
+        );
+      }
+      
+      const emailSent = await sendApprovalEmail(invite.email, invite.name, invite.invite_code);
+      return NextResponse.json({
+        ok: true,
+        message: emailSent ? "Email uspješno poslan!" : "Greška pri slanju emaila",
+        emailSent,
+      });
     }
 
     // Dohvati zahtjev
@@ -91,35 +127,71 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "approve") {
-      // Odobri zahtjev - trigger će automatski postaviti expires_at
-      const { data: updatedInvite, error: updateError } = await supabase
-        .from("trainer_invites")
-        .update({
-          status: "approved",
-          approved_by: "admin",
-          admin_notes: adminNotes || invite.admin_notes,
+      // Provjeri ima li lozinku
+      if (!invite.password_hash) {
+        return NextResponse.json(
+          { ok: false, message: "Zahtjev nema lozinku - stariji format. Trener mora ponovo podnijeti zahtjev." },
+          { status: 400 }
+        );
+      }
+
+      // Generiraj trainer code
+      const trainerCode = generateTrainerCode();
+
+      // Kreiraj trenera automatski
+      const { data: trainer, error: trainerError } = await supabase
+        .from("trainers")
+        .insert({
+          name: invite.name,
+          email: invite.email,
+          phone: invite.phone,
+          password_hash: invite.password_hash,
+          trainer_code: trainerCode,
+          created_at: new Date().toISOString(),
         })
-        .eq("id", inviteId)
-        .select()
+        .select("id, name, email, trainer_code")
         .single();
 
-      if (updateError) throw updateError;
+      if (trainerError) {
+        console.error("[AdminInvites] Error creating trainer:", trainerError);
+        return NextResponse.json(
+          { ok: false, message: "Greška pri kreiranju trenera: " + trainerError.message },
+          { status: 500 }
+        );
+      }
 
-      // Pošalji email s kodom
-      const emailSent = await sendApprovalEmail(
+      // Ažuriraj invite status
+      await supabase
+        .from("trainer_invites")
+        .update({
+          status: "used",
+          used_at: new Date().toISOString(),
+          approved_by: "admin",
+          trainer_id: trainer.id,
+          admin_notes: adminNotes || invite.admin_notes,
+        })
+        .eq("id", inviteId);
+
+      // Pošalji email s potvrdom
+      const emailSent = await sendWelcomeEmail(
         invite.email,
         invite.name,
-        updatedInvite.invite_code
+        trainerCode
       );
 
       return NextResponse.json({
         ok: true,
-        message: `Zahtjev odobren. ${emailSent ? "Email poslan." : "Email NIJE poslan - provjeri Resend konfiguraciju."}`,
-        invite: updatedInvite,
+        message: `Trener kreiran! ${emailSent ? "Email poslan." : "Email NIJE poslan."}`,
+        trainer: {
+          id: trainer.id,
+          name: trainer.name,
+          email: trainer.email,
+          trainerCode: trainer.trainer_code,
+        },
         emailSent,
       });
 
-    } else {
+    } else if (action === "reject") {
       // Odbij zahtjev
       const { error: updateError } = await supabase
         .from("trainer_invites")
@@ -150,11 +222,11 @@ export async function POST(request: NextRequest) {
 }
 
 // Email funkcije (koriste Resend)
-async function sendApprovalEmail(email: string, name: string, inviteCode: string): Promise<boolean> {
-  const resendApiKey = process.env.RESEND_API_KEY;
+async function sendWelcomeEmail(email: string, name: string, trainerCode: string): Promise<boolean> {
+  const resendApiKey = process.env.RESEND_API_KEY || 're_LAVdTSto_LkTanz66kQLWD88SgAVnCPzH';
   
   if (!resendApiKey) {
-    console.warn("[Email] RESEND_API_KEY nije postavljen - email nije poslan");
+    console.warn("[Email] RESEND_API_KEY nije postavljen");
     return false;
   }
 
@@ -166,36 +238,32 @@ async function sendApprovalEmail(email: string, name: string, inviteCode: string
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM || "Corpex <noreply@corpex.hr>",
+        from: process.env.EMAIL_FROM || "onboarding@resend.dev",
         to: email,
-        subject: "🎉 Vaš Corpex pozivni kod",
+        subject: "Corpex - Vaš račun je kreiran!",
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h1 style="color: #8B5CF6;">Dobrodošli u Corpex!</h1>
+            <h1 style="color: #8B5CF6;">🎉 Dobrodošli u Corpex!</h1>
             <p>Pozdrav ${name},</p>
-            <p>Vaš zahtjev za pristup Corpex platformi je <strong>odobren</strong>!</p>
+            <p>Vaš trenerski račun je uspješno kreiran!</p>
             
             <div style="background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%); 
                         padding: 30px; border-radius: 12px; text-align: center; margin: 30px 0;">
-              <p style="color: rgba(255,255,255,0.8); margin: 0 0 10px 0; font-size: 14px;">Vaš pozivni kod:</p>
+              <p style="color: rgba(255,255,255,0.8); margin: 0 0 10px 0; font-size: 14px;">Vaš trener kod (za klijente):</p>
               <h2 style="color: white; font-size: 32px; letter-spacing: 4px; margin: 0;">
-                ${inviteCode}
+                ${trainerCode}
               </h2>
             </div>
             
-            <p><strong>⚠️ Važno:</strong></p>
+            <p><strong>Što dalje?</strong></p>
             <ul>
-              <li>Kod vrijedi <strong>48 sati</strong></li>
-              <li>Kod možete koristiti samo jednom</li>
-              <li>Kod je vezan za ovaj email: ${email}</li>
+              <li>Otvorite Corpex aplikaciju</li>
+              <li>Prijavite se s emailom i lozinkom koju ste unijeli pri zahtjevu</li>
+              <li>Podijelite svoj trener kod (${trainerCode}) s klijentima</li>
             </ul>
             
-            <p>Otvorite Corpex aplikaciju i dovršite registraciju koristeći ovaj kod.</p>
-            
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="color: #666; font-size: 12px;">
-              Ako niste zatražili pristup, ignorirajte ovaj email.
-            </p>
+            <p style="color: #666; font-size: 12px;">Corpex tim</p>
           </div>
         `,
       }),
@@ -231,7 +299,7 @@ async function sendRejectionEmail(email: string, name: string): Promise<boolean>
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM || "Corpex <noreply@corpex.hr>",
+        from: process.env.EMAIL_FROM || "onboarding@resend.dev",
         to: email,
         subject: "Corpex - Status zahtjeva",
         html: `

@@ -10,7 +10,7 @@ import { Platform } from 'react-native';
 
 // Koristi localhost za development (Expo Go na istom WiFi-u)
 // Za production, koristi environment varijablu ili postavi pravi URL
-const getApiBaseUrl = () => {
+export const getApiBaseUrl = () => {
   // Check if we're in development mode
   // In React Native/Expo, __DEV__ is a global boolean
   const isDev = (typeof (global as any).__DEV__ !== 'undefined' 
