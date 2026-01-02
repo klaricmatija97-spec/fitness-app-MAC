@@ -245,6 +245,9 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
   const [step, setStep] = useState<Step>(getInitialStep());
   const [loading, setLoading] = useState(false);
   const [fromAnnualPlan] = useState(!!phaseData); // Track if we came from annual plan
+  const [annualProgramId, setAnnualProgramId] = useState<string | null>(
+    phaseData?.mesocycleId ? phaseData.mesocycleId.split('-')[0] : null // Extract annual program ID if available
+  );
 
   // Step 1: Client Selection
   const [clients, setClients] = useState<ClientInfo[]>([]);
@@ -1190,64 +1193,139 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.primaryButton, annualPhases.length === 0 && styles.buttonDisabled]} 
-            onPress={() => {
-              // Generiraj program direktno iz faza na lenti
+            onPress={async () => {
+              // Generiraj SVE faze odjednom i poveži ih
               if (annualPhases.length > 0) {
-                // Uzmi prvu fazu za generiranje
-                const firstPhase = annualPhases[0];
-                const phaseDuration = firstPhase.endWeek - firstPhase.startWeek + 1;
-                const phaseTypeInfo = MESOCYCLE_TYPES.find(m => m.value === firstPhase.type);
-                
-                console.log('🎯 [Step3] Generating from timeline:', { 
-                  type: firstPhase.type, 
-                  typeLabel: phaseTypeInfo?.label,
-                  duration: phaseDuration,
-                  startWeek: firstPhase.startWeek,
-                  endWeek: firstPhase.endWeek,
-                  allPhases: annualPhases.map(p => ({ type: p.type, start: p.startWeek, end: p.endWeek })),
-                });
-                
-                // Postavi durationWeeks i goal iz faze
-                setDurationWeeks(phaseDuration);
-                
-                // Eksplicitno mapiraj tip faze na goal
-                const newGoal: ProgramGoal = 
-                  firstPhase.type === 'hipertrofija' ? 'hipertrofija' :
-                  firstPhase.type === 'jakost' ? 'jakost' :
-                  firstPhase.type === 'snaga' ? 'snaga' :
-                  firstPhase.type === 'izdrzljivost' ? 'izdrzljivost' :
-                  'hipertrofija'; // Default fallback
-                
-                console.log('🎯 [Step3] Setting goal:', { 
-                  phaseType: firstPhase.type, 
-                  mappedGoal: newGoal 
-                });
-                
-                setGoal(newGoal);
-                
-                // Generiraj SVE tjedne odmah - VAŽNO: koristi firstPhase.type, ne goal
-                const programPhaseType = firstPhase.type as MesocycleType;
-                const program = generateMockFullProgram(
-                  programPhaseType,
-                  phaseTypeInfo?.label || firstPhase.type,
-                  phaseDuration
-                );
-                
-                console.log('🎯 [Step3] Generated program:', { 
-                  phaseType: program.phaseType, 
-                  phaseName: program.phaseName,
-                  totalWeeks: program.totalWeeks,
-                  firstWeekMesocycleType: program.weeks[0]?.mesocycleType,
-                });
-                
-                setFullProgram(program);
-                setCurrentWeekIndex(0);
-                setStep(5); // Idi direktno na pregled
+                setLoading(true);
+                try {
+                  // Sortiraj faze po startWeek
+                  const sortedPhases = [...annualPhases].sort((a, b) => a.startWeek - b.startWeek);
+                  
+                  console.log('🎯 [Step3] Generating ALL phases from timeline:', {
+                    totalPhases: sortedPhases.length,
+                    phases: sortedPhases.map(p => ({ 
+                      type: p.type, 
+                      start: p.startWeek, 
+                      end: p.endWeek,
+                      duration: p.endWeek - p.startWeek + 1,
+                    })),
+                  });
+                  
+                  // Generiraj sve faze i poveži ih
+                  let previousProgramId: string | null = null;
+                  const generatedPrograms: Array<{ phaseType: string; programId: string; duration: number }> = [];
+                  
+                  for (let i = 0; i < sortedPhases.length; i++) {
+                    const phase = sortedPhases[i];
+                    const phaseDuration = phase.endWeek - phase.startWeek + 1;
+                    const phaseTypeInfo = MESOCYCLE_TYPES.find(m => m.value === phase.type);
+                    
+                    // Mapiraj tip faze na goal
+                    const phaseGoal: ProgramGoal = 
+                      phase.type === 'hipertrofija' ? 'hipertrofija' :
+                      phase.type === 'jakost' ? 'jakost' :
+                      phase.type === 'snaga' ? 'snaga' :
+                      phase.type === 'izdrzljivost' ? 'izdrzljivost' :
+                      'hipertrofija';
+                    
+                    console.log(`🎯 [Step3] Generating phase ${i + 1}/${sortedPhases.length}:`, {
+                      type: phase.type,
+                      duration: phaseDuration,
+                      startWeek: phase.startWeek,
+                      endWeek: phase.endWeek,
+                      previousProgramId,
+                    });
+                    
+                    // Generiraj program za ovu fazu
+                    const response = await fetch(`${API_BASE_URL}/api/training/generate`, {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        clientId: selectedClient?.id,
+                        gender: selectedClient?.gender,
+                        cilj: phaseGoal,
+                        razina: level || 'srednji',
+                        treninziTjedno: trainingFrequency || 4,
+                        trajanjeTjedana: phaseDuration,
+                        mezociklusTip: phase.type,
+                        splitTip: splitType || 'upper_lower',
+                        dostupnaOprema: availableEquipment || ['sipka', 'bucice', 'sprava'],
+                        // Poveži s prethodnom fazom
+                        annualProgramId: annualProgramId || undefined,
+                        previousProgramId: previousProgramId || undefined,
+                        phaseOrder: i + 1,
+                        totalPhases: sortedPhases.length,
+                      }),
+                    });
+                    
+                    if (response.ok) {
+                      const result = await response.json();
+                      if (result.success && result.data?.programId) {
+                        previousProgramId = result.data.programId;
+                        generatedPrograms.push({
+                          phaseType: phase.type,
+                          programId: result.data.programId,
+                          duration: phaseDuration,
+                        });
+                        console.log(`✅ [Step3] Phase ${i + 1} generated:`, result.data.programId);
+                      }
+                    } else {
+                      console.error(`❌ [Step3] Failed to generate phase ${i + 1}:`, response.status);
+                    }
+                  }
+                  
+                  console.log('🎯 [Step3] All phases generated:', generatedPrograms);
+                  
+                  // Prikaži prvu fazu za pregled
+                  if (generatedPrograms.length > 0) {
+                    const firstPhase = sortedPhases[0];
+                    const phaseDuration = firstPhase.endWeek - firstPhase.startWeek + 1;
+                    const phaseTypeInfo = MESOCYCLE_TYPES.find(m => m.value === firstPhase.type);
+                    
+                    setDurationWeeks(phaseDuration);
+                    setGoal(firstPhase.type === 'hipertrofija' ? 'hipertrofija' :
+                           firstPhase.type === 'jakost' ? 'jakost' :
+                           firstPhase.type === 'snaga' ? 'snaga' :
+                           firstPhase.type === 'izdrzljivost' ? 'izdrzljivost' :
+                           'hipertrofija');
+                    
+                    const programPhaseType = firstPhase.type as MesocycleType;
+                    const program = generateMockFullProgram(
+                      programPhaseType,
+                      phaseTypeInfo?.label || firstPhase.type,
+                      phaseDuration
+                    );
+                    
+                    setFullProgram(program);
+                    setCurrentWeekIndex(0);
+                    setStep(5); // Idi direktno na pregled
+                    
+                    Alert.alert(
+                      'Programi generirani',
+                      `Uspješno generirano ${generatedPrograms.length} faza. Faze su povezane - klijent će moći prijeći na sljedeću fazu nakon završetka trenutne.`,
+                      [{ text: 'OK' }]
+                    );
+                  }
+                } catch (error) {
+                  console.error('Error generating phases:', error);
+                  Alert.alert(
+                    'Greška',
+                    'Greška pri generiranju faza. Pokušaj ponovno.',
+                    [{ text: 'OK' }]
+                  );
+                } finally {
+                  setLoading(false);
+                }
               }
             }}
-            disabled={annualPhases.length === 0}
+            disabled={annualPhases.length === 0 || loading}
           >
-            <Text style={styles.primaryButtonText}>Generiraj {annualPhases.length > 0 ? `(${annualPhases.reduce((sum, p) => sum + (p.endWeek - p.startWeek + 1), 0)} tj.)` : ''}</Text>
+            <Text style={styles.primaryButtonText}>
+              {loading ? 'Generiram...' : `Generiraj sve faze (${annualPhases.length > 0 ? annualPhases.reduce((sum, p) => sum + (p.endWeek - p.startWeek + 1), 0) : 0} tj.)`}
+            </Text>
           </TouchableOpacity>
         </View>
 

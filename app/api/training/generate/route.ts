@@ -57,6 +57,11 @@ const GeneratorInputSchema = z.object({
   ozljede: z.array(z.string()).optional(),
   maksCiljanoTrajanje: z.number().int().min(30).max(120).optional(),
   napomeneTrenera: z.string().max(1000).optional(),
+  // Povezivanje programa (za godišnji plan)
+  annualProgramId: z.string().uuid().optional(),
+  previousProgramId: z.string().uuid().optional(),
+  phaseOrder: z.number().int().min(1).optional(),
+  totalPhases: z.number().int().min(1).optional(),
 });
 
 // ============================================

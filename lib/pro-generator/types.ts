@@ -177,6 +177,12 @@ export interface GeneratorInput {
   ozljede?: string[];          // Ozljede za izbjegavanje
   maksCiljanoTrajanje?: number; // Minuta po treningu
   napomeneTrenera?: string;
+  
+  // Povezivanje programa (za godišnji plan)
+  annualProgramId?: string;    // ID godišnjeg plana
+  previousProgramId?: string;  // ID prethodnog programa u sekvenci
+  phaseOrder?: number;          // Redni broj faze (1, 2, 3...)
+  totalPhases?: number;         // Ukupan broj faza
 }
 
 /** Rezultat validacije inputa */
@@ -215,6 +221,13 @@ export interface TreningProgram {
   
   // Struktura
   mezociklusi: Mezociklus[];
+  
+  // Povezivanje programa (za godišnji plan)
+  annualProgramId?: string;        // ID godišnjeg plana
+  previousProgramId?: string;      // ID prethodnog programa u sekvenci
+  nextProgramId?: string;          // ID sljedećeg programa u sekvenci
+  phaseOrder?: number;              // Redni broj faze (1, 2, 3...)
+  totalPhases?: number;             // Ukupan broj faza
   
   // Timestamps
   createdAt: Date;

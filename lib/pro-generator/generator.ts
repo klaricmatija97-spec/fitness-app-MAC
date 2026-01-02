@@ -250,6 +250,11 @@ export async function buildProgram(input: GeneratorInput): Promise<TreningProgra
     validacijaRezultat: validacija,
     napomeneTrenera: input.napomeneTrenera,
     mezociklusi,
+    // Povezivanje programa (za godišnji plan)
+    annualProgramId: input.annualProgramId,
+    previousProgramId: input.previousProgramId,
+    phaseOrder: input.phaseOrder,
+    totalPhases: input.totalPhases,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
