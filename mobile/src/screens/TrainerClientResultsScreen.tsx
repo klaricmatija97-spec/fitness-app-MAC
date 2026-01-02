@@ -76,6 +76,17 @@ interface ClientResultsData {
     adherence: number;
     avgRIR: number;
   }[];
+  adherenceTrend?: {
+    date: string;
+    adherence: number;
+    workoutsCompleted: number;
+    workoutsPlanned: number;
+  }[];
+  volumeTrend?: {
+    date: string;
+    volume: number;
+    workouts: number;
+  }[];
 }
 
 export default function TrainerClientResultsScreen({ 
@@ -97,14 +108,89 @@ export default function TrainerClientResultsScreen({
   async function loadData() {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/trainer/client/${clientId}/results`, {
-        headers: { 'Authorization': `Bearer ${authToken}` },
-      });
-      const result = await response.json();
+      // Dohvati progress podatke
+      const progressResponse = await fetch(
+        `${API_BASE_URL}/api/trainer/client/${clientId}/progress?period=12w`,
+        {
+          headers: { 'Authorization': `Bearer ${authToken}` },
+        }
+      );
+      const progressResult = await progressResponse.json();
 
-      if (result.success) {
-        setData(result.data);
+      // Dohvati client info
+      const clientResponse = await fetch(
+        `${API_BASE_URL}/api/trainer/client/${clientId}`,
+        {
+          headers: { 'Authorization': `Bearer ${authToken}` },
+        }
+      );
+      const clientResult = await clientResponse.json();
+
+      // Dohvati recent workout logs
+      const logsResponse = await fetch(
+        `${API_BASE_URL}/api/trainer/client/${clientId}/workout-logs?limit=10`,
+        {
+          headers: { 'Authorization': `Bearer ${authToken}` },
+        }
+      );
+      const logsResult = await logsResponse.json();
+
+      if (progressResult.success && clientResult.success) {
+        const progress = progressResult.data;
+        const client = clientResult.data.client;
+        const recentLogs = logsResult.success ? logsResult.data.logs || [] : [];
+
+        // Transformiraj podatke u format koji screen očekuje
+        const transformedData: ClientResultsData = {
+          client: {
+            id: client.id,
+            name: client.name,
+            email: client.email || '',
+            connectedSince: client.createdAt || new Date().toISOString(),
+          },
+          summary: {
+            totalWorkouts: progress.summary.totalWorkouts,
+            adherenceRate: Math.round(progress.summary.avgAdherence),
+            avgSessionDuration: progress.summary.avgSessionDuration,
+            totalVolumeKg: progress.summary.totalVolume,
+            personalBests: progress.summary.personalBests,
+            missedWorkouts: progress.summary.missedWorkouts,
+            currentStreak: progress.summary.currentStreak,
+          },
+          recentWorkouts: recentLogs.map((log: any) => ({
+            id: log.id,
+            date: log.started_at,
+            sessionName: log.session?.split_name || 'Workout',
+            duration: log.duration_minutes || 60,
+            exercisesCompleted: log.completed_exercises || 0,
+            totalExercises: log.total_exercises || 0,
+            totalVolume: log.total_volume || 0,
+            averageRIR: 2, // TODO: Calculate from sets
+            flagged: log.status !== 'completed',
+            flagReason: log.status === 'partial' ? 'Djelomično završeno' : 
+                       log.status === 'skipped' ? 'Preskočeno' : undefined,
+          })),
+          personalBests: progress.exerciseProgress
+            .filter((ex: any) => ex.personalBest)
+            .map((ex: any) => ({
+              exercise: ex.exerciseName,
+              weight: ex.personalBest.weight,
+              date: ex.personalBest.date,
+            })),
+          alerts: [], // TODO: Generate alerts from flagged exercises
+          weeklyProgress: progress.weeklyData.map((week: any) => ({
+            week: week.weekLabel,
+            volume: week.volume,
+            adherence: Math.round(week.adherence),
+            avgRIR: 2, // TODO: Calculate from logs
+          })),
+          adherenceTrend: progress.adherenceTrend || [],
+          volumeTrend: progress.volumeTrend || [],
+        };
+
+        setData(transformedData);
       } else {
+        // Fallback na mock podatke ako API ne radi
         setData(generateMockData());
       }
     } catch (error) {
@@ -324,21 +410,88 @@ export default function TrainerClientResultsScreen({
 
               {/* Weekly Progress Chart */}
               <View style={styles.chartSection}>
-                <Text style={styles.sectionTitle}> Tjedni napredak</Text>
+                <Text style={styles.sectionTitle}>📊 Tjedni napredak</Text>
                 <View style={styles.weeklyChart}>
-                  {data.weeklyProgress.map((week, index) => {
-                    const maxVolume = Math.max(...data.weeklyProgress.map(w => w.volume));
-                    const height = (week.volume / maxVolume) * 80;
-                    return (
-                      <View key={index} style={styles.weekColumn}>
-                        <View style={[styles.weekBar, { height }]} />
-                        <Text style={styles.weekLabel}>{week.week}</Text>
-                        <Text style={styles.weekVolume}>{(week.volume / 1000).toFixed(0)}k</Text>
-                      </View>
-                    );
-                  })}
+                  {data.weeklyProgress.length > 0 ? (
+                    data.weeklyProgress.map((week, index) => {
+                      const maxVolume = Math.max(...data.weeklyProgress.map(w => w.volume), 1);
+                      const height = maxVolume > 0 ? (week.volume / maxVolume) * 80 : 0;
+                      return (
+                        <View key={index} style={styles.weekColumn}>
+                          <View style={[styles.weekBar, { height: Math.max(height, 4) }]} />
+                          <Text style={styles.weekLabel}>{week.week}</Text>
+                          <Text style={styles.weekVolume}>{(week.volume / 1000).toFixed(0)}k</Text>
+                        </View>
+                      );
+                    })
+                  ) : (
+                    <Text style={styles.emptyChartText}>Nema podataka</Text>
+                  )}
                 </View>
               </View>
+
+              {/* Adherence Trend Chart */}
+              {data.adherenceTrend && data.adherenceTrend.length > 0 && (
+                <View style={styles.chartSection}>
+                  <Text style={styles.sectionTitle}>📈 Adherence trend</Text>
+                  <View style={styles.trendChart}>
+                    {data.adherenceTrend.slice(-14).map((point, index) => {
+                      const maxAdherence = 100;
+                      const height = (point.adherence / maxAdherence) * 100;
+                      const date = new Date(point.date);
+                      const dayLabel = date.getDate().toString();
+                      return (
+                        <View key={index} style={styles.trendColumn}>
+                          <View style={[styles.trendBar, { 
+                            height: Math.max(height, 2),
+                            backgroundColor: point.adherence >= 80 ? '#22C55E' :
+                                           point.adherence >= 60 ? '#F59E0B' : '#DC2626'
+                          }]} />
+                          <Text style={styles.trendLabel}>{dayLabel}</Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                  <View style={styles.chartLegend}>
+                    <View style={styles.legendItem}>
+                      <View style={[styles.legendDot, { backgroundColor: '#22C55E' }]} />
+                      <Text style={styles.legendText}>≥80%</Text>
+                    </View>
+                    <View style={styles.legendItem}>
+                      <View style={[styles.legendDot, { backgroundColor: '#F59E0B' }]} />
+                      <Text style={styles.legendText}>60-79%</Text>
+                    </View>
+                    <View style={styles.legendItem}>
+                      <View style={[styles.legendDot, { backgroundColor: '#DC2626' }]} />
+                      <Text style={styles.legendText}>&lt;60%</Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              {/* Volume Trend Chart */}
+              {data.volumeTrend && data.volumeTrend.length > 0 && (
+                <View style={styles.chartSection}>
+                  <Text style={styles.sectionTitle}>💪 Volumen trend</Text>
+                  <View style={styles.trendChart}>
+                    {data.volumeTrend.slice(-14).map((point, index) => {
+                      const maxVolume = Math.max(...data.volumeTrend!.map(p => p.volume), 1);
+                      const height = maxVolume > 0 ? (point.volume / maxVolume) * 100 : 0;
+                      const date = new Date(point.date);
+                      const dayLabel = date.getDate().toString();
+                      return (
+                        <View key={index} style={styles.trendColumn}>
+                          <View style={[styles.trendBar, { 
+                            height: Math.max(height, 2),
+                            backgroundColor: '#3B82F6'
+                          }]} />
+                          <Text style={styles.trendLabel}>{dayLabel}</Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
 
               {/* Stats Details */}
               <View style={styles.statsSection}>
@@ -544,6 +697,57 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
+  },
+  emptyChartText: {
+    color: '#71717A',
+    fontSize: 14,
+    textAlign: 'center',
+    paddingVertical: 40,
+  },
+  trendChart: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    height: 120,
+    marginTop: 16,
+    paddingHorizontal: 4,
+  },
+  trendColumn: {
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 2,
+  },
+  trendBar: {
+    width: '100%',
+    minHeight: 2,
+    backgroundColor: '#3B82F6',
+    borderRadius: 2,
+    marginBottom: 4,
+  },
+  trendLabel: {
+    color: '#71717A',
+    fontSize: 10,
+    marginTop: 4,
+  },
+  chartLegend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 12,
+    gap: 16,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  legendText: {
+    color: '#71717A',
+    fontSize: 11,
   },
   sectionTitle: { color: '#FFF', fontSize: 16, fontWeight: '600', marginBottom: 16 },
   weeklyChart: {
