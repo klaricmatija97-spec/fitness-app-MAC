@@ -512,8 +512,8 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
       const weekSets = isDeload ? Math.max(2, baseSets - 2) : Math.round(baseSets * volumeModifier);
       const weekRIR = isDeload ? 4 : Math.max(0, phaseParams.rirEnd - Math.round(progress * (phaseParams.rirStart - phaseParams.rirEnd)));
       
-      // Generiraj vježbe za ovaj tjedan
-      const exercises = generateWeekExercises(isMale, phaseParams, weekSets, weekRIR, weekNum);
+      // Generiraj vježbe za ovaj tjedan - SADA UZIMA U OBZIR FAZU
+      const exercises = generateWeekExercises(isMale, phaseParams, weekSets, weekRIR, weekNum, phaseType);
       
       const weekPlan: WeekPlan = {
         weekNumber: weekNum,
@@ -550,35 +550,106 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
     return params[phaseType] || params['hipertrofija'];
   }
 
-  // Generiraj vježbe za tjedan
-  function generateWeekExercises(isMale: boolean, params: ReturnType<typeof getPhaseParameters>, sets: number, rir: number, weekNum: number): { upper: Exercise[]; lower: Exercise[] } {
+  // Generiraj vježbe za tjedan - UZIMA U OBZIR FAZU!
+  function generateWeekExercises(isMale: boolean, params: ReturnType<typeof getPhaseParameters>, sets: number, rir: number, weekNum: number, phaseType: MesocycleType): { upper: Exercise[]; lower: Exercise[] } {
+    
+    // =============================================
+    // JAKOST - Barbell compound vježbe (Big 3)
+    // =============================================
+    if (phaseType === 'jakost' || phaseType === 'natjecanje') {
+      const upperExercises: Exercise[] = [
+        { id: `u1-w${weekNum}`, name: 'Bench Press', nameEn: 'Barbell Bench Press', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Prsa'], secondaryMuscles: ['Triceps', 'Ramena'], isLocked: false },
+        { id: `u2-w${weekNum}`, name: 'Barbell Row', nameEn: 'Barbell Bent Over Row', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Leda'], secondaryMuscles: ['Biceps'], isLocked: false },
+        { id: `u3-w${weekNum}`, name: 'Overhead Press', nameEn: 'Barbell Overhead Press', sets: Math.max(2, sets - 1), repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Ramena'], secondaryMuscles: ['Triceps'], isLocked: false },
+        { id: `u4-w${weekNum}`, name: 'Weighted Pull Up', nameEn: 'Weighted Pull Up', sets: Math.max(2, sets - 1), repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'bodyweight', primaryMuscles: ['Leda'], secondaryMuscles: ['Biceps'], isLocked: false },
+        { id: `u5-w${weekNum}`, name: 'Close Grip Bench', nameEn: 'Close Grip Bench Press', sets: 3, repsMin: params.repsMin + 2, repsMax: params.repsMax + 2, restSeconds: 120, rir: Math.min(3, rir + 1), equipment: 'barbell', primaryMuscles: ['Triceps'], secondaryMuscles: ['Prsa'], isLocked: false },
+      ];
+      const lowerExercises: Exercise[] = [
+        { id: `l1-w${weekNum}`, name: 'Back Squat', nameEn: 'Barbell Back Squat', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Quadriceps'], secondaryMuscles: ['Gluteus', 'Hamstrings'], isLocked: false },
+        { id: `l2-w${weekNum}`, name: 'Deadlift', nameEn: 'Conventional Deadlift', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Hamstrings', 'Leda'], secondaryMuscles: ['Gluteus', 'Quadriceps'], isLocked: false },
+        { id: `l3-w${weekNum}`, name: 'Front Squat', nameEn: 'Barbell Front Squat', sets: Math.max(2, sets - 1), repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Quadriceps'], secondaryMuscles: ['Core'], isLocked: false },
+        { id: `l4-w${weekNum}`, name: 'Barbell Hip Thrust', nameEn: 'Barbell Hip Thrust', sets: Math.max(2, sets - 1), repsMin: params.repsMin + 2, repsMax: params.repsMax + 2, restSeconds: 120, rir: Math.min(2, rir + 1), equipment: 'barbell', primaryMuscles: ['Gluteus'], secondaryMuscles: ['Hamstrings'], isLocked: false },
+      ];
+      return { upper: upperExercises, lower: lowerExercises };
+    }
+    
+    // =============================================
+    // SNAGA - Eksplozivne i Olympic vježbe
+    // =============================================
+    if (phaseType === 'snaga') {
+      const upperExercises: Exercise[] = [
+        { id: `u1-w${weekNum}`, name: 'Push Press', nameEn: 'Barbell Push Press', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Ramena'], secondaryMuscles: ['Triceps', 'Core'], isLocked: false },
+        { id: `u2-w${weekNum}`, name: 'Power Clean', nameEn: 'Power Clean', sets, repsMin: 3, repsMax: 5, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Cijelo tijelo'], secondaryMuscles: [], isLocked: false },
+        { id: `u3-w${weekNum}`, name: 'Explosive Row', nameEn: 'Pendlay Row', sets: Math.max(2, sets - 1), repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Leda'], secondaryMuscles: ['Biceps'], isLocked: false },
+        { id: `u4-w${weekNum}`, name: 'Med Ball Slam', nameEn: 'Medicine Ball Slam', sets: 3, repsMin: 8, repsMax: 10, restSeconds: 60, rir: 2, equipment: 'medicine_ball', primaryMuscles: ['Core'], secondaryMuscles: ['Ramena'], isLocked: false },
+        { id: `u5-w${weekNum}`, name: 'Plyo Push Up', nameEn: 'Plyometric Push Up', sets: 3, repsMin: 6, repsMax: 10, restSeconds: 90, rir: 2, equipment: 'bodyweight', primaryMuscles: ['Prsa'], secondaryMuscles: ['Triceps'], isLocked: false },
+      ];
+      const lowerExercises: Exercise[] = [
+        { id: `l1-w${weekNum}`, name: 'Box Jump', nameEn: 'Box Jump', sets: 4, repsMin: 5, repsMax: 8, restSeconds: 90, rir: 2, equipment: 'box', primaryMuscles: ['Quadriceps'], secondaryMuscles: ['Gluteus'], isLocked: false },
+        { id: `l2-w${weekNum}`, name: 'Jump Squat', nameEn: 'Jump Squat', sets, repsMin: 5, repsMax: 8, restSeconds: params.restSec, rir, equipment: 'bodyweight', primaryMuscles: ['Quadriceps'], secondaryMuscles: ['Gluteus'], isLocked: false },
+        { id: `l3-w${weekNum}`, name: 'Power Snatch', nameEn: 'Power Snatch', sets: Math.max(2, sets - 1), repsMin: 3, repsMax: 5, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Cijelo tijelo'], secondaryMuscles: [], isLocked: false },
+        { id: `l4-w${weekNum}`, name: 'Kettlebell Swing', nameEn: 'Kettlebell Swing', sets: 4, repsMin: 10, repsMax: 15, restSeconds: 60, rir: 2, equipment: 'kettlebell', primaryMuscles: ['Gluteus', 'Hamstrings'], secondaryMuscles: ['Core'], isLocked: false },
+        { id: `l5-w${weekNum}`, name: 'Broad Jump', nameEn: 'Standing Broad Jump', sets: 3, repsMin: 5, repsMax: 8, restSeconds: 90, rir: 2, equipment: 'bodyweight', primaryMuscles: ['Quadriceps'], secondaryMuscles: ['Gluteus'], isLocked: false },
+      ];
+      return { upper: upperExercises, lower: lowerExercises };
+    }
+    
+    // =============================================
+    // IZDRŽLJIVOST - Machine i cable vježbe (sigurnije za visoke rep)
+    // =============================================
+    if (phaseType === 'izdrzljivost') {
+      const upperExercises: Exercise[] = [
+        { id: `u1-w${weekNum}`, name: 'Machine Chest Press', nameEn: 'Machine Chest Press', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'machine', primaryMuscles: ['Prsa'], secondaryMuscles: ['Triceps'], isLocked: false },
+        { id: `u2-w${weekNum}`, name: 'Cable Row', nameEn: 'Seated Cable Row', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'cable', primaryMuscles: ['Leda'], secondaryMuscles: ['Biceps'], isLocked: false },
+        { id: `u3-w${weekNum}`, name: 'Machine Shoulder Press', nameEn: 'Machine Shoulder Press', sets: Math.max(2, sets - 1), repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'machine', primaryMuscles: ['Ramena'], secondaryMuscles: ['Triceps'], isLocked: false },
+        { id: `u4-w${weekNum}`, name: 'Lat Pulldown', nameEn: 'Lat Pulldown', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'cable', primaryMuscles: ['Leda'], secondaryMuscles: ['Biceps'], isLocked: false },
+        { id: `u5-w${weekNum}`, name: 'Cable Fly', nameEn: 'Cable Fly', sets: 3, repsMin: 15, repsMax: 20, restSeconds: 45, rir: Math.min(3, rir + 1), equipment: 'cable', primaryMuscles: ['Prsa'], secondaryMuscles: [], isLocked: false },
+        { id: `u6-w${weekNum}`, name: 'Face Pull', nameEn: 'Face Pull', sets: 3, repsMin: 15, repsMax: 20, restSeconds: 45, rir: Math.min(3, rir + 1), equipment: 'cable', primaryMuscles: ['Ramena'], secondaryMuscles: ['Leda'], isLocked: false },
+      ];
+      const lowerExercises: Exercise[] = [
+        { id: `l1-w${weekNum}`, name: 'Leg Press', nameEn: 'Leg Press', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'machine', primaryMuscles: ['Quadriceps'], secondaryMuscles: ['Gluteus'], isLocked: false },
+        { id: `l2-w${weekNum}`, name: 'Leg Curl', nameEn: 'Lying Leg Curl', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'machine', primaryMuscles: ['Hamstrings'], secondaryMuscles: [], isLocked: false },
+        { id: `l3-w${weekNum}`, name: 'Leg Extension', nameEn: 'Leg Extension', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'machine', primaryMuscles: ['Quadriceps'], secondaryMuscles: [], isLocked: false },
+        { id: `l4-w${weekNum}`, name: 'Cable Pull Through', nameEn: 'Cable Pull Through', sets: 3, repsMin: 15, repsMax: 20, restSeconds: 45, rir: Math.min(3, rir + 1), equipment: 'cable', primaryMuscles: ['Gluteus'], secondaryMuscles: ['Hamstrings'], isLocked: false },
+        { id: `l5-w${weekNum}`, name: 'Smith Squat', nameEn: 'Smith Machine Squat', sets: Math.max(2, sets - 1), repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'smith', primaryMuscles: ['Quadriceps'], secondaryMuscles: ['Gluteus'], isLocked: false },
+        { id: `l6-w${weekNum}`, name: 'Calf Raise Machine', nameEn: 'Seated Calf Raise', sets: 4, repsMin: 15, repsMax: 25, restSeconds: 30, rir: Math.min(3, rir + 1), equipment: 'machine', primaryMuscles: ['Listovi'], secondaryMuscles: [], isLocked: false },
+      ];
+      return { upper: upperExercises, lower: lowerExercises };
+    }
+    
+    // =============================================
+    // HIPERTROFIJA (default) - Mix vježbi za mišićni rast
+    // =============================================
     const upperExercises: Exercise[] = isMale ? [
-      { id: `u1-w${weekNum}`, name: 'Bench Press', nameEn: 'Bench Press', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Prsa'], secondaryMuscles: ['Triceps', 'Ramena'], isLocked: false },
-      { id: `u2-w${weekNum}`, name: 'Bent Over Row', nameEn: 'Bent Over Row', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Leda'], secondaryMuscles: ['Biceps'], isLocked: false },
-      { id: `u3-w${weekNum}`, name: 'Overhead Press', nameEn: 'Overhead Press', sets: Math.max(2, sets - 1), repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Ramena'], secondaryMuscles: ['Triceps'], isLocked: false },
-      { id: `u4-w${weekNum}`, name: 'Lat Pulldown', nameEn: 'Lat Pulldown', sets: Math.max(2, sets - 1), repsMin: params.repsMin + 2, repsMax: params.repsMax + 2, restSeconds: Math.max(60, params.restSec - 30), rir, equipment: 'cable', primaryMuscles: ['Leda'], secondaryMuscles: ['Biceps'], isLocked: false },
-      { id: `u5-w${weekNum}`, name: 'Incline DB Curl', nameEn: 'Incline Dumbbell Curl', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 60, rir: Math.min(3, rir + 1), equipment: 'dumbbell', primaryMuscles: ['Biceps'], secondaryMuscles: [], isLocked: false },
-      { id: `u6-w${weekNum}`, name: 'Tricep Pushdown', nameEn: 'Tricep Pushdown', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 60, rir: Math.min(3, rir + 1), equipment: 'cable', primaryMuscles: ['Triceps'], secondaryMuscles: [], isLocked: false },
+      { id: `u1-w${weekNum}`, name: 'Incline Bench Press', nameEn: 'Incline Barbell Bench Press', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Prsa'], secondaryMuscles: ['Triceps', 'Ramena'], isLocked: false },
+      { id: `u2-w${weekNum}`, name: 'Dumbbell Row', nameEn: 'Single Arm Dumbbell Row', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'dumbbell', primaryMuscles: ['Leda'], secondaryMuscles: ['Biceps'], isLocked: false },
+      { id: `u3-w${weekNum}`, name: 'Cable Fly', nameEn: 'Cable Crossover Fly', sets: Math.max(2, sets - 1), repsMin: params.repsMin + 2, repsMax: params.repsMax + 2, restSeconds: 60, rir, equipment: 'cable', primaryMuscles: ['Prsa'], secondaryMuscles: [], isLocked: false },
+      { id: `u4-w${weekNum}`, name: 'Lat Pulldown', nameEn: 'Wide Grip Lat Pulldown', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'cable', primaryMuscles: ['Leda'], secondaryMuscles: ['Biceps'], isLocked: false },
+      { id: `u5-w${weekNum}`, name: 'Lateral Raise', nameEn: 'Dumbbell Lateral Raise', sets: 4, repsMin: 12, repsMax: 15, restSeconds: 60, rir: Math.min(3, rir + 1), equipment: 'dumbbell', primaryMuscles: ['Ramena'], secondaryMuscles: [], isLocked: false },
+      { id: `u6-w${weekNum}`, name: 'EZ Bar Curl', nameEn: 'EZ Bar Curl', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 60, rir: Math.min(3, rir + 1), equipment: 'ez_bar', primaryMuscles: ['Biceps'], secondaryMuscles: [], isLocked: false },
+      { id: `u7-w${weekNum}`, name: 'Tricep Dip', nameEn: 'Tricep Dip', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 60, rir: Math.min(3, rir + 1), equipment: 'bodyweight', primaryMuscles: ['Triceps'], secondaryMuscles: ['Prsa'], isLocked: false },
     ] : [
-      { id: `u1-w${weekNum}`, name: 'Incline DB Press', nameEn: 'Incline Dumbbell Press', sets: Math.max(2, sets - 1), repsMin: params.repsMin + 2, repsMax: params.repsMax + 2, restSeconds: Math.max(60, params.restSec - 30), rir, equipment: 'dumbbell', primaryMuscles: ['Prsa'], secondaryMuscles: ['Ramena', 'Triceps'], isLocked: false },
-      { id: `u2-w${weekNum}`, name: 'Lat Pulldown', nameEn: 'Lat Pulldown', sets, repsMin: params.repsMin + 2, repsMax: params.repsMax + 2, restSeconds: Math.max(60, params.restSec - 30), rir, equipment: 'cable', primaryMuscles: ['Leda'], secondaryMuscles: ['Biceps'], isLocked: false },
-      { id: `u3-w${weekNum}`, name: 'Seated Row', nameEn: 'Seated Cable Row', sets: Math.max(2, sets - 1), repsMin: params.repsMin + 2, repsMax: params.repsMax + 2, restSeconds: Math.max(60, params.restSec - 30), rir, equipment: 'cable', primaryMuscles: ['Leda'], secondaryMuscles: ['Biceps'], isLocked: false },
-      { id: `u4-w${weekNum}`, name: 'Lateral Raise', nameEn: 'Dumbbell Lateral Raise', sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60, rir: Math.min(3, rir + 1), equipment: 'dumbbell', primaryMuscles: ['Ramena'], secondaryMuscles: [], isLocked: false },
-      { id: `u5-w${weekNum}`, name: 'Face Pull', nameEn: 'Face Pull', sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60, rir: Math.min(3, rir + 1), equipment: 'cable', primaryMuscles: ['Ramena', 'Leda'], secondaryMuscles: [], isLocked: false },
+      { id: `u1-w${weekNum}`, name: 'Incline DB Press', nameEn: 'Incline Dumbbell Press', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'dumbbell', primaryMuscles: ['Prsa'], secondaryMuscles: ['Ramena', 'Triceps'], isLocked: false },
+      { id: `u2-w${weekNum}`, name: 'Cable Row', nameEn: 'Seated Cable Row', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'cable', primaryMuscles: ['Leda'], secondaryMuscles: ['Biceps'], isLocked: false },
+      { id: `u3-w${weekNum}`, name: 'DB Shoulder Press', nameEn: 'Seated Dumbbell Shoulder Press', sets: Math.max(2, sets - 1), repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'dumbbell', primaryMuscles: ['Ramena'], secondaryMuscles: ['Triceps'], isLocked: false },
+      { id: `u4-w${weekNum}`, name: 'Lat Pulldown', nameEn: 'Lat Pulldown', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'cable', primaryMuscles: ['Leda'], secondaryMuscles: ['Biceps'], isLocked: false },
+      { id: `u5-w${weekNum}`, name: 'Lateral Raise', nameEn: 'Dumbbell Lateral Raise', sets: 4, repsMin: 12, repsMax: 15, restSeconds: 60, rir: Math.min(3, rir + 1), equipment: 'dumbbell', primaryMuscles: ['Ramena'], secondaryMuscles: [], isLocked: false },
+      { id: `u6-w${weekNum}`, name: 'Face Pull', nameEn: 'Face Pull', sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60, rir: Math.min(3, rir + 1), equipment: 'cable', primaryMuscles: ['Ramena', 'Leda'], secondaryMuscles: [], isLocked: false },
     ];
 
     const lowerExercises: Exercise[] = isMale ? [
-      { id: `l1-w${weekNum}`, name: 'Squat', nameEn: 'Barbell Back Squat', sets, repsMin: params.repsMin, repsMax: Math.min(8, params.repsMax), restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Quadriceps'], secondaryMuscles: ['Gluteus', 'Hamstrings'], isLocked: false },
-      { id: `l2-w${weekNum}`, name: 'Romanian Deadlift', nameEn: 'Romanian Deadlift', sets: Math.max(2, sets - 1), repsMin: params.repsMin + 2, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Hamstrings'], secondaryMuscles: ['Gluteus', 'Leda'], isLocked: false },
-      { id: `l3-w${weekNum}`, name: 'Leg Press', nameEn: 'Leg Press', sets: Math.max(2, sets - 1), repsMin: params.repsMin + 2, repsMax: params.repsMax + 2, restSeconds: Math.max(60, params.restSec - 30), rir, equipment: 'machine', primaryMuscles: ['Quadriceps'], secondaryMuscles: ['Gluteus'], isLocked: false },
-      { id: `l4-w${weekNum}`, name: 'Leg Curl', nameEn: 'Lying Leg Curl', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 90, rir: Math.min(3, rir + 1), equipment: 'machine', primaryMuscles: ['Hamstrings'], secondaryMuscles: [], isLocked: false },
-      { id: `l5-w${weekNum}`, name: 'Calf Raise', nameEn: 'Standing Calf Raise', sets: 4, repsMin: 12, repsMax: 15, restSeconds: 60, rir: Math.min(3, rir + 1), equipment: 'machine', primaryMuscles: ['Listovi'], secondaryMuscles: [], isLocked: false },
+      { id: `l1-w${weekNum}`, name: 'Squat', nameEn: 'Barbell Back Squat', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Quadriceps'], secondaryMuscles: ['Gluteus', 'Hamstrings'], isLocked: false },
+      { id: `l2-w${weekNum}`, name: 'Romanian Deadlift', nameEn: 'Romanian Deadlift', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Hamstrings'], secondaryMuscles: ['Gluteus', 'Leda'], isLocked: false },
+      { id: `l3-w${weekNum}`, name: 'Leg Press', nameEn: 'Leg Press', sets: Math.max(2, sets - 1), repsMin: params.repsMin + 2, repsMax: params.repsMax + 2, restSeconds: 90, rir, equipment: 'machine', primaryMuscles: ['Quadriceps'], secondaryMuscles: ['Gluteus'], isLocked: false },
+      { id: `l4-w${weekNum}`, name: 'Walking Lunge', nameEn: 'Dumbbell Walking Lunge', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 90, rir: Math.min(3, rir + 1), equipment: 'dumbbell', primaryMuscles: ['Quadriceps', 'Gluteus'], secondaryMuscles: [], isLocked: false },
+      { id: `l5-w${weekNum}`, name: 'Leg Curl', nameEn: 'Lying Leg Curl', sets: 3, repsMin: 10, repsMax: 15, restSeconds: 60, rir: Math.min(3, rir + 1), equipment: 'machine', primaryMuscles: ['Hamstrings'], secondaryMuscles: [], isLocked: false },
+      { id: `l6-w${weekNum}`, name: 'Calf Raise', nameEn: 'Standing Calf Raise', sets: 4, repsMin: 12, repsMax: 15, restSeconds: 60, rir: Math.min(3, rir + 1), equipment: 'machine', primaryMuscles: ['Listovi'], secondaryMuscles: [], isLocked: false },
     ] : [
-      { id: `l1-w${weekNum}`, name: 'Hip Thrust', nameEn: 'Barbell Hip Thrust', sets, repsMin: params.repsMin + 2, repsMax: params.repsMax + 2, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Gluteus'], secondaryMuscles: ['Hamstrings'], isLocked: false },
-      { id: `l2-w${weekNum}`, name: 'Bulgarian Split Squat', nameEn: 'Bulgarian Split Squat', sets: Math.max(2, sets - 1), repsMin: params.repsMin + 2, repsMax: params.repsMax + 2, restSeconds: Math.max(60, params.restSec - 30), rir, equipment: 'dumbbell', primaryMuscles: ['Quadriceps', 'Gluteus'], secondaryMuscles: [], isLocked: false },
-      { id: `l3-w${weekNum}`, name: 'Romanian Deadlift', nameEn: 'Romanian Deadlift', sets, repsMin: params.repsMin + 2, repsMax: params.repsMax + 2, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Hamstrings', 'Gluteus'], secondaryMuscles: ['Leda'], isLocked: false },
-      { id: `l4-w${weekNum}`, name: 'Goblet Squat', nameEn: 'Goblet Squat', sets: Math.max(2, sets - 1), repsMin: 12, repsMax: 15, restSeconds: 90, rir: Math.min(3, rir + 1), equipment: 'dumbbell', primaryMuscles: ['Quadriceps'], secondaryMuscles: ['Gluteus'], isLocked: false },
-      { id: `l5-w${weekNum}`, name: 'Glute Bridge', nameEn: 'Glute Bridge', sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60, rir: Math.min(3, rir + 1), equipment: 'bodyweight', primaryMuscles: ['Gluteus'], secondaryMuscles: ['Hamstrings'], isLocked: false },
+      { id: `l1-w${weekNum}`, name: 'Hip Thrust', nameEn: 'Barbell Hip Thrust', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Gluteus'], secondaryMuscles: ['Hamstrings'], isLocked: false },
+      { id: `l2-w${weekNum}`, name: 'Bulgarian Split Squat', nameEn: 'Bulgarian Split Squat', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'dumbbell', primaryMuscles: ['Quadriceps', 'Gluteus'], secondaryMuscles: [], isLocked: false },
+      { id: `l3-w${weekNum}`, name: 'Romanian Deadlift', nameEn: 'Romanian Deadlift', sets, repsMin: params.repsMin, repsMax: params.repsMax, restSeconds: params.restSec, rir, equipment: 'barbell', primaryMuscles: ['Hamstrings', 'Gluteus'], secondaryMuscles: ['Leda'], isLocked: false },
+      { id: `l4-w${weekNum}`, name: 'Leg Press', nameEn: 'Leg Press', sets: Math.max(2, sets - 1), repsMin: params.repsMin + 2, repsMax: params.repsMax + 2, restSeconds: 90, rir, equipment: 'machine', primaryMuscles: ['Quadriceps'], secondaryMuscles: ['Gluteus'], isLocked: false },
+      { id: `l5-w${weekNum}`, name: 'Cable Kickback', nameEn: 'Cable Glute Kickback', sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60, rir: Math.min(3, rir + 1), equipment: 'cable', primaryMuscles: ['Gluteus'], secondaryMuscles: [], isLocked: false },
       { id: `l6-w${weekNum}`, name: 'Abductor Machine', nameEn: 'Hip Abductor Machine', sets: 3, repsMin: 15, repsMax: 20, restSeconds: 60, rir: Math.min(3, rir + 1), equipment: 'machine', primaryMuscles: ['Gluteus'], secondaryMuscles: [], isLocked: false },
     ];
 
