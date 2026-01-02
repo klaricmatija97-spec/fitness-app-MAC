@@ -1104,8 +1104,20 @@ function kreirajVjezbuSesijeIFT(
   const odmorValidiran = Math.min(600, Math.max(0, odmorSrednja));
   
   // 4. Setovi - validiraj da nije 0 ili negativan, min 1 set
-  const setoviSModifikatorom = params.setovi * volumenMod;
-  const setoviValidirani = Math.max(1, Math.round(setoviSModifikatorom));
+  // Poboljšana primjena volumena: koristi ceiling za povećanje, floor za smanjenje
+  // Ovo osigurava da se promjene vide čak i kod malih setova
+  let setoviSModifikatorom: number;
+  if (volumenMod > 1.0) {
+    // Povećanje: koristi Math.ceil da osiguraš da se vidi povećanje
+    setoviSModifikatorom = Math.ceil(params.setovi * volumenMod);
+  } else if (volumenMod < 1.0) {
+    // Smanjenje: koristi Math.floor da osiguraš da se vidi smanjenje
+    setoviSModifikatorom = Math.floor(params.setovi * volumenMod);
+  } else {
+    // Bez promjene
+    setoviSModifikatorom = params.setovi;
+  }
+  const setoviValidirani = Math.max(1, setoviSModifikatorom);
   
   // 5. Postotak 1RM - validiraj raspon 0-120% (120% za neke napredne tehnike)
   const postotak1RMSModifikatorom = params.intenzitet * intenzitetMod;
@@ -1113,6 +1125,13 @@ function kreirajVjezbuSesijeIFT(
   
   // 6. Log upozorenja za ekstremne vrijednosti (za debugging)
   if (DEBUG) {
+    log('debug', `Volumen primjena za ${vjezba.naziv_hr}:`, {
+      originalSetovi: params.setovi,
+      volumenMod,
+      setoviSModifikatorom,
+      setoviValidirani,
+      promjena: `${params.setovi} → ${setoviValidirani} (${volumenMod > 1 ? '+' : ''}${((volumenMod - 1) * 100).toFixed(1)}%)`,
+    });
     if (setoviValidirani !== Math.round(setoviSModifikatorom)) {
       log('warning', `Setovi prilagođeni: ${Math.round(setoviSModifikatorom)} → ${setoviValidirani}`, {
         vjezba: vjezba.naziv_hr,
@@ -1434,6 +1453,7 @@ function izracunajValnuProgresiju(
   
   // VALOVITA PROGRESIJA (IFT preporučena)
   // Koristi 4-tjedni val pattern koji se ponavlja
+  // IFT metodika: volumen se povećava kroz tjedne, s periodičkim smanjenjima za oporavak
   const pozicijaUValu = ((tjedanBroj - 1) % 4) + 1;
   
   switch (pozicijaUValu) {
@@ -1445,30 +1465,44 @@ function izracunajValnuProgresiju(
         intenzitetMultiplikator: 1.00,
         opisFaze: 'Akumulacija - bazni volumen',
       };
-    case 2: // Povećan
+    case 2: // Povećan volumen
       return {
         tjedanBroj,
         tipProgresije: 'valna',
-        volumenMultiplikator: 1.08,
+        volumenMultiplikator: 1.10, // Povećan od 1.08 na 1.10 za vidljiviju promjenu
         intenzitetMultiplikator: 1.03,
         opisFaze: 'Akumulacija - povećan volumen',
       };
-    case 3: // Mini-deload (smanjenje)
+    case 3: // Nastavak povećanja volumena (umjesto smanjenja)
       return {
         tjedanBroj,
         tipProgresije: 'valna',
-        volumenMultiplikator: 0.92,
+        volumenMultiplikator: 1.15, // Povećan umjesto smanjen - IFT progresija
         intenzitetMultiplikator: 1.05,
-        opisFaze: 'Intenzifikacija - smanjen volumen, veći intenzitet',
+        opisFaze: 'Akumulacija - nastavak povećanja volumena',
       };
-    case 4: // Peak
-      return {
-        tjedanBroj,
-        tipProgresije: 'valna',
-        volumenMultiplikator: 1.12,
-        intenzitetMultiplikator: 1.07,
-        opisFaze: 'Realizacija - peak',
-      };
+    case 4: // Peak ili mini-deload (ovisno o poziciji u programu)
+      // Ako je zadnji tjedan u valnom ciklusu, peak; inače mini-deload za oporavak
+      const jeZadnjiVal = Math.floor((tjedanBroj - 1) / 4) === Math.floor((ukupnoTjedana - 1) / 4);
+      if (jeZadnjiVal && tjedanBroj === ukupnoTjedana) {
+        // Zadnji tjedan - peak
+        return {
+          tjedanBroj,
+          tipProgresije: 'valna',
+          volumenMultiplikator: 1.20,
+          intenzitetMultiplikator: 1.08,
+          opisFaze: 'Realizacija - peak',
+        };
+      } else {
+        // Mini-deload za oporavak prije sljedećeg vala
+        return {
+          tjedanBroj,
+          tipProgresije: 'valna',
+          volumenMultiplikator: 0.95, // Blago smanjenje za oporavak
+          intenzitetMultiplikator: 1.02,
+          opisFaze: 'Mini-deload - oporavak prije sljedećeg vala',
+        };
+      }
     default:
       return {
         tjedanBroj,
