@@ -368,6 +368,39 @@ export const SPLIT_TEMPLATEI: Array<{
       { naziv: 'Full Body Glutei', misicneGrupe: ['gluteusi', 'cetveroglavi', 'straznja_loza', 'prsa', 'ledja'] },
     ],
   },
+  {
+    naziv: 'PHAT (Power/Hypertrophy Adaptive Training)',
+    opis: '5 dana - Kombinacija power i hypertrophy treninga',
+    dani: [
+      { naziv: 'Power Upper', misicneGrupe: ['prsa', 'ledja', 'ramena', 'biceps', 'triceps'] },
+      { naziv: 'Power Lower', misicneGrupe: ['cetveroglavi', 'straznja_loza', 'gluteusi'] },
+      { naziv: 'Rest', misicneGrupe: [] },
+      { naziv: 'Hypertrophy Chest & Arms', misicneGrupe: ['prsa', 'biceps', 'triceps'] },
+      { naziv: 'Hypertrophy Back & Shoulders', misicneGrupe: ['ledja', 'ramena', 'trapezi'] },
+      { naziv: 'Hypertrophy Legs', misicneGrupe: ['cetveroglavi', 'straznja_loza', 'gluteusi', 'listovi'] },
+    ],
+  },
+  {
+    naziv: '3-Day Full Body Intenzivni',
+    opis: '3 dana - Cijelo tijelo svaki trening, maksimalna frekvencija',
+    dani: [
+      { naziv: 'Full Body A', misicneGrupe: ['prsa', 'ledja', 'ramena', 'cetveroglavi', 'straznja_loza', 'biceps', 'triceps'] },
+      { naziv: 'Full Body B', misicneGrupe: ['prsa', 'ledja', 'ramena', 'gluteusi', 'listovi', 'trbusnjaci'] },
+      { naziv: 'Full Body C', misicneGrupe: ['prsa', 'ledja', 'ramena', 'cetveroglavi', 'gluteusi', 'biceps', 'triceps'] },
+    ],
+  },
+  {
+    naziv: 'Legs/Push/Pull',
+    opis: '3-6 dana - Alternativni redoslijed (Noge prvo)',
+    dani: [
+      { naziv: 'Noge', misicneGrupe: ['cetveroglavi', 'straznja_loza', 'gluteusi', 'listovi', 'trbusnjaci'] },
+      { naziv: 'Guranje', misicneGrupe: ['prsa', 'ramena', 'triceps'] },
+      { naziv: 'Povlačenje', misicneGrupe: ['ledja', 'biceps', 'straznja_loza'] },
+      { naziv: 'Noge', misicneGrupe: ['cetveroglavi', 'straznja_loza', 'gluteusi', 'listovi'] },
+      { naziv: 'Guranje', misicneGrupe: ['prsa', 'ramena', 'triceps'] },
+      { naziv: 'Povlačenje', misicneGrupe: ['ledja', 'biceps', 'straznja_loza'] },
+    ],
+  },
 ];
 
 // ============================================
