@@ -2207,14 +2207,16 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                       setExerciseToReplace({ sessionIndex, exerciseIndex });
                       setShowReplaceModal(true);
                     }}
+                    activeOpacity={0.7}
                   >
                     <Text style={styles.exerciseActionText}>Zamijeni</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
-                    style={styles.exerciseActionButton}
+                    style={[styles.exerciseActionButton, styles.exerciseActionButtonEdit]}
                     onPress={() => handleEditExercise(sessionIndex, exerciseIndex)}
+                    activeOpacity={0.7}
                   >
-                    <Text style={styles.exerciseActionText}>Uredi</Text>
+                    <Text style={[styles.exerciseActionText, styles.exerciseActionTextEdit]}>Uredi</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -3779,16 +3781,32 @@ const styles = StyleSheet.create({
   exerciseName: { color: '#FFF', fontSize: 15, fontWeight: '500' },
   exerciseParams: { color: '#71717A', fontSize: 12, marginTop: 2 },
   exerciseMuscles: { color: '#FFFFFF', fontSize: 11, marginTop: 2 },
-  exerciseActions: { flexDirection: 'row', gap: 8 },
-  exerciseActionButton: {
-    width: 36,
-    height: 36,
-    backgroundColor: '#333',
-    borderRadius: 8,
-    justifyContent: 'center',
+  exerciseActions: { 
+    flexDirection: 'row', 
+    gap: 6,
     alignItems: 'center',
   },
-  exerciseActionText: { fontSize: 16 },
+  exerciseActionButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.3)',
+  },
+  exerciseActionButtonEdit: {
+    backgroundColor: 'rgba(113, 113, 122, 0.15)',
+    borderColor: 'rgba(113, 113, 122, 0.3)',
+  },
+  exerciseActionText: { 
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#3B82F6',
+    letterSpacing: 0.3,
+  },
+  exerciseActionTextEdit: {
+    color: '#A1A1AA',
+  },
 
   // Add Exercise
   addExerciseButton: {
