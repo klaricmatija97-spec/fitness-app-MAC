@@ -1,567 +1,260 @@
-// Baza vježbi za teretanu - koristi se u Add Exercise modalu
+/**
+ * Exercise Database - 873 vježbe
+ * 
+ * Izvor: wrkout/exercises.json (MIT License)
+ * GitHub: https://github.com/wrkout/exercises.json
+ */
 
-export type MuscleGroup = 
-  | "chest" | "back" | "shoulders" | "arms" | "legs" | "core" | "full-body";
+import wrkoutDatabase from './wrkout-database.json';
 
-export type ExerciseType = "compound" | "isolation" | "cardio" | "bodyweight";
+// ============================================
+// TYPES
+// ============================================
 
-export interface LibraryExercise {
+export interface WrkoutExercise {
   id: string;
   name: string;
-  nameHr: string;
-  muscleGroup: MuscleGroup;
-  muscleGroupHr: string;
-  type: ExerciseType;
-  equipment: string;
-  equipmentHr: string;
-  alternatives?: string[];
+  force: 'push' | 'pull' | 'static' | null;
+  level: 'beginner' | 'intermediate' | 'expert';
+  mechanic: 'compound' | 'isolation' | null;
+  equipment: string | null;
+  primaryMuscles: string[];
+  secondaryMuscles: string[];
+  instructions: string[];
+  category: 'strength' | 'stretching' | 'plyometrics' | 'strongman' | 'powerlifting' | 'cardio' | 'olympic weightlifting';
 }
 
-// Vježbe za teretanu
-export const gymExercises: LibraryExercise[] = [
-  // PRSENI (Chest) - 7 vježbi
-  {
-    id: "bench-press",
-    name: "Bench Press",
-    nameHr: "Pritisak s klupom",
-    muscleGroup: "chest",
-    muscleGroupHr: "Prsni",
-    type: "compound",
-    equipment: "barbell",
-    equipmentHr: "Šipka",
-    alternatives: ["dumbbell-press", "machine-press"],
-  },
-  {
-    id: "dumbbell-press",
-    name: "Dumbbell Press",
-    nameHr: "Pritisak s bučicama",
-    muscleGroup: "chest",
-    muscleGroupHr: "Prsni",
-    type: "compound",
-    equipment: "dumbbell",
-    equipmentHr: "Bučice",
-    alternatives: ["bench-press", "machine-press"],
-  },
-  {
-    id: "incline-press",
-    name: "Incline Bench Press",
-    nameHr: "Pritisak na kosoj klupi",
-    muscleGroup: "chest",
-    muscleGroupHr: "Prsni",
-    type: "compound",
-    equipment: "barbell",
-    equipmentHr: "Šipka",
-    alternatives: ["incline-dumbbell-press"],
-  },
-  {
-    id: "incline-dumbbell-press",
-    name: "Incline Dumbbell Press",
-    nameHr: "Pritisak s bučicama na kosoj klupi",
-    muscleGroup: "chest",
-    muscleGroupHr: "Prsni",
-    type: "compound",
-    equipment: "dumbbell",
-    equipmentHr: "Bučice",
-    alternatives: ["incline-press"],
-  },
-  {
-    id: "chest-fly",
-    name: "Chest Fly",
-    nameHr: "Raznoženje za prsne",
-    muscleGroup: "chest",
-    muscleGroupHr: "Prsni",
-    type: "isolation",
-    equipment: "dumbbell",
-    equipmentHr: "Bučice",
-    alternatives: ["cable-fly", "machine-fly"],
-  },
-  {
-    id: "cable-fly",
-    name: "Cable Fly",
-    nameHr: "Raznoženje na kablovima",
-    muscleGroup: "chest",
-    muscleGroupHr: "Prsni",
-    type: "isolation",
-    equipment: "cable",
-    equipmentHr: "Kablovi",
-    alternatives: ["chest-fly", "machine-fly"],
-  },
-  {
-    id: "machine-press",
-    name: "Machine Chest Press",
-    nameHr: "Pritisak na spravi",
-    muscleGroup: "chest",
-    muscleGroupHr: "Prsni",
-    type: "compound",
-    equipment: "machine",
-    equipmentHr: "Sprava",
-    alternatives: ["bench-press", "dumbbell-press"],
-  },
+export type MuscleGroup = 
+  | 'quadriceps' | 'shoulders' | 'abdominals' | 'chest' | 'hamstrings'
+  | 'triceps' | 'biceps' | 'lats' | 'middle back' | 'calves'
+  | 'lower back' | 'forearms' | 'glutes' | 'traps' | 'adductors'
+  | 'abductors' | 'neck';
 
-  // LEĐA (Back) - 8 vježbi
-  {
-    id: "deadlift",
-    name: "Deadlift",
-    nameHr: "Mrtvo dizanje",
-    muscleGroup: "back",
-    muscleGroupHr: "Leđa",
-    type: "compound",
-    equipment: "barbell",
-    equipmentHr: "Šipka",
-    alternatives: ["romanian-deadlift", "t-bar-row"],
-  },
-  {
-    id: "barbell-row",
-    name: "Barbell Row",
-    nameHr: "Vlačenje sa šipkom",
-    muscleGroup: "back",
-    muscleGroupHr: "Leđa",
-    type: "compound",
-    equipment: "barbell",
-    equipmentHr: "Šipka",
-    alternatives: ["dumbbell-row", "cable-row"],
-  },
-  {
-    id: "dumbbell-row",
-    name: "Dumbbell Row",
-    nameHr: "Vlačenje s bučicama",
-    muscleGroup: "back",
-    muscleGroupHr: "Leđa",
-    type: "compound",
-    equipment: "dumbbell",
-    equipmentHr: "Bučice",
-    alternatives: ["barbell-row", "cable-row"],
-  },
-  {
-    id: "pull-up",
-    name: "Pull Up",
-    nameHr: "Zgibovi",
-    muscleGroup: "back",
-    muscleGroupHr: "Leđa",
-    type: "compound",
-    equipment: "bodyweight",
-    equipmentHr: "Vlastito tijelo",
-    alternatives: ["lat-pulldown", "assisted-pull-up"],
-  },
-  {
-    id: "lat-pulldown",
-    name: "Lat Pulldown",
-    nameHr: "Vlačenje na spravi",
-    muscleGroup: "back",
-    muscleGroupHr: "Leđa",
-    type: "compound",
-    equipment: "machine",
-    equipmentHr: "Sprava",
-    alternatives: ["pull-up", "cable-pulldown"],
-  },
-  {
-    id: "cable-row",
-    name: "Cable Row",
-    nameHr: "Vlačenje na kablovima",
-    muscleGroup: "back",
-    muscleGroupHr: "Leđa",
-    type: "compound",
-    equipment: "cable",
-    equipmentHr: "Kablovi",
-    alternatives: ["barbell-row", "dumbbell-row"],
-  },
-  {
-    id: "t-bar-row",
-    name: "T-Bar Row",
-    nameHr: "Vlačenje T-šipkom",
-    muscleGroup: "back",
-    muscleGroupHr: "Leđa",
-    type: "compound",
-    equipment: "machine",
-    equipmentHr: "Sprava",
-    alternatives: ["barbell-row", "cable-row"],
-  },
-  {
-    id: "face-pull",
-    name: "Face Pull",
-    nameHr: "Vlačenje prema licu",
-    muscleGroup: "back",
-    muscleGroupHr: "Leđa",
-    type: "isolation",
-    equipment: "cable",
-    equipmentHr: "Kablovi",
-    alternatives: ["rear-delt-fly"],
-  },
+// ============================================
+// PRIJEVODI
+// ============================================
 
-  // RAMENA (Shoulders) - 5 vježbi
-  {
-    id: "overhead-press",
-    name: "Overhead Press",
-    nameHr: "Pritisak iznad glave",
-    muscleGroup: "shoulders",
-    muscleGroupHr: "Ramena",
-    type: "compound",
-    equipment: "barbell",
-    equipmentHr: "Šipka",
-    alternatives: ["dumbbell-press", "machine-press-shoulders"],
-  },
-  {
-    id: "dumbbell-shoulder-press",
-    name: "Dumbbell Shoulder Press",
-    nameHr: "Pritisak s bučicama iznad glave",
-    muscleGroup: "shoulders",
-    muscleGroupHr: "Ramena",
-    type: "compound",
-    equipment: "dumbbell",
-    equipmentHr: "Bučice",
-    alternatives: ["overhead-press"],
-  },
-  {
-    id: "lateral-raise",
-    name: "Lateral Raise",
-    nameHr: "Bočno podizanje",
-    muscleGroup: "shoulders",
-    muscleGroupHr: "Ramena",
-    type: "isolation",
-    equipment: "dumbbell",
-    equipmentHr: "Bučice",
-    alternatives: ["cable-lateral-raise"],
-  },
-  {
-    id: "rear-delt-fly",
-    name: "Rear Delt Fly",
-    nameHr: "Raznoženje za stražnja ramena",
-    muscleGroup: "shoulders",
-    muscleGroupHr: "Ramena",
-    type: "isolation",
-    equipment: "dumbbell",
-    equipmentHr: "Bučice",
-    alternatives: ["face-pull", "cable-rear-delt"],
-  },
-  {
-    id: "front-raise",
-    name: "Front Raise",
-    nameHr: "Prednje podizanje",
-    muscleGroup: "shoulders",
-    muscleGroupHr: "Ramena",
-    type: "isolation",
-    equipment: "dumbbell",
-    equipmentHr: "Bučice",
-    alternatives: ["cable-front-raise"],
-  },
+export const MUSCLE_TRANSLATIONS: Record<string, string> = {
+  'quadriceps': 'Kvadriceps',
+  'shoulders': 'Ramena',
+  'abdominals': 'Trbušnjaci',
+  'chest': 'Prsa',
+  'hamstrings': 'Stražnja loža',
+  'triceps': 'Triceps',
+  'biceps': 'Biceps',
+  'lats': 'Leđa (latissimus)',
+  'middle back': 'Srednja leđa',
+  'calves': 'Listovi',
+  'lower back': 'Donja leđa',
+  'forearms': 'Podlaktice',
+  'glutes': 'Gluteusi',
+  'traps': 'Trapezius',
+  'adductors': 'Aduktori',
+  'abductors': 'Abduktori',
+  'neck': 'Vrat'
+};
 
-  // RUKE (Arms) - 6 vježbi
-  {
-    id: "barbell-curl",
-    name: "Barbell Curl",
-    nameHr: "Uvijanje sa šipkom",
-    muscleGroup: "arms",
-    muscleGroupHr: "Ruke",
-    type: "isolation",
-    equipment: "barbell",
-    equipmentHr: "Šipka",
-    alternatives: ["dumbbell-curl", "cable-curl"],
-  },
-  {
-    id: "dumbbell-curl",
-    name: "Dumbbell Curl",
-    nameHr: "Uvijanje s bučicama",
-    muscleGroup: "arms",
-    muscleGroupHr: "Ruke",
-    type: "isolation",
-    equipment: "dumbbell",
-    equipmentHr: "Bučice",
-    alternatives: ["barbell-curl", "cable-curl"],
-  },
-  {
-    id: "tricep-dip",
-    name: "Tricep Dip",
-    nameHr: "Dips za triceps",
-    muscleGroup: "arms",
-    muscleGroupHr: "Ruke",
-    type: "compound",
-    equipment: "bodyweight",
-    equipmentHr: "Vlastito tijelo",
-    alternatives: ["tricep-pushdown", "overhead-tricep"],
-  },
-  {
-    id: "tricep-pushdown",
-    name: "Tricep Pushdown",
-    nameHr: "Pritisak za triceps",
-    muscleGroup: "arms",
-    muscleGroupHr: "Ruke",
-    type: "isolation",
-    equipment: "cable",
-    equipmentHr: "Kablovi",
-    alternatives: ["tricep-dip", "overhead-tricep"],
-  },
-  {
-    id: "overhead-tricep",
-    name: "Overhead Tricep Extension",
-    nameHr: "Ispružanje tricepsa iznad glave",
-    muscleGroup: "arms",
-    muscleGroupHr: "Ruke",
-    type: "isolation",
-    equipment: "dumbbell",
-    equipmentHr: "Bučice",
-    alternatives: ["tricep-pushdown", "tricep-dip"],
-  },
-  {
-    id: "hammer-curl",
-    name: "Hammer Curl",
-    nameHr: "Čekićno uvijanje",
-    muscleGroup: "arms",
-    muscleGroupHr: "Ruke",
-    type: "isolation",
-    equipment: "dumbbell",
-    equipmentHr: "Bučice",
-    alternatives: ["barbell-curl", "dumbbell-curl"],
-  },
+export const EQUIPMENT_TRANSLATIONS: Record<string, string> = {
+  'barbell': 'Šipka',
+  'dumbbell': 'Bučice',
+  'machine': 'Sprava',
+  'cable': 'Kabel',
+  'kettlebells': 'Kettlebell',
+  'body only': 'Vlastita težina',
+  'bands': 'Elastične trake',
+  'medicine ball': 'Medicinka',
+  'exercise ball': 'Lopta za vježbanje',
+  'foam roll': 'Foam roller',
+  'e-z curl bar': 'EZ šipka',
+  'other': 'Ostalo',
+  'null': 'Bez opreme'
+};
 
-  // NOGE (Legs) - 8 vježbi
-  {
-    id: "squat",
-    name: "Squat",
-    nameHr: "Čučnjevi",
-    muscleGroup: "legs",
-    muscleGroupHr: "Noge",
-    type: "compound",
-    equipment: "barbell",
-    equipmentHr: "Šipka",
-    alternatives: ["goblet-squat", "leg-press"],
-  },
-  {
-    id: "leg-press",
-    name: "Leg Press",
-    nameHr: "Pritisak nogama",
-    muscleGroup: "legs",
-    muscleGroupHr: "Noge",
-    type: "compound",
-    equipment: "machine",
-    equipmentHr: "Sprava",
-    alternatives: ["squat", "goblet-squat"],
-  },
-  {
-    id: "romanian-deadlift",
-    name: "Romanian Deadlift",
-    nameHr: "Rumunsko mrtvo dizanje",
-    muscleGroup: "legs",
-    muscleGroupHr: "Noge",
-    type: "compound",
-    equipment: "barbell",
-    equipmentHr: "Šipka",
-    alternatives: ["deadlift", "leg-curl"],
-  },
-  {
-    id: "leg-curl",
-    name: "Leg Curl",
-    nameHr: "Uvijanje nogu",
-    muscleGroup: "legs",
-    muscleGroupHr: "Noge",
-    type: "isolation",
-    equipment: "machine",
-    equipmentHr: "Sprava",
-    alternatives: ["romanian-deadlift"],
-  },
-  {
-    id: "leg-extension",
-    name: "Leg Extension",
-    nameHr: "Ispružanje nogu",
-    muscleGroup: "legs",
-    muscleGroupHr: "Noge",
-    type: "isolation",
-    equipment: "machine",
-    equipmentHr: "Sprava",
-    alternatives: ["squat", "lunges"],
-  },
-  {
-    id: "lunges",
-    name: "Lunges",
-    nameHr: "Iskoraci",
-    muscleGroup: "legs",
-    muscleGroupHr: "Noge",
-    type: "compound",
-    equipment: "dumbbell",
-    equipmentHr: "Bučice",
-    alternatives: ["squat", "leg-press"],
-  },
-  {
-    id: "goblet-squat",
-    name: "Goblet Squat",
-    nameHr: "Čučnjevi s bučicom",
-    muscleGroup: "legs",
-    muscleGroupHr: "Noge",
-    type: "compound",
-    equipment: "dumbbell",
-    equipmentHr: "Bučice",
-    alternatives: ["squat", "leg-press"],
-  },
-  {
-    id: "calf-raise",
-    name: "Calf Raise",
-    nameHr: "Podizanje na prste",
-    muscleGroup: "legs",
-    muscleGroupHr: "Noge",
-    type: "isolation",
-    equipment: "machine",
-    equipmentHr: "Sprava",
-    alternatives: ["standing-calf-raise"],
-  },
+export const CATEGORY_TRANSLATIONS: Record<string, string> = {
+  'strength': 'Snaga',
+  'stretching': 'Istezanje',
+  'plyometrics': 'Pliometrija',
+  'strongman': 'Strongman',
+  'powerlifting': 'Powerlifting',
+  'cardio': 'Kardio',
+  'olympic weightlifting': 'Olimpijsko dizanje'
+};
 
-  // TRBUH (Core) - 5 vježbi
-  {
-    id: "crunches",
-    name: "Crunches",
-    nameHr: "Trbušnjaci",
-    muscleGroup: "core",
-    muscleGroupHr: "Trbuh",
-    type: "isolation",
-    equipment: "bodyweight",
-    equipmentHr: "Vlastito tijelo",
-    alternatives: ["sit-ups", "plank"],
-  },
-  {
-    id: "plank",
-    name: "Plank",
-    nameHr: "Držanje u poziciji",
-    muscleGroup: "core",
-    muscleGroupHr: "Trbuh",
-    type: "isolation",
-    equipment: "bodyweight",
-    equipmentHr: "Vlastito tijelo",
-    alternatives: ["crunches", "mountain-climbers"],
-  },
-  {
-    id: "russian-twist",
-    name: "Russian Twist",
-    nameHr: "Ruski zavoj",
-    muscleGroup: "core",
-    muscleGroupHr: "Trbuh",
-    type: "isolation",
-    equipment: "bodyweight",
-    equipmentHr: "Vlastito tijelo",
-    alternatives: ["crunches", "side-plank"],
-  },
-  {
-    id: "leg-raise",
-    name: "Leg Raise",
-    nameHr: "Podizanje nogu",
-    muscleGroup: "core",
-    muscleGroupHr: "Trbuh",
-    type: "isolation",
-    equipment: "bodyweight",
-    equipmentHr: "Vlastito tijelo",
-    alternatives: ["crunches", "hanging-leg-raise"],
-  },
-  {
-    id: "mountain-climbers",
-    name: "Mountain Climbers",
-    nameHr: "Planinski penjači",
-    muscleGroup: "core",
-    muscleGroupHr: "Trbuh",
-    type: "cardio",
-    equipment: "bodyweight",
-    equipmentHr: "Vlastito tijelo",
-    alternatives: ["plank", "burpees"],
-  },
-];
+export const LEVEL_TRANSLATIONS: Record<string, string> = {
+  'beginner': 'Početnik',
+  'intermediate': 'Srednji',
+  'expert': 'Napredni'
+};
 
-// Bodyweight vježbe
-export const bodyweightExercises: LibraryExercise[] = [
-  {
-    id: "push-up",
-    name: "Push Up",
-    nameHr: "Sklekovi",
-    muscleGroup: "chest",
-    muscleGroupHr: "Prsni",
-    type: "compound",
-    equipment: "bodyweight",
-    equipmentHr: "Vlastito tijelo",
-    alternatives: ["incline-push-up", "diamond-push-up"],
-  },
-  {
-    id: "pull-up-bodyweight",
-    name: "Pull Up",
-    nameHr: "Zgibovi",
-    muscleGroup: "back",
-    muscleGroupHr: "Leđa",
-    type: "compound",
-    equipment: "bodyweight",
-    equipmentHr: "Vlastito tijelo",
-    alternatives: ["chin-up", "inverted-row"],
-  },
-  {
-    id: "squat-bodyweight",
-    name: "Bodyweight Squat",
-    nameHr: "Čučnjevi",
-    muscleGroup: "legs",
-    muscleGroupHr: "Noge",
-    type: "compound",
-    equipment: "bodyweight",
-    equipmentHr: "Vlastito tijelo",
-    alternatives: ["jump-squat", "pistol-squat"],
-  },
-  {
-    id: "burpees",
-    name: "Burpees",
-    nameHr: "Burpiji",
-    muscleGroup: "full-body",
-    muscleGroupHr: "Cijelo tijelo",
-    type: "cardio",
-    equipment: "bodyweight",
-    equipmentHr: "Vlastito tijelo",
-    alternatives: ["mountain-climbers", "jumping-jacks"],
-  },
-  {
-    id: "jumping-jacks",
-    name: "Jumping Jacks",
-    nameHr: "Skakanje",
-    muscleGroup: "full-body",
-    muscleGroupHr: "Cijelo tijelo",
-    type: "cardio",
-    equipment: "bodyweight",
-    equipmentHr: "Vlastito tijelo",
-    alternatives: ["burpees", "high-knees"],
-  },
-  {
-    id: "high-knees",
-    name: "High Knees",
-    nameHr: "Visoka koljena",
-    muscleGroup: "full-body",
-    muscleGroupHr: "Cijelo tijelo",
-    type: "cardio",
-    equipment: "bodyweight",
-    equipmentHr: "Vlastito tijelo",
-    alternatives: ["jumping-jacks", "burpees"],
-  },
-  {
-    id: "jump-squat",
-    name: "Jump Squat",
-    nameHr: "Skok čučanj",
-    muscleGroup: "legs",
-    muscleGroupHr: "Noge",
-    type: "cardio",
-    equipment: "bodyweight",
-    equipmentHr: "Vlastito tijelo",
-    alternatives: ["squat-bodyweight"],
-  },
-];
+// ============================================
+// BAZA VJEŽBI
+// ============================================
 
-// Sve vježbe zajedno
-export const allExercises: LibraryExercise[] = [...gymExercises, ...bodyweightExercises];
+export const allExercises: WrkoutExercise[] = wrkoutDatabase as WrkoutExercise[];
 
-// Helper funkcije
-export function getExercisesByMuscleGroup(muscleGroup: MuscleGroup): LibraryExercise[] {
-  return allExercises.filter(ex => ex.muscleGroup === muscleGroup);
+// ============================================
+// HELPER FUNKCIJE
+// ============================================
+
+/**
+ * Dohvati sve vježbe
+ */
+export function getAllExercises(): WrkoutExercise[] {
+  return allExercises;
 }
 
-export function getExerciseById(id: string): LibraryExercise | undefined {
-  return allExercises.find(ex => ex.id === id);
+/**
+ * Dohvati vježbu po ID-u
+ */
+export function getExerciseById(id: string): WrkoutExercise | undefined {
+  return allExercises.find(e => e.id === id);
 }
 
-// Kategorije za prikaz u modalu
-export const muscleGroupCategories: { id: MuscleGroup; nameHr: string }[] = [
-  { id: 'chest', nameHr: 'Prsni' },
-  { id: 'back', nameHr: 'Leđa' },
-  { id: 'shoulders', nameHr: 'Ramena' },
-  { id: 'arms', nameHr: 'Ruke' },
-  { id: 'legs', nameHr: 'Noge' },
-  { id: 'core', nameHr: 'Trbuh' },
-  { id: 'full-body', nameHr: 'Cijelo tijelo' },
+/**
+ * Dohvati vježbu po imenu
+ */
+export function getExerciseByName(name: string): WrkoutExercise | undefined {
+  return allExercises.find(e => e.name.toLowerCase() === name.toLowerCase());
+}
+
+/**
+ * Filtriraj vježbe po mišićnoj grupi
+ */
+export function getExercisesByMuscle(muscle: string): WrkoutExercise[] {
+  const muscleLower = muscle.toLowerCase();
+  return allExercises.filter(e => 
+    e.primaryMuscles.some(m => m.toLowerCase() === muscleLower) ||
+    e.secondaryMuscles.some(m => m.toLowerCase() === muscleLower)
+  );
+}
+
+/**
+ * Filtriraj vježbe po primarnoj mišićnoj grupi
+ */
+export function getExercisesByPrimaryMuscle(muscle: string): WrkoutExercise[] {
+  const muscleLower = muscle.toLowerCase();
+  return allExercises.filter(e => 
+    e.primaryMuscles.some(m => m.toLowerCase() === muscleLower)
+  );
+}
+
+/**
+ * Filtriraj vježbe po opremi
+ */
+export function getExercisesByEquipment(equipment: string): WrkoutExercise[] {
+  return allExercises.filter(e => e.equipment === equipment);
+}
+
+/**
+ * Filtriraj vježbe po kategoriji
+ */
+export function getExercisesByCategory(category: string): WrkoutExercise[] {
+  return allExercises.filter(e => e.category === category);
+}
+
+/**
+ * Filtriraj vježbe po razini
+ */
+export function getExercisesByLevel(level: 'beginner' | 'intermediate' | 'expert'): WrkoutExercise[] {
+  return allExercises.filter(e => e.level === level);
+}
+
+/**
+ * Napredna pretraga
+ */
+export function searchExercises(options: {
+  muscle?: string;
+  equipment?: string;
+  level?: 'beginner' | 'intermediate' | 'expert';
+  category?: string;
+  searchTerm?: string;
+}): WrkoutExercise[] {
+  return allExercises.filter(e => {
+    if (options.muscle) {
+      const muscleLower = options.muscle.toLowerCase();
+      if (!e.primaryMuscles.some(m => m.toLowerCase() === muscleLower) && 
+          !e.secondaryMuscles.some(m => m.toLowerCase() === muscleLower)) {
+        return false;
+      }
+    }
+    if (options.equipment && e.equipment !== options.equipment) {
+      return false;
+    }
+    if (options.level && e.level !== options.level) {
+      return false;
+    }
+    if (options.category && e.category !== options.category) {
+      return false;
+    }
+    if (options.searchTerm) {
+      const term = options.searchTerm.toLowerCase();
+      return e.name.toLowerCase().includes(term) || 
+             e.primaryMuscles.some(m => m.toLowerCase().includes(term));
+    }
+    return true;
+  });
+}
+
+// ============================================
+// KATEGORIJE ZA PRIKAZ U MODALU
+// ============================================
+
+export const muscleGroupCategories: { id: string; nameHr: string; nameEn: string }[] = [
+  { id: 'chest', nameHr: 'Prsa', nameEn: 'chest' },
+  { id: 'lats', nameHr: 'Leđa', nameEn: 'lats' },
+  { id: 'middle back', nameHr: 'Srednja leđa', nameEn: 'middle back' },
+  { id: 'lower back', nameHr: 'Donja leđa', nameEn: 'lower back' },
+  { id: 'shoulders', nameHr: 'Ramena', nameEn: 'shoulders' },
+  { id: 'biceps', nameHr: 'Biceps', nameEn: 'biceps' },
+  { id: 'triceps', nameHr: 'Triceps', nameEn: 'triceps' },
+  { id: 'forearms', nameHr: 'Podlaktice', nameEn: 'forearms' },
+  { id: 'quadriceps', nameHr: 'Kvadriceps', nameEn: 'quadriceps' },
+  { id: 'hamstrings', nameHr: 'Stražnja loža', nameEn: 'hamstrings' },
+  { id: 'glutes', nameHr: 'Gluteusi', nameEn: 'glutes' },
+  { id: 'calves', nameHr: 'Listovi', nameEn: 'calves' },
+  { id: 'abdominals', nameHr: 'Trbušnjaci', nameEn: 'abdominals' },
+  { id: 'traps', nameHr: 'Trapezius', nameEn: 'traps' },
+  { id: 'adductors', nameHr: 'Aduktori', nameEn: 'adductors' },
+  { id: 'abductors', nameHr: 'Abduktori', nameEn: 'abductors' },
+  { id: 'neck', nameHr: 'Vrat', nameEn: 'neck' },
 ];
 
+export const categoryList: { id: string; nameHr: string }[] = [
+  { id: 'strength', nameHr: 'Snaga' },
+  { id: 'plyometrics', nameHr: 'Pliometrija' },
+  { id: 'powerlifting', nameHr: 'Powerlifting' },
+  { id: 'olympic weightlifting', nameHr: 'Olimpijsko dizanje' },
+  { id: 'strongman', nameHr: 'Strongman' },
+  { id: 'cardio', nameHr: 'Kardio' },
+  { id: 'stretching', nameHr: 'Istezanje' },
+];
+
+// ============================================
+// STATISTIKA
+// ============================================
+
+export function getDatabaseStats() {
+  const muscles = new Set(allExercises.flatMap(e => e.primaryMuscles));
+  const equipment = new Set(allExercises.filter(e => e.equipment).map(e => e.equipment));
+  const categories = new Set(allExercises.map(e => e.category));
+  
+  const byCategory: Record<string, number> = {};
+  allExercises.forEach(e => {
+    byCategory[e.category] = (byCategory[e.category] || 0) + 1;
+  });
+
+  const byLevel: Record<string, number> = {};
+  allExercises.forEach(e => {
+    byLevel[e.level] = (byLevel[e.level] || 0) + 1;
+  });
+
+  return {
+    totalExercises: allExercises.length,
+    muscleGroups: muscles.size,
+    equipmentTypes: equipment.size,
+    categories: [...categories],
+    byCategory,
+    byLevel,
+    source: 'wrkout/exercises.json (MIT License)',
+  };
+}

@@ -28,7 +28,16 @@ import {
   Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { allExercises, muscleGroupCategories, LibraryExercise } from '../data/exercises';
+import { 
+  allExercises, 
+  muscleGroupCategories, 
+  WrkoutExercise,
+  MUSCLE_TRANSLATIONS,
+  EQUIPMENT_TRANSLATIONS,
+  CATEGORY_TRANSLATIONS,
+  categoryList,
+  searchExercises,
+} from '../data/exercises';
 import { API_BASE_URL } from '../services/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -2662,42 +2671,50 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
 
     const currentSession = currentWeek.sessions[addExerciseSessionIndex];
     
-    // Konvertiraj LibraryExercise u Exercise format
-    const convertToExercise = (libEx: LibraryExercise): Omit<Exercise, 'isLocked'> => {
+    // Konvertiraj WrkoutExercise u Exercise format
+    const convertToExercise = (wrkEx: WrkoutExercise): Omit<Exercise, 'isLocked'> => {
       // Default parametri ovisno o tipu vježbe
-      const isCompound = libEx.type === 'compound';
+      const isCompound = wrkEx.mechanic === 'compound';
+      const primaryMuscle = wrkEx.primaryMuscles[0] || '';
       return {
-        id: libEx.id,
-        name: libEx.nameHr, // Koristimo hrvatski naziv
-        nameEn: libEx.name,
+        id: wrkEx.id,
+        name: wrkEx.name,
+        nameEn: wrkEx.name,
         sets: isCompound ? 4 : 3,
         repsMin: isCompound ? 6 : 10,
         repsMax: isCompound ? 10 : 15,
         restSeconds: isCompound ? 90 : 60,
         rir: 2,
-        equipment: libEx.equipmentHr,
-        primaryMuscles: [libEx.muscleGroupHr],
-        secondaryMuscles: [],
+        equipment: wrkEx.equipment ? (EQUIPMENT_TRANSLATIONS[wrkEx.equipment] || wrkEx.equipment) : 'Bez opreme',
+        primaryMuscles: wrkEx.primaryMuscles.map(m => MUSCLE_TRANSLATIONS[m] || m),
+        secondaryMuscles: wrkEx.secondaryMuscles.map(m => MUSCLE_TRANSLATIONS[m] || m),
       };
     };
 
-    // Grupiraj vježbe po mišićnoj grupi koristeći pravu bazu
+    // Grupiraj vježbe po mišićnoj grupi koristeći pravu bazu (873 vježbe)
     const exerciseCatalog = muscleGroupCategories.map(cat => ({
       category: cat.nameHr,
+      categoryId: cat.id,
       exercises: allExercises
-        .filter(ex => ex.muscleGroup === cat.id)
+        .filter(ex => ex.primaryMuscles.includes(cat.nameEn))
         .map(convertToExercise)
     })).filter(cat => cat.exercises.length > 0);
 
     // Filtriraj vježbe po pretrazi
-    const filteredCatalog = exerciseCatalog.map(cat => ({
-      ...cat,
-      exercises: cat.exercises.filter(ex => 
-        ex.name.toLowerCase().includes(addExerciseFilter.toLowerCase()) ||
-        ex.nameEn.toLowerCase().includes(addExerciseFilter.toLowerCase()) ||
-        ex.primaryMuscles.some(m => m.toLowerCase().includes(addExerciseFilter.toLowerCase()))
-      )
-    })).filter(cat => cat.exercises.length > 0);
+    const filteredCatalog = addExerciseFilter.length > 0
+      ? [{
+          category: `Rezultati za "${addExerciseFilter}"`,
+          categoryId: 'search',
+          exercises: allExercises
+            .filter(ex => 
+              ex.name.toLowerCase().includes(addExerciseFilter.toLowerCase()) ||
+              ex.primaryMuscles.some(m => m.toLowerCase().includes(addExerciseFilter.toLowerCase())) ||
+              (ex.equipment && ex.equipment.toLowerCase().includes(addExerciseFilter.toLowerCase()))
+            )
+            .slice(0, 50) // Limit rezultata za performanse
+            .map(convertToExercise)
+        }].filter(cat => cat.exercises.length > 0)
+      : exerciseCatalog;
 
     // Dodaj vježbu u sesiju
     const addExerciseToSession = (exercise: Omit<Exercise, 'isLocked'>) => {
