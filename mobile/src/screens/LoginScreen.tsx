@@ -33,9 +33,10 @@ interface LoginScreenProps {
   onSkipLogin?: () => void;
   onBack?: () => void;
   onTrainerMode?: () => void;
+  onTrainerRegister?: () => void;
 }
 
-export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTrainerMode }: LoginScreenProps) {
+export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTrainerMode, onTrainerRegister }: LoginScreenProps) {
   const [currentBgImage, setCurrentBgImage] = useState(0);
   const [isLoginMode, setIsLoginMode] = useState(true);
   
@@ -330,6 +331,18 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
                   </TouchableOpacity>
                 )}
 
+                {/* Trainer register link */}
+                {onTrainerRegister && (
+                  <TouchableOpacity
+                    style={styles.trainerRegisterLink}
+                    onPress={onTrainerRegister}
+                  >
+                    <Text style={styles.trainerRegisterLinkText}>
+                      🏋️ Jesi trener? Registriraj se ovdje
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
                 {/* Skip login */}
                 {onSkipLogin && (
                   <TouchableOpacity
@@ -463,6 +476,18 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
                   >
                     <Text style={styles.trainerButtonText}>
                        Trener mod
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                {/* Trainer register link */}
+                {onTrainerRegister && (
+                  <TouchableOpacity
+                    style={styles.trainerRegisterLink}
+                    onPress={onTrainerRegister}
+                  >
+                    <Text style={styles.trainerRegisterLinkText}>
+                      🏋️ Jesi trener? Registriraj se ovdje
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -626,6 +651,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     letterSpacing: 1.2,
     fontWeight: '600',
+  },
+  trainerRegisterLink: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  trainerRegisterLinkText: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 12,
+    letterSpacing: 0.5,
   },
   skipButton: {
     paddingVertical: 12,

@@ -25,7 +25,8 @@ import NotificationSettingsScreen from "./src/screens/NotificationSettingsScreen
 import TrainerBrowseScreen from "./src/screens/TrainerBrowseScreen";
 import TrainerProfileScreen from "./src/screens/TrainerProfileScreen";
 import TrainerProfileEditScreen from "./src/screens/TrainerProfileEditScreen";
-import { goalStorage } from "./src/services/storage";
+import TrainerRegisterScreen from "./src/screens/TrainerRegisterScreen";
+import { goalStorage, authStorage } from "./src/services/storage";
 
 // Helper funkcija za kreiranje auth tokena (format: base64(userId:timestamp))
 // Za MVP koristimo hardcoded trainer UUID
@@ -72,6 +73,7 @@ export default function App() {
   const [showTrainerBrowse, setShowTrainerBrowse] = useState(false);
   const [showTrainerProfile, setShowTrainerProfile] = useState(false);
   const [showTrainerProfileEdit, setShowTrainerProfileEdit] = useState(false);
+  const [showTrainerRegister, setShowTrainerRegister] = useState(false);
   const [selectedTrainerIdForProfile, setSelectedTrainerIdForProfile] = useState<string | null>(null);
   const [selectedTrainerCodeForProfile, setSelectedTrainerCodeForProfile] = useState<string | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
@@ -296,6 +298,32 @@ export default function App() {
     setShowLogin(false);
     setShowOnboarding(false);
     setShowTrainerHome(true);
+  };
+
+  const handleShowTrainerRegister = () => {
+    setShowLogin(false);
+    setShowTrainerRegister(true);
+  };
+
+  const handleTrainerRegisterSuccess = async (trainerData: {
+    id: string;
+    name: string;
+    email: string;
+    trainerCode: string;
+    accessToken: string;
+  }) => {
+    // Spremi token i podatke trenera
+    await authStorage.saveToken(trainerData.accessToken);
+    await authStorage.saveTrainerId(trainerData.id);
+    
+    // Prebaci na trainer home
+    setShowTrainerRegister(false);
+    setShowTrainerHome(true);
+  };
+
+  const handleTrainerRegisterBack = () => {
+    setShowTrainerRegister(false);
+    setShowLogin(true);
   };
 
   const handleTrainerClientPress = (clientId: string) => {
@@ -974,6 +1002,16 @@ export default function App() {
     return <OnboardingScreen onComplete={handleOnboardingComplete} onBack={handleBackToLogin} />;
   }
 
+  // Trainer registracija
+  if (showTrainerRegister) {
+    return (
+      <TrainerRegisterScreen
+        onRegisterSuccess={handleTrainerRegisterSuccess}
+        onBack={handleTrainerRegisterBack}
+      />
+    );
+  }
+
   // Login ekran s fade-in animacijom
   return (
     <Animated.View
@@ -992,7 +1030,13 @@ export default function App() {
         },
       ]}
     >
-      <LoginScreen onLoginSuccess={handleLoginSuccess} onSkipLogin={handleSkipLogin} onBack={handleBackToWelcome} onTrainerMode={handleShowTrainerMode} />
+      <LoginScreen 
+        onLoginSuccess={handleLoginSuccess} 
+        onSkipLogin={handleSkipLogin} 
+        onBack={handleBackToWelcome} 
+        onTrainerMode={handleShowTrainerMode}
+        onTrainerRegister={handleShowTrainerRegister}
+      />
     </Animated.View>
   );
 }

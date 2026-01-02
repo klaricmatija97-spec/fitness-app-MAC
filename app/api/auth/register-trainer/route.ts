@@ -75,19 +75,17 @@ export async function POST(request: Request) {
     const supabase = createServiceClient();
 
     // ============================================
-    // 1. PROVJERI INVITE CODE (ako je potreban)
+    // 1. PROVJERI INVITE CODE
     // ============================================
     
-    // TODO: Implementiraj invite-only registraciju ako želiš
-    // Za sada dopuštamo otvorenu registraciju
-    // if (process.env.REQUIRE_INVITE_CODE === 'true') {
-    //   if (!inviteCode || inviteCode !== process.env.TRAINER_INVITE_CODE) {
-    //     return NextResponse.json(
-    //       { ok: false, message: "Nevažeći pozivni kod" },
-    //       { status: 403 }
-    //     );
-    //   }
-    // }
+    const validInviteCode = process.env.TRAINER_INVITE_CODE || 'FITPRO2024';
+    
+    if (!inviteCode || inviteCode.toUpperCase() !== validInviteCode.toUpperCase()) {
+      return NextResponse.json(
+        { ok: false, message: "Nevažeći pozivni kod. Kontaktirajte FitCoach tim." },
+        { status: 403 }
+      );
+    }
 
     // ============================================
     // 2. PROVJERI POSTOJI LI EMAIL

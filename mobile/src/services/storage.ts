@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const STORAGE_KEYS = {
   AUTH_TOKEN: 'authToken',
   CLIENT_ID: 'clientId',
+  TRAINER_ID: 'trainerId',
   USERNAME: 'username',
   USER_DATA: 'userData',
   SELECTED_GOAL: 'selectedGoal',
@@ -33,6 +34,14 @@ export const authStorage = {
     return await AsyncStorage.getItem(STORAGE_KEYS.CLIENT_ID);
   },
 
+  async saveTrainerId(trainerId: string) {
+    await AsyncStorage.setItem(STORAGE_KEYS.TRAINER_ID, trainerId);
+  },
+
+  async getTrainerId(): Promise<string | null> {
+    return await AsyncStorage.getItem(STORAGE_KEYS.TRAINER_ID);
+  },
+
   async saveUsername(username: string) {
     await AsyncStorage.setItem(STORAGE_KEYS.USERNAME, username);
   },
@@ -45,6 +54,7 @@ export const authStorage = {
     await AsyncStorage.multiRemove([
       STORAGE_KEYS.AUTH_TOKEN,
       STORAGE_KEYS.CLIENT_ID,
+      STORAGE_KEYS.TRAINER_ID,
       STORAGE_KEYS.USERNAME,
     ]);
   },
