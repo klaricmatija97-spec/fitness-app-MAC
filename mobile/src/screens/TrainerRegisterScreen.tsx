@@ -1,6 +1,9 @@
 /**
  * Trainer Register Screen
- * Registracija novog trenera s pozivnim kodom
+ * ========================
+ * Dva moda:
+ * 1. Zahtjev za pristup (ako trener nema kod)
+ * 2. Registracija s kodom (ako trener ima kod)
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -20,8 +23,9 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-// Ista pozadinska slika kao login
 const backgroundImage = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1920&h=1080&fit=crop&q=80';
+
+type Mode = 'request' | 'register';
 
 interface TrainerRegisterScreenProps {
   onRegisterSuccess?: (trainerData: {
@@ -35,7 +39,16 @@ interface TrainerRegisterScreenProps {
 }
 
 export default function TrainerRegisterScreen({ onRegisterSuccess, onBack }: TrainerRegisterScreenProps) {
-  // Form state
+  // Mode state
+  const [mode, setMode] = useState<Mode>('request');
+  
+  // Form state - Request
+  const [requestName, setRequestName] = useState('');
+  const [requestEmail, setRequestEmail] = useState('');
+  const [requestPhone, setRequestPhone] = useState('');
+  const [requestMessage, setRequestMessage] = useState('');
+  
+  // Form state - Register
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -46,6 +59,7 @@ export default function TrainerRegisterScreen({ onRegisterSuccess, onBack }: Tra
   // UI state
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<{
     score: number;
     messages: string[];
@@ -87,8 +101,65 @@ export default function TrainerRegisterScreen({ onRegisterSuccess, onBack }: Tra
     setPasswordStrength({ score, messages });
   }, [password]);
   
-  // Validiraj formu
-  const validateForm = (): boolean => {
+  // =============================================
+  // ZAHTJEV ZA PRISTUP
+  // =============================================
+  
+  const handleRequestAccess = async () => {
+    setError('');
+    
+    if (!requestName.trim()) {
+      setError('Unesite ime i prezime');
+      return;
+    }
+    
+    if (!requestEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requestEmail)) {
+      setError('Unesite ispravan email');
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      const { getApiBaseUrl } = await import('../services/api');
+      const API_URL = getApiBaseUrl();
+      
+      const response = await fetch(`${API_URL}/api/trainer/request-access`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: requestName.trim(),
+          email: requestEmail.toLowerCase().trim(),
+          phone: requestPhone.trim() || undefined,
+          message: requestMessage.trim() || undefined,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.ok) {
+        setRequestSent(true);
+        Alert.alert(
+          '✅ Zahtjev poslan!',
+          'Vaš zahtjev za pristup je uspješno poslan. Javit ćemo vam se emailom u najkraćem roku s pozivnim kodom.',
+          [{ text: 'U redu' }]
+        );
+      } else {
+        setError(data.message || 'Greška pri slanju zahtjeva');
+      }
+    } catch (err) {
+      console.error('[TrainerRequest] Error:', err);
+      setError('Greška pri povezivanju. Provjerite internet vezu.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // =============================================
+  // REGISTRACIJA
+  // =============================================
+  
+  const validateRegisterForm = (): boolean => {
     if (!name.trim()) {
       setError('Unesite ime i prezime');
       return false;
@@ -115,18 +186,17 @@ export default function TrainerRegisterScreen({ onRegisterSuccess, onBack }: Tra
     }
     
     if (!inviteCode.trim()) {
-      setError('Unesite pozivni kod');
+      setError('Unesite pozivni kod koji ste dobili emailom');
       return false;
     }
     
     return true;
   };
   
-  // Registracija
   const handleRegister = async () => {
     setError('');
     
-    if (!validateForm()) return;
+    if (!validateRegisterForm()) return;
     
     setLoading(true);
     
@@ -149,7 +219,6 @@ export default function TrainerRegisterScreen({ onRegisterSuccess, onBack }: Tra
       const data = await response.json();
       
       if (data.ok) {
-        // Uspješna registracija
         Alert.alert(
           '✅ Registracija uspješna!',
           `Dobrodošao ${data.trainer.name}!\n\nTvoj trener kod: ${data.trainer.trainerCode}\n\nKlijenti koriste ovaj kod za povezivanje s tobom.`,
@@ -179,7 +248,10 @@ export default function TrainerRegisterScreen({ onRegisterSuccess, onBack }: Tra
     }
   };
   
-  // Password strength indicator
+  // =============================================
+  // RENDER: Password strength indicator
+  // =============================================
+  
   const renderPasswordStrength = () => {
     if (password.length === 0) return null;
     
@@ -212,6 +284,255 @@ export default function TrainerRegisterScreen({ onRegisterSuccess, onBack }: Tra
       </View>
     );
   };
+  
+  // =============================================
+  // RENDER: Mode Tabs
+  // =============================================
+  
+  const renderModeTabs = () => (
+    <View style={styles.tabContainer}>
+      <TouchableOpacity
+        style={[styles.tab, mode === 'request' && styles.tabActive]}
+        onPress={() => { setMode('request'); setError(''); }}
+      >
+        <Text style={[styles.tabText, mode === 'request' && styles.tabTextActive]}>
+          Zatraži pristup
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.tab, mode === 'register' && styles.tabActive]}
+        onPress={() => { setMode('register'); setError(''); }}
+      >
+        <Text style={[styles.tabText, mode === 'register' && styles.tabTextActive]}>
+          Imam kod
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+  
+  // =============================================
+  // RENDER: Request Form
+  // =============================================
+  
+  const renderRequestForm = () => {
+    if (requestSent) {
+      return (
+        <View style={styles.successContainer}>
+          <Text style={styles.successIcon}>📧</Text>
+          <Text style={styles.successTitle}>Zahtjev poslan!</Text>
+          <Text style={styles.successText}>
+            Provjerite email ({requestEmail}) za pozivni kod.
+            {'\n\n'}
+            Obično odgovaramo unutar 24 sata.
+          </Text>
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={() => setMode('register')}
+          >
+            <Text style={styles.secondaryButtonText}>Već imam kod →</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    
+    return (
+      <View style={styles.form}>
+        {/* Name */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>IME I PREZIME *</Text>
+          <TextInput
+            style={styles.input}
+            value={requestName}
+            onChangeText={setRequestName}
+            placeholder="Ivan Horvat"
+            placeholderTextColor="rgba(255,255,255,0.3)"
+            autoCapitalize="words"
+          />
+        </View>
+        
+        {/* Email */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>EMAIL *</Text>
+          <TextInput
+            style={styles.input}
+            value={requestEmail}
+            onChangeText={setRequestEmail}
+            placeholder="ivan@gym.hr"
+            placeholderTextColor="rgba(255,255,255,0.3)"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+        </View>
+        
+        {/* Phone */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>TELEFON (OPCIJALNO)</Text>
+          <TextInput
+            style={styles.input}
+            value={requestPhone}
+            onChangeText={setRequestPhone}
+            placeholder="+385 91 123 4567"
+            placeholderTextColor="rgba(255,255,255,0.3)"
+            keyboardType="phone-pad"
+          />
+        </View>
+        
+        {/* Message */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>PORUKA (OPCIJALNO)</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={requestMessage}
+            onChangeText={setRequestMessage}
+            placeholder="Reci nam nešto o sebi..."
+            placeholderTextColor="rgba(255,255,255,0.3)"
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+        
+        {/* Error */}
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.error}>{error}</Text>
+          </View>
+        ) : null}
+        
+        {/* Submit */}
+        <TouchableOpacity
+          style={[styles.button, loading && styles.buttonDisabled]}
+          onPress={handleRequestAccess}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>POŠALJI ZAHTJEV</Text>
+          )}
+        </TouchableOpacity>
+        
+        <Text style={styles.infoText}>
+          Nakon odobrenja, pozivni kod ćemo poslati na vašu email adresu.
+        </Text>
+      </View>
+    );
+  };
+  
+  // =============================================
+  // RENDER: Register Form
+  // =============================================
+  
+  const renderRegisterForm = () => (
+    <View style={styles.form}>
+      {/* Invite Code - First! */}
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>POZIVNI KOD *</Text>
+        <TextInput
+          style={[styles.input, styles.inviteCodeInput]}
+          value={inviteCode}
+          onChangeText={(text) => setInviteCode(text.toUpperCase())}
+          placeholder="TRN-XXXXXX"
+          placeholderTextColor="rgba(255,255,255,0.3)"
+          autoCapitalize="characters"
+          maxLength={20}
+        />
+        <Text style={styles.inviteCodeHint}>
+          Kod ste dobili emailom nakon odobrenja zahtjeva
+        </Text>
+      </View>
+      
+      {/* Name */}
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>IME I PREZIME *</Text>
+        <TextInput
+          style={styles.input}
+          value={name}
+          onChangeText={setName}
+          placeholder="Ivan Horvat"
+          placeholderTextColor="rgba(255,255,255,0.3)"
+          autoCapitalize="words"
+        />
+      </View>
+      
+      {/* Email */}
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>EMAIL * (isti kao za zahtjev)</Text>
+        <TextInput
+          style={styles.input}
+          value={email}
+          onChangeText={setEmail}
+          placeholder="ivan@gym.hr"
+          placeholderTextColor="rgba(255,255,255,0.3)"
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+      </View>
+      
+      {/* Phone */}
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>TELEFON (OPCIJALNO)</Text>
+        <TextInput
+          style={styles.input}
+          value={phone}
+          onChangeText={setPhone}
+          placeholder="+385 91 123 4567"
+          placeholderTextColor="rgba(255,255,255,0.3)"
+          keyboardType="phone-pad"
+        />
+      </View>
+      
+      {/* Password */}
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>LOZINKA *</Text>
+        <TextInput
+          style={styles.input}
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Min. 8 znakova, veliko slovo, broj"
+          placeholderTextColor="rgba(255,255,255,0.3)"
+          secureTextEntry
+        />
+        {renderPasswordStrength()}
+      </View>
+      
+      {/* Confirm Password */}
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>POTVRDI LOZINKU *</Text>
+        <TextInput
+          style={styles.input}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          placeholder="••••••••"
+          placeholderTextColor="rgba(255,255,255,0.3)"
+          secureTextEntry
+        />
+      </View>
+      
+      {/* Error */}
+      {error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.error}>{error}</Text>
+        </View>
+      ) : null}
+      
+      {/* Submit */}
+      <TouchableOpacity
+        style={[styles.button, loading && styles.buttonDisabled]}
+        onPress={handleRegister}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>REGISTRIRAJ SE</Text>
+        )}
+      </TouchableOpacity>
+      
+      <Text style={styles.infoText}>
+        Registracijom prihvaćaš uvjete korištenja i pravila privatnosti.
+      </Text>
+    </View>
+  );
 
   return (
     <KeyboardAvoidingView
@@ -249,123 +570,19 @@ export default function TrainerRegisterScreen({ onRegisterSuccess, onBack }: Tra
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.headerIcon}>🏋️</Text>
-            <Text style={styles.title}>Registracija trenera</Text>
+            <Text style={styles.title}>Postani Corpex trener</Text>
             <Text style={styles.subtitle}>
-              Kreiraj svoj trenerski račun i počni raditi s klijentima
+              {mode === 'request' 
+                ? 'Zatraži pristup platformi i počni raditi s klijentima'
+                : 'Dovrši registraciju koristeći pozivni kod'}
             </Text>
           </View>
           
-          {/* Form */}
-          <View style={styles.form}>
-            {/* Name */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>IME I PREZIME</Text>
-              <TextInput
-                style={styles.input}
-                value={name}
-                onChangeText={setName}
-                placeholder="Ivan Horvat"
-                placeholderTextColor="rgba(255,255,255,0.3)"
-                autoCapitalize="words"
-              />
-            </View>
-            
-            {/* Email */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>EMAIL</Text>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="ivan@gym.hr"
-                placeholderTextColor="rgba(255,255,255,0.3)"
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-            
-            {/* Phone */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>TELEFON (OPCIJALNO)</Text>
-              <TextInput
-                style={styles.input}
-                value={phone}
-                onChangeText={setPhone}
-                placeholder="+385 91 123 4567"
-                placeholderTextColor="rgba(255,255,255,0.3)"
-                keyboardType="phone-pad"
-              />
-            </View>
-            
-            {/* Password */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>LOZINKA</Text>
-              <TextInput
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Min. 8 znakova, veliko slovo, broj"
-                placeholderTextColor="rgba(255,255,255,0.3)"
-                secureTextEntry
-              />
-              {renderPasswordStrength()}
-            </View>
-            
-            {/* Confirm Password */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>POTVRDI LOZINKU</Text>
-              <TextInput
-                style={styles.input}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="••••••••"
-                placeholderTextColor="rgba(255,255,255,0.3)"
-                secureTextEntry
-              />
-            </View>
-            
-            {/* Invite Code */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>POZIVNI KOD *</Text>
-              <TextInput
-                style={[styles.input, styles.inviteCodeInput]}
-                value={inviteCode}
-                onChangeText={(text) => setInviteCode(text.toUpperCase())}
-                placeholder="XXXXXX"
-                placeholderTextColor="rgba(255,255,255,0.3)"
-                autoCapitalize="characters"
-                maxLength={20}
-              />
-              <Text style={styles.inviteCodeHint}>
-                Pozivni kod dobiješ od Corpex tima
-              </Text>
-            </View>
-            
-            {/* Error */}
-            {error ? (
-              <View style={styles.errorContainer}>
-                <Text style={styles.error}>{error}</Text>
-              </View>
-            ) : null}
-            
-            {/* Submit */}
-            <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={handleRegister}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>REGISTRIRAJ SE</Text>
-              )}
-            </TouchableOpacity>
-            
-            {/* Info */}
-            <Text style={styles.infoText}>
-              Registracijom prihvaćaš uvjete korištenja i pravila privatnosti.
-            </Text>
-          </View>
+          {/* Mode Tabs */}
+          {renderModeTabs()}
+          
+          {/* Form based on mode */}
+          {mode === 'request' ? renderRequestForm() : renderRegisterForm()}
         </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -415,7 +632,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 32,
   },
   headerIcon: {
     fontSize: 48,
@@ -434,6 +651,32 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+  // Tab styles
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 32,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  tabActive: {
+    backgroundColor: 'rgba(139, 92, 246, 0.3)',
+  },
+  tabText: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  tabTextActive: {
+    color: '#fff',
+  },
+  // Form styles
   form: {
     gap: 20,
   },
@@ -454,6 +697,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 17,
     fontWeight: '300',
+  },
+  textArea: {
+    minHeight: 80,
+    textAlignVertical: 'top',
   },
   inviteCodeInput: {
     letterSpacing: 4,
@@ -520,6 +767,16 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     fontWeight: '600',
   },
+  secondaryButton: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  secondaryButtonText: {
+    color: 'rgba(139, 92, 246, 1)',
+    fontSize: 14,
+    fontWeight: '500',
+  },
   infoText: {
     fontSize: 11,
     color: 'rgba(255,255,255,0.3)',
@@ -527,5 +784,25 @@ const styles = StyleSheet.create({
     marginTop: 16,
     lineHeight: 16,
   },
+  // Success state
+  successContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  successIcon: {
+    fontSize: 64,
+    marginBottom: 24,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: '300',
+    color: '#fff',
+    marginBottom: 16,
+  },
+  successText: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.6)',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
 });
-

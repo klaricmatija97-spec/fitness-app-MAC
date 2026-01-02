@@ -75,14 +75,36 @@ export async function POST(request: Request) {
     const supabase = createServiceClient();
 
     // ============================================
-    // 1. PROVJERI INVITE CODE
+    // 1. PROVJERI INVITE CODE IZ BAZE
     // ============================================
     
-    const validInviteCode = process.env.TRAINER_INVITE_CODE || 'FITPRO2024';
-    
-    if (!inviteCode || inviteCode.toUpperCase() !== validInviteCode.toUpperCase()) {
+    if (!inviteCode) {
       return NextResponse.json(
-        { ok: false, message: "Nevažeći pozivni kod. Kontaktirajte Corpex tim." },
+        { ok: false, message: "Pozivni kod je obavezan. Zatražite pristup putem aplikacije." },
+        { status: 403 }
+      );
+    }
+
+    // Provjeri kod u bazi - mora biti vezan za ovaj email
+    const { data: invite, error: inviteError } = await supabase
+      .from("trainer_invites")
+      .select("*")
+      .eq("invite_code", inviteCode.toUpperCase())
+      .eq("email", email.toLowerCase().trim())
+      .eq("status", "approved")
+      .single();
+
+    if (inviteError || !invite) {
+      return NextResponse.json(
+        { ok: false, message: "Nevažeći pozivni kod ili email. Provjerite da koristite isti email na koji ste dobili kod." },
+        { status: 403 }
+      );
+    }
+
+    // Provjeri je li kod istekao
+    if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
+      return NextResponse.json(
+        { ok: false, message: "Pozivni kod je istekao. Zatražite novi pristup." },
         { status: 403 }
       );
     }
@@ -176,7 +198,20 @@ export async function POST(request: Request) {
     }
 
     // ============================================
-    // 6. GENERIRAJ JWT TOKENE
+    // 6. OZNAČI POZIVNICU KAO ISKORIŠTENU
+    // ============================================
+
+    await supabase
+      .from("trainer_invites")
+      .update({
+        status: "used",
+        used_at: new Date().toISOString(),
+        trainer_id: trainer.id,
+      })
+      .eq("id", invite.id);
+
+    // ============================================
+    // 7. GENERIRAJ JWT TOKENE
     // ============================================
 
     const tokens = generateTokens({
@@ -186,7 +221,7 @@ export async function POST(request: Request) {
     });
 
     // ============================================
-    // 7. VRATI USPJEŠAN ODGOVOR
+    // 8. VRATI USPJEŠAN ODGOVOR
     // ============================================
 
     return NextResponse.json({
