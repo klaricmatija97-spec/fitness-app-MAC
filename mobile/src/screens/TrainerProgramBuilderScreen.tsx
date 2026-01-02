@@ -246,9 +246,21 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
   const [step, setStep] = useState<Step>(getInitialStep());
   const [loading, setLoading] = useState(false);
   const [fromAnnualPlan] = useState(!!phaseData); // Track if we came from annual plan
-  const [annualProgramId, setAnnualProgramId] = useState<string | null>(
-    phaseData?.mesocycleId ? phaseData.mesocycleId.split('-')[0] : null // Extract annual program ID if available
-  );
+  // Helper za validaciju UUID
+  const isValidUUID = (str: string | null | undefined): boolean => {
+    if (!str) return false;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
+  };
+  
+  const [annualProgramId, setAnnualProgramId] = useState<string | null>(() => {
+    // Provjeri da li mesocycleId izgleda kao UUID
+    const id = phaseData?.mesocycleId;
+    if (id && isValidUUID(id)) {
+      return id;
+    }
+    return null; // Ne koristi nevalidan UUID
+  });
 
   // Step 1: Client Selection
   const [clients, setClients] = useState<ClientInfo[]>([]);
@@ -1277,9 +1289,9 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                       trajanjeTjedana: phaseDuration,
                       splitTip: splitType || 'upper_lower',
                       dostupnaOprema: selectedEquipment.length > 0 ? selectedEquipment : ['sipka', 'bucice', 'sprava'],
-                      // Poveži s prethodnom fazom
-                      ...(annualProgramId && { annualProgramId }),
-                      ...(previousProgramId && { previousProgramId }),
+                      // Poveži s prethodnom fazom - samo ako su validni UUID-ovi
+                      ...(annualProgramId && isValidUUID(annualProgramId) && { annualProgramId }),
+                      ...(previousProgramId && isValidUUID(previousProgramId) && { previousProgramId }),
                       phaseOrder: i + 1,
                       totalPhases: sortedPhases.length,
                     };
