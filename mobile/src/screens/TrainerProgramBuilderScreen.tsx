@@ -61,7 +61,7 @@ type Step = 1 | 2 | 3 | '3A' | 4 | 5 | 6 | 7;
 // IFT Metodika - Ciljevi treninga (Tablica 23)
 type ProgramGoal = 'jakost' | 'snaga' | 'hipertrofija' | 'izdrzljivost' | 'rekreacija_zdravlje';
 type UserLevel = 'pocetnik' | 'srednji' | 'napredni';
-type SplitType = 'full_body' | 'upper_lower' | 'push_pull_legs' | 'bro_split' | 'custom';
+type SplitType = 'full_body' | 'upper_lower' | 'push_pull_legs' | 'body_part_split' | 'custom';
 
 interface CustomSplitDay {
   redniBroj: number;
@@ -164,7 +164,7 @@ const SPLITS: { value: SplitType; label: string; description: string; sessionsPe
   { value: 'full_body', label: 'Full Body', description: '2-3x tjedno, cijelo tijelo', sessionsPerWeek: 3 },
   { value: 'upper_lower', label: 'Upper/Lower', description: '4x tjedno, gornje/donje', sessionsPerWeek: 4 },
   { value: 'push_pull_legs', label: 'Push/Pull/Legs', description: '5-6x tjedno', sessionsPerWeek: 6 },
-  { value: 'bro_split', label: 'Bro Split', description: '5x tjedno, po mišićnoj grupi', sessionsPerWeek: 5 },
+  { value: 'body_part_split', label: 'Bro Split', description: '5x tjedno, po mišićnoj grupi', sessionsPerWeek: 5 },
   { value: 'custom', label: 'Custom Split', description: 'Kreiraj vlastiti split', sessionsPerWeek: 0 },
 ];
 
@@ -1230,12 +1230,32 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                     }
                     
                     // Mapiraj tip faze na goal (API očekuje specifične vrijednosti)
-                    const phaseGoal = 
-                      phase.type === 'hipertrofija' ? 'hipertrofija' :
-                      phase.type === 'jakost' ? 'maksimalna_snaga' :
-                      phase.type === 'snaga' ? 'maksimalna_snaga' : // Snaga se tretira kao maksimalna snaga
-                      phase.type === 'izdrzljivost' ? 'misicna_izdrzljivost' :
-                      'hipertrofija';
+                    // Backend ciljevi: 'hipertrofija', 'maksimalna_snaga', 'misicna_izdrzljivost', 'rekreacija_zdravlje'
+                    let phaseGoal: string;
+                    switch (phase.type) {
+                      case 'hipertrofija':
+                        phaseGoal = 'hipertrofija';
+                        break;
+                      case 'jakost':
+                      case 'snaga':
+                      case 'natjecanje':
+                        phaseGoal = 'maksimalna_snaga';
+                        break;
+                      case 'izdrzljivost':
+                        phaseGoal = 'misicna_izdrzljivost';
+                        break;
+                      case 'priprema':
+                        phaseGoal = 'hipertrofija'; // Priprema koristi hipertrofiju kao bazu
+                        break;
+                      case 'deload':
+                      case 'tranzicija':
+                        phaseGoal = 'rekreacija_zdravlje'; // Deload i tranzicija koriste rekreaciju
+                        break;
+                      default:
+                        phaseGoal = 'hipertrofija';
+                    }
+                    
+                    console.log(`📋 [Step3] Phase ${i + 1} mapping: ${phase.type} → ${phaseGoal}`);
                     
                     // Provjeri da li imamo sve potrebne podatke
                     if (!selectedClient?.id) {
@@ -1308,7 +1328,19 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                       let errorDetails = `Status: ${response.status}`;
                       try {
                         const errorData = await response.json();
-                        errorDetails = errorData.error || errorData.detalji || JSON.stringify(errorData);
+                        // Detaljno logiranje za debugging
+                        console.error(`❌ [Step3] Phase ${i + 1} error response:`, JSON.stringify(errorData, null, 2));
+                        console.error(`❌ [Step3] Request body was:`, JSON.stringify(requestBody, null, 2));
+                        
+                        // Prikaži sve dostupne detalje greške
+                        if (errorData.detalji) {
+                          errorDetails = `Validacija: ${JSON.stringify(errorData.detalji)}`;
+                        } else if (errorData.error) {
+                          errorDetails = errorData.error;
+                        } else {
+                          errorDetails = JSON.stringify(errorData);
+                        }
+                        
                         failedPhases.push({
                           phaseType: phase.type,
                           error: typeof errorDetails === 'string' ? errorDetails : JSON.stringify(errorDetails),
