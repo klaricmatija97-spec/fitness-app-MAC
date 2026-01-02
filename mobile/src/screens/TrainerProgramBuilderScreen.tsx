@@ -61,7 +61,21 @@ type Step = 1 | 2 | 3 | '3A' | 4 | 5 | 6 | 7;
 // IFT Metodika - Ciljevi treninga (Tablica 23)
 type ProgramGoal = 'jakost' | 'snaga' | 'hipertrofija' | 'izdrzljivost' | 'rekreacija_zdravlje';
 type UserLevel = 'pocetnik' | 'srednji' | 'napredni';
-type SplitType = 'full_body' | 'upper_lower' | 'push_pull_legs' | 'bro_split';
+type SplitType = 'full_body' | 'upper_lower' | 'push_pull_legs' | 'bro_split' | 'custom';
+
+interface CustomSplitDay {
+  redniBroj: number;
+  naziv: string;
+  misicneGrupe: string[];
+  opcionalneGrupe?: string[];
+}
+
+interface CustomSplit {
+  naziv: string;
+  opis?: string;
+  dani: CustomSplitDay[];
+  ukupnoDana: number;
+}
 type Gender = 'male' | 'female' | 'other';
 type MesocycleType = 'hipertrofija' | 'jakost' | 'snaga' | 'izdrzljivost' | 'deload' | 'priprema' | 'natjecanje' | 'tranzicija';
 type ProgramMode = 'with_mesocycles' | 'clean_plan';
@@ -151,6 +165,7 @@ const SPLITS: { value: SplitType; label: string; description: string; sessionsPe
   { value: 'upper_lower', label: 'Upper/Lower', description: '4x tjedno, gornje/donje', sessionsPerWeek: 4 },
   { value: 'push_pull_legs', label: 'Push/Pull/Legs', description: '5-6x tjedno', sessionsPerWeek: 6 },
   { value: 'bro_split', label: 'Bro Split', description: '5x tjedno, po mišićnoj grupi', sessionsPerWeek: 5 },
+  { value: 'custom', label: 'Custom Split', description: 'Kreiraj vlastiti split', sessionsPerWeek: 0 },
 ];
 
 const EQUIPMENT_OPTIONS = [
@@ -241,6 +256,8 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
   const [trainingFrequency, setTrainingFrequency] = useState(4); // Koliko dana tjedno
   const [splitType, setSplitType] = useState<SplitType>('upper_lower');
   const [splitAutoSuggested, setSplitAutoSuggested] = useState(true); // Prati da li je auto ili rucno
+  const [customSplit, setCustomSplit] = useState<CustomSplit | null>(null);
+  const [showCustomSplitBuilder, setShowCustomSplitBuilder] = useState(false);
   const [durationWeeks, setDurationWeeks] = useState(phaseData?.durationWeeks || 12);
   const [equipment, setEquipment] = useState(EQUIPMENT_OPTIONS.map(e => ({ ...e })));
   
@@ -372,7 +389,7 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
       const totalWeeks = phaseData?.durationWeeks || durationWeeks;
       
       // Pokušaj API poziv
-      const response = await fetch(`${API_BASE_URL}/api/training/generate-program`, {
+      const response = await fetch(`${API_BASE_URL}/api/training/generate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -385,6 +402,7 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
           cilj: goal,
           razina: level,
           splitTip: splitType,
+          customSplit: splitType === 'custom' && customSplit ? customSplit : undefined,
           treninziTjedno: trainingFrequency,
           trajanjeTjedana: totalWeeks,
           mezociklusTip: phaseType,
@@ -756,13 +774,23 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
           <TouchableOpacity
             key={s.value}
             style={[styles.splitCard, splitType === s.value && styles.splitCardSelected]}
-            onPress={() => setSplitType(s.value)}
+            onPress={() => {
+              if (s.value === 'custom') {
+                setShowCustomSplitBuilder(true);
+              } else {
+                setSplitType(s.value);
+                setCustomSplit(null);
+              }
+            }}
           >
             <View style={styles.splitInfo}>
               <Text style={styles.splitLabel}>{s.label}</Text>
               <Text style={styles.splitDescription}>{s.description}</Text>
+              {s.value === 'custom' && customSplit && (
+                <Text style={styles.customSplitInfo}>✓ {customSplit.naziv} ({customSplit.ukupnoDana} dana)</Text>
+              )}
             </View>
-            <Text style={styles.splitSessions}>{s.sessionsPerWeek}x</Text>
+            {s.value !== 'custom' && <Text style={styles.splitSessions}>{s.sessionsPerWeek}x</Text>}
           </TouchableOpacity>
         ))}
 
@@ -1939,6 +1967,169 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
     );
   }
 
+  // Custom Split Builder Modal
+  function renderCustomSplitBuilder() {
+    const [localCustomSplit, setLocalCustomSplit] = useState<CustomSplit>(
+      customSplit || {
+        naziv: 'Moj Custom Split',
+        dani: [],
+        ukupnoDana: trainingFrequency,
+      }
+    );
+    const [editingDayIndex, setEditingDayIndex] = useState<number | null>(null);
+    
+    const MISICNE_GRUPE = [
+      { key: 'prsa', naziv: 'Prsa', kategorija: 'Gornji' },
+      { key: 'ledja', naziv: 'Leđa', kategorija: 'Gornji' },
+      { key: 'ramena', naziv: 'Ramena', kategorija: 'Gornji' },
+      { key: 'biceps', naziv: 'Biceps', kategorija: 'Gornji' },
+      { key: 'triceps', naziv: 'Triceps', kategorija: 'Gornji' },
+      { key: 'cetveroglavi', naziv: 'Četveroglavi', kategorija: 'Donji' },
+      { key: 'straznja_loza', naziv: 'Stražnja loža', kategorija: 'Donji' },
+      { key: 'gluteusi', naziv: 'Gluteusi', kategorija: 'Donji' },
+      { key: 'listovi', naziv: 'Listovi', kategorija: 'Donji' },
+      { key: 'trbusnjaci', naziv: 'Trbušnjaci', kategorija: 'Core' },
+    ];
+    
+    const addDay = () => {
+      const newDay: CustomSplitDay = {
+        redniBroj: localCustomSplit.dani.length + 1,
+        naziv: `Dan ${localCustomSplit.dani.length + 1}`,
+        misicneGrupe: [],
+      };
+      setLocalCustomSplit({
+        ...localCustomSplit,
+        dani: [...localCustomSplit.dani, newDay],
+        ukupnoDana: localCustomSplit.dani.length + 1,
+      });
+      setEditingDayIndex(localCustomSplit.dani.length);
+    };
+    
+    const removeDay = (index: number) => {
+      const newDani = localCustomSplit.dani.filter((_, i) => i !== index).map((d, i) => ({
+        ...d,
+        redniBroj: i + 1,
+      }));
+      setLocalCustomSplit({
+        ...localCustomSplit,
+        dani: newDani,
+        ukupnoDana: newDani.length,
+      });
+    };
+    
+    const updateDay = (index: number, updates: Partial<CustomSplitDay>) => {
+      const newDani = [...localCustomSplit.dani];
+      newDani[index] = { ...newDani[index], ...updates };
+      setLocalCustomSplit({ ...localCustomSplit, dani: newDani });
+    };
+    
+    const toggleMuscleGroup = (dayIndex: number, muscleKey: string) => {
+      const day = localCustomSplit.dani[dayIndex];
+      const hasMuscle = day.misicneGrupe.includes(muscleKey);
+      updateDay(dayIndex, {
+        misicneGrupe: hasMuscle
+          ? day.misicneGrupe.filter(m => m !== muscleKey)
+          : [...day.misicneGrupe, muscleKey],
+      });
+    };
+    
+    const saveCustomSplit = () => {
+      if (localCustomSplit.dani.length === 0) {
+        Alert.alert('Greška', 'Dodaj barem jedan dan u split');
+        return;
+      }
+      if (localCustomSplit.dani.some(d => d.misicneGrupe.length === 0)) {
+        Alert.alert('Greška', 'Svaki dan mora imati barem jednu mišićnu grupu');
+        return;
+      }
+      setCustomSplit(localCustomSplit);
+      setSplitType('custom');
+      setShowCustomSplitBuilder(false);
+    };
+    
+    if (!showCustomSplitBuilder) return null;
+    
+    return (
+      <Modal
+        visible={showCustomSplitBuilder}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowCustomSplitBuilder(false)}>
+              <Text style={styles.modalCancelText}>Odustani</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Custom Split Builder</Text>
+            <TouchableOpacity onPress={saveCustomSplit}>
+              <Text style={styles.modalSaveText}>Spremi</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalContent}>
+            <TextInput
+              style={styles.splitNameInput}
+              placeholder="Naziv split-a (npr. Arnold Style)"
+              value={localCustomSplit.naziv}
+              onChangeText={(text) => setLocalCustomSplit({ ...localCustomSplit, naziv: text })}
+            />
+            
+            <Text style={styles.modalSectionTitle}>Dani ({localCustomSplit.dani.length})</Text>
+            
+            {localCustomSplit.dani.map((day, dayIndex) => (
+              <View key={dayIndex} style={styles.customDayCard}>
+                <View style={styles.customDayHeader}>
+                  <TextInput
+                    style={styles.dayNameInput}
+                    value={day.naziv}
+                    onChangeText={(text) => updateDay(dayIndex, { naziv: text })}
+                    placeholder={`Dan ${dayIndex + 1}`}
+                  />
+                  <TouchableOpacity
+                    style={styles.removeDayButton}
+                    onPress={() => removeDay(dayIndex)}
+                  >
+                    <Text style={styles.removeDayText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+                
+                <Text style={styles.muscleGroupsLabel}>Mišićne grupe:</Text>
+                <View style={styles.muscleGroupsGrid}>
+                  {MISICNE_GRUPE.map((muscle) => {
+                    const isSelected = day.misicneGrupe.includes(muscle.key);
+                    return (
+                      <TouchableOpacity
+                        key={muscle.key}
+                        style={[
+                          styles.muscleGroupChip,
+                          isSelected && styles.muscleGroupChipSelected,
+                        ]}
+                        onPress={() => toggleMuscleGroup(dayIndex, muscle.key)}
+                      >
+                        <Text
+                          style={[
+                            styles.muscleGroupChipText,
+                            isSelected && styles.muscleGroupChipTextSelected,
+                          ]}
+                        >
+                          {muscle.naziv}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            ))}
+            
+            <TouchableOpacity style={styles.addDayButton} onPress={addDay}>
+              <Text style={styles.addDayButtonText}>+ Dodaj dan</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </Modal>
+    );
+  }
+
   // Replace Exercise Modal
   function renderReplaceModal() {
     if (!exerciseToReplace || !fullProgram) return null;
@@ -2036,6 +2227,7 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
         {step === 7 && renderStep7()}
 
         {/* Modals */}
+        {renderCustomSplitBuilder()}
         {renderReplaceModal()}
       </LinearGradient>
     </View>
@@ -3192,4 +3384,114 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalCloseText: { color: '#71717A', fontSize: 16 },
+  
+  // Custom Split Builder
+  customSplitInfo: { color: '#22C55E', fontSize: 12, marginTop: 4 },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#0A0A0A',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  modalTitle: { color: '#FFF', fontSize: 18, fontWeight: '700' },
+  modalCancelText: { color: '#71717A', fontSize: 16 },
+  modalSaveText: { color: '#22C55E', fontSize: 16, fontWeight: '600' },
+  modalContent: { flex: 1, padding: 20 },
+  splitNameInput: {
+    backgroundColor: '#27272A',
+    borderRadius: 12,
+    padding: 16,
+    color: '#FFF',
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  modalSectionTitle: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  customDayCard: {
+    backgroundColor: '#27272A',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  customDayHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  dayNameInput: {
+    flex: 1,
+    backgroundColor: '#3F3F46',
+    borderRadius: 8,
+    padding: 12,
+    color: '#FFF',
+    fontSize: 16,
+    marginRight: 12,
+  },
+  removeDayButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#DC2626',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removeDayText: { color: '#FFF', fontSize: 18, fontWeight: '700' },
+  muscleGroupsLabel: {
+    color: '#A1A1AA',
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  muscleGroupsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  muscleGroupChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#3F3F46',
+    borderWidth: 1,
+    borderColor: '#444',
+  },
+  muscleGroupChipSelected: {
+    backgroundColor: '#22C55E',
+    borderColor: '#22C55E',
+  },
+  muscleGroupChipText: {
+    color: '#A1A1AA',
+    fontSize: 14,
+  },
+  muscleGroupChipTextSelected: {
+    color: '#FFF',
+    fontWeight: '600',
+  },
+  addDayButton: {
+    backgroundColor: '#27272A',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#444',
+    borderStyle: 'dashed',
+    marginTop: 8,
+  },
+  addDayButtonText: {
+    color: '#71717A',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });

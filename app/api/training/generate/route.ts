@@ -39,7 +39,18 @@ const GeneratorInputSchema = z.object({
   
   // Opcionalni parametri
   trenerId: z.string().uuid().optional(),
-  splitTip: z.enum(['full_body', 'upper_lower', 'push_pull_legs', 'body_part_split']).optional(),
+  splitTip: z.enum(['full_body', 'upper_lower', 'push_pull_legs', 'body_part_split', 'custom']).optional(),
+  customSplit: z.object({
+    naziv: z.string().min(1),
+    opis: z.string().optional(),
+    ukupnoDana: z.number().int().min(2).max(6),
+    dani: z.array(z.object({
+      redniBroj: z.number().int().min(1),
+      naziv: z.string().min(1),
+      misicneGrupe: z.array(z.string()).min(1),
+      opcionalneGrupe: z.array(z.string()).optional(),
+    })).min(1),
+  }).optional(),
   dostupnaOprema: z.array(z.string()).optional(),
   izbjegavajVjezbe: z.array(z.string()).optional(),
   fokusiraneGrupe: z.array(z.string()).optional(),

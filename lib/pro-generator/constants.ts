@@ -248,7 +248,127 @@ export const SPLIT_KONFIGURACIJE: Record<TipSplita, SplitKonfiguracija> = {
       weak_points: ['trbusnjaci', 'listovi'],  // Slabe točke
     },
   },
+  // Custom split se kreira dinamički od strane trenera
+  // Ne koristi statičku konfiguraciju
+  custom: {
+    naziv: 'Custom Split',
+    opisHr: 'Prilagođeni split - trener kreira vlastiti raspored',
+    daniPoTjednu: [2, 3, 4, 5, 6],
+    daniStruktura: [], // Dinamički se kreira
+    misicneGrupePoTreningu: {}, // Dinamički se kreira
+  },
 };
+
+// ============================================
+// CUSTOM SPLIT HELPER FUNKCIJE
+// ============================================
+
+/**
+ * Konvertira CustomSplitKonfiguracija u SplitKonfiguracija format
+ * za kompatibilnost s generatorom
+ */
+export function konvertirajCustomSplitUSplitKonfiguraciju(
+  customSplit: import('./types').CustomSplitKonfiguracija
+): SplitKonfiguracija {
+  const daniStruktura: string[][] = [];
+  const misicneGrupePoTreningu: Record<string, string[]> = {};
+  
+  // Kreiraj strukturu dana
+  const daniNazivi: string[] = [];
+  for (const dan of customSplit.dani) {
+    const treningKey = `custom_day_${dan.redniBroj}`;
+    daniNazivi.push(treningKey);
+    misicneGrupePoTreningu[treningKey] = [
+      ...dan.misicneGrupe,
+      ...(dan.opcionalneGrupe || []),
+    ];
+  }
+  
+  // Dodaj strukturu za različite kombinacije (npr. ako ima 6 dana, može se koristiti 3, 4, 5 ili 6)
+  for (let i = 2; i <= customSplit.ukupnoDana; i++) {
+    if (i <= daniNazivi.length) {
+      daniStruktura.push(daniNazivi.slice(0, i));
+    }
+  }
+  
+  return {
+    naziv: customSplit.naziv,
+    opisHr: customSplit.opis || `Prilagođeni split: ${customSplit.naziv}`,
+    daniPoTjednu: Array.from({ length: customSplit.ukupnoDana - 1 }, (_, i) => i + 2),
+    daniStruktura,
+    misicneGrupePoTreningu,
+  };
+}
+
+/**
+ * Lista dostupnih mišićnih grupa za Custom Split Builder
+ */
+export const DOSTUPNE_MISICNE_GRUPE: Array<{ key: string; naziv: string; kategorija: string }> = [
+  // Gornji dio
+  { key: 'prsa', naziv: 'Prsa', kategorija: 'Gornji dio' },
+  { key: 'ledja', naziv: 'Leđa', kategorija: 'Gornji dio' },
+  { key: 'ramena', naziv: 'Ramena', kategorija: 'Gornji dio' },
+  { key: 'biceps', naziv: 'Biceps', kategorija: 'Gornji dio' },
+  { key: 'triceps', naziv: 'Triceps', kategorija: 'Gornji dio' },
+  { key: 'trapezi', naziv: 'Trapezi', kategorija: 'Gornji dio' },
+  { key: 'podlaktice', naziv: 'Podlaktice', kategorija: 'Gornji dio' },
+  
+  // Donji dio
+  { key: 'cetveroglavi', naziv: 'Četveroglavi', kategorija: 'Donji dio' },
+  { key: 'straznja_loza', naziv: 'Stražnja loža', kategorija: 'Donji dio' },
+  { key: 'gluteusi', naziv: 'Gluteusi', kategorija: 'Donji dio' },
+  { key: 'listovi', naziv: 'Listovi', kategorija: 'Donji dio' },
+  
+  // Core
+  { key: 'trbusnjaci', naziv: 'Trbušnjaci', kategorija: 'Core' },
+  
+  // Ostalo
+  { key: 'primicaci', naziv: 'Primicači (unutrašnji but)', kategorija: 'Ostalo' },
+  { key: 'odmicaci', naziv: 'Odmicači (vanjski but)', kategorija: 'Ostalo' },
+];
+
+/**
+ * Preporučeni split templatei za Custom Split Builder
+ */
+export const SPLIT_TEMPLATEI: Array<{
+  naziv: string;
+  opis: string;
+  dani: Array<{ naziv: string; misicneGrupe: string[] }>;
+}> = [
+  {
+    naziv: 'Arnold Split',
+    opis: '6 dana - Prsa/Leđa, Ramena/Ruke, Noge (2x tjedno)',
+    dani: [
+      { naziv: 'Prsa + Leđa', misicneGrupe: ['prsa', 'ledja'] },
+      { naziv: 'Ramena + Ruke', misicneGrupe: ['ramena', 'biceps', 'triceps'] },
+      { naziv: 'Noge', misicneGrupe: ['cetveroglavi', 'straznja_loza', 'gluteusi', 'listovi'] },
+      { naziv: 'Prsa + Leđa', misicneGrupe: ['prsa', 'ledja'] },
+      { naziv: 'Ramena + Ruke', misicneGrupe: ['ramena', 'biceps', 'triceps'] },
+      { naziv: 'Noge', misicneGrupe: ['cetveroglavi', 'straznja_loza', 'gluteusi', 'listovi'] },
+    ],
+  },
+  {
+    naziv: 'PHUL (Power/Hypertrophy Upper/Lower)',
+    opis: '4 dana - Power Upper, Power Lower, Hypertrophy Upper, Hypertrophy Lower',
+    dani: [
+      { naziv: 'Power Upper', misicneGrupe: ['prsa', 'ledja', 'ramena', 'biceps', 'triceps'] },
+      { naziv: 'Power Lower', misicneGrupe: ['cetveroglavi', 'straznja_loza', 'gluteusi'] },
+      { naziv: 'Hypertrophy Upper', misicneGrupe: ['prsa', 'ledja', 'ramena', 'biceps', 'triceps'] },
+      { naziv: 'Hypertrophy Lower', misicneGrupe: ['cetveroglavi', 'straznja_loza', 'gluteusi', 'listovi'] },
+    ],
+  },
+  {
+    naziv: 'Glutei Specializacija',
+    opis: '5 dana - Fokus na gluteuse i donji dio tijela',
+    dani: [
+      { naziv: 'Glutei + Noge A', misicneGrupe: ['gluteusi', 'cetveroglavi', 'straznja_loza'] },
+      { naziv: 'Gornji dio', misicneGrupe: ['prsa', 'ledja', 'ramena'] },
+      { naziv: 'Glutei + Noge B', misicneGrupe: ['gluteusi', 'listovi', 'trbusnjaci'] },
+      { naziv: 'Ruke + Core', misicneGrupe: ['biceps', 'triceps', 'trbusnjaci'] },
+      { naziv: 'Full Body Glutei', misicneGrupe: ['gluteusi', 'cetveroglavi', 'straznja_loza', 'prsa', 'ledja'] },
+    ],
+  },
+];
 
 // ============================================
 // MAPIRANJE OBRAZACA POKRETA

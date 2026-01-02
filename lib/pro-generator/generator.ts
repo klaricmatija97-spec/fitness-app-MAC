@@ -27,6 +27,7 @@ import type {
   VjezbaProširena,
   VolumenTracking,
   ProgresijaTjedna,
+  CustomSplitKonfiguracija,
 } from './types';
 import {
   GENERATOR_VERSION,
@@ -46,6 +47,8 @@ import {
   // Kardio
   KARDIO_PROGRAMI,
   HIIT_PROTOKOL_IFT,
+  // Custom Split
+  konvertirajCustomSplitUSplitKonfiguraciju,
 } from './constants';
 import { filtrirajVjezbe, dohvatiVjezbeZaGrupu, pronadiAlternative } from './exercise-loader';
 
@@ -116,8 +119,29 @@ export function validirajInput(input: GeneratorInput): ValidacijaRezultat {
     greske.push('trajanjeTjedana mora biti između 4 i 12');
   }
   
+  // Provjeri custom split
+  if (input.splitTip === 'custom') {
+    if (!input.customSplit) {
+      greske.push('customSplit je obavezan kada je splitTip = "custom"');
+    } else {
+      // Validacija custom split strukture
+      if (input.customSplit.dani.length === 0) {
+        greske.push('Custom split mora imati barem jedan dan');
+      }
+      if (input.customSplit.ukupnoDana < 2 || input.customSplit.ukupnoDana > 6) {
+        greske.push('Custom split mora imati između 2 i 6 dana');
+      }
+      if (input.customSplit.dani.length !== input.customSplit.ukupnoDana) {
+        greske.push('Broj dana u custom split-u mora odgovarati ukupnoDana');
+      }
+      if (input.treninziTjedno > input.customSplit.ukupnoDana) {
+        greske.push('treninziTjedno ne može biti veći od ukupnoDana u custom split-u');
+      }
+    }
+  }
+  
   // Provjeri kompatibilnost split/treninzi
-  if (input.splitTip) {
+  if (input.splitTip && input.splitTip !== 'custom') {
     const splitConfig = SPLIT_KONFIGURACIJE[input.splitTip];
     if (splitConfig && !splitConfig.daniPoTjednu.includes(input.treninziTjedno)) {
       upozorenja.push(`Split '${input.splitTip}' nije optimalan za ${input.treninziTjedno} treninga tjedno`);
@@ -195,7 +219,7 @@ export async function buildProgram(input: GeneratorInput): Promise<TreningProgra
   
   // 2. Odredi split ako nije zadan
   const splitTip = input.splitTip || odaberiOptimalniSplit(input);
-  log('info', `Odabrani split: ${splitTip}`);
+  log('info', `Odabrani split: ${splitTip}`, { customSplit: input.customSplit ? 'DA' : 'NE' });
   
   // 3. Generiraj mezocikluse
   const mezociklusi = await buildMesocycles({
@@ -205,7 +229,10 @@ export async function buildProgram(input: GeneratorInput): Promise<TreningProgra
   
   // 4. Kreiraj program objekt
   const programId = uuidv4();
-  const splitConfig = SPLIT_KONFIGURACIJE[splitTip];
+  // Za custom split, koristi konvertirani config
+  const splitConfig = splitTip === 'custom' && input.customSplit
+    ? konvertirajCustomSplitUSplitKonfiguraciju(input.customSplit)
+    : SPLIT_KONFIGURACIJE[splitTip];
   
   const program: TreningProgram = {
     id: programId,
@@ -400,8 +427,16 @@ interface BuildSessionsInput extends BuildWeeksInput {
 }
 
 async function buildSessions(input: BuildSessionsInput): Promise<TrenigSesija[]> {
-  const { treninziTjedno, splitTip, jeDeload } = input;
-  const splitConfig = SPLIT_KONFIGURACIJE[splitTip];
+  const { treninziTjedno, splitTip, jeDeload, customSplit } = input;
+  
+  // Ako je custom split, konvertiraj ga u SplitKonfiguracija format
+  let splitConfig: typeof SPLIT_KONFIGURACIJE[TipSplita];
+  if (splitTip === 'custom' && customSplit) {
+    splitConfig = konvertirajCustomSplitUSplitKonfiguraciju(customSplit);
+  } else {
+    splitConfig = SPLIT_KONFIGURACIJE[splitTip];
+  }
+  
   const treninzi: TrenigSesija[] = [];
   
   // Dohvati strukturu dana za ovaj split
@@ -413,6 +448,12 @@ async function buildSessions(input: BuildSessionsInput): Promise<TrenigSesija[]>
     
     // Dohvati mišićne grupe za ovaj tip treninga
     const misicneGrupe = splitConfig.misicneGrupePoTreningu[tipTreninga] || [];
+    
+    // Za custom split, koristi naziv dana iz custom konfiguracije
+    let nazivTreninga = tipTreninga;
+    if (splitTip === 'custom' && customSplit && customSplit.dani[i]) {
+      nazivTreninga = customSplit.dani[i].naziv;
+    }
     
     // Odaberi vježbe
     const vjezbe = await selectExercises({
@@ -430,7 +471,7 @@ async function buildSessions(input: BuildSessionsInput): Promise<TrenigSesija[]>
       id: uuidv4(),
       weekId: '', // Popunit će se kasnije
       danUTjednu,
-      naziv: generirajNazivTreninga(tipTreninga, i + 1),
+      naziv: nazivTreninga || generirajNazivTreninga(tipTreninga, i + 1),
       tipTreninga,
       procijenjanoTrajanje: izracunajTrajanje(vjezbe.length, jeDeload),
       zagrijavanje,

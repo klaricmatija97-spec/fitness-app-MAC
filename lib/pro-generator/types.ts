@@ -31,7 +31,26 @@ export type TipSplita =
   | 'full_body'         // Cijelo tijelo svaki trening
   | 'upper_lower'       // Gore/Dolje alternacija
   | 'push_pull_legs'    // Push/Pull/Legs rotacija
-  | 'body_part_split';  // Izolirani dijelovi (samo napredni)
+  | 'body_part_split'   // Izolirani dijelovi (samo napredni)
+  | 'custom';           // Prilagođeni split (trener kreira)
+
+/**
+ * Custom Split - Trener kreira vlastiti split
+ * Omogućava potpunu fleksibilnost u rasporedu mišićnih grupa po danima
+ */
+export interface CustomSplitKonfiguracija {
+  naziv: string;                    // npr. "Arnold Style", "Glutei Focus"
+  opis?: string;                    // Opcionalni opis
+  dani: CustomSplitDan[];           // Lista dana u split-u
+  ukupnoDana: number;               // Ukupan broj dana (npr. 6)
+}
+
+export interface CustomSplitDan {
+  redniBroj: number;                // 1, 2, 3...
+  naziv: string;                    // npr. "Prsa + Leđa", "Noge A"
+  misicneGrupe: string[];           // ['prsa', 'ledja', 'triceps']
+  opcionalneGrupe?: string[];       // ['trbusnjaci'] - dodatne grupe
+}
 
 /** Status programa */
 export type StatusPrograma = 'draft' | 'aktivan' | 'pauziran' | 'zavrsen';
@@ -151,6 +170,7 @@ export interface GeneratorInput {
   // Opcionalni parametri
   trenerId?: string;
   splitTip?: TipSplita;        // Ako nije zadan, automatski se odabire
+  customSplit?: CustomSplitKonfiguracija; // Za custom split tip
   dostupnaOprema?: string[];   // Filtriranje vježbi po opremi
   izbjegavajVjezbe?: string[]; // ID-evi vježbi koje treba izbjeći
   fokusiraneGrupe?: string[];  // Prioritetne mišićne grupe
