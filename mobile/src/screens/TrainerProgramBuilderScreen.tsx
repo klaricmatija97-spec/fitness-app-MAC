@@ -1260,7 +1260,7 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                         trajanjeTjedana: phaseDuration,
                         mezociklusTip: phase.type,
                         splitTip: splitType || 'upper_lower',
-                        dostupnaOprema: availableEquipment || ['sipka', 'bucice', 'sprava'],
+                        dostupnaOprema: equipment.filter(e => e.selected).map(e => e.id),
                         // Poveži s prethodnom fazom
                         annualProgramId: annualProgramId || undefined,
                         previousProgramId: previousProgramId || undefined,
