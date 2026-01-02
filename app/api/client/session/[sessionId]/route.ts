@@ -73,9 +73,7 @@ export async function GET(
     // Dohvati exercises
     const { data: exercises } = await supabase
       .from('session_exercises')
-      .select(
-        'id, exercise_id as exerciseId, exercise_name as name, exercise_name_hr as nameHr, order_index as orderIndex, sets, reps_target as repsTarget, tempo, rest_seconds as restSeconds, target_rpe as targetRPE, target_rir as targetRIR, primary_muscles as primaryMuscles, secondary_muscles as secondaryMuscles, equipment'
-      )
+      .select('id, exercise_id, exercise_name, exercise_name_hr, order_index, sets, reps_target, tempo, rest_seconds, target_rpe, target_rir, primary_muscles, secondary_muscles, equipment')
       .eq('session_id', sessionId)
       .order('order_index');
 
@@ -88,20 +86,20 @@ export async function GET(
           weekNumber: session.week_number,
           dayOfWeek: session.day_of_week,
           estimatedDuration: session.estimated_duration_minutes || 60,
-          exercises: (exercises || []).map((ex) => ({
+          exercises: (exercises || []).map((ex: any) => ({
             id: ex.id,
-            exerciseId: ex.exerciseId,
-            name: ex.name,
-            nameHr: ex.nameHr || ex.name,
-            orderIndex: ex.orderIndex,
+            exerciseId: ex.exercise_id,
+            name: ex.exercise_name,
+            nameHr: ex.exercise_name_hr || ex.exercise_name,
+            orderIndex: ex.order_index,
             sets: ex.sets,
-            repsTarget: ex.repsTarget,
+            repsTarget: ex.reps_target,
             tempo: ex.tempo || null,
-            restSeconds: ex.restSeconds,
-            targetRPE: ex.targetRPE || null,
-            targetRIR: ex.targetRIR || null,
-            primaryMuscles: ex.primaryMuscles || [],
-            secondaryMuscles: ex.secondaryMuscles || [],
+            restSeconds: ex.rest_seconds,
+            targetRPE: ex.target_rpe || null,
+            targetRIR: ex.target_rir || null,
+            primaryMuscles: ex.primary_muscles || [],
+            secondaryMuscles: ex.secondary_muscles || [],
             equipment: ex.equipment || null,
           })),
         },

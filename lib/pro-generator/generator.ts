@@ -1003,11 +1003,11 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
         const powerliftingVjezbe = ['squat', 'bench press', 'deadlift', 'overhead press'];
         const jePowerliftingA = powerliftingVjezbe.some(pv => 
           a.name.toLowerCase().includes(pv.toLowerCase()) || 
-          a.name_hr?.toLowerCase().includes(pv.toLowerCase())
+          a.naziv_hr?.toLowerCase().includes(pv.toLowerCase())
         );
         const jePowerliftingB = powerliftingVjezbe.some(pv => 
           b.name.toLowerCase().includes(pv.toLowerCase()) || 
-          b.name_hr?.toLowerCase().includes(pv.toLowerCase())
+          b.naziv_hr?.toLowerCase().includes(pv.toLowerCase())
         );
         powerliftingBonusA = jePowerliftingA ? 20 : 0;
         powerliftingBonusB = jePowerliftingB ? 20 : 0;
@@ -1130,7 +1130,7 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
         ponavljanja: iftStruktura.compoundPonavljanja,
         intenzitet: jeDeload ? intenzitetProgresija - 20 : intenzitetProgresija,
         odmorSekunde: ciljParam.odmorSekunde,
-        tempo: ciljParam.tempoPreporuka,
+        tempo: ciljParam.tempoPreporuka || '2/0/2/0',
         rir: ciljParam.rirRaspon,
       },
       volumenModifikator,
@@ -1154,7 +1154,7 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
         ponavljanja: iftStruktura.isolationPonavljanja,
         intenzitet: jeDeload ? iftStruktura.isolationIntenzitet - 15 : iftStruktura.isolationIntenzitet,
         odmorSekunde: { min: ciljParam.odmorSekunde.min, max: Math.min(90, ciljParam.odmorSekunde.max) },
-        tempo: ciljParam.tempoPreporuka,
+        tempo: ciljParam.tempoPreporuka || '2/0/2/0',
         rir: { min: ciljParam.rirRaspon.min + 1, max: ciljParam.rirRaspon.max + 1 },
       },
       volumenModifikator,
@@ -1453,11 +1453,11 @@ function validacijaVolumenaMEVMRV(
   grupa: string
 ): number {
   if (volumen < mev) {
-    log('warn', `Volumen za ${grupa} (${volumen}) ispod MEV (${mev}), povećano na MEV`);
+    log('warning', `Volumen za ${grupa} (${volumen}) ispod MEV (${mev}), povećano na MEV`);
     return mev;
   }
   if (volumen > mrv) {
-    log('warn', `Volumen za ${grupa} (${volumen}) iznad MRV (${mrv}), smanjeno na MRV`);
+    log('warning', `Volumen za ${grupa} (${volumen}) iznad MRV (${mrv}), smanjeno na MRV`);
     return mrv;
   }
   return volumen;

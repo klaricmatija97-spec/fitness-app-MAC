@@ -19,7 +19,7 @@ const CreateAnnualPlanSchema = z.object({
  * Kreira novi godišnji plan za klijenta
  */
 export async function POST(request: NextRequest) {
-  return withTrainerAuth(request, async (req, auth) => {
+  return withTrainerAuth(request, async (req: NextRequest, auth: AuthUser): Promise<NextResponse> => {
     try {
       const body = await req.json();
       const parseResult = CreateAnnualPlanSchema.safeParse(body);
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
  * Dohvaća godišnji plan za klijenta i godinu
  */
 export async function GET(request: NextRequest) {
-  return withTrainerAuth(request, async (req, auth) => {
+  return withTrainerAuth(request, async (req: NextRequest, auth: AuthUser): Promise<NextResponse> => {
     try {
       const { searchParams } = new URL(request.url);
       const clientId = searchParams.get('clientId');

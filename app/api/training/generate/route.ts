@@ -92,7 +92,18 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const input: GeneratorInput = parseResult.data;
+    // Mapiraj API cilj u interni format
+    const ciljMapping: Record<string, 'jakost' | 'snaga' | 'hipertrofija' | 'izdrzljivost' | 'rekreacija_zdravlje'> = {
+      'maksimalna_snaga': 'jakost',
+      'misicna_izdrzljivost': 'izdrzljivost',
+      'hipertrofija': 'hipertrofija',
+      'rekreacija_zdravlje': 'rekreacija_zdravlje',
+    };
+    
+    const input: GeneratorInput = {
+      ...parseResult.data,
+      cilj: ciljMapping[parseResult.data.cilj] || parseResult.data.cilj as any,
+    };
     
     console.log(`[API] Generiram program za klijenta ${input.clientId}`, {
       cilj: input.cilj,

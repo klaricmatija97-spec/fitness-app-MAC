@@ -151,9 +151,9 @@ export function requireClient(request: NextRequest): AuthUser | null {
 /**
  * Wrapper za zaštićene API rute - vraća NextResponse error ako nije autentificiran
  */
-export async function withAuth<T>(
+export async function withAuth(
   request: NextRequest,
-  handler: (req: NextRequest, auth: AuthUser) => Promise<NextResponse<T>>
+  handler: (req: NextRequest, auth: AuthUser) => Promise<NextResponse>
 ): Promise<NextResponse> {
   const auth = requireAuth(request);
   
@@ -170,9 +170,9 @@ export async function withAuth<T>(
 /**
  * Wrapper za trainer-only rute
  */
-export async function withTrainerAuth<T>(
+export async function withTrainerAuth(
   request: NextRequest,
-  handler: (req: NextRequest, auth: AuthUser) => Promise<NextResponse<T>>
+  handler: (req: NextRequest, auth: AuthUser) => Promise<NextResponse>
 ): Promise<NextResponse> {
   const auth = requireTrainer(request);
   
@@ -189,9 +189,9 @@ export async function withTrainerAuth<T>(
 /**
  * Wrapper za client-only rute
  */
-export async function withClientAuth<T>(
+export async function withClientAuth(
   request: NextRequest,
-  handler: (req: NextRequest, auth: AuthUser) => Promise<NextResponse<T>>
+  handler: (req: NextRequest, auth: AuthUser) => Promise<NextResponse>
 ): Promise<NextResponse> {
   const auth = requireClient(request);
   

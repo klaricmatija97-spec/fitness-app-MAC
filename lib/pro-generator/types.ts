@@ -18,7 +18,10 @@ export type CiljTreninga =
   | 'snaga'                  // Power/Eksplozivnost (6-8 rep, 80-90% 1RM, 2-3 min odmor)
   | 'hipertrofija'           // Povećanje mišićne mase (8-12 rep, 65-80% 1RM, 60-90 sec odmor)
   | 'izdrzljivost'           // Mišićna izdržljivost (12+ rep, do 60% 1RM, 0-60 sec odmor)
-  | 'rekreacija_zdravlje';   // Održavanje forme i prevencija
+  | 'rekreacija_zdravlje'    // Održavanje forme i prevencija
+  // API aliasi (za kompatibilnost s frontendovim)
+  | 'maksimalna_snaga'       // Alias za 'jakost'
+  | 'misicna_izdrzljivost';  // Alias za 'izdrzljivost'
 
 /** Razina korisnika */
 export type RazinaKorisnika = 

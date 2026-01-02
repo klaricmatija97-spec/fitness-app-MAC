@@ -101,57 +101,57 @@ export function forbiddenResponse(message: string = 'Pristup odbijen'): NextResp
  * Wrapper za zaštićene API rute
  * Automatski verificira token i dodaje user u request
  */
-export async function withAuth<T>(
+export async function withAuth(
   request: NextRequest,
-  handler: (request: NextRequest, user: JWTPayload) => Promise<NextResponse<T>>
-): Promise<NextResponse<T | { success: false; error: string }>> {
+  handler: (trainerId: string) => Promise<NextResponse>
+): Promise<NextResponse> {
   const auth = authenticateRequest(request);
   
   if (!auth.authenticated || !auth.user) {
-    return unauthorizedResponse(auth.error, auth.statusCode) as NextResponse<{ success: false; error: string }>;
+    return unauthorizedResponse(auth.error, auth.statusCode);
   }
   
-  return handler(request, auth.user);
+  return handler(auth.user.userId);
 }
 
 /**
  * Wrapper za rute koje zahtijevaju trainer pristup
  */
-export async function withTrainerAuth<T>(
+export async function withTrainerAuth(
   request: NextRequest,
-  handler: (request: NextRequest, user: JWTPayload) => Promise<NextResponse<T>>
-): Promise<NextResponse<T | { success: false; error: string }>> {
+  handler: (trainerId: string) => Promise<NextResponse>
+): Promise<NextResponse> {
   const auth = authenticateRequest(request);
   
   if (!auth.authenticated || !auth.user) {
-    return unauthorizedResponse(auth.error, auth.statusCode) as NextResponse<{ success: false; error: string }>;
+    return unauthorizedResponse(auth.error, auth.statusCode);
   }
   
   if (auth.user.userType !== 'trainer') {
-    return forbiddenResponse('Samo treneri mogu pristupiti ovoj ruti') as NextResponse<{ success: false; error: string }>;
+    return forbiddenResponse('Samo treneri mogu pristupiti ovoj ruti');
   }
   
-  return handler(request, auth.user);
+  return handler(auth.user.userId);
 }
 
 /**
  * Wrapper za rute koje zahtijevaju client pristup
  */
-export async function withClientAuth<T>(
+export async function withClientAuth(
   request: NextRequest,
-  handler: (request: NextRequest, user: JWTPayload) => Promise<NextResponse<T>>
-): Promise<NextResponse<T | { success: false; error: string }>> {
+  handler: (clientId: string) => Promise<NextResponse>
+): Promise<NextResponse> {
   const auth = authenticateRequest(request);
   
   if (!auth.authenticated || !auth.user) {
-    return unauthorizedResponse(auth.error, auth.statusCode) as NextResponse<{ success: false; error: string }>;
+    return unauthorizedResponse(auth.error, auth.statusCode);
   }
   
   if (auth.user.userType !== 'client') {
-    return forbiddenResponse('Samo klijenti mogu pristupiti ovoj ruti') as NextResponse<{ success: false; error: string }>;
+    return forbiddenResponse('Samo klijenti mogu pristupiti ovoj ruti');
   }
   
-  return handler(request, auth.user);
+  return handler(auth.user.userId);
 }
 
 /**

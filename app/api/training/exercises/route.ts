@@ -18,7 +18,7 @@ import path from 'path';
 let exercisesCache: any[] | null = null;
 
 async function loadExercises(): Promise<any[]> {
-  if (exercisesCache) {
+  if (exercisesCache !== null) {
     return exercisesCache;
   }
 
@@ -28,8 +28,9 @@ async function loadExercises(): Promise<any[]> {
     const exercises = JSON.parse(fileContent);
     
     // Ako je array, vrati direktno; ako je objekt s 'exercises', vrati exercises
-    exercisesCache = Array.isArray(exercises) ? exercises : (exercises.exercises || []);
-    return exercisesCache;
+    const loadedExercises: any[] = Array.isArray(exercises) ? exercises : (exercises.exercises || []);
+    exercisesCache = loadedExercises;
+    return loadedExercises;
   } catch (error) {
     console.error('[Exercise API] Greška pri učitavanju vježbi:', error);
     return [];

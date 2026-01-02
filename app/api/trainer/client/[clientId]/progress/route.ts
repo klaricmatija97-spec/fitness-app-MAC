@@ -71,11 +71,11 @@ interface ProgressData {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { clientId: string } }
+  { params }: { params: Promise<{ clientId: string }> }
 ) {
   return withTrainerAuth(request, async (trainerId) => {
     try {
-      const { clientId } = params;
+      const { clientId } = await params;
       const searchParams = request.nextUrl.searchParams;
       const period = searchParams.get('period') || '12w'; // 4w, 8w, 12w, all
       const programId = searchParams.get('programId');

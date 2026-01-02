@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { 
           ok: false, 
-          message: parseResult.error.errors[0]?.message || "Nevažeći podaci" 
+          message: parseResult.error.issues[0]?.message || "Nevažeći podaci" 
         },
         { status: 400 }
       );

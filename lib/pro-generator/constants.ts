@@ -87,6 +87,29 @@ export const CILJ_PARAMETRI: Record<CiljTreninga, CiljParametri> = {
     volumenPoGrupi: { min: 6, max: 12 },
     tempoPreporuka: '2/0/2/0',
   },
+  
+  // API ALIASI (za kompatibilnost)
+  // maksimalna_snaga je alias za jakost
+  maksimalna_snaga: {
+    setovi: { min: 3, max: 8 },
+    ponavljanja: { min: 1, max: 5 },
+    odmorSekunde: { min: 180, max: 300 },
+    rirRaspon: { min: 0, max: 2 },
+    intenzitetRaspon: { min: 90, max: 100 },
+    volumenPoGrupi: { min: 6, max: 12 },
+    tempoPreporuka: '2/0/x/0',
+  },
+  
+  // misicna_izdrzljivost je alias za izdrzljivost
+  misicna_izdrzljivost: {
+    setovi: { min: 2, max: 4 },
+    ponavljanja: { min: 12, max: 25 },
+    odmorSekunde: { min: 0, max: 60 },
+    rirRaspon: { min: 2, max: 4 },
+    intenzitetRaspon: { min: 40, max: 60 },
+    volumenPoGrupi: { min: 8, max: 15 },
+    tempoPreporuka: '2/0/2/0',
+  },
 };
 
 // ============================================

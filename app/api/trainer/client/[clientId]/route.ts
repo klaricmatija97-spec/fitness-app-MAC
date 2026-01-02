@@ -131,9 +131,9 @@ export async function GET(
       .limit(1)
       .maybeSingle();
 
-    let adherence = null;
-    let recentSessions = [];
-    let flaggedExercises = [];
+    let adherence: number | null = null;
+    let recentSessions: any[] = [];
+    let flaggedExercises: any[] = [];
 
     if (program) {
       // Dohvati total sessions count
