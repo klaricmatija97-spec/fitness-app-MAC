@@ -1195,9 +1195,6 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
           <TouchableOpacity style={styles.secondaryButton} onPress={() => setStep(1)}>
             <Text style={styles.secondaryButtonText}>← Klijent</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.secondaryButton} onPress={() => setStep(2)}>
-            <Text style={styles.secondaryButtonText}>⚙️ Postavke</Text>
-          </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.primaryButton, annualPhases.length === 0 && styles.buttonDisabled]} 
             onPress={async () => {
