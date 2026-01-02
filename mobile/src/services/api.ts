@@ -6,6 +6,8 @@
  * Za production, postavi pravi URL u environment varijablama
  */
 
+import { Platform } from 'react-native';
+
 // Koristi localhost za development (Expo Go na istom WiFi-u)
 // Za production, koristi environment varijablu ili postavi pravi URL
 const getApiBaseUrl = () => {
@@ -17,8 +19,24 @@ const getApiBaseUrl = () => {
   
   if (isDev) {
     // Development - koristi LAN IP za pristup s mobilnog uređaja
+    // Za iOS Simulator ili Android Emulator, koristi localhost
+    // Za fizički uređaj, koristi LAN IP računala
+    
+    // Provjeri da li je simulator/emulator
+    const isSimulator = Platform.OS === 'ios' || Platform.OS === 'android';
+    
+    // Za simulator/emulator koristi localhost (10.0.2.2 za Android emulator)
+    if (Platform.OS === 'android') {
+      // Android emulator koristi 10.0.2.2 za localhost računala
+      return 'http://10.0.2.2:3000';
+    } else if (Platform.OS === 'ios') {
+      // iOS simulator koristi localhost
+      return 'http://localhost:3000';
+    }
+    
+    // Za fizički uređaj, koristi LAN IP
     // Zamijeni sa svojom LAN IP adresom ako je drugačija
-    const LAN_IP = '192.168.1.11'; // Automatski detektiraj ili postavi ručno
+    const LAN_IP = '192.168.1.11'; // TODO: Automatski detektiraj ili postavi ručno
     return `http://${LAN_IP}:3000`;
   }
   // Production - TODO: Postavi pravi URL

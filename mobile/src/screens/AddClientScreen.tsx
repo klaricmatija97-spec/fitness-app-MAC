@@ -73,14 +73,37 @@ export default function AddClientScreen({ authToken, onComplete, onCancel }: Pro
         hasToken: !!authToken,
       });
 
-      const response = await fetch(requestUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
+      // Dodaj timeout za fetch request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 sekundi timeout
+
+      let response: Response;
+      try {
+        response = await fetch(requestUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        
+        // Provjeri tip greške
+        if (fetchError.name === 'AbortError') {
+          throw new Error(`Request timeout - server nije odgovorio u roku od 10 sekundi.\n\nProvjeri:\n1. Je li server pokrenut na ${API_BASE_URL}?\n2. Je li mobilni uređaj na istoj WiFi mreži?`);
+        }
+        
+        // Network error
+        if (fetchError.message?.includes('Network request failed') || fetchError.message?.includes('Failed to connect')) {
+          throw new Error(`Nije moguće povezati se sa serverom.\n\nURL: ${requestUrl}\n\nProvjeri:\n1. Je li server pokrenut? (npm run dev)\n2. Je li mobilni uređaj na istoj WiFi mreži?\n3. Je li IP adresa točna? (trenutno: ${API_BASE_URL})\n4. Provjeri firewall postavke`);
+        }
+        
+        throw fetchError;
+      }
 
       // Provjeri da li je response OK
       if (!response.ok) {
