@@ -961,7 +961,7 @@ export default function App() {
   }
 
   // Ako još nije login, prikaži welcome s animacijom
-  if (!showLogin && !showOnboarding && !showGoalSelection && !showIntakeFlow) {
+  if (!showLogin && !showOnboarding && !showGoalSelection && !showIntakeFlow && !showTrainerRegister) {
     return (
       <Animated.View
         style={[
