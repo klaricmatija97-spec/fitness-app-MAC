@@ -142,16 +142,65 @@ export async function GET(
         .select('id', { count: 'exact', head: true })
         .eq('program_id', program.id);
 
-      // TODO: Dohvati completed sessions iz workout_logs kada se implementira
-      // Za sada, pretpostavljamo 0 completed
-      const completedSessions = 0;
-      adherence = totalSessions && totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
+      // Dohvati completed sessions iz workout_logs
+      const { count: completedSessionsCount } = await supabase
+        .from('workout_logs')
+        .select('id', { count: 'exact', head: true })
+        .eq('program_id', program.id)
+        .eq('status', 'completed');
 
-      // TODO: Dohvati recent sessions iz workout_logs
-      recentSessions = [];
+      const completedSessions = completedSessionsCount || 0;
+      adherence = totalSessions && totalSessions > 0 
+        ? Math.round((completedSessions / totalSessions) * 100) 
+        : 0;
 
-      // TODO: Dohvati flagged exercises iz workout_logs (pain/difficulty reports)
-      flaggedExercises = [];
+      // Dohvati recent sessions iz workout_logs
+      const { data: recentLogs } = await supabase
+        .from('workout_logs')
+        .select(`
+          id,
+          started_at,
+          completed_at,
+          status,
+          adherence_score,
+          session:program_sessions(split_name, day_of_week)
+        `)
+        .eq('program_id', program.id)
+        .order('started_at', { ascending: false })
+        .limit(5);
+
+      recentSessions = (recentLogs || []).map(log => ({
+        id: log.id,
+        date: log.started_at,
+        status: log.status,
+        adherence: log.adherence_score,
+        sessionName: (log.session as any)?.split_name || 'Unknown',
+      }));
+
+      // Dohvati flagged exercises iz workout_logs (pain/difficulty reports)
+      const { data: flaggedExercisesData } = await supabase
+        .from('workout_log_exercises')
+        .select(`
+          id,
+          exercise_name,
+          pain_reported,
+          difficulty_reported,
+          difficulty_level,
+          workout_log:workout_logs(started_at, program_id)
+        `)
+        .or('pain_reported.eq.true,difficulty_reported.eq.true')
+        .eq('workout_log.program_id', program.id)
+        .order('workout_log.started_at', { ascending: false })
+        .limit(10);
+
+      flaggedExercises = (flaggedExercisesData || []).map(ex => ({
+        id: ex.id,
+        exerciseName: ex.exercise_name,
+        painReported: ex.pain_reported,
+        difficultyReported: ex.difficulty_reported,
+        difficultyLevel: ex.difficulty_level,
+        date: (ex.workout_log as any)?.started_at,
+      }));
     }
 
     // Izračunaj BMI ako imamo podatke

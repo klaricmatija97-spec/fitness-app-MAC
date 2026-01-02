@@ -285,20 +285,39 @@ export async function GET(request: NextRequest) {
 
           const totalSessions = sessions?.length || 0;
 
-          // TODO: Dohvati completed sessions iz workout_logs kada se implementira
-          // Za sada, pretpostavljamo 0 completed
-          const completedSessions = 0;
+          // Dohvati completed sessions iz workout_logs
+          const { count: completedSessionsCount } = await supabase
+            .from('workout_logs')
+            .select('id', { count: 'exact', head: true })
+            .eq('program_id', program.id)
+            .eq('status', 'completed');
+
+          const completedSessions = completedSessionsCount || 0;
 
           adherence =
             totalSessions > 0
               ? Math.round((completedSessions / totalSessions) * 100)
               : 0;
 
-          // TODO: Dohvati last session date iz workout_logs
-          // Za sada, postavljamo na null
+          // Dohvati last session date iz workout_logs
+          const { data: lastSession } = await supabase
+            .from('workout_logs')
+            .select('started_at')
+            .eq('program_id', program.id)
+            .order('started_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          const lastSessionDate = lastSession?.started_at || null;
 
           // Needs attention ako adherence < 70% ili nema sessiona u 7 dana
-          needsAttention = adherence < 70;
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          const hasRecentSession = lastSessionDate 
+            ? new Date(lastSessionDate) > sevenDaysAgo 
+            : false;
+          
+          needsAttention = adherence < 70 || !hasRecentSession;
         }
 
         return {
