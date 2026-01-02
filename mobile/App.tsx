@@ -304,11 +304,13 @@ export default function App() {
   };
 
   const handleAnnualPlanPress = (clientId: string, clientName: string) => {
+    // Otvori TrainerProgramBuilderScreen direktno - ima svoju lentu vremena
     setSelectedClientId(clientId);
     setSelectedClientName(clientName);
     setSelectedYear(new Date().getFullYear());
+    setSelectedPhaseData(null); // Nema unaprijed definiranu fazu
     setShowTrainerClientDetail(false);
-    setShowAnnualPlanBuilder(true);
+    setShowTrainingGenerator(true); // Direktno na TrainerProgramBuilderScreen
   };
 
   const handleGenerateProgram = (clientId: string, phaseData?: {
@@ -531,8 +533,8 @@ export default function App() {
         year={selectedYear}
         onBack={handleBackFromAnnualPlan}
         onGenerateProgram={handleGenerateProgram}
-        onGenerateAllPhases={async (clientId, phases, onComplete) => {
-          console.log('[App] Generating all phases:', phases.length);
+        onGenerateAllPhases={async (cId, phases, onComplete) => {
+          console.log('[App] Generating all phases:', phases.length, 'for client:', cId);
           const results: {phaseType: string; phaseName: string; programId: string | null; success: boolean; error?: string}[] = [];
           let previousProgramId: string | null = null;
           
@@ -570,24 +572,28 @@ export default function App() {
                   break;
               }
               
+              const requestBody = {
+                klijentId: cId,
+                cilj: cilj,
+                razina: 'srednji', // FIXED: bilo je 'srednja', treba biti 'srednji'
+                frekvencija: 4,
+                splitTip: 'upper_lower',
+                trajanjeTjedana: phase.durationWeeks,
+                dostupnaOprema: ['barbell', 'dumbbell', 'cable', 'machine'],
+                ...(previousProgramId && { previousProgramId }),
+                phaseOrder: i + 1,
+                totalPhases: phases.length,
+              };
+              
+              console.log(`[App] Request body:`, JSON.stringify(requestBody));
+              
               const response = await fetch(`${API_BASE_URL}/api/training/generate`, {
                 method: 'POST',
                 headers: {
                   'Authorization': `Bearer ${TRAINER_TOKEN}`,
                   'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                  klijentId: clientId,
-                  cilj: cilj,
-                  razina: 'srednja',
-                  frekvencija: 4,
-                  splitTip: 'upper_lower',
-                  trajanjeTjedana: phase.durationWeeks,
-                  dostupnaOprema: ['barbell', 'dumbbell', 'cable', 'machine'],
-                  previousProgramId: previousProgramId,
-                  phaseOrder: i + 1,
-                  totalPhases: phases.length,
-                }),
+                body: JSON.stringify(requestBody),
               });
               
               if (!response.ok) {
