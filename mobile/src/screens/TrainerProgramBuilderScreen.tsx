@@ -1228,21 +1228,28 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                     const phaseDuration = phase.endWeek - phase.startWeek + 1;
                     const phaseTypeInfo = MESOCYCLE_TYPES.find(m => m.value === phase.type);
                     
-                    // Mapiraj tip faze na goal
-                    const phaseGoal: ProgramGoal = 
+                    // Mapiraj tip faze na goal (API očekuje specifične vrijednosti)
+                    const phaseGoal = 
                       phase.type === 'hipertrofija' ? 'hipertrofija' :
-                      phase.type === 'jakost' ? 'jakost' :
-                      phase.type === 'snaga' ? 'snaga' :
-                      phase.type === 'izdrzljivost' ? 'izdrzljivost' :
+                      phase.type === 'jakost' ? 'maksimalna_snaga' :
+                      phase.type === 'snaga' ? 'maksimalna_snaga' : // Snaga se tretira kao maksimalna snaga
+                      phase.type === 'izdrzljivost' ? 'misicna_izdrzljivost' :
                       'hipertrofija';
                     
                     console.log(`🎯 [Step3] Generating phase ${i + 1}/${sortedPhases.length}:`, {
                       type: phase.type,
+                      goal: phaseGoal,
                       duration: phaseDuration,
                       startWeek: phase.startWeek,
                       endWeek: phase.endWeek,
                       previousProgramId,
                     });
+                    
+                    // Provjeri da li imamo sve potrebne podatke
+                    if (!selectedClient?.id) {
+                      console.error('❌ [Step3] Missing client ID');
+                      continue;
+                    }
                     
                     // Generiraj program za ovu fazu
                     const response = await fetch(`${API_BASE_URL}/api/training/generate`, {
@@ -1252,13 +1259,11 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                         'Content-Type': 'application/json',
                       },
                       body: JSON.stringify({
-                        clientId: selectedClient?.id,
-                        gender: selectedClient?.gender,
+                        clientId: selectedClient.id,
                         cilj: phaseGoal,
                         razina: level || 'srednji',
                         treninziTjedno: trainingFrequency || 4,
                         trajanjeTjedana: phaseDuration,
-                        mezociklusTip: phase.type,
                         splitTip: splitType || 'upper_lower',
                         dostupnaOprema: equipment.filter(e => e.selected).map(e => e.id),
                         // Poveži s prethodnom fazom
@@ -1279,9 +1284,20 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                           duration: phaseDuration,
                         });
                         console.log(`✅ [Step3] Phase ${i + 1} generated:`, result.data.programId);
+                      } else {
+                        const errorMsg = result.error || result.message || 'Unknown error';
+                        console.error(`❌ [Step3] Phase ${i + 1} generation failed:`, errorMsg, result);
                       }
                     } else {
-                      console.error(`❌ [Step3] Failed to generate phase ${i + 1}:`, response.status);
+                      // Pokušaj dohvatiti detalje greške
+                      let errorDetails = `Status: ${response.status}`;
+                      try {
+                        const errorData = await response.json();
+                        errorDetails = errorData.error || errorData.detalji || JSON.stringify(errorData);
+                        console.error(`❌ [Step3] Failed to generate phase ${i + 1}:`, errorDetails);
+                      } catch (e) {
+                        console.error(`❌ [Step3] Failed to generate phase ${i + 1}:`, response.status, response.statusText);
+                      }
                     }
                   }
                   
