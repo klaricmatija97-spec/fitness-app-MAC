@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServiceClient } from '@/lib/supabase';
-import { requireTrainer } from '@/lib/api/auth-helpers';
+import { withTrainerAuth, type AuthUser } from '@/lib/api/auth-helpers';
 
 const supabase = createServiceClient();
 
@@ -19,7 +19,7 @@ const CreateAnnualPlanSchema = z.object({
  * Kreira novi godišnji plan za klijenta
  */
 export async function POST(request: NextRequest) {
-  return requireTrainer(request, async (req, auth) => {
+  return withTrainerAuth(request, async (req, auth) => {
     try {
       const body = await req.json();
       const parseResult = CreateAnnualPlanSchema.safeParse(body);
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
  * Dohvaća godišnji plan za klijenta i godinu
  */
 export async function GET(request: NextRequest) {
-  return requireTrainer(request, async (req, auth) => {
+  return withTrainerAuth(request, async (req, auth) => {
     try {
       const { searchParams } = new URL(request.url);
       const clientId = searchParams.get('clientId');
