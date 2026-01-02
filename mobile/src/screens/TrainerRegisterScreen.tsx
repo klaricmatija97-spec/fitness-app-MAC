@@ -337,7 +337,7 @@ export default function TrainerRegisterScreen({ onRegisterSuccess, onBack }: Tra
                 maxLength={20}
               />
               <Text style={styles.inviteCodeHint}>
-                Pozivni kod dobiješ od FitCoach tima
+                Pozivni kod dobiješ od Corpex tima
               </Text>
             </View>
             

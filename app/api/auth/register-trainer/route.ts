@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     
     if (!inviteCode || inviteCode.toUpperCase() !== validInviteCode.toUpperCase()) {
       return NextResponse.json(
-        { ok: false, message: "Nevažeći pozivni kod. Kontaktirajte FitCoach tim." },
+        { ok: false, message: "Nevažeći pozivni kod. Kontaktirajte Corpex tim." },
         { status: 403 }
       );
     }
