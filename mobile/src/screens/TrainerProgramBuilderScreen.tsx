@@ -880,7 +880,14 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
   // STEP 3: Annual Plan Timeline - Full Year (52 weeks)
   const WEEK_WIDTH_ANNUAL = 24;
   const TRACK_HEIGHT_ANNUAL = 56;
-  const [annualPhases, setAnnualPhases] = useState<{id: string; type: MesocycleType; startWeek: number; endWeek: number}[]>([]);
+  // Inicijaliziraj faze iz phaseData ako dolazimo iz godišnjeg plana
+  const initialAnnualPhases = phaseData ? [{
+    id: `phase-${phaseData.mesocycleId || Date.now()}`,
+    type: phaseData.phaseType as MesocycleType,
+    startWeek: phaseData.startWeek,
+    endWeek: phaseData.endWeek,
+  }] : [];
+  const [annualPhases, setAnnualPhases] = useState<{id: string; type: MesocycleType; startWeek: number; endWeek: number}[]>(initialAnnualPhases);
   const [annualScrollEnabled, setAnnualScrollEnabled] = useState(true);
   const [draggingAnnual, setDraggingAnnual] = useState<{
     phaseIndex: number;
