@@ -1198,26 +1198,47 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                 const phaseDuration = firstPhase.endWeek - firstPhase.startWeek + 1;
                 const phaseTypeInfo = MESOCYCLE_TYPES.find(m => m.value === firstPhase.type);
                 
-                console.log('[Step3] Generating from timeline:', { 
+                console.log('🎯 [Step3] Generating from timeline:', { 
                   type: firstPhase.type, 
+                  typeLabel: phaseTypeInfo?.label,
                   duration: phaseDuration,
                   startWeek: firstPhase.startWeek,
-                  endWeek: firstPhase.endWeek
+                  endWeek: firstPhase.endWeek,
+                  allPhases: annualPhases.map(p => ({ type: p.type, start: p.startWeek, end: p.endWeek })),
                 });
                 
                 // Postavi durationWeeks i goal iz faze
                 setDurationWeeks(phaseDuration);
-                if (firstPhase.type === 'hipertrofija') setGoal('hipertrofija');
-                else if (firstPhase.type === 'jakost') setGoal('jakost');
-                else if (firstPhase.type === 'snaga') setGoal('snaga');
-                else if (firstPhase.type === 'izdrzljivost') setGoal('izdrzljivost');
                 
-                // Generiraj SVE tjedne odmah
+                // Eksplicitno mapiraj tip faze na goal
+                const newGoal: ProgramGoal = 
+                  firstPhase.type === 'hipertrofija' ? 'hipertrofija' :
+                  firstPhase.type === 'jakost' ? 'jakost' :
+                  firstPhase.type === 'snaga' ? 'snaga' :
+                  firstPhase.type === 'izdrzljivost' ? 'izdrzljivost' :
+                  'hipertrofija'; // Default fallback
+                
+                console.log('🎯 [Step3] Setting goal:', { 
+                  phaseType: firstPhase.type, 
+                  mappedGoal: newGoal 
+                });
+                
+                setGoal(newGoal);
+                
+                // Generiraj SVE tjedne odmah - VAŽNO: koristi firstPhase.type, ne goal
+                const programPhaseType = firstPhase.type as MesocycleType;
                 const program = generateMockFullProgram(
-                  firstPhase.type,
+                  programPhaseType,
                   phaseTypeInfo?.label || firstPhase.type,
                   phaseDuration
                 );
+                
+                console.log('🎯 [Step3] Generated program:', { 
+                  phaseType: program.phaseType, 
+                  phaseName: program.phaseName,
+                  totalWeeks: program.totalWeeks,
+                  firstWeekMesocycleType: program.weeks[0]?.mesocycleType,
+                });
                 
                 setFullProgram(program);
                 setCurrentWeekIndex(0);
@@ -1792,7 +1813,24 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
           <View style={styles.weekInfoItem}>
             <Text style={styles.weekInfoLabel}>Tip</Text>
             <Text style={styles.weekInfoValue}>
-              {currentWeek.isDeload ? 'Deload' : MESOCYCLE_TYPES.find(m => m.value === (currentWeek.mesocycleType || fullProgram.phaseType))?.label || fullProgram.phaseName}
+              {(() => {
+                // Debugging: ispis vrijednosti
+                const weekType = currentWeek.mesocycleType;
+                const programType = fullProgram.phaseType;
+                console.log('🔍 [Step5] Week type display:', { 
+                  isDeload: currentWeek.isDeload,
+                  weekMesocycleType: weekType, 
+                  programPhaseType: programType,
+                  programPhaseName: fullProgram.phaseName,
+                });
+                
+                if (currentWeek.isDeload) return 'Deload';
+                
+                // Koristi weekType ako postoji, inače programType
+                const typeToDisplay = weekType || programType;
+                const found = MESOCYCLE_TYPES.find(m => m.value === typeToDisplay);
+                return found?.label || fullProgram.phaseName;
+              })()}
             </Text>
           </View>
         </View>
