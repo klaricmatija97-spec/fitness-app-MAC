@@ -306,6 +306,11 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
   const [exerciseToReplace, setExerciseToReplace] = useState<{ sessionIndex: number; exerciseIndex: number } | null>(null);
   const [replacementExercises, setReplacementExercises] = useState<Exercise[]>([]);
 
+  // Add Exercise Modal
+  const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
+  const [addExerciseSessionIndex, setAddExerciseSessionIndex] = useState<number | null>(null);
+  const [addExerciseFilter, setAddExerciseFilter] = useState<string>('');
+
   // Program ID
   const [programId, setProgramId] = useState<string | null>(null);
 
@@ -2319,7 +2324,9 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
 
   // Add exercise handler
   function handleAddExercise(sessionIndex: number) {
-    Alert.alert('Dodaj vjezbu', 'Ova funkcija ce otvoriti katalog vjezbi za odabir.');
+    setAddExerciseSessionIndex(sessionIndex);
+    setAddExerciseFilter('');
+    setShowAddExerciseModal(true);
   }
 
   // STEP 7: Publish
@@ -2645,6 +2652,159 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
     );
   }
 
+  // Add Exercise Modal
+  function renderAddExerciseModal() {
+    if (addExerciseSessionIndex === null || !fullProgram) return null;
+    
+    const currentWeek = fullProgram.weeks[currentWeekIndex];
+    if (!currentWeek) return null;
+
+    const currentSession = currentWeek.sessions[addExerciseSessionIndex];
+    
+    // Katalog vježbi - grupirano po mišićnim grupama
+    const exerciseCatalog: { category: string; exercises: Omit<Exercise, 'isLocked'>[] }[] = [
+      {
+        category: 'Prsa',
+        exercises: [
+          { id: 'add-1', name: 'Bench Press', nameEn: 'Bench Press', sets: 3, repsMin: 8, repsMax: 12, restSeconds: 90, rir: 2, equipment: 'barbell', primaryMuscles: ['prsa'], secondaryMuscles: ['triceps', 'ramena'] },
+          { id: 'add-2', name: 'Incline Dumbbell Press', nameEn: 'Incline Dumbbell Press', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 75, rir: 2, equipment: 'dumbbell', primaryMuscles: ['prsa'], secondaryMuscles: ['triceps', 'ramena'] },
+          { id: 'add-3', name: 'Cable Fly', nameEn: 'Cable Fly', sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60, rir: 1, equipment: 'cable', primaryMuscles: ['prsa'], secondaryMuscles: [] },
+          { id: 'add-4', name: 'Dips', nameEn: 'Dips', sets: 3, repsMin: 8, repsMax: 12, restSeconds: 90, rir: 2, equipment: 'bodyweight', primaryMuscles: ['prsa'], secondaryMuscles: ['triceps'] },
+        ]
+      },
+      {
+        category: 'Leđa',
+        exercises: [
+          { id: 'add-5', name: 'Lat Pulldown', nameEn: 'Lat Pulldown', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 75, rir: 2, equipment: 'cable', primaryMuscles: ['latissimus'], secondaryMuscles: ['biceps'] },
+          { id: 'add-6', name: 'Barbell Row', nameEn: 'Barbell Row', sets: 3, repsMin: 8, repsMax: 10, restSeconds: 90, rir: 2, equipment: 'barbell', primaryMuscles: ['latissimus', 'trapezius'], secondaryMuscles: ['biceps'] },
+          { id: 'add-7', name: 'Seated Cable Row', nameEn: 'Seated Cable Row', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 75, rir: 2, equipment: 'cable', primaryMuscles: ['latissimus'], secondaryMuscles: ['biceps', 'trapezius'] },
+          { id: 'add-8', name: 'Pull-ups', nameEn: 'Pull-ups', sets: 3, repsMin: 6, repsMax: 10, restSeconds: 90, rir: 2, equipment: 'bodyweight', primaryMuscles: ['latissimus'], secondaryMuscles: ['biceps'] },
+        ]
+      },
+      {
+        category: 'Ramena',
+        exercises: [
+          { id: 'add-9', name: 'Overhead Press', nameEn: 'Overhead Press', sets: 3, repsMin: 8, repsMax: 10, restSeconds: 90, rir: 2, equipment: 'barbell', primaryMuscles: ['ramena'], secondaryMuscles: ['triceps'] },
+          { id: 'add-10', name: 'Lateral Raise', nameEn: 'Lateral Raise', sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60, rir: 1, equipment: 'dumbbell', primaryMuscles: ['ramena'], secondaryMuscles: [] },
+          { id: 'add-11', name: 'Face Pull', nameEn: 'Face Pull', sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60, rir: 1, equipment: 'cable', primaryMuscles: ['ramena', 'trapezius'], secondaryMuscles: [] },
+          { id: 'add-12', name: 'Rear Delt Fly', nameEn: 'Rear Delt Fly', sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60, rir: 1, equipment: 'dumbbell', primaryMuscles: ['ramena'], secondaryMuscles: [] },
+        ]
+      },
+      {
+        category: 'Noge',
+        exercises: [
+          { id: 'add-13', name: 'Squat', nameEn: 'Squat', sets: 4, repsMin: 6, repsMax: 8, restSeconds: 120, rir: 2, equipment: 'barbell', primaryMuscles: ['kvadriceps', 'gluteus'], secondaryMuscles: ['hamstrings'] },
+          { id: 'add-14', name: 'Romanian Deadlift', nameEn: 'Romanian Deadlift', sets: 3, repsMin: 8, repsMax: 10, restSeconds: 90, rir: 2, equipment: 'barbell', primaryMuscles: ['hamstrings', 'gluteus'], secondaryMuscles: ['leđa'] },
+          { id: 'add-15', name: 'Leg Press', nameEn: 'Leg Press', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 90, rir: 2, equipment: 'machine', primaryMuscles: ['kvadriceps'], secondaryMuscles: ['gluteus'] },
+          { id: 'add-16', name: 'Leg Curl', nameEn: 'Leg Curl', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 60, rir: 1, equipment: 'machine', primaryMuscles: ['hamstrings'], secondaryMuscles: [] },
+          { id: 'add-17', name: 'Calf Raise', nameEn: 'Calf Raise', sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60, rir: 1, equipment: 'machine', primaryMuscles: ['listovi'], secondaryMuscles: [] },
+        ]
+      },
+      {
+        category: 'Ruke',
+        exercises: [
+          { id: 'add-18', name: 'Barbell Curl', nameEn: 'Barbell Curl', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 60, rir: 1, equipment: 'barbell', primaryMuscles: ['biceps'], secondaryMuscles: [] },
+          { id: 'add-19', name: 'Tricep Pushdown', nameEn: 'Tricep Pushdown', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 60, rir: 1, equipment: 'cable', primaryMuscles: ['triceps'], secondaryMuscles: [] },
+          { id: 'add-20', name: 'Hammer Curl', nameEn: 'Hammer Curl', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 60, rir: 1, equipment: 'dumbbell', primaryMuscles: ['biceps'], secondaryMuscles: ['podlaktica'] },
+          { id: 'add-21', name: 'Skull Crusher', nameEn: 'Skull Crusher', sets: 3, repsMin: 10, repsMax: 12, restSeconds: 60, rir: 1, equipment: 'barbell', primaryMuscles: ['triceps'], secondaryMuscles: [] },
+        ]
+      },
+      {
+        category: 'Core',
+        exercises: [
+          { id: 'add-22', name: 'Plank', nameEn: 'Plank', sets: 3, repsMin: 30, repsMax: 60, restSeconds: 60, rir: 0, equipment: 'bodyweight', primaryMuscles: ['trbuh'], secondaryMuscles: [] },
+          { id: 'add-23', name: 'Cable Crunch', nameEn: 'Cable Crunch', sets: 3, repsMin: 12, repsMax: 15, restSeconds: 60, rir: 1, equipment: 'cable', primaryMuscles: ['trbuh'], secondaryMuscles: [] },
+          { id: 'add-24', name: 'Hanging Leg Raise', nameEn: 'Hanging Leg Raise', sets: 3, repsMin: 10, repsMax: 15, restSeconds: 60, rir: 1, equipment: 'bodyweight', primaryMuscles: ['trbuh'], secondaryMuscles: [] },
+        ]
+      },
+    ];
+
+    // Filtriraj vježbe po pretrazi
+    const filteredCatalog = exerciseCatalog.map(cat => ({
+      ...cat,
+      exercises: cat.exercises.filter(ex => 
+        ex.name.toLowerCase().includes(addExerciseFilter.toLowerCase()) ||
+        ex.primaryMuscles.some(m => m.toLowerCase().includes(addExerciseFilter.toLowerCase()))
+      )
+    })).filter(cat => cat.exercises.length > 0);
+
+    // Dodaj vježbu u sesiju
+    const addExerciseToSession = (exercise: Omit<Exercise, 'isLocked'>) => {
+      setFullProgram(prev => {
+        if (!prev || addExerciseSessionIndex === null) return prev;
+        const newWeeks = [...prev.weeks];
+        const newSessions = [...newWeeks[currentWeekIndex].sessions];
+        const newExercises = [...newSessions[addExerciseSessionIndex].exercises, { ...exercise, isLocked: false }];
+        newSessions[addExerciseSessionIndex] = { ...newSessions[addExerciseSessionIndex], exercises: newExercises };
+        newWeeks[currentWeekIndex] = { ...newWeeks[currentWeekIndex], sessions: newSessions };
+        return { ...prev, weeks: newWeeks };
+      });
+      setShowAddExerciseModal(false);
+      setAddExerciseSessionIndex(null);
+      setAddExerciseFilter('');
+    };
+
+    return (
+      <Modal visible={showAddExerciseModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxHeight: '80%' }]}>
+            <Text style={styles.modalTitle}>Dodaj vježbu</Text>
+            <Text style={styles.modalSubtitle}>Sesija: {currentSession?.name || `Trening ${addExerciseSessionIndex + 1}`}</Text>
+            
+            {/* Search/Filter */}
+            <View style={styles.addExerciseSearchContainer}>
+              <TextInput
+                style={styles.addExerciseSearchInput}
+                placeholder="Pretraži vježbe..."
+                placeholderTextColor="#666"
+                value={addExerciseFilter}
+                onChangeText={setAddExerciseFilter}
+              />
+            </View>
+            
+            <ScrollView style={styles.addExerciseList} showsVerticalScrollIndicator={false}>
+              {filteredCatalog.map((category) => (
+                <View key={category.category} style={styles.addExerciseCategory}>
+                  <Text style={styles.addExerciseCategoryTitle}>{category.category}</Text>
+                  {category.exercises.map((exercise) => (
+                    <TouchableOpacity
+                      key={exercise.id}
+                      style={styles.addExerciseItem}
+                      onPress={() => addExerciseToSession(exercise)}
+                    >
+                      <View style={styles.addExerciseItemContent}>
+                        <Text style={styles.addExerciseItemName}>{exercise.name}</Text>
+                        <Text style={styles.addExerciseItemMeta}>
+                          {exercise.sets}×{exercise.repsMin}-{exercise.repsMax} | {exercise.equipment}
+                        </Text>
+                      </View>
+                      <Text style={styles.addExerciseItemPlus}>+</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ))}
+              
+              {filteredCatalog.length === 0 && (
+                <Text style={styles.addExerciseNoResults}>Nema rezultata za "{addExerciseFilter}"</Text>
+              )}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => {
+                setShowAddExerciseModal(false);
+                setAddExerciseSessionIndex(null);
+                setAddExerciseFilter('');
+              }}
+            >
+              <Text style={styles.modalCloseText}>Zatvori</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  }
+
   // ============================================
   // MAIN RENDER
   // ============================================
@@ -2675,6 +2835,7 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
         {/* Modals */}
         {renderCustomSplitBuilder()}
         {renderReplaceModal()}
+        {renderAddExerciseModal()}
       </LinearGradient>
     </View>
   );
@@ -3819,6 +3980,72 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   addExerciseText: { color: '#71717A', fontSize: 14 },
+
+  // Add Exercise Modal
+  addExerciseSearchContainer: {
+    marginBottom: 12,
+  },
+  addExerciseSearchInput: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    color: '#FFF',
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  addExerciseList: {
+    maxHeight: 400,
+  },
+  addExerciseCategory: {
+    marginBottom: 16,
+  },
+  addExerciseCategoryTitle: {
+    color: '#60A5FA',
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  addExerciseItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  addExerciseItemContent: {
+    flex: 1,
+  },
+  addExerciseItemName: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  addExerciseItemMeta: {
+    color: '#71717A',
+    fontSize: 12,
+  },
+  addExerciseItemPlus: {
+    color: '#22C55E',
+    fontSize: 22,
+    fontWeight: '700',
+    marginLeft: 12,
+  },
+  addExerciseNoResults: {
+    color: '#71717A',
+    fontSize: 14,
+    textAlign: 'center',
+    paddingVertical: 20,
+  },
 
   // Publish Card
   publishCard: {
