@@ -13,7 +13,7 @@ interface TrainerInvite {
 
 export default function AdminPage() {
   const [invites, setInvites] = useState<TrainerInvite[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [adminKey, setAdminKey] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -37,17 +37,30 @@ export default function AdminPage() {
 
   const handleLogin = async () => {
     setLoading(true);
-    const res = await fetch(`/api/admin/trainer-invites?status=pending`, {
-      headers: { 'x-admin-key': adminKey },
-    });
-    const data = await res.json();
-    if (data.ok) {
-      setAuthenticated(true);
-      setInvites(data.invites);
-    } else {
-      setMessage({ type: 'error', text: 'Pogrešan admin ključ' });
+    setMessage(null);
+    
+    try {
+      console.log('Logging in with key:', adminKey);
+      const res = await fetch(`/api/admin/trainer-invites?status=pending`, {
+        headers: { 'x-admin-key': adminKey },
+      });
+      console.log('Response status:', res.status);
+      const data = await res.json();
+      console.log('Response data:', data);
+      
+      if (data.ok) {
+        setAuthenticated(true);
+        setInvites(data.invites || []);
+        setMessage({ type: 'success', text: `Prijavljeni! ${data.count || 0} zahtjeva na čekanju.` });
+      } else {
+        setMessage({ type: 'error', text: data.message || 'Pogrešan admin ključ' });
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setMessage({ type: 'error', text: 'Greška pri povezivanju s serverom' });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleAction = async (inviteId: string, action: 'approve' | 'reject') => {
