@@ -309,16 +309,17 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
               </Animated.View>
 
               <View style={styles.form}>
-                {/* Username */}
+                {/* Email */}
                 <View style={styles.inputContainer}>
-                  <Text style={styles.label}>KORISNIČKO IME</Text>
+                  <Text style={styles.label}>E-MAIL</Text>
                   <TextInput
                     style={styles.input}
                     value={username}
                     onChangeText={setUsername}
-                    placeholder="ime.prezime"
+                    placeholder="email@example.com"
                     placeholderTextColor="rgba(255,255,255,0.3)"
                     autoCapitalize="none"
+                    keyboardType="email-address"
                   />
                 </View>
 
