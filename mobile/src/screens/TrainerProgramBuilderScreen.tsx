@@ -384,7 +384,17 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
     setLoading(true);
     try {
       // Odredi tip faze i trajanje
-      const phaseType = phaseData?.phaseType as MesocycleType || goal === 'jakost' ? 'jakost' : goal === 'snaga' ? 'snaga' : 'hipertrofija';
+      // Ako imamo phaseData, koristi phaseType iz njega, inače mapiraj goal u phaseType
+      let phaseType: MesocycleType;
+      if (phaseData?.phaseType) {
+        phaseType = phaseData.phaseType as MesocycleType;
+      } else {
+        // Mapiraj goal u phaseType
+        phaseType = goal === 'jakost' ? 'jakost' : 
+                   goal === 'snaga' ? 'snaga' : 
+                   goal === 'izdrzljivost' ? 'izdrzljivost' : 
+                   'hipertrofija';
+      }
       const phaseName = phaseData?.phaseName || MESOCYCLE_TYPES.find(m => m.value === phaseType)?.label || 'Program';
       const totalWeeks = phaseData?.durationWeeks || durationWeeks;
       
@@ -1782,7 +1792,7 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
           <View style={styles.weekInfoItem}>
             <Text style={styles.weekInfoLabel}>Tip</Text>
             <Text style={styles.weekInfoValue}>
-              {currentWeek.isDeload ? 'Deload' : MESOCYCLE_TYPES.find(m => m.value === currentWeek.mesocycleType)?.label}
+              {currentWeek.isDeload ? 'Deload' : MESOCYCLE_TYPES.find(m => m.value === (currentWeek.mesocycleType || fullProgram.phaseType))?.label || fullProgram.phaseName}
             </Text>
           </View>
         </View>
