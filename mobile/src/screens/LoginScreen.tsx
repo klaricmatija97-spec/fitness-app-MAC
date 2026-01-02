@@ -338,7 +338,7 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
                     onPress={onTrainerRegister}
                   >
                     <Text style={styles.trainerRegisterLinkText}>
-                      🏋️ Jesi trener? Registriraj se ovdje
+                      Registracija trenera →
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -487,7 +487,7 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
                     onPress={onTrainerRegister}
                   >
                     <Text style={styles.trainerRegisterLinkText}>
-                      🏋️ Jesi trener? Registriraj se ovdje
+                      Registracija trenera →
                     </Text>
                   </TouchableOpacity>
                 )}
