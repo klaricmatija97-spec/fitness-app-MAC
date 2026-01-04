@@ -41,10 +41,11 @@ const registerTrainerSchema = z.object({
 // HELPER: Generiraj jedinstveni trainer code
 // ============================================
 
+// Format: TRN-XXXX
 function generateTrainerCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Bez sličnih znakova (0/O, 1/I/L)
+  let code = 'TRN-';
+  for (let i = 0; i < 4; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;

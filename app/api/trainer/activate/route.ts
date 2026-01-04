@@ -4,15 +4,17 @@ import { z } from "zod";
 import { generateTokens } from "@/lib/auth/jwt";
 
 const ActivateSchema = z.object({
-  code: z.string().min(6, "Kod je prekratak"),
+  code: z.string()
+    .min(10, "Aktivacijski kod mora imati format ACT-XXXXXX")
+    .regex(/^ACT-[A-Z0-9]{6}$/, "Neispravan format. Očekivani format: ACT-XXXXXX"),
   email: z.string().email("Nevažeća email adresa"),
 });
 
-// Generiraj jedinstveni trainer code
+// Generiraj jedinstveni trainer code - Format: TRN-XXXX
 function generateTrainerCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Bez sličnih znakova (0/O, 1/I/L)
+  let code = 'TRN-';
+  for (let i = 0; i < 4; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;

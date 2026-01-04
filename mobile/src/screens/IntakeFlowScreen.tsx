@@ -15,8 +15,11 @@ import {
   PanResponder,
   TextInput,
   ScrollView,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 
 // Premium sportske slike
 const backgroundImages = [
@@ -26,24 +29,13 @@ const backgroundImages = [
   'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?w=1920&h=1080&fit=crop&q=80',
 ];
 
-// Opcije
-const honorificOptions = [
-  { value: 'mr', label: 'Mr' },
-  { value: 'mrs', label: 'Mrs' },
-  { value: 'ms', label: 'Ms' },
-  { value: 'other', label: 'Other' },
+// Opcije spola - minimalistično sa simbolima
+const genderOptions = [
+  { value: 'mr', label: 'Muškarac', symbol: '♂' },
+  { value: 'mrs', label: 'Žena', symbol: '♀' },
 ];
 
-const ageOptions = [
-  { value: '10-20', label: '10 – 20' },
-  { value: '20-30', label: '20 – 30' },
-  { value: '30-40', label: '30 – 40' },
-  { value: '40-50', label: '40 – 50' },
-  { value: '50-60', label: '50 – 60' },
-  { value: '60-70', label: '60 – 70' },
-  { value: '70+', label: '70+' },
-  { value: 'other', label: 'Ostalo' },
-];
+// Dob - sada koristimo točnu vrijednost umjesto raspona
 
 const weightUnits = [
   { value: 'kg', label: 'kg' },
@@ -61,16 +53,77 @@ const trainingFrequencyOptions = [
   { value: '6', label: '6 puta tjedno' },
 ];
 
-type SlideId = 'honorific' | 'age' | 'weight' | 'height' | 'foodPreferences' | 'avoidIngredients' | 'allergies' | 'trainingFrequency';
+// Tipovi ciljeva
+export type GoalType = 'FAT_LOSS' | 'RECOMPOSITION' | 'MUSCLE_GAIN' | 'ENDURANCE';
+
+// Opcije ciljeva s akcent bojama
+const goalOptions: { id: GoalType; title: string; subtitle: string; emoji: string; accentColor: string; isHero?: boolean }[] = [
+  {
+    id: 'FAT_LOSS',
+    title: 'Skinuti masno tkivo',
+    subtitle: 'Najčešći izbor',
+    emoji: '🔥',
+    accentColor: '#FF7A00',
+    isHero: true,
+  },
+  {
+    id: 'RECOMPOSITION',
+    title: 'Rekompozicija',
+    subtitle: 'Ako već treniraš',
+    emoji: '⚖️',
+    accentColor: '#A855F7',
+  },
+  {
+    id: 'MUSCLE_GAIN',
+    title: 'Dobiti mišićnu masu',
+    subtitle: 'Traži disciplinu',
+    emoji: '💪',
+    accentColor: '#22C55E',
+  },
+  {
+    id: 'ENDURANCE',
+    title: 'Izdržljivost',
+    subtitle: 'Kondicija & energija',
+    emoji: '🏃',
+    accentColor: '#3B82F6',
+  },
+];
+
+type SlideId = 'goal' | 'honorific' | 'age' | 'weight' | 'height' | 'favoriteActivities' | 'foodPreferences' | 'avoidIngredients' | 'allergies' | 'healthConditions' | 'trainingFrequency';
+
+// Sportovi i aktivnosti s emoji ikonama
+const sportsActivities = [
+  { value: 'gym', label: 'Teretana', emoji: '🏋️' },
+  { value: 'running', label: 'Trčanje', emoji: '🏃' },
+  { value: 'cycling', label: 'Biciklizam', emoji: '🚴' },
+  { value: 'swimming', label: 'Plivanje', emoji: '🏊' },
+  { value: 'football', label: 'Nogomet', emoji: '⚽' },
+  { value: 'basketball', label: 'Košarka', emoji: '🏀' },
+  { value: 'tennis', label: 'Tenis', emoji: '🎾' },
+  { value: 'boxing', label: 'Boks', emoji: '🥊' },
+  { value: 'yoga', label: 'Yoga', emoji: '🧘' },
+  { value: 'hiking', label: 'Planinarenje', emoji: '🥾' },
+  { value: 'crossfit', label: 'CrossFit', emoji: '💪' },
+  { value: 'martial-arts', label: 'Borilački sportovi', emoji: '🥋' },
+  { value: 'dancing', label: 'Ples', emoji: '💃' },
+  { value: 'climbing', label: 'Penjanje', emoji: '🧗' },
+  { value: 'skiing', label: 'Skijanje', emoji: '⛷️' },
+  { value: 'volleyball', label: 'Odbojka', emoji: '🏐' },
+  { value: 'padel', label: 'Padel', emoji: '🏸' },
+  { value: 'rowing', label: 'Veslanje', emoji: '🚣' },
+];
 
 interface IntakeFormState {
+  goal: GoalType | '';
   honorific: string;
-  ageRange: string;
+  age: string; // Točna dob (npr. "25")
   weight: { value: string; unit: string };
   height: { value: string; unit: string };
+  favoriteActivities: string[]; // Omiljeni sportovi/aktivnosti
   foodPreferences: string;
   avoidIngredients: string;
   allergies: string;
+  healthConditions: string; // Ozljede, bolesti, zdravstvena stanja
   trainingFrequency: string;
 }
 
@@ -80,14 +133,17 @@ interface IntakeFlowScreenProps {
 }
 
 const slideOrder: SlideId[] = [
+  'goal',
   'honorific',
   'age',
   'weight',
   'height',
+  'favoriteActivities',  // Omiljeni sportovi - za trenera kao putokaz
+  'trainingFrequency',
+  'healthConditions',  // Ozljede i bolesti - BITNO za trenera
   'foodPreferences',
   'avoidIngredients',
   'allergies',
-  'trainingFrequency',
 ];
 
 export default function IntakeFlowScreen({ onComplete, onBack }: IntakeFlowScreenProps) {
@@ -95,13 +151,16 @@ export default function IntakeFlowScreen({ onComplete, onBack }: IntakeFlowScree
   const [currentBgImage, setCurrentBgImage] = useState(0);
   const [showWeightInput, setShowWeightInput] = useState(true);
   const [intakeForm, setIntakeForm] = useState<IntakeFormState>({
+    goal: '',
     honorific: '',
-    ageRange: '',
+    age: '25', // Default dob
     weight: { value: '50', unit: 'kg' },
     height: { value: '150', unit: 'cm' },
+    favoriteActivities: [], // Omiljeni sportovi
     foodPreferences: '',
     avoidIngredients: '',
     allergies: '',
+    healthConditions: '',
     trainingFrequency: '',
   });
 
@@ -111,27 +170,36 @@ export default function IntakeFlowScreen({ onComplete, onBack }: IntakeFlowScree
   const slideTranslateY = useRef(new Animated.Value(0)).current;
   const weightInputTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const heightInputTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // State za direktni unos vrijednosti
+  const [isEditingAge, setIsEditingAge] = useState(false);
+  const [isEditingWeight, setIsEditingWeight] = useState(false);
+  const [isEditingHeight, setIsEditingHeight] = useState(false);
+  const [tempValue, setTempValue] = useState('');
 
-  // PanResponder za swipe navigaciju
+  // PanResponder za swipe navigaciju - striktnije pragove
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => !isAnimating.current,
+      onStartShouldSetPanResponder: () => false, // Nikad ne uzimaj na početku
       onMoveShouldSetPanResponder: (_, gestureState) => {
         if (isAnimating.current) return false;
-        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx) && Math.abs(gestureState.dy) > 10;
+        // Mora biti izrazito vertikalan swipe (dy > 3x dx) i minimum 50px pomaka
+        const isVertical = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 3;
+        const isSignificant = Math.abs(gestureState.dy) > 50;
+        return isVertical && isSignificant;
       },
       onPanResponderRelease: (_, gestureState) => {
         if (isAnimating.current) return;
         const { dy, vy } = gestureState;
         
-        if (dy > 80 || vy > 0.5) {
-          // Swipe down - nazad
+        // Striktiji pragovi: 120px ili brzina 0.8
+        if (dy > 120 && vy > 0.3) {
+          // Swipe down - nazad (samo ako nije prvi slide)
           if (currentSlideIndex > 0) {
             goToPrevious();
-          } else if (onBack) {
-            onBack();
           }
-        } else if (dy < -80 || vy < -0.5) {
+          // MAKNUT onBack() - ne izlazi iz onboardinga na swipe
+        } else if (dy < -120 && vy < -0.3) {
           // Swipe up - naprijed
           if (canGoNext()) {
             goToNext();
@@ -186,14 +254,19 @@ export default function IntakeFlowScreen({ onComplete, onBack }: IntakeFlowScree
 
   const canGoNext = (): boolean => {
     switch (currentSlide) {
+      case 'goal':
+        return intakeForm.goal !== '';
       case 'honorific':
         return intakeForm.honorific !== '';
       case 'age':
-        return intakeForm.ageRange !== '';
+        const age = parseInt(intakeForm.age);
+        return age >= 10 && age <= 100;
       case 'weight':
         return intakeForm.weight.value !== '' && parseInt(intakeForm.weight.value) > 0;
       case 'height':
         return intakeForm.height.value !== '' && parseInt(intakeForm.height.value) > 0;
+      case 'favoriteActivities':
+        return intakeForm.favoriteActivities.length >= 1; // Bar jedna aktivnost
       case 'trainingFrequency':
         return intakeForm.trainingFrequency !== '';
       default:
@@ -286,6 +359,25 @@ export default function IntakeFlowScreen({ onComplete, onBack }: IntakeFlowScree
     setIntakeForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Haptic feedback + auto-advance za single-choice pitanja
+  const selectAndAdvance = (field: keyof IntakeFormState, value: any) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    updateForm(field, value);
+    
+    // Auto-advance nakon kratke pauze
+    setTimeout(() => {
+      if (!isAnimating.current) {
+        goToNext();
+      }
+    }, 300);
+  };
+
+  // Samo haptic bez auto-advance
+  const selectWithHaptic = (field: keyof IntakeFormState, value: any) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    updateForm(field, value);
+  };
+
   const renderSlide = () => {
     const slideStyle = {
       opacity: slideOpacity,
@@ -293,25 +385,122 @@ export default function IntakeFlowScreen({ onComplete, onBack }: IntakeFlowScree
     };
 
     switch (currentSlide) {
+      case 'goal':
+        const heroGoal = goalOptions.find(g => g.isHero)!;
+        const otherGoals = goalOptions.filter(g => !g.isHero);
+        
+        return (
+          <Animated.View style={[styles.slideContent, slideStyle]}>
+            <Text style={styles.questionText}>Koji je tvoj cilj?</Text>
+            <Text style={styles.goalSubtitle}>Možeš ga promijeniti kasnije</Text>
+            
+            {/* Hero kartica - Full width */}
+            <TouchableOpacity
+              style={[
+                styles.goalHeroCard,
+                intakeForm.goal === heroGoal.id && styles.goalCardSelected,
+              ]}
+              onPress={() => selectAndAdvance('goal', heroGoal.id)}
+              activeOpacity={0.9}
+            >
+              {/* Checkmark ako je selektirano */}
+              {intakeForm.goal === heroGoal.id && (
+                <View style={styles.goalCheckmark}>
+                  <Text style={styles.goalCheckmarkText}>✓</Text>
+                </View>
+              )}
+              
+              <View style={styles.goalHeroContent}>
+                <Text style={[styles.goalHeroEmoji, intakeForm.goal === heroGoal.id && { transform: [{ scale: 1.1 }] }]}>
+                  {heroGoal.emoji}
+                </Text>
+                <View style={styles.goalHeroText}>
+                  <Text style={[
+                    styles.goalHeroTitle,
+                    intakeForm.goal === heroGoal.id && { color: '#fff' }
+                  ]}>{heroGoal.title}</Text>
+                  <Text style={styles.goalHeroSubtitle}>{heroGoal.subtitle}</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+            
+            {/* Grid s ostalim karticama - 2 gore, 1 full width dolje */}
+            <View style={styles.goalOtherGrid}>
+              {otherGoals.map((goal, index) => {
+                const isLastCard = index === otherGoals.length - 1;
+                return (
+                  <TouchableOpacity
+                    key={goal.id}
+                    style={[
+                      isLastCard ? styles.goalFullWidthCard : styles.goalSmallCard,
+                      intakeForm.goal === goal.id && styles.goalCardSelected,
+                    ]}
+                    onPress={() => selectAndAdvance('goal', goal.id)}
+                    activeOpacity={0.9}
+                  >
+                    {/* Checkmark ako je selektirano */}
+                    {intakeForm.goal === goal.id && (
+                      <View style={styles.goalCheckmark}>
+                        <Text style={styles.goalCheckmarkText}>✓</Text>
+                      </View>
+                    )}
+                    
+                    {isLastCard ? (
+                      // Full width kartica - horizontalni layout
+                      <View style={styles.goalFullWidthContent}>
+                        <Text style={[
+                          styles.goalFullWidthEmoji,
+                          intakeForm.goal === goal.id && { transform: [{ scale: 1.1 }] }
+                        ]}>{goal.emoji}</Text>
+                        <View>
+                          <Text style={[
+                            styles.goalSmallTitle,
+                            intakeForm.goal === goal.id && { color: '#fff' }
+                          ]}>{goal.title}</Text>
+                          <Text style={styles.goalSmallSubtitle}>{goal.subtitle}</Text>
+                        </View>
+                      </View>
+                    ) : (
+                      // Male kartice - vertikalni layout
+                      <>
+                        <Text style={styles.goalSmallEmoji}>{goal.emoji}</Text>
+                        <Text style={[
+                          styles.goalSmallTitle,
+                          intakeForm.goal === goal.id && { color: '#fff' }
+                        ]}>{goal.title}</Text>
+                        <Text style={styles.goalSmallSubtitle}>{goal.subtitle}</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </Animated.View>
+        );
+
       case 'honorific':
         return (
           <Animated.View style={[styles.slideContent, slideStyle]}>
             <Text style={styles.questionText}>Spol</Text>
-            <View style={styles.optionsContainer}>
-              {honorificOptions.map((option) => (
+            <View style={styles.genderContainer}>
+              {genderOptions.map((option) => (
                 <TouchableOpacity
                   key={option.value}
                   style={[
-                    styles.optionButton,
-                    intakeForm.honorific === option.value && styles.optionButtonSelected,
+                    styles.genderCard,
+                    intakeForm.honorific === option.value && styles.genderCardSelected,
                   ]}
-                  onPress={() => updateForm('honorific', option.value)}
+                  onPress={() => selectAndAdvance('honorific', option.value)}
                   activeOpacity={0.8}
                 >
+                  <Text style={[
+                    styles.genderSymbol,
+                    intakeForm.honorific === option.value && styles.genderSymbolSelected,
+                  ]}>{option.symbol}</Text>
                   <Text
                     style={[
-                      styles.optionText,
-                      intakeForm.honorific === option.value && styles.optionTextSelected,
+                      styles.genderLabel,
+                      intakeForm.honorific === option.value && styles.genderLabelSelected,
                     ]}
                   >
                     {option.label}
@@ -323,34 +512,87 @@ export default function IntakeFlowScreen({ onComplete, onBack }: IntakeFlowScree
         );
 
       case 'age':
+        const currentAge = parseInt(intakeForm.age) || 25;
         return (
           <Animated.View style={[styles.slideContent, slideStyle]}>
             <Text style={styles.questionText}>Koliko imaš godina?</Text>
-            <ScrollView style={styles.optionsScrollView} showsVerticalScrollIndicator={false}>
-              <View style={styles.optionsContainer}>
-                {ageOptions.map((option) => (
+            {isEditingAge && (
+              <Text style={styles.descriptionText}>Upiši dob i potvrdi</Text>
+            )}
+            <View style={styles.arrowInputContainer}>
+              <View style={styles.arrowColumn}>
+                {!isEditingAge && (
                   <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.optionButton,
-                      styles.optionButtonFullWidth,
-                      intakeForm.ageRange === option.value && styles.optionButtonSelected,
-                    ]}
-                    onPress={() => updateForm('ageRange', option.value)}
-                    activeOpacity={0.8}
+                    style={styles.arrowButton}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      const newValue = Math.min(100, currentAge + 1);
+                      updateForm('age', newValue.toString());
+                    }}
+                    activeOpacity={0.7}
                   >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        intakeForm.ageRange === option.value && styles.optionTextSelected,
-                      ]}
-                    >
-                      {option.label}
-                    </Text>
+                    <Text style={styles.arrowText}>▲</Text>
                   </TouchableOpacity>
-                ))}
+                )}
+                
+                <TouchableOpacity 
+                  style={styles.valueDisplay}
+                  onPress={() => {
+                    setTempValue(currentAge.toString());
+                    setIsEditingAge(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  {isEditingAge ? (
+                    <TextInput
+                      style={styles.directInput}
+                      value={tempValue}
+                      onChangeText={setTempValue}
+                      keyboardType="number-pad"
+                      autoFocus
+                      selectTextOnFocus
+                      maxLength={3}
+                    />
+                  ) : (
+                    <>
+                      <Text style={styles.valueText}>{currentAge}</Text>
+                      <Text style={styles.tapToEditHint}>klikni na broj za direktan unos</Text>
+                    </>
+                  )}
+                  <Text style={styles.unitLabel}>godina</Text>
+                </TouchableOpacity>
+                
+                {!isEditingAge && (
+                  <TouchableOpacity
+                    style={styles.arrowButton}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      const newValue = Math.max(10, currentAge - 1);
+                      updateForm('age', newValue.toString());
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.arrowText}>▼</Text>
+                  </TouchableOpacity>
+                )}
               </View>
-            </ScrollView>
+            </View>
+            
+            {isEditingAge && (
+              <TouchableOpacity 
+                style={styles.confirmInputButton}
+                onPress={() => {
+                  const parsed = parseInt(tempValue);
+                  if (parsed >= 10 && parsed <= 100) {
+                    updateForm('age', parsed.toString());
+                  }
+                  setIsEditingAge(false);
+                  Keyboard.dismiss();
+                }}
+              >
+                <Text style={styles.confirmInputText}>Gotovo ✓</Text>
+              </TouchableOpacity>
+            )}
           </Animated.View>
         );
 
@@ -359,21 +601,49 @@ export default function IntakeFlowScreen({ onComplete, onBack }: IntakeFlowScree
         return (
           <Animated.View style={[styles.slideContent, slideStyle]}>
             <Text style={styles.questionText}>Trenutna težina</Text>
-            <Text style={styles.descriptionText}>Koristi strelice za odabir težine.</Text>
+            {isEditingWeight && (
+              <Text style={styles.descriptionText}>Upiši težinu i potvrdi</Text>
+            )}
             <View style={styles.arrowInputContainer}>
               <View style={styles.arrowColumn}>
-                <TouchableOpacity
-                  style={styles.arrowButton}
+                {!isEditingWeight && (
+                  <TouchableOpacity
+                    style={styles.arrowButton}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      const newValue = Math.min(300, currentWeight + 1);
+                      updateForm('weight', { ...intakeForm.weight, value: newValue.toString() });
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.arrowText}>▲</Text>
+                  </TouchableOpacity>
+                )}
+                
+                <TouchableOpacity 
+                  style={styles.valueDisplay}
                   onPress={() => {
-                    const newValue = Math.max(30, currentWeight + 1);
-                    updateForm('weight', { ...intakeForm.weight, value: newValue.toString() });
+                    setTempValue(currentWeight.toString());
+                    setIsEditingWeight(true);
                   }}
-                  activeOpacity={0.7}
+                  activeOpacity={0.8}
                 >
-                  <Text style={styles.arrowText}>▲</Text>
-                </TouchableOpacity>
-                <View style={styles.valueDisplay}>
-                  <Text style={styles.valueText}>{currentWeight}</Text>
+                  {isEditingWeight ? (
+                    <TextInput
+                      style={styles.directInput}
+                      value={tempValue}
+                      onChangeText={setTempValue}
+                      keyboardType="number-pad"
+                      autoFocus
+                      selectTextOnFocus
+                      maxLength={3}
+                    />
+                  ) : (
+                    <>
+                      <Text style={styles.valueText}>{currentWeight}</Text>
+                      <Text style={styles.tapToEditHint}>klikni na broj za direktan unos</Text>
+                    </>
+                  )}
                   <View style={styles.unitSelector}>
                     {weightUnits.map((unit) => (
                       <TouchableOpacity
@@ -397,19 +667,39 @@ export default function IntakeFlowScreen({ onComplete, onBack }: IntakeFlowScree
                       </TouchableOpacity>
                     ))}
                   </View>
-                </View>
-                <TouchableOpacity
-                  style={styles.arrowButton}
-                  onPress={() => {
-                    const newValue = Math.max(30, currentWeight - 1);
-                    updateForm('weight', { ...intakeForm.weight, value: newValue.toString() });
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.arrowText}>▼</Text>
                 </TouchableOpacity>
+                
+                {!isEditingWeight && (
+                  <TouchableOpacity
+                    style={styles.arrowButton}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      const newValue = Math.max(30, currentWeight - 1);
+                      updateForm('weight', { ...intakeForm.weight, value: newValue.toString() });
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.arrowText}>▼</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
+            
+            {isEditingWeight && (
+              <TouchableOpacity 
+                style={styles.confirmInputButton}
+                onPress={() => {
+                  const parsed = parseInt(tempValue);
+                  if (parsed >= 30 && parsed <= 300) {
+                    updateForm('weight', { ...intakeForm.weight, value: parsed.toString() });
+                  }
+                  setIsEditingWeight(false);
+                  Keyboard.dismiss();
+                }}
+              >
+                <Text style={styles.confirmInputText}>Gotovo ✓</Text>
+              </TouchableOpacity>
+            )}
           </Animated.View>
         );
 
@@ -418,21 +708,49 @@ export default function IntakeFlowScreen({ onComplete, onBack }: IntakeFlowScree
         return (
           <Animated.View style={[styles.slideContent, slideStyle]}>
             <Text style={styles.questionText}>Visina</Text>
-            <Text style={styles.descriptionText}>Koristi strelice za odabir visine.</Text>
+            {isEditingHeight && (
+              <Text style={styles.descriptionText}>Upiši visinu i potvrdi</Text>
+            )}
             <View style={styles.arrowInputContainer}>
               <View style={styles.arrowColumn}>
-                <TouchableOpacity
-                  style={styles.arrowButton}
+                {!isEditingHeight && (
+                  <TouchableOpacity
+                    style={styles.arrowButton}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      const newValue = Math.min(250, currentHeight + 1);
+                      updateForm('height', { ...intakeForm.height, value: newValue.toString() });
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.arrowText}>▲</Text>
+                  </TouchableOpacity>
+                )}
+                
+                <TouchableOpacity 
+                  style={styles.valueDisplay}
                   onPress={() => {
-                    const newValue = Math.min(250, currentHeight + 1);
-                    updateForm('height', { ...intakeForm.height, value: newValue.toString() });
+                    setTempValue(currentHeight.toString());
+                    setIsEditingHeight(true);
                   }}
-                  activeOpacity={0.7}
+                  activeOpacity={0.8}
                 >
-                  <Text style={styles.arrowText}>▲</Text>
-                </TouchableOpacity>
-                <View style={styles.valueDisplay}>
-                  <Text style={styles.valueText}>{currentHeight}</Text>
+                  {isEditingHeight ? (
+                    <TextInput
+                      style={styles.directInput}
+                      value={tempValue}
+                      onChangeText={setTempValue}
+                      keyboardType="number-pad"
+                      autoFocus
+                      selectTextOnFocus
+                      maxLength={3}
+                    />
+                  ) : (
+                    <>
+                      <Text style={styles.valueText}>{currentHeight}</Text>
+                      <Text style={styles.tapToEditHint}>klikni na broj za direktan unos</Text>
+                    </>
+                  )}
                   <View style={styles.unitSelector}>
                     {heightUnits.map((unit) => (
                       <TouchableOpacity
@@ -456,74 +774,203 @@ export default function IntakeFlowScreen({ onComplete, onBack }: IntakeFlowScree
                       </TouchableOpacity>
                     ))}
                   </View>
-                </View>
-                <TouchableOpacity
-                  style={styles.arrowButton}
-                  onPress={() => {
-                    const newValue = Math.max(100, currentHeight - 1);
-                    updateForm('height', { ...intakeForm.height, value: newValue.toString() });
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.arrowText}>▼</Text>
                 </TouchableOpacity>
+                
+                {!isEditingHeight && (
+                  <TouchableOpacity
+                    style={styles.arrowButton}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      const newValue = Math.max(100, currentHeight - 1);
+                      updateForm('height', { ...intakeForm.height, value: newValue.toString() });
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.arrowText}>▼</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
+            
+            {isEditingHeight && (
+              <TouchableOpacity 
+                style={styles.confirmInputButton}
+                onPress={() => {
+                  const parsed = parseInt(tempValue);
+                  if (parsed >= 100 && parsed <= 250) {
+                    updateForm('height', { ...intakeForm.height, value: parsed.toString() });
+                  }
+                  setIsEditingHeight(false);
+                  Keyboard.dismiss();
+                }}
+              >
+                <Text style={styles.confirmInputText}>Gotovo ✓</Text>
+              </TouchableOpacity>
+            )}
+          </Animated.View>
+        );
+
+      case 'favoriteActivities':
+        const toggleActivity = (value: string) => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          const current = intakeForm.favoriteActivities;
+          if (current.includes(value)) {
+            updateForm('favoriteActivities', current.filter(v => v !== value));
+          } else {
+            updateForm('favoriteActivities', [...current, value]);
+          }
+        };
+        
+        return (
+          <Animated.View style={[styles.slideContent, slideStyle]}>
+            <Text style={styles.questionText}>Što voliš raditi?</Text>
+            <Text style={styles.descriptionText}>Odaberi sportove i aktivnosti koje te zanimaju</Text>
+            <ScrollView 
+              style={styles.activitiesScrollView} 
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.activitiesGrid}
+            >
+              {sportsActivities.map((activity) => {
+                const isSelected = intakeForm.favoriteActivities.includes(activity.value);
+                return (
+                  <TouchableOpacity
+                    key={activity.value}
+                    style={[
+                      styles.activityChip,
+                      isSelected && styles.activityChipSelected,
+                    ]}
+                    onPress={() => toggleActivity(activity.value)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.activityEmoji}>{activity.emoji}</Text>
+                    <Text style={[
+                      styles.activityChipText,
+                      isSelected && styles.activityChipTextSelected,
+                    ]}>
+                      {activity.label}
+                    </Text>
+                    {isSelected && <Text style={styles.activityCheckmark}>✓</Text>}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            <Text style={styles.selectedCount}>
+              {intakeForm.favoriteActivities.length} odabrano
+            </Text>
           </Animated.View>
         );
 
       case 'foodPreferences':
         return (
-          <Animated.View style={[styles.slideContent, slideStyle]}>
-            <Text style={styles.questionText}>Preferiram</Text>
-            <Text style={styles.descriptionText}>Što želiš jesti više?</Text>
-            <TextInput
-              style={styles.textArea}
-              placeholder="junetina, losos, riža, avokado..."
-              placeholderTextColor="rgba(255,255,255,0.4)"
-              value={intakeForm.foodPreferences}
-              onChangeText={(text) => updateForm('foodPreferences', text)}
-              multiline
-              numberOfLines={4}
-            />
-            <Text style={styles.hintText}>Odvoji namirnice zarezom</Text>
-          </Animated.View>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <Animated.View style={[styles.slideContent, slideStyle]}>
+              <Text style={styles.questionText}>Preferiram</Text>
+              <Text style={styles.descriptionText}>Što želiš jesti više?</Text>
+              <TextInput
+                style={styles.textArea}
+                placeholder="junetina, losos, riža, avokado..."
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                value={intakeForm.foodPreferences}
+                onChangeText={(text) => updateForm('foodPreferences', text)}
+                multiline
+                numberOfLines={4}
+                blurOnSubmit={true}
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+              />
+              <Text style={styles.hintText}>Odvoji namirnice zarezom</Text>
+              <TouchableOpacity style={styles.dismissKeyboardButton} onPress={Keyboard.dismiss}>
+                <Text style={styles.dismissKeyboardText}>Gotovo ✓</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </TouchableWithoutFeedback>
         );
 
       case 'avoidIngredients':
         return (
-          <Animated.View style={[styles.slideContent, slideStyle]}>
-            <Text style={styles.questionText}>Ne želim jesti</Text>
-            <Text style={styles.descriptionText}>Što ne želiš jesti?</Text>
-            <TextInput
-              style={styles.textArea}
-              placeholder="piletina, tuna, mlijeko..."
-              placeholderTextColor="rgba(255,255,255,0.4)"
-              value={intakeForm.avoidIngredients}
-              onChangeText={(text) => updateForm('avoidIngredients', text)}
-              multiline
-              numberOfLines={4}
-            />
-            <Text style={styles.hintText}>Odvoji namirnice zarezom</Text>
-          </Animated.View>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <Animated.View style={[styles.slideContent, slideStyle]}>
+              <Text style={styles.questionText}>Ne želim jesti</Text>
+              <Text style={styles.descriptionText}>Što ne želiš jesti?</Text>
+              <TextInput
+                style={styles.textArea}
+                placeholder="piletina, tuna, mlijeko..."
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                value={intakeForm.avoidIngredients}
+                onChangeText={(text) => updateForm('avoidIngredients', text)}
+                multiline
+                numberOfLines={4}
+                blurOnSubmit={true}
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+              />
+              <Text style={styles.hintText}>Odvoji namirnice zarezom</Text>
+              <TouchableOpacity style={styles.dismissKeyboardButton} onPress={Keyboard.dismiss}>
+                <Text style={styles.dismissKeyboardText}>Gotovo ✓</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </TouchableWithoutFeedback>
         );
 
       case 'allergies':
         return (
-          <Animated.View style={[styles.slideContent, slideStyle]}>
-            <Text style={styles.questionText}>Alergije i intolerancije</Text>
-            <Text style={styles.descriptionText}>Što ne smiješ jesti?</Text>
-            <TextInput
-              style={styles.textArea}
-              placeholder="laktoza, gluten, orašasti plodovi..."
-              placeholderTextColor="rgba(255,255,255,0.4)"
-              value={intakeForm.allergies}
-              onChangeText={(text) => updateForm('allergies', text)}
-              multiline
-              numberOfLines={4}
-            />
-            <Text style={styles.hintText}>Odvoji namirnice zarezom</Text>
-          </Animated.View>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <Animated.View style={[styles.slideContent, slideStyle]}>
+              <Text style={styles.questionText}>Alergije i intolerancije</Text>
+              <Text style={styles.descriptionText}>Što ne smiješ jesti?</Text>
+              <TextInput
+                style={styles.textArea}
+                placeholder="laktoza, gluten, orašasti plodovi..."
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                value={intakeForm.allergies}
+                onChangeText={(text) => updateForm('allergies', text)}
+                multiline
+                numberOfLines={4}
+                blurOnSubmit={true}
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+              />
+              <Text style={styles.hintText}>Odvoji namirnice zarezom</Text>
+              <TouchableOpacity style={styles.dismissKeyboardButton} onPress={Keyboard.dismiss}>
+                <Text style={styles.dismissKeyboardText}>Gotovo ✓</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </TouchableWithoutFeedback>
+        );
+
+      case 'healthConditions':
+        return (
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <Animated.View style={[styles.slideContent, slideStyle]}>
+              <Text style={styles.questionText}>Ozljede i zdravstvena stanja</Text>
+              <Text style={styles.descriptionText}>
+                Imaš li ozljede, bolesti ili stanja koja utječu na trening?
+              </Text>
+              <TextInput
+                style={styles.textArea}
+                placeholder="npr. hernija diska, visoki tlak, dijabetes, ozljeda koljena..."
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                value={intakeForm.healthConditions}
+                onChangeText={(text) => updateForm('healthConditions', text)}
+                multiline
+                numberOfLines={5}
+                blurOnSubmit={true}
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+              />
+              <Text style={styles.hintText}>
+                Ove informacije su povjerljive i pomažu treneru da prilagodi program tvojim potrebama
+              </Text>
+              
+              {/* Gumb za zatvaranje tipkovnice */}
+              <TouchableOpacity 
+                style={styles.dismissKeyboardButton}
+                onPress={Keyboard.dismiss}
+              >
+                <Text style={styles.dismissKeyboardText}>Gotovo ✓</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </TouchableWithoutFeedback>
         );
 
       case 'trainingFrequency':
@@ -531,24 +978,28 @@ export default function IntakeFlowScreen({ onComplete, onBack }: IntakeFlowScree
           <Animated.View style={[styles.slideContent, slideStyle]}>
             <Text style={styles.questionText}>Koliko puta tjedno možeš trenirati?</Text>
             <Text style={styles.descriptionText}>Odaberi broj treninga tjedno koje možeš realno uključiti u svoj raspored.</Text>
-            <View style={styles.optionsContainer}>
+            <View style={styles.frequencyGrid}>
               {trainingFrequencyOptions.map((option) => (
                 <TouchableOpacity
                   key={option.value}
                   style={[
-                    styles.optionButton,
-                    intakeForm.trainingFrequency === option.value && styles.optionButtonSelected,
+                    styles.frequencyCard,
+                    intakeForm.trainingFrequency === option.value && styles.frequencyCardSelected,
                   ]}
-                  onPress={() => updateForm('trainingFrequency', option.value)}
+                  onPress={() => selectAndAdvance('trainingFrequency', option.value)}
                   activeOpacity={0.8}
                 >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      intakeForm.trainingFrequency === option.value && styles.optionTextSelected,
-                    ]}
-                  >
-                    {option.label}
+                  <Text style={[
+                    styles.frequencyNumber,
+                    intakeForm.trainingFrequency === option.value && styles.frequencyNumberSelected,
+                  ]}>
+                    {option.value}
+                  </Text>
+                  <Text style={[
+                    styles.frequencyLabel,
+                    intakeForm.trainingFrequency === option.value && styles.frequencyLabelSelected,
+                  ]}>
+                    {option.value === '1' ? 'dan' : option.value === '2' || option.value === '3' || option.value === '4' ? 'dana' : 'dana'}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -593,19 +1044,20 @@ export default function IntakeFlowScreen({ onComplete, onBack }: IntakeFlowScree
       <View style={styles.content}>
         {renderSlide()}
 
-        {/* Progress indicator */}
+        {/* Progress dots */}
         <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${((currentSlideIndex + 1) / slideOrder.length) * 100}%` },
-              ]}
-            />
+          <View style={styles.dotsContainer}>
+            {slideOrder.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.dot,
+                  index === currentSlideIndex && styles.dotActive,
+                  index < currentSlideIndex && styles.dotCompleted,
+                ]}
+              />
+            ))}
           </View>
-          <Text style={styles.progressText}>
-            {currentSlideIndex + 1} / {slideOrder.length}
-          </Text>
         </View>
 
         {/* Navigation buttons */}
@@ -800,22 +1252,25 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     alignItems: 'center',
   },
-  progressBar: {
-    width: '100%',
-    height: 4,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 2,
-    marginBottom: 8,
+  dotsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
   },
-  progressFill: {
-    height: '100%',
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  dotActive: {
+    width: 24,
     backgroundColor: '#fff',
-    borderRadius: 2,
+    borderRadius: 4,
   },
-  progressText: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
-    fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
+  dotCompleted: {
+    backgroundColor: 'rgba(255,255,255,0.5)',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -927,6 +1382,294 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
+  },
+  unitLabel: {
+    fontSize: 18,
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  
+  // Sportovi i aktivnosti
+  activitiesScrollView: {
+    maxHeight: 400,
+    marginTop: 16,
+  },
+  activitiesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 10,
+    paddingBottom: 20,
+  },
+  activityChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    gap: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  activityChipSelected: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderColor: '#fff',
+  },
+  activityEmoji: {
+    fontSize: 20,
+  },
+  activityChipText: {
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.8)',
+    fontWeight: '500',
+  },
+  activityChipTextSelected: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  activityCheckmark: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '700',
+  },
+  selectedCount: {
+    textAlign: 'center',
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 14,
+    marginTop: 16,
+  },
+  
+  // Gumb za zatvaranje tipkovnice
+  dismissKeyboardButton: {
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 25,
+    marginTop: 20,
+  },
+  dismissKeyboardText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  
+  // Direktni unos vrijednosti
+  tapToEditHint: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.4)',
+    marginTop: 10,
+  },
+  directInput: {
+    fontSize: 64,
+    fontWeight: '700',
+    color: '#fff',
+    textAlign: 'center',
+    minWidth: 120,
+    padding: 0,
+    fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
+  },
+  confirmInputButton: {
+    alignSelf: 'center',
+    backgroundColor: '#fff',
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 30,
+    marginTop: 30,
+  },
+  confirmInputText: {
+    color: '#1a1a2e',
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  
+  // Spol - elegantne kartice
+  genderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 24,
+    marginTop: 50,
+  },
+  genderCard: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 20,
+    paddingVertical: 36,
+    paddingHorizontal: 36,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.1)',
+    minWidth: 130,
+  },
+  genderCardSelected: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderColor: '#fff',
+  },
+  genderSymbol: {
+    fontSize: 48,
+    marginBottom: 12,
+    color: 'rgba(255,255,255,0.6)',
+  },
+  genderSymbolSelected: {
+    color: '#fff',
+  },
+  genderLabel: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '500',
+    letterSpacing: 0.3,
+  },
+  genderLabelSelected: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  // Goal styles - asymmetric layout
+  goalSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.5)',
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  goalHeroCard: {
+    width: '100%',
+    minHeight: 130,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    padding: 20,
+    marginBottom: 14,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  goalHeroContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  goalHeroEmoji: {
+    fontSize: 48,
+    marginRight: 16,
+  },
+  goalHeroText: {
+    flex: 1,
+  },
+  goalHeroTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.9)',
+    marginBottom: 4,
+  },
+  goalHeroSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.5)',
+  },
+  goalCheckmark: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  goalCheckmarkText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#000',
+  },
+  goalOtherGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  goalSmallCard: {
+    width: '48.5%',
+    minHeight: 110,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    padding: 16,
+    marginBottom: 12,
+    position: 'relative',
+  },
+  goalCardSelected: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderColor: '#fff',
+  },
+  goalSmallEmoji: {
+    fontSize: 28,
+    marginBottom: 8,
+  },
+  goalSmallTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.85)',
+    marginBottom: 2,
+  },
+  goalSmallSubtitle: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.45)',
+  },
+  goalFullWidthCard: {
+    width: '100%',
+    minHeight: 80,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    padding: 16,
+    position: 'relative',
+  },
+  goalFullWidthContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  goalFullWidthEmoji: {
+    fontSize: 32,
+    marginRight: 14,
+  },
+  // Frequency grid styles
+  frequencyGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+    marginTop: 24,
+  },
+  frequencyCard: {
+    width: 72,
+    height: 80,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  frequencyCardSelected: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderColor: '#fff',
+  },
+  frequencyNumber: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.7)',
+    letterSpacing: -0.5,
+  },
+  frequencyNumberSelected: {
+    color: '#fff',
+  },
+  frequencyLabel: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.5)',
+    marginTop: 2,
+  },
+  frequencyLabelSelected: {
+    color: 'rgba(255,255,255,0.8)',
   },
 });
 

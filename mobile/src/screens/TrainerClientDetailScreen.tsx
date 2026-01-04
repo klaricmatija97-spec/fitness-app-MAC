@@ -60,8 +60,11 @@ interface ClientData {
     dietCleanliness: number | null;
     mealFrequency: string | null;
     allergies: string | null;
+    foodPreferences: string | null;
+    avoidIngredients: string | null;
   };
   injuries: string | null;
+  healthConditions: string | null; // Ozljede, bolesti, zdravstvena stanja iz onboardinga
   notes: string | null;
 }
 
@@ -476,19 +479,37 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
               )}
               {data.client.nutrition.allergies && (
                 <View style={styles.allergiesBox}>
-                  <Text style={styles.allergiesTitle}>Alergije / Netolerancije</Text>
+                  <Text style={styles.allergiesTitle}>🚫 Alergije / Netolerancije</Text>
                   <Text style={styles.allergiesText}>{data.client.nutrition.allergies}</Text>
+                </View>
+              )}
+              {data.client.nutrition.foodPreferences && (
+                <View style={styles.preferencesBox}>
+                  <Text style={styles.preferencesTitle}>✅ Preferirana hrana</Text>
+                  <Text style={styles.preferencesText}>{data.client.nutrition.foodPreferences}</Text>
+                </View>
+              )}
+              {data.client.nutrition.avoidIngredients && (
+                <View style={styles.avoidBox}>
+                  <Text style={styles.avoidTitle}>❌ Izbjegava</Text>
+                  <Text style={styles.avoidText}>{data.client.nutrition.avoidIngredients}</Text>
                 </View>
               )}
             </View>
           )}
 
           {/* ============================================ */}
-          {/* OZLJEDE / NAPOMENE */}
+          {/* OZLJEDE / ZDRAVLJE / NAPOMENE */}
           {/* ============================================ */}
-          {(data.client.injuries || data.client.notes) && (
+          {(data.client.injuries || data.client.healthConditions || data.client.notes) && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Zdravlje i napomene</Text>
+              {data.client.healthConditions && (
+                <View style={styles.healthBox}>
+                  <Text style={styles.healthTitle}>⚠️ Zdravstvena stanja</Text>
+                  <Text style={styles.healthText}>{data.client.healthConditions}</Text>
+                </View>
+              )}
               {data.client.injuries && (
                 <View style={styles.warningBox}>
                   <Text style={styles.warningTitle}>Ozljede / Ograničenja</Text>
@@ -913,8 +934,40 @@ const styles = StyleSheet.create({
     padding: 12,
     marginTop: 12,
   },
-  allergiesTitle: { fontSize: 12, color: '#A1A1AA', fontWeight: '600', marginBottom: 4 },
+  allergiesTitle: { fontSize: 12, color: '#FFB74D', fontWeight: '600', marginBottom: 4 },
   allergiesText: { fontSize: 14, color: '#FFF' },
+  
+  // Preferences box
+  preferencesBox: {
+    backgroundColor: '#2D4A3D',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12,
+  },
+  preferencesTitle: { fontSize: 12, color: '#81C784', fontWeight: '600', marginBottom: 4 },
+  preferencesText: { fontSize: 14, color: '#FFF' },
+  
+  // Avoid ingredients box
+  avoidBox: {
+    backgroundColor: '#4A3D2D',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12,
+  },
+  avoidTitle: { fontSize: 12, color: '#FF8A65', fontWeight: '600', marginBottom: 4 },
+  avoidText: { fontSize: 14, color: '#FFF' },
+  
+  // Health conditions box
+  healthBox: {
+    backgroundColor: '#3D2D4A',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#9C27B0',
+  },
+  healthTitle: { fontSize: 13, color: '#CE93D8', fontWeight: '700', marginBottom: 6 },
+  healthText: { fontSize: 14, color: '#FFF', lineHeight: 20 },
   
   // Warning box (injuries)
   warningBox: {
@@ -922,6 +975,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#F44336',
   },
   warningTitle: { fontSize: 12, color: '#F44336', fontWeight: '600', marginBottom: 4 },
   warningText: { fontSize: 14, color: '#FFF' },

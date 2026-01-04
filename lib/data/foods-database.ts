@@ -59,11 +59,22 @@ export const NAMIRNICE: Namirnica[] = [
     id: 'turkey_breast',
     name: 'Pureća prsa',
     nameEn: 'Turkey breast',
+    // USDA: Turkey, breast, from whole bird, meat only, roasted
+    proteinPer100g: 30.1,
+    carbsPer100g: 0,
+    fatsPer100g: 0.7,
+    caloriesPer100g: 135,
+    category: 'protein',
+  },
+  {
+    id: 'ground_turkey',
+    name: 'Mljevena puretina',
+    nameEn: 'Ground turkey',
     // USDA FDC 330869: Turkey, ground, 93% lean, cooked
     proteinPer100g: 27.1,
     carbsPer100g: 0,
     fatsPer100g: 11.6,
-    caloriesPer100g: 220, // USDA exact
+    caloriesPer100g: 220,
     category: 'protein',
   },
   {
@@ -228,6 +239,17 @@ export const NAMIRNICE: Namirnica[] = [
     carbsPer100g: 49.2,
     fatsPer100g: 3.6,
     caloriesPer100g: calcKcal(9.4, 49.2, 3.6), // 267 kcal
+    category: 'carb',
+  },
+  {
+    id: 'toast_integral',
+    name: 'Integralni tost',
+    nameEn: 'Whole grain toast',
+    // USDA: Bread, whole-wheat, commercially prepared
+    proteinPer100g: 12.3,
+    carbsPer100g: 43.1,
+    fatsPer100g: 3.5,
+    caloriesPer100g: 252,
     category: 'carb',
   },
   {
@@ -1353,6 +1375,8 @@ export const FOOD_ALIASES: Record<string, string> = {
   'Smoked Chicken breast': 'smoked_chicken_breast',
   'Turkey breast': 'turkey_breast',
   'Turkey': 'turkey_breast',
+  'Ground turkey': 'ground_turkey',
+  'Turkey meatballs': 'ground_turkey',
   'Salmon': 'salmon',
   'Tuna': 'tuna_canned',
   'Beef': 'beef_lean',
@@ -1370,6 +1394,9 @@ export const FOOD_ALIASES: Record<string, string> = {
   // Ugljikohidrati
   'Oats': 'oats',
   'Toast': 'toast',
+  'Integralni tost': 'toast_integral',
+  'Whole grain toast': 'toast_integral',
+  'Toast integral': 'toast_integral',
   'Rice crackers': 'rice_crackers',
   'Pasta cooked': 'pasta_cooked',
   'Pasta': 'pasta_cooked',

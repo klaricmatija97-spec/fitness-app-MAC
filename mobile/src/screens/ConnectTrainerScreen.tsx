@@ -19,15 +19,32 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { API_BASE_URL } from '../services/api';
 
+interface IntakeData {
+  name?: string;
+  email?: string;
+  honorific?: string;
+  age?: number;
+  weight?: { value: number; unit: string };
+  height?: { value: number; unit: string };
+  goal?: string;
+  activities?: string[];
+  trainingFrequency?: string;
+  healthConditions?: string;
+  foodPreferences?: string;
+  avoidIngredients?: string;
+  allergies?: string;
+}
+
 interface Props {
   authToken: string;
+  intakeData?: IntakeData; // Podaci iz onboardinga
   onConnected?: (trainerName: string, trainerId: string) => void;
   onSkip?: () => void;
   onBack?: () => void;
   onBrowseTrainers?: () => void; // Navigacija na listu trenera
 }
 
-export default function ConnectTrainerScreen({ authToken, onConnected, onSkip, onBack, onBrowseTrainers }: Props) {
+export default function ConnectTrainerScreen({ authToken, intakeData, onConnected, onSkip, onBack, onBrowseTrainers }: Props) {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,13 +80,37 @@ export default function ConnectTrainerScreen({ authToken, onConnected, onSkip, o
     setError(null);
 
     try {
+      // Pripremi intake podatke za slanje
+      const requestBody: { trainerCode: string; intakeData?: IntakeData } = { 
+        trainerCode: codeToSubmit 
+      };
+      
+      if (intakeData) {
+        requestBody.intakeData = {
+          name: intakeData.name,
+          email: intakeData.email,
+          honorific: intakeData.honorific,
+          age: intakeData.age,
+          weight: intakeData.weight,
+          height: intakeData.height,
+          goal: intakeData.goal,
+          activities: intakeData.activities,
+          trainingFrequency: intakeData.trainingFrequency,
+          healthConditions: intakeData.healthConditions,
+          foodPreferences: intakeData.foodPreferences,
+          avoidIngredients: intakeData.avoidIngredients,
+          allergies: intakeData.allergies,
+        };
+        console.log('[ConnectTrainer] Sending intake data:', requestBody.intakeData);
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/client/connect`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ trainerCode: codeToSubmit }),
+        body: JSON.stringify(requestBody),
       });
 
       const result = await response.json();
@@ -191,8 +232,8 @@ export default function ConnectTrainerScreen({ authToken, onConnected, onSkip, o
           <View style={styles.infoSection}>
             <Text style={styles.infoTitle}>Kako dobiti kod?</Text>
             <Text style={styles.infoText}>
-              Vaš trener ima jedinstveni kod u svojoj aplikaciji.{'\n'}
-              Zamolite ga da vam pošalje kod putem SMS-a ili emaila.
+              Vaš trener ima jedinstveni kod (TRN-XXXX) u svojoj aplikaciji.{'\n'}
+              Zamolite ga da vam pošalje svoj trener kod.
             </Text>
           </View>
         </KeyboardAvoidingView>

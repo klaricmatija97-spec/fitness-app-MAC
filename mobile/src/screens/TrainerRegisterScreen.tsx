@@ -177,8 +177,11 @@ export default function TrainerRegisterScreen({ onRegisterSuccess, onBack }: Tra
       setError('Unesite ispravan email');
       return;
     }
-    if (!activateCode.trim() || activateCode.length < 6) {
-      setError('Unesite aktivacijski kod');
+    
+    // Validiraj format aktivacijskog koda (ACT-XXXXXX)
+    const codeToCheck = activateCode.trim().toUpperCase();
+    if (!/^ACT-[A-Z0-9]{6}$/.test(codeToCheck)) {
+      setError('Neispravan format koda. Očekivani format: ACT-XXXXXX');
       return;
     }
     
@@ -452,14 +455,21 @@ export default function TrainerRegisterScreen({ onRegisterSuccess, onBack }: Tra
                 <TextInput
                   style={[styles.input, styles.codeInput]}
                   value={activateCode}
-                  onChangeText={(text) => setActivateCode(text.toUpperCase())}
-                  placeholder="TRN-XXXXXX"
+                  onChangeText={(text) => {
+                    // Auto-format: dodaj ACT- prefix ako korisnik unese samo 6 znakova
+                    let formatted = text.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+                    if (formatted.length === 6 && !formatted.startsWith('ACT')) {
+                      formatted = 'ACT-' + formatted;
+                    }
+                    setActivateCode(formatted);
+                  }}
+                  placeholder="ACT-XXXXXX"
                   placeholderTextColor="rgba(255,255,255,0.3)"
                   autoCapitalize="characters"
-                  maxLength={12}
+                  maxLength={10}
                 />
                 <Text style={styles.codeHint}>
-                  Kod ste dobili emailom nakon odobrenja
+                  Aktivacijski kod ste dobili emailom nakon odobrenja
                 </Text>
               </View>
               

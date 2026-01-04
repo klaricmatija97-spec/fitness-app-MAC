@@ -18,6 +18,28 @@ const ConnectSchema = z.object({
     .min(8, 'Kod mora imati najmanje 8 znakova')
     .max(10, 'Kod može imati najviše 10 znakova')
     .regex(/^TRN-[A-Z0-9]{4}$/, 'Neispravan format koda. Očekivani format: TRN-XXXX'),
+  // Intake podaci (opcionalno, šalju se ako klijent nije prethodno registriran)
+  intakeData: z.object({
+    name: z.string().optional(),
+    email: z.string().email().optional(),
+    honorific: z.string().optional(),
+    age: z.number().optional(),
+    weight: z.object({
+      value: z.number(),
+      unit: z.string(),
+    }).optional(),
+    height: z.object({
+      value: z.number(),
+      unit: z.string(),
+    }).optional(),
+    goal: z.string().optional(),
+    activities: z.array(z.string()).optional(),
+    trainingFrequency: z.string().optional(),
+    healthConditions: z.string().optional(),
+    foodPreferences: z.string().optional(),
+    avoidIngredients: z.string().optional(),
+    allergies: z.string().optional(),
+  }).optional(),
 });
 
 /**
@@ -51,7 +73,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { trainerCode } = parseResult.data;
+    const { trainerCode, intakeData } = parseResult.data;
 
     // Pronađi trenera po kodu
     const { data: trainer, error: trainerError } = await supabase
@@ -87,26 +109,55 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ako klijent ne postoji u clients tablici, kreiraj ga
+    // Ako klijent ne postoji u clients tablici, kreiraj ga s intake podacima
     if (!existingClient) {
+      // Mapiraj goal iz mobilne forme na backend format
+      const mapGoal = (goal?: string): string[] => {
+        if (!goal) return [];
+        const goalMap: Record<string, string> = {
+          'FAT_LOSS': 'lose-fat',
+          'RECOMPOSITION': 'recomp',
+          'MUSCLE_GAIN': 'gain-muscle',
+          'ENDURANCE': 'endurance',
+        };
+        const mapped = goalMap[goal];
+        return mapped ? [mapped] : [];
+      };
+
       const { error: insertError } = await supabase
         .from('clients')
         .insert({
           id: clientId,
-          name: 'Novi klijent',
-          email: `client-${clientId}@app.com`,
+          name: intakeData?.name || 'Novi klijent',
+          email: intakeData?.email || `client-${clientId}@app.com`,
           trainer_id: trainer.id,
           connected_at: new Date().toISOString(),
           invite_status: 'connected',
-          // Default vrijednosti
-          honorific: 'other',
-          age_range: 'other',
-          weight_value: 70,
-          weight_unit: 'kg',
-          height_value: 170,
-          height_unit: 'cm',
-          activities: [],
-          goals: [],
+          // Podaci iz intake forme
+          honorific: intakeData?.honorific || 'other',
+          age_range: intakeData?.age ? `${intakeData.age}` : 'other', // Spremamo točnu dob kao string
+          weight_value: intakeData?.weight?.value || 70,
+          weight_unit: intakeData?.weight?.unit || 'kg',
+          height_value: intakeData?.height?.value || 170,
+          height_unit: intakeData?.height?.unit || 'cm',
+          activities: intakeData?.activities || [],
+          goals: mapGoal(intakeData?.goal),
+          training_frequency: intakeData?.trainingFrequency ? parseInt(intakeData.trainingFrequency) : null,
+          injuries: intakeData?.healthConditions || null,
+          allergies: (() => {
+            // Kombiniraj sve food preferencije
+            const parts: string[] = [];
+            if (intakeData?.allergies?.trim()) {
+              parts.push(`alergije: ${intakeData.allergies.trim()}`);
+            }
+            if (intakeData?.avoidIngredients?.trim()) {
+              parts.push(`ne želim: ${intakeData.avoidIngredients.trim()}`);
+            }
+            if (intakeData?.foodPreferences?.trim()) {
+              parts.push(`preferiram: ${intakeData.foodPreferences.trim()}`);
+            }
+            return parts.length > 0 ? parts.join(". ") : null;
+          })(),
           diet_cleanliness: 50,
         });
 
@@ -153,14 +204,65 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Poveži klijenta s trenerom
+    // Poveži klijenta s trenerom I ažuriraj intake podatke ako su poslani
+    const updateData: Record<string, any> = {
+      trainer_id: trainer.id,
+      connected_at: new Date().toISOString(),
+      invite_status: 'connected',
+    };
+
+    // Ako imamo intake podatke, ažuriraj ih
+    if (intakeData) {
+      if (intakeData.name) updateData.name = intakeData.name;
+      if (intakeData.email) updateData.email = intakeData.email;
+      if (intakeData.honorific) updateData.honorific = intakeData.honorific;
+      if (intakeData.age) updateData.age_range = `${intakeData.age}`;
+      if (intakeData.weight?.value) {
+        updateData.weight_value = intakeData.weight.value;
+        updateData.weight_unit = intakeData.weight.unit || 'kg';
+      }
+      if (intakeData.height?.value) {
+        updateData.height_value = intakeData.height.value;
+        updateData.height_unit = intakeData.height.unit || 'cm';
+      }
+      if (intakeData.activities?.length) updateData.activities = intakeData.activities;
+      if (intakeData.goal) {
+        const mapGoalUpdate = (goal: string): string[] => {
+          const goalMap: Record<string, string> = {
+            'FAT_LOSS': 'lose-fat',
+            'RECOMPOSITION': 'recomp',
+            'MUSCLE_GAIN': 'gain-muscle',
+            'ENDURANCE': 'endurance',
+          };
+          const mapped = goalMap[goal];
+          return mapped ? [mapped] : [];
+        };
+        updateData.goals = mapGoalUpdate(intakeData.goal);
+      }
+      if (intakeData.trainingFrequency) {
+        updateData.training_frequency = parseInt(intakeData.trainingFrequency);
+      }
+      if (intakeData.healthConditions) updateData.injuries = intakeData.healthConditions;
+      
+      // Kombiniraj food preferencije
+      const foodParts: string[] = [];
+      if (intakeData.allergies?.trim()) {
+        foodParts.push(`alergije: ${intakeData.allergies.trim()}`);
+      }
+      if (intakeData.avoidIngredients?.trim()) {
+        foodParts.push(`ne želim: ${intakeData.avoidIngredients.trim()}`);
+      }
+      if (intakeData.foodPreferences?.trim()) {
+        foodParts.push(`preferiram: ${intakeData.foodPreferences.trim()}`);
+      }
+      if (foodParts.length > 0) {
+        updateData.allergies = foodParts.join(". ");
+      }
+    }
+
     const { error: updateError } = await supabase
       .from('clients')
-      .update({
-        trainer_id: trainer.id,
-        connected_at: new Date().toISOString(),
-        invite_status: 'connected',
-      })
+      .update(updateData)
       .eq('id', clientId);
 
     if (updateError) {

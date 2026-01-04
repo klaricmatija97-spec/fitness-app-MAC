@@ -16,6 +16,8 @@ import {
   ActivityIndicator,
   RefreshControl,
   FlatList,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -93,13 +95,15 @@ interface Props {
   onNewProgram?: () => void;
   onShowCode?: () => void;
   onEditProfile?: () => void;
+  onLogout?: () => void;
 }
 
-export default function TrainerHomeScreen({ authToken, onClientPress, onNewClient, onNewProgram, onShowCode, onEditProfile }: Props) {
+export default function TrainerHomeScreen({ authToken, onClientPress, onNewClient, onNewProgram, onShowCode, onEditProfile, onLogout }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState<TrainerHomeData | null>(null);
   const [filter, setFilter] = useState<'all' | 'active' | 'needsAttention'>('all');
+  const [menuVisible, setMenuVisible] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -171,19 +175,56 @@ export default function TrainerHomeScreen({ authToken, onClientPress, onNewClien
       <LinearGradient colors={['#0A0A0A', '#171717']} style={styles.gradient}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <TouchableOpacity style={styles.headerIconButton} onPress={onEditProfile}>
-              <Text style={styles.headerIconText}>P</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.headerIconButton} onPress={onShowCode}>
-              <Text style={styles.headerIconText}>#</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.menuButton} onPress={() => setMenuVisible(true)}>
+            <View style={styles.menuLines}>
+              <View style={styles.menuLine} />
+              <View style={styles.menuLine} />
+              <View style={styles.menuLine} />
+            </View>
+          </TouchableOpacity>
           <Text style={styles.title}>Klijenti</Text>
           <TouchableOpacity style={styles.newButton} onPress={onNewClient}>
             <Text style={styles.newButtonText}>+ Novi</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Hamburger Menu Modal */}
+        <Modal
+          visible={menuVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setMenuVisible(false)}
+        >
+          <Pressable style={styles.menuOverlay} onPress={() => setMenuVisible(false)}>
+            <View style={styles.menuContainer}>
+              <TouchableOpacity 
+                style={styles.menuItem} 
+                onPress={() => { setMenuVisible(false); onEditProfile?.(); }}
+              >
+                <Text style={styles.menuItemIcon}>👤</Text>
+                <Text style={styles.menuItemText}>Portfolio</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.menuItem} 
+                onPress={() => { setMenuVisible(false); onShowCode?.(); }}
+              >
+                <Text style={styles.menuItemIcon}>#</Text>
+                <Text style={styles.menuItemText}>Moj kod</Text>
+              </TouchableOpacity>
+              
+              <View style={styles.menuDivider} />
+              
+              <TouchableOpacity 
+                style={styles.menuItem} 
+                onPress={() => { setMenuVisible(false); onLogout?.(); }}
+              >
+                <Text style={styles.menuItemIcon}>🚪</Text>
+                <Text style={[styles.menuItemText, styles.menuItemLogout]}>Odjava</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Modal>
 
         {/* Stats Cards */}
         {data && (
@@ -314,20 +355,66 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFF',
   },
-  headerLeft: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  headerIconButton: {
+  menuButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     backgroundColor: '#18181B',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerIconText: {
+  menuLines: {
+    width: 20,
+    height: 14,
+    justifyContent: 'space-between',
+  },
+  menuLine: {
+    width: '100%',
+    height: 2,
+    backgroundColor: '#fff',
+    borderRadius: 1,
+  },
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-start',
+    paddingTop: 100,
+    paddingLeft: 20,
+  },
+  menuContainer: {
+    backgroundColor: '#1C1C1E',
+    borderRadius: 16,
+    padding: 8,
+    width: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  menuItemIcon: {
     fontSize: 18,
+    marginRight: 12,
+  },
+  menuItemText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '500',
+  },
+  menuItemLogout: {
+    color: '#EF4444',
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginVertical: 4,
   },
   codeButton: {
     backgroundColor: '#3F3F46',

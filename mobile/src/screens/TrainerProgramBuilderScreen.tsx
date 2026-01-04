@@ -91,6 +91,11 @@ type Gender = 'male' | 'female' | 'other';
 type MesocycleType = 'hipertrofija' | 'jakost' | 'snaga' | 'izdrzljivost' | 'deload' | 'priprema' | 'natjecanje' | 'tranzicija';
 type ProgramMode = 'with_mesocycles' | 'clean_plan';
 
+interface ClientGoal {
+  value: string;
+  label: string;
+}
+
 interface ClientInfo {
   id: string;
   name: string;
@@ -99,6 +104,11 @@ interface ClientInfo {
   age?: number;
   weight?: number;
   height?: number;
+  trainingFrequency?: number; // Klijentova preferirana frekvencija iz onboardinga
+  goals?: ClientGoal[]; // Klijentovi ciljevi iz onboardinga
+  experience?: string; // beginner/intermediate/advanced
+  experienceLabel?: string; // Početnik/Srednji/Napredni
+  injuries?: string; // Ozljede/zdravstvena stanja
 }
 
 interface Mesocycle {
@@ -418,6 +428,7 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
           age: c.age,
           weight: c.weight,
           height: c.height,
+          trainingFrequency: c.training_frequency ? parseInt(c.training_frequency) : undefined,
         })));
       }
     } catch (error) {
@@ -432,15 +443,59 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
       });
       const data = await response.json();
       if (data.success) {
+        const clientData = data.data.client;
+        const clientFrequency = clientData.training?.frequency 
+          ? parseInt(clientData.training.frequency) 
+          : undefined;
+        
         setSelectedClient({
-          id: data.data.client.id,
-          name: data.data.client.name,
-          email: data.data.client.email,
-          gender: data.data.client.gender || 'other',
-          age: data.data.client.age,
-          weight: data.data.client.weight,
-          height: data.data.client.height,
+          id: clientData.id,
+          name: clientData.name,
+          email: clientData.email,
+          gender: clientData.gender || 'other',
+          age: clientData.age,
+          weight: clientData.weight,
+          height: clientData.height,
+          trainingFrequency: clientFrequency,
+          goals: clientData.goals || [],
+          experience: clientData.training?.experience,
+          experienceLabel: clientData.training?.experienceLabel,
+          injuries: clientData.injuries,
         });
+        
+        // Auto-postavi frekvenciju na klijentovu preferenciju (ako postoji)
+        if (clientFrequency && clientFrequency >= 3 && clientFrequency <= 6) {
+          handleFrequencyChange(clientFrequency);
+        }
+        
+        // Auto-postavi razinu iskustva na klijentovu preferenciju (ako postoji)
+        const experienceToLevel: Record<string, UserLevel> = {
+          'beginner': 'pocetnik',
+          'intermediate': 'srednji',
+          'advanced': 'napredni',
+        };
+        const clientExperience = clientData.training?.experience;
+        if (clientExperience && experienceToLevel[clientExperience]) {
+          setLevel(experienceToLevel[clientExperience]);
+        }
+        
+        // Auto-postavi cilj prema onboarding ciljevima (ako postoji)
+        const goalToProgram: Record<string, ProgramGoal> = {
+          'gain-muscle': 'hipertrofija',
+          'recomp': 'hipertrofija',
+          'lose-fat': 'rekreacija_zdravlje',
+          'power': 'snaga',
+          'endurance': 'izdrzljivost',
+          'speed': 'snaga',
+          'learn-gym': 'rekreacija_zdravlje',
+        };
+        const clientGoals = clientData.goals || [];
+        for (const g of clientGoals) {
+          if (goalToProgram[g.value]) {
+            setGoal(goalToProgram[g.value]);
+            break;
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading client:', error);
@@ -909,6 +964,36 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
           </View>
         )}
 
+        {/* Client Preferences from Onboarding */}
+        {selectedClient && (selectedClient.goals?.length || selectedClient.experience || selectedClient.injuries) && (
+          <View style={styles.clientOnboardingInfo}>
+            <Text style={styles.clientOnboardingTitle}>📋 Podaci iz onboardinga</Text>
+            
+            {selectedClient.goals && selectedClient.goals.length > 0 && (
+              <View style={styles.clientInfoRow}>
+                <Text style={styles.clientInfoLabel}>🎯 Ciljevi:</Text>
+                <Text style={styles.clientInfoValue}>
+                  {selectedClient.goals.map(g => g.label).join(', ')}
+                </Text>
+              </View>
+            )}
+            
+            {selectedClient.experienceLabel && (
+              <View style={styles.clientInfoRow}>
+                <Text style={styles.clientInfoLabel}>💪 Iskustvo:</Text>
+                <Text style={styles.clientInfoValue}>{selectedClient.experienceLabel}</Text>
+              </View>
+            )}
+            
+            {selectedClient.injuries && (
+              <View style={styles.clientInfoRow}>
+                <Text style={styles.clientInfoLabel}>⚠️ Ozljede:</Text>
+                <Text style={styles.clientInfoValueWarning}>{selectedClient.injuries}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Goal Selection - Disabled if from annual plan */}
         <Text style={styles.sectionTitle}>Cilj programa {fromAnnualPlan && '(iz plana)'}</Text>
         <View style={styles.optionsGrid}>
@@ -940,6 +1025,42 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
           ))}
         </View>
 
+        {/* Frekvencija treninga */}
+        <Text style={styles.sectionTitle}>Frekvencija treninga</Text>
+        {selectedClient?.trainingFrequency && (
+          <View style={styles.clientPreferenceHint}>
+            <Text style={styles.clientPreferenceText}>
+              💡 {selectedClient.name} preferira {selectedClient.trainingFrequency}x tjedno
+            </Text>
+          </View>
+        )}
+        <View style={styles.frequencyRow}>
+          {FREQUENCY_OPTIONS.map((f) => (
+            <TouchableOpacity
+              key={f.value}
+              style={[
+                styles.frequencyChip,
+                trainingFrequency === f.value && styles.frequencyChipSelected,
+                selectedClient?.trainingFrequency === f.value && trainingFrequency !== f.value && styles.frequencyChipRecommended,
+              ]}
+              onPress={() => handleFrequencyChange(f.value)}
+            >
+              <Text style={[
+                styles.frequencyChipText,
+                trainingFrequency === f.value && styles.frequencyChipTextSelected,
+              ]}>
+                {f.label}
+              </Text>
+              {selectedClient?.trainingFrequency === f.value && trainingFrequency !== f.value && (
+                <Text style={styles.frequencyChipHint}>preporučeno</Text>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+        <Text style={styles.frequencyDescription}>
+          {FREQUENCY_OPTIONS.find(f => f.value === trainingFrequency)?.description}
+        </Text>
+
         {/* Split Selection */}
         <Text style={styles.sectionTitle}>Split tip</Text>
         {SPLITS.map((s) => (
@@ -952,6 +1073,10 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
               } else {
                 setSplitType(s.value);
                 setCustomSplit(null);
+                // Ažuriraj frekvenciju ako se koristi preporučena
+                if (splitAutoSuggested) {
+                  setTrainingFrequency(s.sessionsPerWeek);
+                }
               }
             }}
           >
@@ -3038,6 +3163,83 @@ const styles = StyleSheet.create({
   optionChipSelected: { borderColor: '#FFFFFF', backgroundColor: '#27272A' },
   optionChipText: { color: '#A1A1AA', fontSize: 14 },
   optionChipTextSelected: { color: '#FFF', fontWeight: '600' },
+
+  // Client preference hint
+  clientPreferenceHint: {
+    backgroundColor: '#1E3A5F',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#60A5FA',
+  },
+  clientPreferenceText: { color: '#93C5FD', fontSize: 13 },
+
+  // Client Onboarding Info
+  clientOnboardingInfo: {
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.3)',
+  },
+  clientOnboardingTitle: {
+    color: '#93C5FD',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  clientInfoRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  clientInfoLabel: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 13,
+    width: 90,
+  },
+  clientInfoValue: {
+    color: '#fff',
+    fontSize: 13,
+    flex: 1,
+    fontWeight: '500',
+  },
+  clientInfoValueWarning: {
+    color: '#FBBF24',
+    fontSize: 13,
+    flex: 1,
+    fontWeight: '500',
+  },
+
+  // Frequency selector
+  frequencyRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  frequencyChip: {
+    flex: 1,
+    backgroundColor: '#18181B',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  frequencyChipSelected: { 
+    borderColor: '#A855F7', 
+    backgroundColor: '#27272A' 
+  },
+  frequencyChipRecommended: { 
+    borderColor: '#60A5FA',
+    borderStyle: 'dashed',
+  },
+  frequencyChipText: { color: '#A1A1AA', fontSize: 16, fontWeight: '600' },
+  frequencyChipTextSelected: { color: '#FFF' },
+  frequencyChipHint: { color: '#60A5FA', fontSize: 10, marginTop: 2 },
+  frequencyDescription: { 
+    color: '#71717A', 
+    fontSize: 12, 
+    textAlign: 'center',
+    marginBottom: 16,
+  },
 
   // Duration
   durationRow: { flexDirection: 'row', gap: 10 },

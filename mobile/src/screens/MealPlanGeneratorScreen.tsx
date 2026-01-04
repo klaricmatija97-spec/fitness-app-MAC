@@ -23,6 +23,7 @@ import { authStorage } from '../services/storage';
 // Tipovi - STRICT: sve je required osim snack3
 interface MealComponent {
   name: string;
+  displayName?: string; // Prikaz s mjernim jedinicama (npr. "Mlijeko 1.2% (2 dcl)")
   grams: number;
   calories: number;
   protein: number;
@@ -291,6 +292,7 @@ export default function MealPlanGeneratorScreen({ onBack, onNavigateToTraining, 
         if ((scoredMeal as any).componentDetails && Array.isArray((scoredMeal as any).componentDetails)) {
           components = (scoredMeal as any).componentDetails.map((c: any) => ({
             name: c.foodName || c.name || '',
+            displayName: c.displayName || undefined,
             grams: c.grams || 0,
             calories: 0,
             protein: 0,
@@ -299,7 +301,8 @@ export default function MealPlanGeneratorScreen({ onBack, onNavigateToTraining, 
           }));
         } else if (scoredMeal.meta?.components && Array.isArray(scoredMeal.meta.components)) {
           components = scoredMeal.meta.components.map((c: any) => ({
-            name: c.food || c.name || '',
+            name: c.displayName || c.food || c.name || '',
+            displayName: c.displayName || undefined,
             grams: c.grams || 0,
             calories: 0,
             protein: 0,
@@ -845,12 +848,66 @@ export default function MealPlanGeneratorScreen({ onBack, onNavigateToTraining, 
 
             <View style={styles.ingredientsSection}>
               <Text style={styles.sectionTitle}>Sastojci:</Text>
-              {meal.components.map((component, idx) => (
-                <View key={`component-${meal.name}-${component.name}-${idx}`} style={styles.ingredientItem}>
-                  <Text style={styles.ingredientName}>{component.name}</Text>
-                  <Text style={styles.ingredientAmount}>{component.grams}g</Text>
-                </View>
-              ))}
+              {meal.components.map((component, idx) => {
+                // Prepoznaj tekućine po nazivu
+                const nameLower = component.name.toLowerCase();
+                const isLiquid = nameLower.includes('mlijeko') || 
+                                 nameLower.includes('milk') ||
+                                 nameLower.includes('jogurt') ||
+                                 nameLower.includes('yogurt') ||
+                                 nameLower.includes('skyr') ||
+                                 nameLower.includes('voda') ||
+                                 nameLower.includes('water');
+                
+                // Prepoznaj jaja - prikazuj u komadima
+                const isEgg = nameLower.includes('jaj') || 
+                              nameLower.includes('egg') ||
+                              nameLower.includes('bjelanj');
+                
+                // Ako displayName ima volume jedinice, koristi ga
+                const hasVolumeUnit = component.displayName && 
+                  (component.displayName.includes('ml)') || 
+                   component.displayName.includes('dcl)') || 
+                   component.displayName.includes('kom)'));
+                
+                // Formatiraj tekućine s ml/dcl, jaja s kom
+                const formatAmount = () => {
+                  if (hasVolumeUnit && component.displayName) {
+                    return null; // displayName već sadrži količinu
+                  }
+                  if (isLiquid) {
+                    const grams = component.grams;
+                    if (grams >= 100 && grams % 100 === 0) {
+                      return `${grams / 100} dcl`;
+                    }
+                    return `${grams} ml`;
+                  }
+                  if (isEgg) {
+                    // 1 jaje ≈ 50-60g, bjelanjak ≈ 30g
+                    const grams = component.grams;
+                    if (nameLower.includes('bjelanj')) {
+                      const count = Math.round(grams / 30);
+                      return count > 0 ? `${count} kom` : `${grams}g`;
+                    }
+                    const count = Math.round(grams / 55);
+                    return count > 0 ? `${count} kom` : `${grams}g`;
+                  }
+                  return `${component.grams}g`;
+                };
+                
+                const amountText = formatAmount();
+                
+                return (
+                  <View key={`component-${meal.name}-${component.name}-${idx}`} style={styles.ingredientItem}>
+                    <Text style={styles.ingredientName}>
+                      {hasVolumeUnit ? component.displayName : component.name}
+                    </Text>
+                    {amountText && (
+                      <Text style={styles.ingredientAmount}>{amountText}</Text>
+                    )}
+                  </View>
+                );
+              })}
             </View>
 
             <View style={styles.macrosSection}>

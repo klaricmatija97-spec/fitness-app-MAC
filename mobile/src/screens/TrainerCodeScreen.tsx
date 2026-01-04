@@ -14,6 +14,7 @@ import {
   Share,
   Alert,
   Clipboard,
+  ScrollView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { API_BASE_URL } from '../services/api';
@@ -138,6 +139,7 @@ export default function TrainerCodeScreen({ authToken, onBack }: Props) {
           <View style={styles.placeholder} />
         </View>
 
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Content */}
         <View style={styles.content}>
           {/* Icon */}
@@ -177,16 +179,16 @@ export default function TrainerCodeScreen({ authToken, onBack }: Props) {
             disabled={regenerating}
           >
             {regenerating ? (
-              <ActivityIndicator color="#71717A" size="small" />
+              <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={styles.regenerateText}> Generiraj novi kod</Text>
+              <Text style={styles.regenerateText}>🔄 Generiraj novi kod</Text>
             )}
           </TouchableOpacity>
         </View>
 
         {/* Instructions */}
         <View style={styles.instructions}>
-          <Text style={styles.instructionsTitle}> Kako klijent koristi kod:</Text>
+          <Text style={styles.instructionsTitle}>📱 Kako klijent koristi kod:</Text>
           <View style={styles.step}>
             <Text style={styles.stepNumber}>1</Text>
             <Text style={styles.stepText}>Klijent skine aplikaciju</Text>
@@ -204,10 +206,11 @@ export default function TrainerCodeScreen({ authToken, onBack }: Props) {
             <Text style={styles.stepText}>Unese tvoj kod: {trainerCode}</Text>
           </View>
           <View style={styles.step}>
-            <Text style={styles.stepNumber}></Text>
+            <Text style={styles.stepNumber}>✓</Text>
             <Text style={styles.stepText}>Pojavi se u tvojoj listi klijenata!</Text>
           </View>
         </View>
+        </ScrollView>
       </LinearGradient>
     </View>
   );
@@ -216,6 +219,7 @@ export default function TrainerCodeScreen({ authToken, onBack }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   gradient: { flex: 1 },
+  scrollContent: { flexGrow: 1, paddingBottom: 40 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -306,11 +310,18 @@ const styles = StyleSheet.create({
   copyIcon: { fontSize: 18 },
   copyButtonText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
   regenerateButton: {
-    padding: 15,
+    padding: 16,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    marginTop: 10,
   },
   regenerateText: {
-    color: '#71717A',
-    fontSize: 14,
+    color: '#A1A1AA',
+    fontSize: 15,
+    fontWeight: '500',
   },
   instructions: {
     backgroundColor: 'rgba(255,255,255,0.05)',

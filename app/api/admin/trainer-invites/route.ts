@@ -11,11 +11,21 @@ function isAdmin(request: NextRequest): boolean {
   return adminKey === envKey;
 }
 
-// Generiraj jedinstveni trainer code
-function generateTrainerCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
+// Generiraj aktivacijski kod za trener registraciju - Format: ACT-XXXXXX
+function generateActivationCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Bez sličnih znakova (0/O, 1/I/L)
+  let code = 'ACT-';
   for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+// Generiraj trener kod za povezivanje s klijentima - Format: TRN-XXXX
+function generateTrainerCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = 'TRN-';
+  for (let i = 0; i < 4; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
@@ -97,7 +107,7 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      const emailSent = await sendApprovalEmail(invite.email, invite.name, invite.invite_code);
+      const emailSent = await sendApprovalEmailWithCode(invite.email, invite.name, invite.invite_code);
       return NextResponse.json({
         ok: true,
         message: emailSent ? "Email uspješno poslan!" : "Greška pri slanju emaila",
@@ -135,11 +145,15 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Generiraj aktivacijski kod (ACT-XXXXXX)
+      const activationCode = generateActivationCode();
+
       // Ažuriraj invite status na "approved" (račun se kreira tek kad trener upiše kod)
       const { data: updatedInvite, error: updateError } = await supabase
         .from("trainer_invites")
         .update({
           status: "approved",
+          invite_code: activationCode,  // Aktivacijski kod ACT-XXXXXX
           approved_at: new Date().toISOString(),
           expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), // 48h
           approved_by: "admin",
@@ -151,11 +165,11 @@ export async function POST(request: NextRequest) {
 
       if (updateError) throw updateError;
 
-      // Pošalji email s kodom
+      // Pošalji email s aktivacijskim kodom
       const emailSent = await sendApprovalEmailWithCode(
         invite.email,
         invite.name,
-        updatedInvite.invite_code
+        activationCode
       );
 
       return NextResponse.json({
@@ -200,7 +214,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Email funkcije (koriste Resend)
-async function sendApprovalEmailWithCode(email: string, name: string, inviteCode: string): Promise<boolean> {
+async function sendApprovalEmailWithCode(email: string, name: string, activationCode: string): Promise<boolean> {
   const resendApiKey = process.env.RESEND_API_KEY || 're_LAVdTSto_LkTanz66kQLWD88SgAVnCPzH';
   
   if (!resendApiKey) {
@@ -229,7 +243,7 @@ async function sendApprovalEmailWithCode(email: string, name: string, inviteCode
                         padding: 30px; border-radius: 12px; text-align: center; margin: 30px 0;">
               <p style="color: rgba(255,255,255,0.8); margin: 0 0 10px 0; font-size: 14px;">Vaš aktivacijski kod:</p>
               <h2 style="color: white; font-size: 32px; letter-spacing: 4px; margin: 0;">
-                ${inviteCode}
+                ${activationCode}
               </h2>
             </div>
             
@@ -237,10 +251,12 @@ async function sendApprovalEmailWithCode(email: string, name: string, inviteCode
             <ol>
               <li>Otvorite Corpex aplikaciju</li>
               <li>Kliknite "Registracija trenera"</li>
-              <li>Unesite ovaj kod da aktivirate račun</li>
+              <li>Idite na tab "Imam kod"</li>
+              <li>Unesite ovaj aktivacijski kod (${activationCode})</li>
             </ol>
             
-            <p style="color: #888; font-size: 13px;">⚠️ Kod vrijedi 48 sati.</p>
+            <p style="color: #888; font-size: 13px;">⚠️ Aktivacijski kod vrijedi 48 sati i koristi se samo jednom.</p>
+            <p style="color: #888; font-size: 13px;">📱 Nakon aktivacije, dobit ćete svoj <strong>trener kod (TRN-XXXX)</strong> kojim se vaši klijenti povezuju s vama.</p>
             
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
             <p style="color: #666; font-size: 12px;">Corpex tim</p>

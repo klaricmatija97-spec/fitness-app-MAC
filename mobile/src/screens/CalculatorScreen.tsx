@@ -114,6 +114,30 @@ export default function CalculatorScreen({ onComplete, onBack, initialData }: Ca
     return () => clearInterval(interval);
   }, []);
 
+  // Ažuriraj inpute kada se initialData promijeni (npr. iz intake flow-a)
+  useEffect(() => {
+    if (initialData) {
+      const newInputs = {
+        weight: initialData.weight?.toString() || '',
+        height: initialData.height?.toString() || '',
+        age: initialData.age?.toString() || '',
+        gender: initialData.gender || 'male' as Gender,
+      };
+      setBmrInputs(newInputs);
+      
+      // Auto-izračunaj BMR ako su svi podaci prisutni
+      const weight = parseFloat(newInputs.weight);
+      const height = parseFloat(newInputs.height);
+      const age = parseInt(newInputs.age);
+      
+      if (weight && height && age) {
+        const bmr = calculateBMR(weight, height, age, newInputs.gender);
+        setBmrResult(bmr);
+        setTdeeInputs(prev => ({ ...prev, bmr }));
+      }
+    }
+  }, [initialData?.weight, initialData?.height, initialData?.age, initialData?.gender]);
+
   // Animacija pri promjeni stepa
   useEffect(() => {
     Animated.timing(contentOpacity, {
@@ -202,316 +226,334 @@ export default function CalculatorScreen({ onComplete, onBack, initialData }: Ca
     }
   };
 
+  // Provjeri je li podatak preuzet iz onboardinga
+  const hasPrefilledData = initialData?.weight && initialData?.height && initialData?.age;
+
   const renderBMR = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>BMR KALKULATOR</Text>
-      <Text style={styles.stepSubtitle}>Bazalni metabolizam</Text>
+      {/* Minimalistički header */}
+      <Text style={styles.stepTitleMinimal}>Bazalni metabolizam</Text>
       
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Težina (kg)</Text>
-        <TextInput
-          style={styles.input}
-          value={bmrInputs.weight}
-          onChangeText={(v) => setBmrInputs({ ...bmrInputs, weight: v })}
-          keyboardType="numeric"
-          placeholder="npr. 70"
-          placeholderTextColor="rgba(255,255,255,0.4)"
-        />
-      </View>
+      {hasPrefilledData ? (
+        // MINIMALNI UI - podaci su već tu
+        <>
+          {/* Kompaktni prikaz podataka */}
+          <View style={styles.dataCardsRow}>
+            <View style={styles.dataCardSmall}>
+              <Text style={styles.dataCardValue}>{bmrInputs.weight}</Text>
+              <Text style={styles.dataCardLabel}>kg</Text>
+            </View>
+            <View style={styles.dataCardSmall}>
+              <Text style={styles.dataCardValue}>{bmrInputs.height}</Text>
+              <Text style={styles.dataCardLabel}>cm</Text>
+            </View>
+            <View style={styles.dataCardSmall}>
+              <Text style={styles.dataCardValue}>{bmrInputs.age}</Text>
+              <Text style={styles.dataCardLabel}>god</Text>
+            </View>
+            <View style={styles.dataCardSmall}>
+              <Text style={styles.dataCardValue}>{bmrInputs.gender === 'male' ? '♂' : '♀'}</Text>
+              <Text style={styles.dataCardLabel}>{bmrInputs.gender === 'male' ? 'M' : 'Ž'}</Text>
+            </View>
+          </View>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Visina (cm)</Text>
-        <TextInput
-          style={styles.input}
-          value={bmrInputs.height}
-          onChangeText={(v) => setBmrInputs({ ...bmrInputs, height: v })}
-          keyboardType="numeric"
-          placeholder="npr. 175"
-          placeholderTextColor="rgba(255,255,255,0.4)"
-        />
-      </View>
+          {/* Veliki rezultat */}
+          {bmrResult !== null ? (
+            <View style={styles.bigResultContainer}>
+              <Text style={styles.bigResultValue}>{bmrResult}</Text>
+              <Text style={styles.bigResultLabel}>kcal/dan</Text>
+              <Text style={styles.bigResultDescription}>
+                Toliko kalorija tvoje tijelo troši u mirovanju
+              </Text>
+              
+              <TouchableOpacity style={styles.continueButtonPrimary} onPress={handleBMRContinue}>
+                <Text style={styles.continueButtonPrimaryText}>Nastavi</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.calcButtonLarge} onPress={handleBMRCalculate}>
+              <Text style={styles.calcButtonLargeText}>Izračunaj</Text>
+            </TouchableOpacity>
+          )}
+        </>
+      ) : (
+        // PUNI UI - nema prethodno unesenih podataka
+        <>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Težina (kg)</Text>
+            <TextInput
+              style={styles.input}
+              value={bmrInputs.weight}
+              onChangeText={(v) => setBmrInputs({ ...bmrInputs, weight: v })}
+              keyboardType="numeric"
+              placeholder="npr. 70"
+              placeholderTextColor="rgba(255,255,255,0.4)"
+            />
+          </View>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Dob (godine)</Text>
-        <TextInput
-          style={styles.input}
-          value={bmrInputs.age}
-          onChangeText={(v) => setBmrInputs({ ...bmrInputs, age: v })}
-          keyboardType="numeric"
-          placeholder="npr. 30"
-          placeholderTextColor="rgba(255,255,255,0.4)"
-        />
-      </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Visina (cm)</Text>
+            <TextInput
+              style={styles.input}
+              value={bmrInputs.height}
+              onChangeText={(v) => setBmrInputs({ ...bmrInputs, height: v })}
+              keyboardType="numeric"
+              placeholder="npr. 175"
+              placeholderTextColor="rgba(255,255,255,0.4)"
+            />
+          </View>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Spol</Text>
-        <View style={styles.pickerContainer}>
-          <TouchableOpacity
-            style={[
-              styles.pickerOption,
-              bmrInputs.gender === 'male' && styles.pickerOptionSelected,
-            ]}
-            onPress={() => setBmrInputs({ ...bmrInputs, gender: 'male' })}
-          >
-            <Text
-              style={[
-                styles.pickerOptionText,
-                bmrInputs.gender === 'male' && styles.pickerOptionTextSelected,
-              ]}
-            >
-              Muškarac
-            </Text>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Dob (godine)</Text>
+            <TextInput
+              style={styles.input}
+              value={bmrInputs.age}
+              onChangeText={(v) => setBmrInputs({ ...bmrInputs, age: v })}
+              keyboardType="numeric"
+              placeholder="npr. 30"
+              placeholderTextColor="rgba(255,255,255,0.4)"
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Spol</Text>
+            <View style={styles.pickerContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.pickerOption,
+                  bmrInputs.gender === 'male' && styles.pickerOptionSelected,
+                ]}
+                onPress={() => setBmrInputs({ ...bmrInputs, gender: 'male' })}
+              >
+                <Text
+                  style={[
+                    styles.pickerOptionText,
+                    bmrInputs.gender === 'male' && styles.pickerOptionTextSelected,
+                  ]}
+                >
+                  Muškarac
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.pickerOption,
+                  bmrInputs.gender === 'female' && styles.pickerOptionSelected,
+                ]}
+                onPress={() => setBmrInputs({ ...bmrInputs, gender: 'female' })}
+              >
+                <Text
+                  style={[
+                    styles.pickerOptionText,
+                    bmrInputs.gender === 'female' && styles.pickerOptionTextSelected,
+                  ]}
+                >
+                  Žena
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.calcButton} onPress={handleBMRCalculate}>
+            <Text style={styles.calcButtonText}>Izračunaj BMR</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.pickerOption,
-              bmrInputs.gender === 'female' && styles.pickerOptionSelected,
-            ]}
-            onPress={() => setBmrInputs({ ...bmrInputs, gender: 'female' })}
-          >
-            <Text
-              style={[
-                styles.pickerOptionText,
-                bmrInputs.gender === 'female' && styles.pickerOptionTextSelected,
-              ]}
-            >
-              Žena
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
 
-      <TouchableOpacity style={styles.calcButton} onPress={handleBMRCalculate}>
-        <Text style={styles.calcButtonText}>Izračunaj BMR</Text>
-      </TouchableOpacity>
-
-      {bmrResult !== null && (
-        <View style={styles.resultContainer}>
-          <Text style={styles.resultLabel}>Tvoj BMR</Text>
-          <Text style={styles.resultValue}>{bmrResult}</Text>
-          <Text style={styles.resultUnit}>kalorija/dan</Text>
-          
-          <TouchableOpacity style={styles.continueButton} onPress={handleBMRContinue}>
-            <Text style={styles.continueButtonText}>Nastavi →</Text>
-          </TouchableOpacity>
-        </View>
+          {bmrResult !== null && (
+            <View style={styles.resultContainer}>
+              <Text style={styles.resultLabel}>Tvoj BMR</Text>
+              <Text style={styles.resultValue}>{bmrResult}</Text>
+              <Text style={styles.resultUnit}>kalorija/dan</Text>
+              
+              <TouchableOpacity style={styles.continueButton} onPress={handleBMRContinue}>
+                <Text style={styles.continueButtonText}>Nastavi →</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </>
       )}
     </View>
   );
+
+  const activityOptions = [
+    { label: 'Sjedilački', desc: 'Ured, malo kretanja', value: 'sedentary', emoji: '🪑' },
+    { label: 'Lagano', desc: '1-3 treninga/tjedno', value: 'light', emoji: '🚶' },
+    { label: 'Umjereno', desc: '3-5 treninga/tjedno', value: 'moderate', emoji: '🏃' },
+    { label: 'Aktivno', desc: '6-7 treninga/tjedno', value: 'active', emoji: '💪' },
+    { label: 'Vrlo aktivno', desc: 'Sportaš, fizički posao', value: 'very_active', emoji: '🔥' },
+  ];
 
   const renderTDEE = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>TDEE KALKULATOR</Text>
-      <Text style={styles.stepSubtitle}>Ukupna dnevna potrošnja energije</Text>
+      <Text style={styles.stepTitleMinimal}>Dnevna potrošnja energije</Text>
       
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>BMR (iz prethodnog koraka)</Text>
-        <TextInput
-          style={styles.input}
-          value={tdeeInputs.bmr.toString()}
-          onChangeText={(v) => setTdeeInputs({ ...tdeeInputs, bmr: parseInt(v) || 0 })}
-          keyboardType="numeric"
-          editable={false}
-          placeholderTextColor="rgba(255,255,255,0.4)"
-        />
+      {/* BMR prikaz */}
+      <View style={styles.previousValueCard}>
+        <Text style={styles.previousValueLabel}>BMR</Text>
+        <Text style={styles.previousValueNumber}>{tdeeInputs.bmr}</Text>
+        <Text style={styles.previousValueUnit}>kcal</Text>
       </View>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Razina aktivnosti</Text>
-        <View style={styles.pickerContainer}>
-          {[
-            { label: 'Sedentary (malo vježbanja)', value: 'sedentary' },
-            { label: 'Light (1-3 dana/tjedno)', value: 'light' },
-            { label: 'Moderate (3-5 dana/tjedno)', value: 'moderate' },
-            { label: 'Active (6-7 dana/tjedno)', value: 'active' },
-            { label: 'Very Active (vrlo aktivno)', value: 'very_active' },
-          ].map((option) => (
-            <TouchableOpacity
-              key={option.value}
-              style={[
-                styles.pickerOption,
-                tdeeInputs.activityLevel === option.value && styles.pickerOptionSelected,
-              ]}
-              onPress={() => setTdeeInputs({ ...tdeeInputs, activityLevel: option.value as ActivityLevel })}
-            >
-              <Text
-                style={[
-                  styles.pickerOptionText,
-                  tdeeInputs.activityLevel === option.value && styles.pickerOptionTextSelected,
-                ]}
-              >
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      {/* Activity selector - lijepe kartice */}
+      <Text style={styles.sectionLabel}>Koliko si aktivan/na?</Text>
+      <View style={styles.activityGrid}>
+        {activityOptions.map((option) => (
+          <TouchableOpacity
+            key={option.value}
+            style={[
+              styles.activityCard,
+              tdeeInputs.activityLevel === option.value && styles.activityCardSelected,
+            ]}
+            onPress={() => {
+              setTdeeInputs({ ...tdeeInputs, activityLevel: option.value as ActivityLevel });
+              // Auto-izračunaj kada se odabere
+              const tdee = calculateTDEE(tdeeInputs.bmr, option.value as ActivityLevel);
+              setTdeeResult(tdee);
+              setTargetInputs({ ...targetInputs, tdee });
+            }}
+          >
+            <Text style={styles.activityEmoji}>{option.emoji}</Text>
+            <Text style={[
+              styles.activityLabel,
+              tdeeInputs.activityLevel === option.value && styles.activityLabelSelected,
+            ]}>{option.label}</Text>
+            <Text style={styles.activityDesc}>{option.desc}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
-
-      <TouchableOpacity style={styles.calcButton} onPress={handleTDEECalculate}>
-        <Text style={styles.calcButtonText}>Izračunaj TDEE</Text>
-      </TouchableOpacity>
 
       {tdeeResult !== null && (
-        <View style={styles.resultContainer}>
-          <Text style={styles.resultLabel}>Tvoj TDEE</Text>
-          <Text style={styles.resultValue}>{tdeeResult}</Text>
-          <Text style={styles.resultUnit}>kalorija/dan</Text>
+        <View style={styles.bigResultContainer}>
+          <Text style={styles.bigResultValue}>{tdeeResult}</Text>
+          <Text style={styles.bigResultLabel}>kcal/dan</Text>
+          <Text style={styles.bigResultDescription}>
+            Ukupno kalorija koje trošiš dnevno
+          </Text>
           
-          <TouchableOpacity style={styles.continueButton} onPress={handleTDEEContinue}>
-            <Text style={styles.continueButtonText}>Nastavi →</Text>
+          <TouchableOpacity style={styles.continueButtonPrimary} onPress={handleTDEEContinue}>
+            <Text style={styles.continueButtonPrimaryText}>Nastavi</Text>
           </TouchableOpacity>
         </View>
       )}
     </View>
   );
+
+  const goalOptions = [
+    { label: 'Smanjiti', desc: '-500 kcal', value: 'lose', emoji: '📉', color: '#EF4444' },
+    { label: 'Održati', desc: '= TDEE', value: 'maintain', emoji: '⚖️', color: '#60A5FA' },
+    { label: 'Povećati', desc: '+500 kcal', value: 'gain', emoji: '📈', color: '#22C55E' },
+  ];
 
   const renderTarget = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>CILJANE KALORIJE</Text>
-      <Text style={styles.stepSubtitle}>Prilagođeno vašem cilju</Text>
+      <Text style={styles.stepTitleMinimal}>Tvoj cilj</Text>
       
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>TDEE (iz prethodnog koraka)</Text>
-        <TextInput
-          style={styles.input}
-          value={targetInputs.tdee.toString()}
-          onChangeText={(v) => setTargetInputs({ ...targetInputs, tdee: parseInt(v) || 0 })}
-          keyboardType="numeric"
-          editable={false}
-          placeholderTextColor="rgba(255,255,255,0.4)"
-        />
+      {/* TDEE prikaz */}
+      <View style={styles.previousValueCard}>
+        <Text style={styles.previousValueLabel}>TDEE</Text>
+        <Text style={styles.previousValueNumber}>{targetInputs.tdee}</Text>
+        <Text style={styles.previousValueUnit}>kcal</Text>
       </View>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Cilj</Text>
-        <View style={styles.pickerContainer}>
-          {[
-            { label: 'Gubitak težine (-500 kcal)', value: 'lose' },
-            { label: 'Održavanje težine (= TDEE)', value: 'maintain' },
-            { label: 'Povećanje težine (+500 kcal)', value: 'gain' },
-          ].map((option) => (
-            <TouchableOpacity
-              key={option.value}
-              style={[
-                styles.pickerOption,
-                targetInputs.goalType === option.value && styles.pickerOptionSelected,
-              ]}
-              onPress={() => setTargetInputs({ ...targetInputs, goalType: option.value as GoalType })}
-            >
-              <Text
-                style={[
-                  styles.pickerOptionText,
-                  targetInputs.goalType === option.value && styles.pickerOptionTextSelected,
-                ]}
-              >
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      {/* Goal selector - velike kartice */}
+      <View style={styles.goalCardsRow}>
+        {goalOptions.map((option) => (
+          <TouchableOpacity
+            key={option.value}
+            style={[
+              styles.goalCard,
+              targetInputs.goalType === option.value && { 
+                backgroundColor: option.color,
+                borderColor: option.color,
+              },
+            ]}
+            onPress={() => {
+              setTargetInputs({ ...targetInputs, goalType: option.value as GoalType });
+              // Auto-izračunaj
+              const target = calculateTargetCalories(targetInputs.tdee, option.value as GoalType);
+              setTargetResult(target);
+              setMacrosInputs({
+                ...macrosInputs,
+                targetCalories: target,
+                goalType: option.value as GoalType,
+                weight: parseFloat(bmrInputs.weight) || 0,
+              });
+            }}
+          >
+            <Text style={styles.goalEmoji}>{option.emoji}</Text>
+            <Text style={[
+              styles.goalLabel,
+              targetInputs.goalType === option.value && styles.goalLabelSelected,
+            ]}>{option.label}</Text>
+            <Text style={[
+              styles.goalDesc,
+              targetInputs.goalType === option.value && styles.goalDescSelected,
+            ]}>{option.desc}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
-
-      <TouchableOpacity style={styles.calcButton} onPress={handleTargetCalculate}>
-        <Text style={styles.calcButtonText}>Izračunaj ciljane kalorije</Text>
-      </TouchableOpacity>
 
       {targetResult !== null && (
-        <View style={styles.resultContainer}>
-          <Text style={styles.resultLabel}>
-            Ciljane kalorije ({targetInputs.goalType === 'lose' ? 'Gubitak' : targetInputs.goalType === 'gain' ? 'Dobitak' : 'Održavanje'})
-          </Text>
-          <Text style={styles.resultValue}>{targetResult}</Text>
-          <Text style={styles.resultUnit}>kalorija/dan</Text>
+        <View style={styles.bigResultContainer}>
+          <Text style={styles.bigResultValue}>{targetResult}</Text>
+          <Text style={styles.bigResultLabel}>kcal/dan</Text>
           
-          <TouchableOpacity style={styles.continueButton} onPress={handleTargetContinue}>
-            <Text style={styles.continueButtonText}>Nastavi →</Text>
+          <TouchableOpacity style={styles.continueButtonPrimary} onPress={handleTargetContinue}>
+            <Text style={styles.continueButtonPrimaryText}>Nastavi</Text>
           </TouchableOpacity>
         </View>
       )}
     </View>
   );
 
+  // Auto-izračunaj makronuntriente kada se dođe na ovaj step
+  useEffect(() => {
+    if (currentStep === 'macros' && macrosInputs.targetCalories && macrosInputs.weight) {
+      const macros = calculateMacros(macrosInputs.targetCalories, macrosInputs.goalType, macrosInputs.weight);
+      setMacrosResult(macros);
+    }
+  }, [currentStep, macrosInputs.targetCalories, macrosInputs.weight, macrosInputs.goalType]);
+
   const renderMacros = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>MAKRONUTRIJENTI</Text>
-      <Text style={styles.stepSubtitle}>Proteini, ugljikohidrati i masti</Text>
+      <Text style={styles.stepTitleMinimal}>Tvoji makronutrijenti</Text>
       
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Ciljane kalorije</Text>
-        <TextInput
-          style={styles.input}
-          value={macrosInputs.targetCalories.toString()}
-          onChangeText={(v) => setMacrosInputs({ ...macrosInputs, targetCalories: parseInt(v) || 0 })}
-          keyboardType="numeric"
-          editable={false}
-          placeholderTextColor="rgba(255,255,255,0.4)"
-        />
+      {/* Prikaz ciljanih kalorija */}
+      <View style={styles.previousValueCard}>
+        <Text style={styles.previousValueLabel}>Cilj</Text>
+        <Text style={styles.previousValueNumber}>{macrosInputs.targetCalories}</Text>
+        <Text style={styles.previousValueUnit}>kcal/dan</Text>
       </View>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Težina (kg)</Text>
-        <TextInput
-          style={styles.input}
-          value={macrosInputs.weight.toString()}
-          onChangeText={(v) => setMacrosInputs({ ...macrosInputs, weight: parseFloat(v) || 0 })}
-          keyboardType="numeric"
-          editable={false}
-          placeholderTextColor="rgba(255,255,255,0.4)"
-        />
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Cilj</Text>
-        <View style={styles.pickerContainer}>
-          {[
-            { label: 'Gubitak težine', value: 'lose' },
-            { label: 'Održavanje težine', value: 'maintain' },
-            { label: 'Povećanje težine', value: 'gain' },
-          ].map((option) => (
-            <TouchableOpacity
-              key={option.value}
-              style={[
-                styles.pickerOption,
-                macrosInputs.goalType === option.value && styles.pickerOptionSelected,
-              ]}
-              onPress={() => setMacrosInputs({ ...macrosInputs, goalType: option.value as GoalType })}
-            >
-              <Text
-                style={[
-                  styles.pickerOptionText,
-                  macrosInputs.goalType === option.value && styles.pickerOptionTextSelected,
-                ]}
-              >
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      <TouchableOpacity style={styles.calcButton} onPress={handleMacrosCalculate}>
-        <Text style={styles.calcButtonText}>Izračunaj makroe</Text>
-      </TouchableOpacity>
-
+      {/* Makro kartice - automatski izračunate */}
       {macrosResult !== null && (
-        <View style={styles.resultContainer}>
-          <View style={styles.macroRow}>
-            <Text style={styles.macroLabel}>Proteini</Text>
-            <Text style={styles.macroValue}>{macrosResult.protein}g</Text>
+        <>
+          <View style={styles.macroCardsContainer}>
+            <View style={[styles.macroCard, { borderTopColor: '#EF4444' }]}>
+              <Text style={styles.macroCardValue}>{macrosResult.protein}g</Text>
+              <Text style={styles.macroCardLabel}>Proteini</Text>
+              <Text style={styles.macroCardPercent}>
+                {Math.round((macrosResult.protein * 4 / macrosInputs.targetCalories) * 100)}%
+              </Text>
+            </View>
+            <View style={[styles.macroCard, { borderTopColor: '#60A5FA' }]}>
+              <Text style={styles.macroCardValue}>{macrosResult.carbs}g</Text>
+              <Text style={styles.macroCardLabel}>Ugljikohidrati</Text>
+              <Text style={styles.macroCardPercent}>
+                {Math.round((macrosResult.carbs * 4 / macrosInputs.targetCalories) * 100)}%
+              </Text>
+            </View>
+            <View style={[styles.macroCard, { borderTopColor: '#FBBF24' }]}>
+              <Text style={styles.macroCardValue}>{macrosResult.fats}g</Text>
+              <Text style={styles.macroCardLabel}>Masti</Text>
+              <Text style={styles.macroCardPercent}>
+                {Math.round((macrosResult.fats * 9 / macrosInputs.targetCalories) * 100)}%
+              </Text>
+            </View>
           </View>
-          <View style={styles.macroRow}>
-            <Text style={styles.macroLabel}>Ugljikohidrati</Text>
-            <Text style={styles.macroValue}>{macrosResult.carbs}g</Text>
-          </View>
-          <View style={styles.macroRow}>
-            <Text style={styles.macroLabel}>Masti</Text>
-            <Text style={styles.macroValue}>{macrosResult.fats}g</Text>
-          </View>
-          
-          <TouchableOpacity style={styles.completeButton} onPress={handleMacrosComplete}>
-            <Text style={styles.completeButtonText}>✓ Završi</Text>
+
+          <TouchableOpacity style={styles.completeButtonLarge} onPress={handleMacrosComplete}>
+            <Text style={styles.completeButtonLargeText}>Završi ✓</Text>
           </TouchableOpacity>
-        </View>
+        </>
       )}
     </View>
   );
@@ -611,12 +653,275 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
     marginBottom: 8,
   },
+  stepTitleMinimal: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.6)',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+    marginBottom: 24,
+  },
   stepSubtitle: {
     fontSize: 16,
     fontWeight: '400',
     color: 'rgba(255,255,255,0.7)',
     textAlign: 'center',
     marginBottom: 32,
+  },
+  
+  // Minimalni UI - kartice s podacima
+  dataCardsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 40,
+  },
+  dataCardSmall: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    minWidth: 70,
+  },
+  dataCardValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  dataCardLabel: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.5)',
+    marginTop: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  
+  // Veliki rezultat
+  bigResultContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  bigResultValue: {
+    fontSize: 72,
+    fontWeight: '800',
+    color: '#fff',
+    fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
+  },
+  bigResultLabel: {
+    fontSize: 18,
+    color: 'rgba(255,255,255,0.6)',
+    marginTop: 4,
+    letterSpacing: 1,
+  },
+  bigResultDescription: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.4)',
+    marginTop: 16,
+    textAlign: 'center',
+    maxWidth: 280,
+  },
+  
+  // Gumbi za minimalni UI
+  calcButtonLarge: {
+    backgroundColor: '#fff',
+    paddingVertical: 18,
+    paddingHorizontal: 60,
+    borderRadius: 30,
+    alignSelf: 'center',
+    marginTop: 20,
+  },
+  calcButtonLargeText: {
+    color: '#1a1a2e',
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  continueButtonPrimary: {
+    backgroundColor: '#fff',
+    paddingVertical: 16,
+    paddingHorizontal: 50,
+    borderRadius: 30,
+    marginTop: 32,
+  },
+  continueButtonPrimaryText: {
+    color: '#1a1a2e',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  
+  // Prethodni rezultat - mala kartica
+  previousValueCard: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 32,
+    opacity: 0.7,
+  },
+  previousValueLabel: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.5)',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  previousValueNumber: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  previousValueUnit: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.5)',
+  },
+  
+  // Section label
+  sectionLabel: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.7)',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  
+  // Activity grid
+  activityGrid: {
+    gap: 10,
+    marginBottom: 24,
+  },
+  activityCard: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  activityCardSelected: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderColor: '#fff',
+  },
+  activityEmoji: {
+    fontSize: 24,
+  },
+  activityLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    flex: 1,
+  },
+  activityLabelSelected: {
+    color: '#fff',
+  },
+  activityDesc: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.5)',
+  },
+  
+  // Goal cards
+  goalCardsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 32,
+  },
+  goalCard: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 20,
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    minWidth: 100,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  goalEmoji: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  goalLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  goalLabelSelected: {
+    color: '#fff',
+  },
+  goalDesc: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.5)',
+    marginTop: 4,
+  },
+  goalDescSelected: {
+    color: 'rgba(255,255,255,0.8)',
+  },
+  
+  // Macro cards
+  macroCardsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 40,
+  },
+  macroCard: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    minWidth: 100,
+    borderTopWidth: 3,
+  },
+  macroCardValue: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  macroCardLabel: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
+    marginTop: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  macroCardPercent: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.4)',
+    marginTop: 6,
+  },
+  
+  // Complete button large
+  completeButtonLarge: {
+    backgroundColor: '#22C55E',
+    paddingVertical: 18,
+    paddingHorizontal: 60,
+    borderRadius: 30,
+    alignSelf: 'center',
+  },
+  completeButtonLargeText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  
+  prefillBanner: {
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.3)',
+  },
+  prefillText: {
+    color: '#4ADE80',
+    fontSize: 14,
+    textAlign: 'center',
+    fontWeight: '500',
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
   },
   inputContainer: {

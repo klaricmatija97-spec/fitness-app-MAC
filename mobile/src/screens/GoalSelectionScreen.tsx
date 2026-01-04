@@ -70,15 +70,19 @@ export default function GoalSelectionScreen({ onComplete, onBack }: GoalSelectio
   const cardsOpacity = useRef(new Animated.Value(0)).current;
   const buttonOpacity = useRef(new Animated.Value(0)).current;
 
-  // PanResponder za swipe-down navigaciju
+  // PanResponder za swipe-down navigaciju - striktnije pragove
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx) && Math.abs(gestureState.dy) > 10;
+        // Mora biti izrazito vertikalan swipe i minimum 50px
+        const isVertical = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 3;
+        const isSignificant = Math.abs(gestureState.dy) > 50;
+        return isVertical && isSignificant;
       },
       onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy > 80 && onBack) { // Swipe down
+        // Striktnije: 120px I brzina 0.3
+        if (gestureState.dy > 120 && gestureState.vy > 0.3 && onBack) {
           onBack();
         }
       },

@@ -19,14 +19,13 @@ import {
   PanResponder,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Video, ResizeMode } from 'expo-av';
 
-// Premium sportske slike - Olympic lifting / F1 trening stil
-const backgroundImages = [
-  'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=1920&h=1080&fit=crop&q=80', // Olympic lifting
-  'https://images.unsplash.com/photo-1517963879433-6ad2b056d712?w=1920&h=1080&fit=crop&q=80', // Weightlifting
-  'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=1920&h=1080&fit=crop&q=80', // Athletic training
-  'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?w=1920&h=1080&fit=crop&q=80', // Gym training
-];
+// Besplatni fitness video s Pexels (licenca: besplatna za komercijalnu upotrebu)
+const BACKGROUND_VIDEO_URL = 'https://videos.pexels.com/video-files/4761434/4761434-hd_1080_1920_25fps.mp4';
+
+// Fallback slike ako video ne radi
+const fallbackImage = 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=1920&h=1080&fit=crop&q=80';
 
 interface LoginScreenProps {
   onLoginSuccess?: () => void;
@@ -43,7 +42,6 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTrainerRegister, onTrainerLoginSuccess }: LoginScreenProps) {
-  const [currentBgImage, setCurrentBgImage] = useState(0);
   const [isLoginMode, setIsLoginMode] = useState(true);
   
   // Login state
@@ -86,13 +84,6 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
     })
   ).current;
 
-  // Rotiraj pozadinske slike svakih 8 sekundi
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentBgImage((prev) => (prev + 1) % backgroundImages.length);
-    }, 8000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Pokreni animacije pri učitavanju - sinkronizirano s pozadinskom slikom
   useEffect(() => {
@@ -264,24 +255,24 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
           { opacity: backgroundOpacity }
         ]}
       >
-        {backgroundImages.map((img, idx) => (
-          <Animated.View
-            key={idx}
-            style={[
-              styles.backgroundImage,
-              { 
-                opacity: idx === currentBgImage ? backgroundOpacity : 0,
-              },
-            ]}
-          >
-            <Image
-              source={{ uri: img }}
-              style={styles.image}
-              resizeMode="cover"
-            />
-            <View style={styles.imageOverlay} />
-          </Animated.View>
-        ))}
+        {/* Video pozadina */}
+        <Video
+          source={{ uri: BACKGROUND_VIDEO_URL }}
+          style={styles.backgroundVideo}
+          resizeMode={ResizeMode.COVER}
+          shouldPlay
+          isLooping
+          isMuted
+          onError={() => console.log('Video error - using fallback')}
+        />
+        {/* Fallback slika dok se video učitava */}
+        <Image
+          source={{ uri: fallbackImage }}
+          style={[styles.image, styles.fallbackImage]}
+          resizeMode="cover"
+        />
+        {/* Overlay za čitljivost */}
+        <View style={styles.imageOverlay} />
       </Animated.View>
 
       {/* Gradient overlay */}
@@ -542,16 +533,20 @@ const styles = StyleSheet.create({
   backgroundContainer: {
     ...StyleSheet.absoluteFillObject,
   },
-  backgroundImage: {
+  backgroundVideo: {
     ...StyleSheet.absoluteFillObject,
   },
   image: {
     width: '100%',
     height: '100%',
   },
+  fallbackImage: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: -1, // Iza videa
+  },
   imageOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.75)', // Dark mode filter
+    backgroundColor: 'rgba(0,0,0,0.65)', // Malo tamniji za bolju čitljivost
   },
   gradient: {
     ...StyleSheet.absoluteFillObject,

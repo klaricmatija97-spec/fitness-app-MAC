@@ -4,7 +4,7 @@ import { API_BASE_URL } from "./src/services/api";
 import WelcomeScreen from "./src/screens/WelcomeScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import OnboardingScreen from "./src/screens/OnboardingScreen";
-import GoalSelectionScreen, { GoalType } from "./src/screens/GoalSelectionScreen";
+import { GoalType } from "./src/screens/IntakeFlowScreen";
 import IntakeFlowScreen from "./src/screens/IntakeFlowScreen";
 import CalculatorScreen from "./src/screens/CalculatorScreen";
 import CalculationsSummaryScreen from "./src/screens/CalculationsSummaryScreen";
@@ -28,30 +28,14 @@ import TrainerProfileEditScreen from "./src/screens/TrainerProfileEditScreen";
 import TrainerRegisterScreen from "./src/screens/TrainerRegisterScreen";
 import { goalStorage, authStorage } from "./src/services/storage";
 
-// Helper funkcija za kreiranje auth tokena (format: base64(userId:timestamp))
-// Za MVP koristimo hardcoded trainer UUID
-const TRAINER_ID = "6dd75281-e4fe-4cfe-8a9d-a07a7a23a9f7"; // Mock trainer ID
-function generateTrainerToken(): string {
-  // Format: base64(userId:timestamp)
-  const timestamp = Date.now();
-  const tokenString = `${TRAINER_ID}:${timestamp}`;
-  
-  // React Native/Expo ima btoa dostupan
-  if (typeof btoa !== 'undefined') {
-    return btoa(tokenString);
-  }
-  
-  // Fallback: koristi hardcoded token ako btoa nije dostupan
-  // Ovo je base64("6dd75281-e4fe-4cfe-8a9d-a07a7a23a9f7:1736704675059")
-  return "NmRkNzUyODEtZTRmZS00Y2ZlLThhOWQtYTA3YTdhMjNhOWY3OjE3MzY3MDQ2NzUwNTk=";
-}
-
-const TRAINER_TOKEN = generateTrainerToken();
 
 export default function App() {
+  // Auth state za trenera
+  const [trainerToken, setTrainerToken] = useState<string | null>(null);
+  const [trainerId, setTrainerId] = useState<string | null>(null);
+  
   const [showLogin, setShowLogin] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showGoalSelection, setShowGoalSelection] = useState(false);
   const [showIntakeFlow, setShowIntakeFlow] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
   const [showCalculationsSummary, setShowCalculationsSummary] = useState(false);
@@ -133,6 +117,21 @@ export default function App() {
   }, [isCheckingConnection, CLIENT_TOKEN]);
 
   // Provjeri vezu kada se prikaže MealPlan ekran
+  // Učitaj spremljene podatke trenera pri pokretanju
+  useEffect(() => {
+    const loadTrainerData = async () => {
+      const savedTrainerId = await authStorage.getTrainerId();
+      const savedToken = await authStorage.getToken();
+      
+      if (savedTrainerId && savedToken) {
+        setTrainerId(savedTrainerId);
+        setTrainerToken(savedToken);
+        console.log('[App] Loaded trainer data:', savedTrainerId);
+      }
+    };
+    loadTrainerData();
+  }, []);
+
   useEffect(() => {
     if (showMealPlan && !connectedTrainerId) {
       checkTrainerConnection();
@@ -165,23 +164,21 @@ export default function App() {
 
   const handleOnboardingComplete = () => {
     console.log("Onboarding complete!");
-    // Prikaži ekran za odabir cilja
+    // Prikaži intake flow direktno (cilj je sada dio intake flow-a)
     setShowOnboarding(false);
-    setShowGoalSelection(true);
-  };
-
-  const handleGoalSelected = async (selectedGoal: GoalType) => {
-    console.log("Goal selected:", selectedGoal);
-    // Spremi odabrani cilj
-    await goalStorage.saveGoal(selectedGoal);
-    // Prikaži intake flow
-    setShowGoalSelection(false);
     setShowIntakeFlow(true);
   };
 
-  const handleIntakeComplete = (formData: any) => {
+
+  const handleIntakeComplete = async (formData: any) => {
     console.log("Intake complete:", formData);
     setIntakeFormData(formData);
+    
+    // Spremi cilj iz intake forme
+    if (formData.goal) {
+      await goalStorage.saveGoal(formData.goal);
+    }
+    
     // Prikaži kalkulatore nakon intake flow-a
     setShowIntakeFlow(false);
     setShowCalculator(true);
@@ -194,6 +191,8 @@ export default function App() {
       foodPreferences: intakeFormData.foodPreferences || '',
       avoidIngredients: intakeFormData.avoidIngredients || '',
       trainingFrequency: intakeFormData.trainingFrequency || '',
+      favoriteActivities: intakeFormData.favoriteActivities || [],
+      healthConditions: intakeFormData.healthConditions || '',
     };
   };
 
@@ -268,13 +267,12 @@ export default function App() {
     }
   };
 
-  const handleBackToGoalSelection = () => {
+  const handleBackFromIntake = () => {
     setShowIntakeFlow(false);
-    setShowGoalSelection(true);
+    setShowOnboarding(true);
   };
 
   const handleBackToOnboarding = () => {
-    setShowGoalSelection(false);
     setShowOnboarding(true);
   };
 
@@ -312,9 +310,15 @@ export default function App() {
     trainerCode: string;
     accessToken: string;
   }) => {
-    // Spremi token i podatke trenera
+    // Spremi token i podatke trenera u storage
     await authStorage.saveToken(trainerData.accessToken);
     await authStorage.saveTrainerId(trainerData.id);
+    
+    // Postavi state za korištenje u aplikaciji
+    setTrainerId(trainerData.id);
+    setTrainerToken(trainerData.accessToken);
+    
+    console.log('[App] Trainer logged in:', trainerData.id);
     
     // Prebaci na trainer home
     setShowTrainerRegister(false);
@@ -323,6 +327,20 @@ export default function App() {
 
   const handleTrainerRegisterBack = () => {
     setShowTrainerRegister(false);
+    setShowLogin(true);
+  };
+
+  // Odjava trenera
+  const handleTrainerLogout = async () => {
+    console.log('[App] Trainer logout');
+    
+    // Obriši spremljene auth podatke
+    await authStorage.clearAuth();
+    
+    // Resetiraj state
+    setTrainerId(null);
+    setTrainerToken(null);
+    setShowTrainerHome(false);
     setShowLogin(true);
   };
 
@@ -566,7 +584,7 @@ export default function App() {
   if (showAnnualPlanBuilder && selectedClientId && selectedClientName) {
     return (
       <AnnualPlanBuilderScreen
-        authToken={TRAINER_TOKEN}
+        authToken={trainerToken || ''}
         clientId={selectedClientId}
         clientName={selectedClientName}
         year={selectedYear}
@@ -629,7 +647,7 @@ export default function App() {
               const response: Response = await fetch(`${API_BASE_URL}/api/training/generate`, {
                 method: 'POST',
                 headers: {
-                  'Authorization': `Bearer ${TRAINER_TOKEN}`,
+                  'Authorization': `Bearer ${trainerToken || ''}`,
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(requestBody),
@@ -691,7 +709,7 @@ export default function App() {
   if (showTrainerClientDetail && selectedClientId) {
     return (
       <TrainerClientDetailScreen
-        authToken={TRAINER_TOKEN}
+        authToken={trainerToken || ''}
         clientId={selectedClientId}
         onBack={handleBackToTrainerHome}
         onAnnualPlanPress={handleAnnualPlanPress}
@@ -711,7 +729,7 @@ export default function App() {
   if (showAddClient) {
     return (
       <AddClientScreen
-        authToken={TRAINER_TOKEN}
+        authToken={trainerToken || ''}
         onComplete={handleClientAdded}
         onCancel={handleBackFromAddClient}
       />
@@ -755,7 +773,7 @@ export default function App() {
   if (showTrainerClientResults && selectedClientId && selectedClientName) {
     return (
       <TrainerClientResultsScreen
-        authToken={TRAINER_TOKEN}
+        authToken={trainerToken || ''}
         clientId={selectedClientId}
         clientName={selectedClientName}
         onBack={() => {
@@ -841,9 +859,33 @@ export default function App() {
 
   // Connect Trainer ekran (za klijente)
   if (showConnectTrainer) {
+    // Pripremi intake podatke za slanje treneru
+    const preparedIntakeData = intakeFormData ? {
+      name: intakeFormData.name || userName || undefined,
+      email: intakeFormData.email || undefined,
+      honorific: intakeFormData.honorific || undefined,
+      age: intakeFormData.age ? parseInt(intakeFormData.age) : undefined,
+      weight: intakeFormData.weight?.value ? {
+        value: parseFloat(intakeFormData.weight.value),
+        unit: intakeFormData.weight.unit || 'kg',
+      } : undefined,
+      height: intakeFormData.height?.value ? {
+        value: parseFloat(intakeFormData.height.value),
+        unit: intakeFormData.height.unit || 'cm',
+      } : undefined,
+      goal: intakeFormData.goal || undefined,
+      activities: intakeFormData.favoriteActivities || undefined,
+      trainingFrequency: intakeFormData.trainingFrequency || undefined,
+      healthConditions: intakeFormData.healthConditions || undefined,
+      foodPreferences: intakeFormData.foodPreferences || undefined,
+      avoidIngredients: intakeFormData.avoidIngredients || undefined,
+      allergies: intakeFormData.allergies || undefined,
+    } : undefined;
+    
     return (
       <ConnectTrainerScreen
         authToken={CLIENT_TOKEN}
+        intakeData={preparedIntakeData}
         onConnected={handleTrainerConnected}
         onSkip={handleSkipConnectTrainer}
         onBack={handleBackFromConnectTrainer}
@@ -856,7 +898,7 @@ export default function App() {
   if (showTrainerProfileEdit) {
     return (
       <TrainerProfileEditScreen
-        authToken={TRAINER_TOKEN}
+        authToken={trainerToken || ''}
         onBack={handleBackFromTrainerProfileEdit}
         onSaved={handleTrainerProfileSaved}
       />
@@ -867,7 +909,7 @@ export default function App() {
   if (showTrainerCode) {
     return (
       <TrainerCodeScreen
-        authToken={TRAINER_TOKEN}
+        authToken={trainerToken || ''}
         onBack={handleBackFromTrainerCode}
       />
     );
@@ -877,12 +919,13 @@ export default function App() {
   if (showTrainerHome) {
     return (
       <TrainerHomeScreen
-        authToken={TRAINER_TOKEN}
+        authToken={trainerToken || ''}
         onClientPress={handleTrainerClientPress}
         onNewClient={handleShowAddClient}
         onNewProgram={handleNewProgramFromTrainerHome}
         onShowCode={handleShowTrainerCode}
         onEditProfile={handleShowTrainerProfileEdit}
+        onLogout={handleTrainerLogout}
       />
     );
   }
@@ -907,7 +950,7 @@ export default function App() {
     
     return (
       <TrainerProgramBuilderScreen
-        authToken={TRAINER_TOKEN}
+        authToken={trainerToken || ''}
         clientId={selectedClientId || undefined}
         phaseData={selectedPhaseData || undefined}
         viewProgramId={viewProgramId || undefined}
@@ -953,7 +996,7 @@ export default function App() {
         initialData={{
           weight: intakeFormData?.weight?.value ? parseFloat(intakeFormData.weight.value) : undefined,
           height: intakeFormData?.height?.value ? parseFloat(intakeFormData.height.value) : undefined,
-          age: intakeFormData?.ageRange ? parseInt(intakeFormData.ageRange.split('-')[0]) : undefined,
+          age: intakeFormData?.age ? parseInt(intakeFormData.age) : undefined,
           gender: intakeFormData?.honorific === 'mr' ? 'male' : 'female',
         }}
       />
@@ -961,7 +1004,7 @@ export default function App() {
   }
 
   // Ako još nije login, prikaži welcome s animacijom
-  if (!showLogin && !showOnboarding && !showGoalSelection && !showIntakeFlow && !showTrainerRegister) {
+  if (!showLogin && !showOnboarding && !showIntakeFlow && !showTrainerRegister) {
     return (
       <Animated.View
         style={[
@@ -987,14 +1030,9 @@ export default function App() {
     );
   }
 
-  // Intake flow ekran nakon odabira cilja
+  // Intake flow ekran (uključuje i odabir cilja)
   if (showIntakeFlow) {
-    return <IntakeFlowScreen onComplete={handleIntakeComplete} onBack={handleBackToGoalSelection} />;
-  }
-
-  // Ekran za odabir cilja nakon onboarding poruka
-  if (showGoalSelection) {
-    return <GoalSelectionScreen onComplete={handleGoalSelected} onBack={handleBackToOnboarding} />;
+    return <IntakeFlowScreen onComplete={handleIntakeComplete} onBack={handleBackFromIntake} />;
   }
 
   // Onboarding ekran nakon login-a

@@ -19,9 +19,15 @@ import { requireTrainer } from '@/lib/api/auth-helpers';
 
 // Helper funkcije za formatiranje labels
 const goalLabels: Record<string, string> = {
-  'recomp': 'Smanjiti masnoću + dobiti mišiće',
-  'lose-fat': 'Smanjiti masnoću',
-  'gain-muscle': 'Dobiti mišiće',
+  // Nove vrijednosti iz IntakeFlowScreen
+  'FAT_LOSS': '🔥 Skinuti masno tkivo',
+  'RECOMPOSITION': '⚖️ Rekompozicija',
+  'MUSCLE_GAIN': '💪 Dobiti mišićnu masu',
+  'ENDURANCE': '🏃 Izdržljivost',
+  // Legacy vrijednosti
+  'recomp': 'Rekompozicija',
+  'lose-fat': 'Skinuti masno tkivo',
+  'gain-muscle': 'Dobiti mišićnu masu',
   'power': 'Postati snažniji',
   'endurance': 'Izdržljivost',
   'speed': 'Brzina i eksplozivnost',
@@ -30,16 +36,26 @@ const goalLabels: Record<string, string> = {
 };
 
 const activityLabels: Record<string, string> = {
-  'running': 'Trčanje',
-  'weight-training': 'Trening s tegovima',
-  'climbing': 'Penjanje',
-  'football': 'Nogomet',
-  'basketball': 'Košarka',
-  'boxing': 'Boks',
-  'padel': 'Padel',
-  'tennis': 'Tenis',
-  'swimming': 'Plivanje',
-  'lifting-weights': 'Dizanje utega',
+  'gym': '🏋️ Teretana',
+  'running': '🏃 Trčanje',
+  'cycling': '🚴 Biciklizam',
+  'swimming': '🏊 Plivanje',
+  'football': '⚽ Nogomet',
+  'basketball': '🏀 Košarka',
+  'tennis': '🎾 Tenis',
+  'boxing': '🥊 Boks',
+  'yoga': '🧘 Yoga',
+  'hiking': '🥾 Planinarenje',
+  'crossfit': '💪 CrossFit',
+  'martial-arts': '🥋 Borilački sportovi',
+  'dancing': '💃 Ples',
+  'climbing': '🧗 Penjanje',
+  'skiing': '⛷️ Skijanje',
+  'volleyball': '🏐 Odbojka',
+  'padel': '🏸 Padel',
+  'rowing': '🚣 Veslanje',
+  'weight-training': '🏋️ Trening s tegovima',
+  'lifting-weights': '🏋️ Dizanje utega',
   'other': 'Ostalo',
 };
 
