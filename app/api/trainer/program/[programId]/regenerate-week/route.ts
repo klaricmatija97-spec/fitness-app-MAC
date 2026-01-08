@@ -66,11 +66,12 @@ export async function POST(
       );
     }
 
-    // Provjeri da li program pripada treneru (preko client_id)
+    // Provjeri da li program pripada treneru (preko client_id) i dohvati gender
+    let clientGender: 'male' | 'female' = 'male'; // Default
     if (program.client_id) {
       const { data: client, error: clientError } = await supabase
         .from('clients')
-        .select('trainer_id')
+        .select('trainer_id, honorific')
         .eq('id', program.client_id)
         .single();
 
@@ -84,6 +85,9 @@ export async function POST(
           { status: 403 }
         );
       }
+      
+      // Konvertuj honorific u gender
+      clientGender = client.honorific === 'mr' ? 'male' : 'female';
     }
 
     // Konstruiraj HybridGeneratorInput iz postojećeg programa
@@ -94,6 +98,7 @@ export async function POST(
       razina: (program.level || 'srednji') as RazinaKorisnika,
       treninziTjedno: program.sessions_per_week || 3,
       trajanjeTjedana: program.duration_weeks || 4,
+      gender: clientGender,
       splitTip: program.split_type || 'full_body',
       popuniSamo: 'sve',
     };

@@ -15,9 +15,7 @@ import FAQRotation from "./components/FAQRotation";
 import AIChat from "./components/AIChat";
 import PortfolioModal from "./components/PortfolioModal";
 import LoginSlideContent from "./components/LoginSlideContent";
-import EducationalOnboarding from "./components/EducationalOnboarding";
-import EducationalSlide from "./components/EducationalSlide";
-import EducationalWizard from "./components/EducationalWizard";
+// Uklonjeno: EducationalOnboarding, EducationalSlide, EducationalWizard
 import MealPlanWelcomeScreen from "./components/MealPlanWelcomeScreen";
 import CalculatorScreen, { CalcCard, CalcInput, CalcSelect, CalcButton, CalcResult, CalcInfoCard } from "./components/CalculatorScreen";
 import CalcFAQRotation from "./components/CalcFAQRotation";
@@ -25,6 +23,7 @@ import HonorificSlide from "./components/HonorificSlide";
 import ScrollSection from "./components/ScrollSection";
 import FadeInSection from "./components/FadeInSection";
 import RevealSection, { useRevealObserver } from "./components/RevealSection";
+import { getMealImageUrl } from "@/lib/utils/mealImageGenerator";
 
 // ============================================
 // DEBUG TEST FLAG (samo za development)
@@ -66,7 +65,6 @@ import { runTestScenarios } from "@/lib/services/debugTestScenarios";
 
 const slideOrder: SlideId[] = [
   "login",
-  "intro",
   "honorific",
   "age",
   "weight",
@@ -260,7 +258,7 @@ function AppDashboardContent() {
   useRevealObserver();
   
   const [clientData, setClientData] = useState<any>(null);
-  const [currentSlide, setCurrentSlide] = useState(isTestMode ? 1 : 0); // 1 = intro (skip login)
+  const [currentSlide, setCurrentSlide] = useState(isTestMode ? 1 : 0); // 0 = login, 1 = honorific (prvi screen upitnika)
   const [direction, setDirection] = useState(0); // -1 for left, 1 for right
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
@@ -435,9 +433,7 @@ function AppDashboardContent() {
     fat: number;
   } | null>(null);
   
-  // State za educational onboarding
-  const [showEducationalOnboarding, setShowEducationalOnboarding] = useState(false);
-  const [educationalOnboardingCompleted, setEducationalOnboardingCompleted] = useState(false);
+  // Uklonjeno: Educational onboarding state
   
   // Funkcije za intake formu
   const updateIntakeForm = <K extends keyof IntakeFormState>(key: K, value: IntakeFormState[K]) => {
@@ -985,6 +981,19 @@ function AppDashboardContent() {
   const hasLoadedRef = useRef<boolean>(false);
 
   useEffect(() => {
+    // Provjeri autentifikaciju prije učitavanja slidea
+    const token = localStorage.getItem("authToken");
+    const clientId = localStorage.getItem("clientId");
+    
+    if (!token || !clientId) {
+      // Korisnik nije prijavljen - vrati na login
+      console.log("User not authenticated, resetting to login slide");
+      setCurrentSlide(0);
+      localStorage.removeItem("appCurrentSlide");
+      hasLoadedRef.current = true;
+      return;
+    }
+    
     // Učitaj currentSlide iz localStorage samo jednom pri inicijalizaciji
     if (!hasLoadedRef.current) {
       const savedSlide = localStorage.getItem("appCurrentSlide");
@@ -993,6 +1002,22 @@ function AppDashboardContent() {
         if (!isNaN(slideIndex) && slideIndex >= 0 && slideIndex < slideOrder.length) {
           console.log("Loading saved slide from localStorage:", slideIndex);
           setCurrentSlide(slideIndex);
+        } else {
+          // Ako je savedSlide nevažeći, idi na honorific (prvi screen upitnika)
+          const honorificIndex = slideOrder.indexOf("honorific");
+          if (honorificIndex !== -1) {
+            console.log("Invalid saved slide, going to honorific:", honorificIndex);
+            setCurrentSlide(honorificIndex);
+            localStorage.setItem("appCurrentSlide", honorificIndex.toString());
+          }
+        }
+      } else {
+        // Ako nema savedSlide, ali je korisnik prijavljen, idi na honorific
+        const honorificIndex = slideOrder.indexOf("honorific");
+        if (honorificIndex !== -1) {
+          console.log("No saved slide, going to honorific:", honorificIndex);
+          setCurrentSlide(honorificIndex);
+          localStorage.setItem("appCurrentSlide", honorificIndex.toString());
         }
       }
       hasLoadedRef.current = true;
@@ -1125,6 +1150,21 @@ function AppDashboardContent() {
   const progress = ((currentSlide + 1) / slideOrder.length) * 100;
   const isLastSlide = currentSlide === slideOrder.length - 1;
   
+  // Provjeri autentifikaciju - ako korisnik nije prijavljen i nije na login slideu, vrati ga na login
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    const clientId = localStorage.getItem("clientId");
+    
+    if (!token || !clientId) {
+      // Korisnik nije prijavljen - vrati na login ako nije već tamo
+      if (currentSlide !== 0) {
+        console.log("User not authenticated, redirecting to login slide");
+        setCurrentSlide(0);
+        localStorage.removeItem("appCurrentSlide");
+      }
+    }
+  }, [currentSlide]);
+  
   // TEST MODE: Automatski postavi demo jelovnik kada korisnik dođe na meals slide
   useEffect(() => {
     if (isTestMode && currentId === "meals" && !weeklyMealPlan) {
@@ -1136,25 +1176,23 @@ function AppDashboardContent() {
   const { setSlides: setContextSlides, setCurrentSlide: setContextSlide } = useSlides();
 
   const nextSlide = () => {
+    // Provjeri autentifikaciju prije navigacije s login slidea
+    if (currentSlide === 0) {
+      const token = localStorage.getItem("authToken");
+      const clientId = localStorage.getItem("clientId");
+      if (!token || !clientId) {
+        console.log("nextSlide: User not authenticated, staying on login slide");
+        return;
+      }
+    }
+    
     if (currentSlide < slideOrder.length - 1) {
       const currentId = slideOrder[currentSlide];
       const newSlide = currentSlide + 1;
       const nextSlideId = slideOrder[newSlide];
       console.log("nextSlide: moving from", currentSlide, "(", currentId, ") to", newSlide, "(", nextSlideId, ")");
       
-      // Provjeri da li je trenutni slide "intro" (drugi slajd, index 1) i da onboarding nije završen
-      // U TEST MODE preskačemo onboarding
-      const onboardingCompleted = localStorage.getItem("educationalOnboardingCompleted");
-      if (!isTestMode && currentId === "intro" && onboardingCompleted !== "true") {
-        // Nakon intro slidea, prikaži edukativni onboarding
-        console.log("🚀 After intro slide, showing educational onboarding");
-        console.log("Setting showEducationalOnboarding to true");
-        setShowEducationalOnboarding(true);
-        setEducationalOnboardingCompleted(false);
-        // NE mijenjaj currentSlide sada - ostavi na intro dok se onboarding ne završi
-        // Onboarding će postaviti currentSlide na honorific kada se završi
-        return;
-      }
+      // Uklonjeno: Educational onboarding logika
       
       setDirection(1);
       setCurrentSlide(newSlide);
@@ -1174,6 +1212,19 @@ function AppDashboardContent() {
     } else {
       console.log("prevSlide: already at first slide");
     }
+  };
+
+  // Logout funkcija - vraća korisnika na login
+  const handleLogout = () => {
+    // Obriši autentifikacijske podatke
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("clientId");
+    localStorage.removeItem("username");
+    localStorage.removeItem("appCurrentSlide");
+    
+    // Vrati na login slide
+    setCurrentSlide(0);
+    console.log("User logged out, returning to login slide");
   };
 
   // Scroll navigation removed - using native vertical scroll instead
@@ -1313,104 +1364,47 @@ function AppDashboardContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSlide]); // setContextSlide je stabilna funkcija iz contexta
 
-  // Provjeri da li je educational onboarding završen pri inicijalizaciji
-  useEffect(() => {
-    const onboardingCompleted = localStorage.getItem("educationalOnboardingCompleted");
-    if (onboardingCompleted === "true") {
-      setEducationalOnboardingCompleted(true);
-      setShowEducationalOnboarding(false);
-    }
-  }, []);
-  
-  // Provjeri da li treba prikazati onboarding kada se currentSlide promijeni
-  // Ovo je backup provjera - glavna logika je u nextSlide() funkciji
-  useEffect(() => {
-    const currentId: SlideId | undefined = slideOrder[currentSlide];
-    const onboardingCompleted = localStorage.getItem("educationalOnboardingCompleted");
-    
-    // Ako je korisnik na intro slideu i onboarding nije završen, i showEducationalOnboarding je postavljen na true
-    // to znači da je korisnik kliknuo naprijed sa intro slidea
-    if (currentId && currentId === "intro" && showEducationalOnboarding && onboardingCompleted !== "true" && !educationalOnboardingCompleted) {
-      console.log("📍 On intro slide with showEducationalOnboarding=true, onboarding should be visible");
-      // Onboarding se već postavlja u nextSlide() funkciji
-    } else if (currentId && currentId !== "intro" && currentId !== "honorific") {
-      // Ako nije na intro ili honorific, sakrij onboarding
-      if (showEducationalOnboarding) {
-        setShowEducationalOnboarding(false);
-      }
-    }
-  }, [currentSlide, showEducationalOnboarding, educationalOnboardingCompleted]);
-
-  // Rukovanje educational onboarding
-  const handleEducationalOnboardingComplete = () => {
-    setShowEducationalOnboarding(false);
-    setEducationalOnboardingCompleted(true);
-    localStorage.setItem("educationalOnboardingCompleted", "true");
-    // Preusmjeri na honorific slide (prvi slide upitnika)
-    const honorificIndex = slideOrder.indexOf("honorific");
-    if (honorificIndex !== -1) {
-      setCurrentSlide(honorificIndex);
-    }
-  };
-
-  const handleEducationalOnboardingSkip = () => {
-    setShowEducationalOnboarding(false);
-    setEducationalOnboardingCompleted(true);
-    localStorage.setItem("educationalOnboardingCompleted", "true");
-    // Preusmjeri na honorific slide (prvi slide upitnika)
-    const honorificIndex = slideOrder.indexOf("honorific");
-    if (honorificIndex !== -1) {
-      setCurrentSlide(honorificIndex);
-    }
-  };
-
-  // Provjeri da li treba prikazati onboarding PRIJE renderanja glavnog sadržaja
-  // Ovo mora biti poslije svih useEffect-ova i funkcija
-  const onboardingCompleted = typeof window !== "undefined" ? localStorage.getItem("educationalOnboardingCompleted") : null;
-  
-  // Provjeri da li treba prikazati onboarding:
-  // Ako je showEducationalOnboarding postavljen na true (iz nextSlide ili useEffect)
-  // I ako onboarding nije već završen
-  // U TEST MODE preskačemo onboarding
-  const shouldShowOnboarding = !isTestMode && showEducationalOnboarding && !educationalOnboardingCompleted && onboardingCompleted !== "true";
-  
-  console.log("🔍 Onboarding check:", {
-    currentId,
-    currentSlide,
-    showEducationalOnboarding,
-    onboardingCompleted,
-    educationalOnboardingCompleted,
-    shouldShowOnboarding
-  });
-  
-  // Prikaži educational onboarding ako treba (prije honorific slidea)
-  if (shouldShowOnboarding) {
-    console.log("✅ Rendering EducationalOnboarding component");
-    return (
-      <EducationalOnboarding
-        onComplete={handleEducationalOnboardingComplete}
-        onSkip={handleEducationalOnboardingSkip}
-      />
-    );
-  }
+  // Uklonjeno: Educational onboarding logika
 
   return (
     <main className="relative bg-[#0D0F10] min-h-screen overflow-y-auto">
       {/* AI Chat Bubble - Persistent on all sections */}
       <AIChat />
 
-      {/* Vertical Scroll Layout - All sections rendered (skip login) */}
+      {/* Logout Button - Vidljiv na svim slideovima osim login */}
+      {currentSlide !== 0 && (
+        <motion.button
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          onClick={handleLogout}
+          className="fixed bottom-6 right-6 z-50 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-full shadow-lg transition-all duration-300 flex items-center gap-2 text-sm font-medium"
+          title="Odjavi se i vrati na login"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Odjavi se
+        </motion.button>
+      )}
+
+      {/* Vertical Scroll Layout - All sections rendered */}
       <div className="w-full">
             {slides
-          .filter((slide) => slide.id !== "login") // Preskoči login slide
+          .filter((slide) => {
+            const isInOrder = slideOrder.includes(slide.id as SlideId);
+            if (!isInOrder) {
+              console.warn(`Slide ${slide.id} not found in slideOrder, skipping`);
+            }
+            return isInOrder;
+          })
           .map((slide, index) => {
             const slideIndex = slideOrder.indexOf(slide.id);
-            const isIntro = slide.id === "intro";
             const isHonorific = slide.id === "honorific";
+            const isLogin = slide.id === "login";
             const bgImage = URBAN_SPORTS_IMAGES[bgImageIndex % URBAN_SPORTS_IMAGES.length];
             
-            // For intro and honorific, render directly without ScrollSection wrapper
-            if (isIntro || isHonorific) {
+            // For honorific and login, render directly without ScrollSection wrapper
+            if (isHonorific || isLogin) {
               return (
                 <section key={slide.id} id={slide.id} className="relative w-full min-h-screen" style={{ position: 'relative' }}>
                   <div className="w-full min-h-screen relative">
@@ -1429,7 +1423,7 @@ function AppDashboardContent() {
                 showLogo={true}
                 showNumber={true}
                 number={slideIndex + 1}
-                total={slideOrder.length - 1} // -1 jer preskačemo login
+                total={slideOrder.length}
                 title={slide.title}
                 description={slide.description}
                           >
@@ -1496,37 +1490,65 @@ interface MealCardInlineProps {
   meal: any;
 }
 
+// Mapa naslova na tip obroka
+const TITLE_TO_MEAL_TYPE: Record<string, 'breakfast' | 'lunch' | 'dinner' | 'snack'> = {
+  "Doručak": "breakfast",
+  "Ručak": "lunch",
+  "Večera": "dinner",
+  "Užina": "snack",
+};
+
 function MealCardInline({ title, meal }: MealCardInlineProps) {
   if (!meal) return null;
 
+  const mealType = TITLE_TO_MEAL_TYPE[title] || 'lunch';
+  const imageUrl = meal.components 
+    ? getMealImageUrl(meal, mealType)
+    : `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop&q=80`;
+
   return (
-    <div className="rounded-xl bg-gray-50 p-3 border border-gray-200">
-      <h6 className="font-semibold text-gray-900 mb-2 text-sm">{title}</h6>
+    <div className="rounded-xl bg-gray-50 overflow-hidden border border-gray-200">
+      {/* Image */}
+      <div className="relative h-24 overflow-hidden">
+        <img 
+          src={imageUrl}
+          alt={meal.name}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop&q=80';
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        <div className="absolute bottom-2 left-3 right-3">
+          <h6 className="font-semibold text-white text-sm drop-shadow">{title}</h6>
+        </div>
+      </div>
       
+      <div className="p-3">
       <div className="mb-2">
-        <p className="text-base font-semibold text-gray-900">{meal.name}</p>
+          <p className="text-sm font-semibold text-gray-900 line-clamp-2">{meal.name}</p>
         {meal.meta?.cuisine && (
           <p className="text-xs text-gray-500 italic">{meal.meta.cuisine}</p>
         )}
       </div>
 
       {/* Makroi */}
-      <div className="mb-2 space-y-0.5 text-xs">
+        <div className="grid grid-cols-2 gap-1 text-xs">
         <div className="flex justify-between">
-          <span className="text-gray-600">Kalorije:</span>
-          <span className="font-medium text-gray-900">{meal.calories.toFixed(0)} kcal</span>
+            <span className="text-gray-500">Kcal:</span>
+            <span className="font-medium text-gray-900">{meal.calories.toFixed(0)}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-600">Proteini:</span>
-          <span className="font-medium text-gray-900">{meal.protein.toFixed(1)}g</span>
+            <span className="text-gray-500">P:</span>
+            <span className="font-medium text-gray-900">{meal.protein.toFixed(0)}g</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-600">Ugljikohidrati:</span>
-          <span className="font-medium text-gray-900">{meal.carbs.toFixed(1)}g</span>
+            <span className="text-gray-500">UH:</span>
+            <span className="font-medium text-gray-900">{meal.carbs.toFixed(0)}g</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-600">Masti:</span>
-          <span className="font-medium text-gray-900">{meal.fat.toFixed(1)}g</span>
+            <span className="text-gray-500">M:</span>
+            <span className="font-medium text-gray-900">{meal.fat.toFixed(0)}g</span>
         </div>
       </div>
 
@@ -1541,6 +1563,7 @@ function MealCardInline({ title, meal }: MealCardInlineProps) {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
@@ -2060,13 +2083,7 @@ function buildSlides(props: BuildSlidesProps): SlideConfig[] {
       render: <LoginSlideContent onNext={setCurrentSlide} nextSlideIndex={1} onBack={undefined} />,
     },
     // INTAKE SLIDES - must match slideOrder
-    {
-      id: "intro",
-      title: "Upoznaj svog trenera",
-      description:
-        "Brzi upitnik koji će mi pomoći da sve prilagodim za tebe. Prođi kroz stranice, odaberi svoje odgovore, i personalizirat ću sve za tebe.",
-      render: <IntroSlideContent onNext={setCurrentSlide} nextSlideIndex={2} userName={intakeForm.name || ""} currentSlide={slideOrder.indexOf("intro")} />,
-    },
+    // Uklonjeno: intro slide - direktno ide na honorific
     {
       id: "honorific",
       title: "",

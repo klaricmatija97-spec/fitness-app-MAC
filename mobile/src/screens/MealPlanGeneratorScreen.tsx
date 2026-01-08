@@ -1024,50 +1024,56 @@ export default function MealPlanGeneratorScreen({ onBack, onNavigateToTraining, 
           },
         ]}
       >
-        <View style={styles.headerTop}>
+        {/* Top row: Back button + Title + Generate button */}
+        <View style={styles.headerTopRow}>
           {onBack && (
             <TouchableOpacity style={styles.backButtonHeader} onPress={onBack}>
-              <Text style={styles.backButtonText}>← Nazad</Text>
+              <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>
           )}
-          <View style={styles.headerButtons}>
+          <Text style={styles.title}>Plan Prehrane</Text>
             <TouchableOpacity
               style={styles.generateButton}
               onPress={generatePlan}
               disabled={loading}
             >
-              <Text style={styles.generateButtonText}>
-                {loading ? 'Generiram...' : 'Novi plan'}
+            <Text style={styles.generateButtonTextLabel}>
+              {loading ? '⏳' : '🔄 Novi'}
               </Text>
             </TouchableOpacity>
-            {/* Trainer Connection Section */}
+        </View>
+
+        {/* Targets row */}
+        <View style={styles.targetsRow}>
+          <View style={styles.targetBadge}>
+            <Text style={styles.targetLabel}>
+              {weeklyPlan.userTargets.goal === 'lose' ? '🔥 Gubitak' : weeklyPlan.userTargets.goal === 'gain' ? '💪 Dobivanje' : '⚖️ Održavanje'}
+            </Text>
+          </View>
+          <Text style={styles.targetText}>
+            {Math.round(weeklyPlan.userTargets.calories)} kcal
+          </Text>
+          <Text style={styles.targetMacro}>P {Math.round(weeklyPlan.userTargets.protein)}g</Text>
+          <Text style={styles.targetMacro}>C {Math.round(weeklyPlan.userTargets.carbs)}g</Text>
+          <Text style={styles.targetMacro}>F {Math.round(weeklyPlan.userTargets.fat)}g</Text>
+        </View>
+
+        {/* Trainer Connection Button - Full width */}
             {!isConnectedToTrainer ? (
-              // Nije povezan - prikaži gumb za povezivanje
               <TouchableOpacity
                 style={styles.connectTrainerButton}
                 onPress={onConnectTrainer}
               >
-                <Text style={styles.connectTrainerButtonText}> Poveži se s trenerom za plan treninga</Text>
+            <Text style={styles.connectTrainerButtonText}>🏋️ Poveži se s trenerom</Text>
               </TouchableOpacity>
             ) : (
-              // Povezan - prikaži gumb za dashboard treninga
               <TouchableOpacity
                 style={styles.connectedButton}
                 onPress={onNavigateToTraining}
               >
-                <Text style={styles.connectedButtonText}> Moj trening ({trainerName})</Text>
+            <Text style={styles.connectedButtonText}>🏋️ Moj trening • {trainerName}</Text>
               </TouchableOpacity>
             )}
-          </View>
-        </View>
-        <Text style={styles.title}>Tjedni Plan Prehrane</Text>
-        <Text style={styles.subtitle}>
-          Program: {weeklyPlan.userTargets.goal === 'lose' ? 'Gubitak kila' : weeklyPlan.userTargets.goal === 'gain' ? 'Dobivanje kila' : 'Održavanje težine'} |{' '}
-          Cilj: {Math.round(weeklyPlan.userTargets.calories)} kcal |{' '}
-          P: {Math.round(weeklyPlan.userTargets.protein)}g |{' '}
-          C: {Math.round(weeklyPlan.userTargets.carbs)}g |{' '}
-          F: {Math.round(weeklyPlan.userTargets.fat)}g
-        </Text>
       </Animated.View>
 
       {/* Day Selector */}
@@ -1217,80 +1223,96 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
   },
   header: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingTop: 50,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.1)',
   },
-  headerTop: {
+  headerTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   backButtonHeader: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    gap: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   generateButton: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.2)',
     paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  generateButtonText: {
+  generateButtonTextLabel: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
   },
-  trainingButton: {
-    backgroundColor: '#27272A',
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+  targetsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
   },
-  trainingButtonText: {
+  targetBadge: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+  },
+  targetLabel: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
+  },
+  targetText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
+    fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
+  },
+  targetMacro: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    fontWeight: '500',
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
   },
   connectTrainerButton: {
-    backgroundColor: '#3F3F46',
-    paddingVertical: 12,
+    backgroundColor: '#3B82F6',
+    paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 12,
-    marginTop: 12,
+    width: '100%',
   },
   connectTrainerButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     textAlign: 'center',
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
   },
   connectedButton: {
-    backgroundColor: '#3F3F46',
-    paddingVertical: 12,
+    backgroundColor: '#22C55E',
+    paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 12,
-    marginTop: 12,
+    width: '100%',
   },
   connectedButtonText: {
     color: '#FFF',
@@ -1300,15 +1322,11 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
   },
   title: {
-    fontSize: 28,
+    fontSize: 18,
     fontWeight: '700',
     color: '#fff',
-    marginBottom: 8,
-    fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
+    flex: 1,
+    textAlign: 'center',
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
   },
   daySelector: {

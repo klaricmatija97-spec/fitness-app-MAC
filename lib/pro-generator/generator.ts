@@ -245,7 +245,7 @@ export async function buildProgram(input: GeneratorInput): Promise<TreningProgra
     ukupnoTjedana: input.trajanjeTjedana,
     treninziTjedno: input.treninziTjedno,
     opis: generirajOpisPrograma(input, splitConfig),
-    status: 'draft',
+    status: 'active', // Programi se kreiraju kao aktivni da klijent odmah vidi
     generatorVerzija: GENERATOR_VERSION,
     validacijaRezultat: validacija,
     napomeneTrenera: input.napomeneTrenera,
@@ -297,8 +297,8 @@ export async function buildMesocycles(input: BuildMesocyclesInput): Promise<Mezo
     const stvarnoTjedana = Math.min(tjedana, preostaloTjedana);
     const mezociklusConfig = MEZOCIKLUS_TIPOVI.find(m => m.tip === tip)!;
     
-    // Izračunaj volumen po grupama
-    const volumenPoGrupi = izracunajVolumenPoGrupi(cilj, razina, tip);
+    // Izračunaj volumen po grupama (s gender prilagodbom)
+    const volumenPoGrupi = izracunajVolumenPoGrupi(cilj, razina, tip, input.gender);
     
     // Kreiraj tjedne za ovaj mezociklus
     const tjedni = await buildWeeks({
@@ -819,6 +819,7 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
     tjedanBroj,
     redniBrojTreninga,
     mezociklusTip,
+    gender,
   } = input;
   
   // Dohvati IFT strukturu za ovaj cilj/fazu
@@ -1013,8 +1014,48 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
         powerliftingBonusB = jePowerliftingB ? 20 : 0;
       }
       
-      const scoreA = koristenaA + frekvencijaA + obrazacPrioritetA + kategorijaBonusA + opremaBonusA + powerliftingBonusA + prioritetnaVjezbaBonusA + opremaPoBonusA;
-      const scoreB = koristenaB + frekvencijaB + obrazacPrioritetB + kategorijaBonusB + opremaBonusB + powerliftingBonusB + prioritetnaVjezbaBonusB + opremaPoBonusB;
+      // 8. BONUS: Gender-specific prioriteti (SPECIFIČNA LOGIKA PO SPOLU)
+      let genderBonusA = 0;
+      let genderBonusB = 0;
+      if (gender === 'female') {
+        // Za žene: prioritet na glute/hip vježbe i stražnju lozu
+        const gluteHipVjezbe = ['hip thrust', 'glute bridge', 'romanian deadlift', 'rdl', 'bulgarian split squat', 
+          'lateral lunge', 'curtsy lunge', 'sumo squat', 'good morning'];
+        const jeGluteHipA = gluteHipVjezbe.some(ghv => 
+          a.name.toLowerCase().includes(ghv.toLowerCase()) || 
+          a.naziv_hr?.toLowerCase().includes(ghv.toLowerCase()) ||
+          a.name.toLowerCase().includes('glute') ||
+          a.naziv_hr?.toLowerCase().includes('glute')
+        );
+        const jeGluteHipB = gluteHipVjezbe.some(ghv => 
+          b.name.toLowerCase().includes(ghv.toLowerCase()) || 
+          b.naziv_hr?.toLowerCase().includes(ghv.toLowerCase()) ||
+          b.name.toLowerCase().includes('glute') ||
+          b.naziv_hr?.toLowerCase().includes('glute')
+        );
+        genderBonusA = jeGluteHipA ? 40 : 0; // JAK bonus za glute/hip vježbe
+        genderBonusB = jeGluteHipB ? 40 : 0;
+        
+        // Bonus za gluteusi i straznja_loza mišićne grupe
+        const gluteGrupe = ['gluteusi', 'glutes', 'straznja_loza', 'hamstrings'];
+        const jeGluteGrupaA = gluteGrupe.some(g => 
+          (a.primarne_grupe_hr || []).some(pg => pg.toLowerCase().includes(g.toLowerCase())) ||
+          (a.primaryMuscles || []).some(pg => pg.toLowerCase().includes(g.toLowerCase()))
+        );
+        const jeGluteGrupaB = gluteGrupe.some(g => 
+          (b.primarne_grupe_hr || []).some(pg => pg.toLowerCase().includes(g.toLowerCase())) ||
+          (b.primaryMuscles || []).some(pg => pg.toLowerCase().includes(g.toLowerCase()))
+        );
+        genderBonusA += jeGluteGrupaA ? 20 : 0; // Dodatni bonus za glute/stražnja loza grupe
+        genderBonusB += jeGluteGrupaB ? 20 : 0;
+      } else if (gender === 'male') {
+        // Za muškarce: možda blagi prioritet na gornji dio tijela (prsa, ramena)
+        // Za sada ne dodajemo veliki bonus, samo ostavimo neutralno
+        // Može se dodati u budućnosti ako bude potrebno
+      }
+      
+      const scoreA = koristenaA + frekvencijaA + obrazacPrioritetA + kategorijaBonusA + opremaBonusA + powerliftingBonusA + prioritetnaVjezbaBonusA + opremaPoBonusA + genderBonusA;
+      const scoreB = koristenaB + frekvencijaB + obrazacPrioritetB + kategorijaBonusB + opremaBonusB + powerliftingBonusB + prioritetnaVjezbaBonusB + opremaPoBonusB + genderBonusB;
       
       return scoreB - scoreA;
     });
@@ -1409,7 +1450,8 @@ function odrediStrukturuMezociklusa(tjedana: number, cilj: string): { tip: strin
 function izracunajVolumenPoGrupi(
   cilj: string, 
   razina: string, 
-  tipMezociklusa: string
+  tipMezociklusa: string,
+  gender?: 'male' | 'female'
 ): { pocetni: Record<string, number>; zavrsni: Record<string, number> } {
   const mezociklusConfig = MEZOCIKLUS_TIPOVI.find(m => m.tip === tipMezociklusa)!;
   
@@ -1423,11 +1465,20 @@ function izracunajVolumenPoGrupi(
     // Prilagodi volumen ovisno o razini
     const razinaMultiplier = razina === 'pocetnik' ? 0.7 : razina === 'srednji' ? 0.85 : 1.0;
     
-    // Pocetni volumen = donja granica MAV * modifikator mezociklusa
-    let pocetniRaw = Math.round(mav.min * razinaMultiplier * mezociklusConfig.volumenModifikator);
+    // Gender-specific prilagodbe volumena
+    let genderMultiplier = 1.0;
+    if (gender === 'female') {
+      // Za žene: povećaj volumen za gluteusi i straznja_loza grupe (veći fokus)
+      if (grupa === 'gluteusi' || grupa === 'straznja_loza') {
+        genderMultiplier = 1.15; // +15% volumen za gluteusi/stražnja loza
+      }
+    }
     
-    // Zavrsni volumen = gornja granica MAV * modifikator mezociklusa
-    let zavrsniRaw = Math.round(mav.max * razinaMultiplier * mezociklusConfig.volumenModifikator * 0.9);
+    // Pocetni volumen = donja granica MAV * modifikator mezociklusa * gender multiplikator
+    let pocetniRaw = Math.round(mav.min * razinaMultiplier * mezociklusConfig.volumenModifikator * genderMultiplier);
+    
+    // Zavrsni volumen = gornja granica MAV * modifikator mezociklusa * gender multiplikator
+    let zavrsniRaw = Math.round(mav.max * razinaMultiplier * mezociklusConfig.volumenModifikator * 0.9 * genderMultiplier);
     
     // MEV/MRV validacija - osiguraj da je volumen u sigurnim granicama
     pocetni[grupa] = validacijaVolumenaMEVMRV(pocetniRaw, mev, mrv, grupa);

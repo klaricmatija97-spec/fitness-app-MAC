@@ -123,7 +123,7 @@ export async function POST(request: Request) {
     // Dohvati client info
     const { data: client } = await supabase
       .from("clients")
-      .select("name, email, connected_trainer_id")
+      .select("name, email, trainer_id, connected_trainer_id")
       .eq("id", account.client_id)
       .single();
 
@@ -140,6 +140,9 @@ export async function POST(request: Request) {
       .update({ last_login: new Date().toISOString() })
       .eq("client_id", account.client_id);
 
+    // Koristi trainer_id kao primarni izvor (connected_trainer_id je legacy)
+    const trainerId = client?.trainer_id || client?.connected_trainer_id || null;
+
     return NextResponse.json({
       ok: true,
       userType: 'client',
@@ -147,7 +150,7 @@ export async function POST(request: Request) {
       clientId: account.client_id, // Backward compatibility
       username: account.username,
       name: client?.name,
-      connectedTrainerId: client?.connected_trainer_id,
+      connectedTrainerId: trainerId,
       // JWT tokeni
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,

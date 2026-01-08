@@ -137,15 +137,16 @@ export async function GET(
       );
     }
 
-    // Dohvati aktivan program
-    const { data: program } = await supabase
+    // Dohvati sve programe klijenta
+    const { data: allPrograms } = await supabase
       .from('training_programs')
-      .select('id, name, status, start_date, end_date, duration_weeks')
+      .select('id, name, status, start_date, end_date, duration_weeks, goal, created_at')
       .eq('client_id', clientId)
       .in('status', ['active', 'draft'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order('created_at', { ascending: false });
+    
+    // Zadnji program za kompatibilnost
+    const program = allPrograms && allPrograms.length > 0 ? allPrograms[0] : null;
 
     let adherence: number | null = null;
     let recentSessions: any[] = [];
@@ -241,6 +242,51 @@ export async function GET(
           };
         });
       }
+    }
+
+    // Dohvati danas i nadolazeće sesije za workout log
+    let todaySession = null;
+    let upcomingSessions: any[] = [];
+    
+    if (program) {
+      const today = new Date();
+      const dayOfWeek = today.getDay();
+      const normalizedDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
+      
+      // Izračunaj current week
+      const startDate = program.start_date ? new Date(program.start_date) : null;
+      const currentWeek = startDate
+        ? Math.floor((Date.now() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
+        : 1;
+      
+      // Dohvati današnju sesiju
+      const { data: todaySessionData } = await supabase
+        .from('program_sessions')
+        .select('id, split_name, week_number, day_of_week')
+        .eq('program_id', program.id)
+        .eq('week_number', currentWeek)
+        .eq('day_of_week', normalizedDayOfWeek)
+        .limit(1)
+        .maybeSingle();
+      
+      todaySession = todaySessionData;
+      
+      // Dohvati nadolazeće sesije (ovaj tjedan i sljedeći)
+      const { data: upcomingData } = await supabase
+        .from('program_sessions')
+        .select('id, split_name, week_number, day_of_week')
+        .eq('program_id', program.id)
+        .gte('week_number', currentWeek)
+        .order('week_number')
+        .order('day_of_week')
+        .limit(10);
+      
+      // Filtriraj samo sesije nakon danas
+      upcomingSessions = (upcomingData || []).filter(s => {
+        if (s.week_number > currentWeek) return true;
+        if (s.week_number === currentWeek && s.day_of_week > normalizedDayOfWeek) return true;
+        return false;
+      }).slice(0, 5);
     }
 
     // Izračunaj BMI ako imamo podatke
@@ -348,7 +394,7 @@ export async function GET(
           calculatedAt: calculations.created_at,
         } : null,
         
-        // Program info
+        // Program info (zadnji program)
         program: program
           ? {
               id: program.id,
@@ -365,6 +411,18 @@ export async function GET(
               totalWeeks: program.duration_weeks,
             }
           : null,
+          
+        // Svi programi klijenta
+        allPrograms: (allPrograms || []).map(p => ({
+          id: p.id,
+          name: p.name,
+          status: p.status,
+          goal: p.goal,
+          startDate: p.start_date,
+          endDate: p.end_date,
+          durationWeeks: p.duration_weeks,
+          createdAt: p.created_at,
+        })),
           
         // Adherence
         adherence: program
@@ -383,6 +441,8 @@ export async function GET(
           
         flaggedExercises,
         recentSessions,
+        todaySession,
+        upcomingSessions,
       },
     });
   } catch (error) {

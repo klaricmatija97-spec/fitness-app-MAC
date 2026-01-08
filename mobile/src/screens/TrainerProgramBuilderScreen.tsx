@@ -381,6 +381,9 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
           weeks: programData.weeks.map((w: any) => ({
             weekNumber: w.weekNumber,
             mesocycleType: w.mesocycleType || 'accumulation',
+            volumeModifier: w.volumeModifier || 1.0,
+            intensityModifier: w.intensityModifier || 1.0,
+            isDeload: w.mesocycleType === 'deload',
             sessions: w.sessions.map((s: any) => ({
               id: s.id,
               name: s.name,
@@ -566,7 +569,7 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
         },
         body: JSON.stringify({
           clientId: selectedClient.id,
-          gender: selectedClient.gender,
+          gender: selectedClient.gender === 'female' ? 'female' : 'male', // Konvertiraj 'other' u 'male'
           // IFT parametri
           cilj: goal,
           razina: level,
@@ -1553,6 +1556,7 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                     
                     const requestBody = {
                       clientId: selectedClient.id,
+                      gender: selectedClient.gender === 'female' ? 'female' : 'male', // DODANO: gender parametar
                       cilj: phaseGoal,
                       razina: level || 'srednji',
                       treninziTjedno: trainingFrequency || 4,

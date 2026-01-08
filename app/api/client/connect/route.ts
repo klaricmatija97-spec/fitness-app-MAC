@@ -110,7 +110,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Ako klijent ne postoji u clients tablici, kreiraj ga s intake podacima
+    // VAŽNO: Klijent se kreira SAMO kada korisnik ručno unese kod trenera (POST request)
+    // NIKADA se ne kreira automatski bez koda!
     if (!existingClient) {
+      // Provjeri da li klijent ima user_accounts (registriran je)
+      // Ako nema user_accounts, to znači da je to mock client_id i ne smije se kreirati s trenerom
+      const { data: userAccount } = await supabase
+        .from('user_accounts')
+        .select('client_id')
+        .eq('client_id', clientId)
+        .single();
+      
+      if (!userAccount) {
+        // Klijent nije registriran - ne kreiraj ga automatski s trenerom!
+        // Korisnik se mora prvo registrirati, a zatim ručno povezati s trenerom unosom koda
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Morate se prvo registrirati prije nego se povežete s trenerom. Molimo registrirajte se i pokušajte ponovno.',
+            code: 'NOT_REGISTERED',
+          },
+          { status: 400 }
+        );
+      }
+      
       // Mapiraj goal iz mobilne forme na backend format
       const mapGoal = (goal?: string): string[] => {
         if (!goal) return [];
@@ -130,7 +153,7 @@ export async function POST(request: NextRequest) {
           id: clientId,
           name: intakeData?.name || 'Novi klijent',
           email: intakeData?.email || `client-${clientId}@app.com`,
-          trainer_id: trainer.id,
+          trainer_id: trainer.id, // Samo kada korisnik ručno unese kod!
           connected_at: new Date().toISOString(),
           invite_status: 'connected',
           // Podaci iz intake forme
@@ -213,7 +236,17 @@ export async function POST(request: NextRequest) {
 
     // Ako imamo intake podatke, ažuriraj ih
     if (intakeData) {
-      if (intakeData.name) updateData.name = intakeData.name;
+      // NIKAD ne prepisuj ime ako klijent već ima pravo ime (koje nije "Novi klijent" ili prazno)
+      // Samo postavi ime ako:
+      // 1. intakeData ima ime I (klijent nema ime ILI ima "Novi klijent")
+      if (intakeData.name && intakeData.name.trim()) {
+        // Samo ažuriraj ako postojeće ime ne postoji ili je "Novi klijent"
+        if (!existingClient.name || existingClient.name === 'Novi klijent' || existingClient.name.trim() === '') {
+          updateData.name = intakeData.name.trim();
+        }
+        // Inače ZADRŽI postojeće ime - ne prepisuj ga!
+      }
+      // Ako intakeData.name nije poslan, NE DIRAJ postojeće ime
       if (intakeData.email) updateData.email = intakeData.email;
       if (intakeData.honorific) updateData.honorific = intakeData.honorific;
       if (intakeData.age) updateData.age_range = `${intakeData.age}`;
@@ -260,10 +293,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { error: updateError } = await supabase
+    console.log('[client/connect] Updating client with data:', {
+      clientId,
+      trainerId: trainer.id,
+      trainerName: trainer.name,
+      updateDataKeys: Object.keys(updateData),
+    });
+
+    const { error: updateError, data: updatedClient } = await supabase
       .from('clients')
       .update(updateData)
-      .eq('id', clientId);
+      .eq('id', clientId)
+      .select('id, name, trainer_id, connected_at')
+      .single();
 
     if (updateError) {
       console.error('[client/connect] Error updating client:', updateError);
@@ -272,6 +314,13 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    console.log('[client/connect] Client updated successfully:', {
+      clientId: updatedClient?.id,
+      name: updatedClient?.name,
+      trainer_id: updatedClient?.trainer_id,
+      connected_at: updatedClient?.connected_at,
+    });
 
     return NextResponse.json({
       success: true,

@@ -36,6 +36,9 @@ const GeneratorInputSchema = z.object({
   }),
   treninziTjedno: z.number().int().min(2, { message: 'treninziTjedno mora biti najmanje 2' }).max(6, { message: 'treninziTjedno mora biti najviše 6' }),
   trajanjeTjedana: z.number().int().min(1, { message: 'trajanjeTjedana mora biti najmanje 1' }).max(16, { message: 'trajanjeTjedana mora biti najviše 16' }),
+  gender: z.enum(['male', 'female'], {
+    message: 'gender mora biti: male ili female',
+  }),
   
   // Opcionalni parametri
   trenerId: z.string().uuid().optional(),
@@ -110,6 +113,7 @@ export async function POST(request: NextRequest) {
       razina: input.razina,
       treninziTjedno: input.treninziTjedno,
       trajanjeTjedana: input.trajanjeTjedana,
+      gender: input.gender,
     });
     
     // 2. Generiraj program
@@ -197,6 +201,7 @@ export async function GET() {
         razina: 'enum - pocetnik | srednji | napredni',
         treninziTjedno: 'number - 2-6 treninga tjedno',
         trajanjeTjedana: 'number - 4-12 tjedana',
+        gender: 'enum - male | female',
       },
       opcionalni: {
         trenerId: 'UUID - ID trenera koji kreira program',

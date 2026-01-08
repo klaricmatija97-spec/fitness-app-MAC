@@ -265,8 +265,9 @@ export async function generateWeeklyMealPlan(
       console.log('📤 Request body:', JSON.stringify(body, null, 2));
       
       // Timeout handling (fallback za starije React Native verzije)
+      // Povećan timeout na 120 sekundi jer generiranje plana može trajati
       const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-      const timeoutId = controller ? setTimeout(() => controller.abort(), 60000) : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 120000) : null;
       
       response = await fetch(requestUrl, {
         method: 'POST',
@@ -291,7 +292,7 @@ export async function generateWeeklyMealPlan(
       });
       
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-        throw new Error(`Request timeout - server nije odgovorio u roku od 60 sekundi. Provjeri je li server pokrenut na ${API_BASE_URL}`);
+        throw new Error(`Request timeout - server nije odgovorio u roku od 120 sekundi. Provjeri je li server pokrenut na ${API_BASE_URL}`);
       }
       
       // Detaljniji error message

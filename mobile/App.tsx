@@ -26,13 +26,18 @@ import TrainerBrowseScreen from "./src/screens/TrainerBrowseScreen";
 import TrainerProfileScreen from "./src/screens/TrainerProfileScreen";
 import TrainerProfileEditScreen from "./src/screens/TrainerProfileEditScreen";
 import TrainerRegisterScreen from "./src/screens/TrainerRegisterScreen";
-import { goalStorage, authStorage } from "./src/services/storage";
+import TrainerWorkoutLogScreen from "./src/screens/TrainerWorkoutLogScreen";
+import { goalStorage, authStorage, appStateStorage, AppScreen } from "./src/services/storage";
 
 
 export default function App() {
   // Auth state za trenera
   const [trainerToken, setTrainerToken] = useState<string | null>(null);
   const [trainerId, setTrainerId] = useState<string | null>(null);
+  
+  // Auth state za klijenta (nakon registracije/logina)
+  const [loggedInClientId, setLoggedInClientId] = useState<string | null>(null);
+  const [clientJwtToken, setClientJwtToken] = useState<string | null>(null);
   
   const [showLogin, setShowLogin] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -55,6 +60,14 @@ export default function App() {
   const [showTrainerClientResults, setShowTrainerClientResults] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
   const [showTrainerBrowse, setShowTrainerBrowse] = useState(false);
+  const [showTrainerWorkoutLog, setShowTrainerWorkoutLog] = useState(false);
+  const [workoutLogSession, setWorkoutLogSession] = useState<{
+    clientId: string;
+    clientName: string;
+    sessionId: string;
+    sessionName: string;
+    programId?: string;
+  } | null>(null);
   const [showTrainerProfile, setShowTrainerProfile] = useState(false);
   const [showTrainerProfileEdit, setShowTrainerProfileEdit] = useState(false);
   const [showTrainerRegister, setShowTrainerRegister] = useState(false);
@@ -80,24 +93,66 @@ export default function App() {
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
   const [intakeFormData, setIntakeFormData] = useState<any>(null);
   const [calculatorResults, setCalculatorResults] = useState<any>(null);
-  const slideAnim = useRef(new Animated.Value(0)).current;
+  const [isLoading, setIsLoading] = useState(false); // Počinje s false - renderiraj odmah
+  const slideAnim = useRef(new Animated.Value(0)).current; // Počinje vidljivo (opacity: 1 kad je slideAnim: 0)
   
-  // Generiraj client token (za javne korisnike)
-  // Koristimo pravi UUID format za klijenta
-  const CLIENT_ID = "c1234567-89ab-cdef-0123-456789abcdef"; // Mock client UUID
-  const CLIENT_TOKEN = typeof btoa !== 'undefined' 
-    ? btoa(`${CLIENT_ID}:${Date.now()}`)
-    : "YzEyMzQ1NjctODlhYi1jZGVmLTAxMjMtNDU2Nzg5YWJjZGVmOjE3MzY3MDQ2NzUwNTk=";
+  // Generiraj client token - koristi JWT ako postoji, inače legacy format
+  // Koristi pravi client_id ako je korisnik ulogiran, inače mock
+  const MOCK_CLIENT_ID = "c1234567-89ab-cdef-0123-456789abcdef"; // Mock client UUID (za neulogirane)
+  const ACTUAL_CLIENT_ID = loggedInClientId || MOCK_CLIENT_ID;
+  // KRITIČNO: Koristi JWT token ako postoji (za ispravnu autentifikaciju)
+  const CLIENT_TOKEN = React.useMemo(() => {
+    // Ako imamo pravi JWT token, koristi njega
+    if (clientJwtToken) {
+      console.log('[App] Using JWT token for client:', ACTUAL_CLIENT_ID);
+      return clientJwtToken;
+    }
+    // Fallback na legacy token (samo za neulogirane korisnike)
+    const token = typeof btoa !== 'undefined' 
+      ? btoa(`${ACTUAL_CLIENT_ID}:${Date.now()}`)
+      : "YzEyMzQ1NjctODlhYi1jZGVmLTAxMjMtNDU2Nzg5YWJjZGVmOjE3MzY3MDQ2NzUwNTk=";
+    console.log('[App] Using legacy token for:', ACTUAL_CLIENT_ID);
+    return token;
+  }, [ACTUAL_CLIENT_ID, clientJwtToken]); // Mijenja se kad se promijeni client ID ili JWT token
 
   // Provjeri je li klijent već povezan s trenerom
   const checkTrainerConnection = useCallback(async () => {
     if (isCheckingConnection) return;
+    
+    // VAŽNO: Ne provjeravaj povezanost ako korisnik nije ulogiran (koristi se mock ID)
+    // Mock ID ne smije imati trenera - samo registrirani klijenti mogu imati trenera
+    if (!loggedInClientId) {
+      console.log('[App] Skipping trainer connection check - user not logged in');
+      setConnectedTrainerId(null);
+      setConnectedTrainerName(null);
+      return;
+    }
+    
     setIsCheckingConnection(true);
     
     try {
+      // Koristi pravi client_id za provjeru
+      const realClientToken = typeof btoa !== 'undefined' 
+        ? btoa(`${loggedInClientId}:${Date.now()}`)
+        : null;
+      
+      if (!realClientToken) {
+        console.log('[App] Cannot create token for trainer check');
+        setIsCheckingConnection(false);
+        return;
+      }
+      
+      // Timeout od 5 sekundi da ne blokira aplikaciju
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 5000) : null;
+      
       const response = await fetch(`${API_BASE_URL}/api/client/connect`, {
-        headers: { 'Authorization': `Bearer ${CLIENT_TOKEN}` },
+        headers: { 'Authorization': `Bearer ${realClientToken}` },
+        ...(controller && { signal: controller.signal }),
       });
+      
+      if (timeoutId) clearTimeout(timeoutId);
+      
       const result = await response.json();
       
       if (result.success && result.data.isConnected) {
@@ -111,32 +166,129 @@ export default function App() {
       }
     } catch (error) {
       console.log('[App] Error checking trainer connection:', error);
+      // Ne postavljaj error state - samo ignoriraj
     } finally {
       setIsCheckingConnection(false);
     }
-  }, [isCheckingConnection, CLIENT_TOKEN]);
+  }, [isCheckingConnection, loggedInClientId]);
 
-  // Provjeri vezu kada se prikaže MealPlan ekran
-  // Učitaj spremljene podatke trenera pri pokretanju
+  // Učitaj spremljene podatke trenera i stanje aplikacije pri pokretanju
   useEffect(() => {
-    const loadTrainerData = async () => {
-      const savedTrainerId = await authStorage.getTrainerId();
-      const savedToken = await authStorage.getToken();
-      
-      if (savedTrainerId && savedToken) {
-        setTrainerId(savedTrainerId);
-        setTrainerToken(savedToken);
-        console.log('[App] Loaded trainer data:', savedTrainerId);
+    const loadSavedData = async () => {
+      try {
+        console.log('[App] Loading saved data...');
+        
+        // 0. Učitaj client_id i JWT token ako postoji (iz registracije/logina)
+        const savedClientId = await authStorage.getClientId();
+        const savedToken = await authStorage.getToken();
+        
+        if (savedClientId) {
+          setLoggedInClientId(savedClientId);
+          console.log('[App] Loaded client ID:', savedClientId);
+          
+          // Učitaj JWT token za klijenta
+          if (savedToken) {
+            setClientJwtToken(savedToken);
+            console.log('[App] Loaded client JWT token');
+          }
+        }
+        
+        // 1. Učitaj trener podatke
+        const savedTrainerId = await authStorage.getTrainerId();
+        const savedTrainerToken = await authStorage.getTrainerToken();
+        
+        console.log('[App] Checking trainer data:', {
+          hasTrainerId: !!savedTrainerId,
+          hasTrainerToken: !!savedTrainerToken,
+          tokenPreview: savedTrainerToken ? savedTrainerToken.substring(0, 30) + '...' : 'null',
+        });
+        
+        if (savedTrainerId && savedTrainerToken) {
+          setTrainerId(savedTrainerId);
+          setTrainerToken(savedTrainerToken);
+          console.log('[App] Loaded trainer data:', savedTrainerId);
+          // Ako je trener, prikaži trainer home
+          setShowTrainerHome(true);
+          return;
+        }
+        
+        // 2. Učitaj stanje aplikacije za klijente
+        const savedState = await appStateStorage.getAppState();
+        if (savedState) {
+          console.log('[App] Restoring saved state:', savedState.currentScreen);
+          
+          // Vrati spremljene podatke
+          if (savedState.intakeFormData) {
+            setIntakeFormData(savedState.intakeFormData);
+          }
+          if (savedState.calculatorResults) {
+            setCalculatorResults(savedState.calculatorResults);
+          }
+          if (savedState.connectedTrainerId) {
+            setConnectedTrainerId(savedState.connectedTrainerId);
+            setConnectedTrainerName(savedState.connectedTrainerName || null);
+          }
+          
+          // Vrati na spremljeni screen
+          switch (savedState.currentScreen) {
+            case 'intakeFlow':
+              setShowIntakeFlow(true);
+              break;
+            case 'calculator':
+              setShowIntakeFlow(false);
+              setShowCalculator(true);
+              break;
+            case 'calculationsSummary':
+              setShowCalculationsSummary(true);
+              break;
+            case 'mealPlan':
+              setShowMealPlan(true);
+              break;
+            case 'clientDashboard':
+              setShowClientDashboard(true);
+              break;
+            case 'onboarding':
+              // PRESKOČI onboarding ako ima problema - idi direktno na intakeFlow
+              console.log('[App] Skipping onboarding, going to intakeFlow');
+              setShowIntakeFlow(true);
+              break;
+            case 'login':
+              // Login je tranzicija - vrati na welcome umjesto da zapneš na loginu
+              // Korisnik može ponovno kliknuti "Započni"
+              console.log('[App] Login state found, showing welcome instead');
+              break;
+            // 'welcome' je default, ne treba ništa
+          }
+        }
+      } catch (error) {
+        console.error('[App] Error loading saved data:', error);
+        // Ako ima grešku, jednostavno prikaži welcome screen
       }
     };
-    loadTrainerData();
+    loadSavedData();
   }, []);
 
   useEffect(() => {
-    if (showMealPlan && !connectedTrainerId) {
-      checkTrainerConnection();
+    if (showMealPlan && !connectedTrainerId && !isLoading) {
+      // Ne blokiraj render - pozovi asinkrono
+      checkTrainerConnection().catch(err => {
+        console.error('[App] Error checking trainer connection:', err);
+      });
     }
-  }, [showMealPlan]);
+  }, [showMealPlan, isLoading]);
+
+  // Helper funkcija za spremanje stanja aplikacije
+  const saveCurrentState = useCallback(async (screen: AppScreen) => {
+    await appStateStorage.saveAppState({
+      currentScreen: screen,
+      intakeFormData,
+      calculatorResults,
+      connectedTrainerId,
+      connectedTrainerName,
+      lastUpdated: Date.now(),
+    });
+    console.log('[App] State saved:', screen);
+  }, [intakeFormData, calculatorResults, connectedTrainerId, connectedTrainerName]);
 
   const handleGetStarted = () => {
     // Smooth transition animacija
@@ -146,27 +298,117 @@ export default function App() {
       useNativeDriver: true,
     }).start(() => {
       setShowLogin(true);
+      saveCurrentState('login');
     });
   };
 
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = async () => {
     console.log("Login successful!");
-    // Prikaži onboarding nakon login-a
+    // Učitaj client_id i JWT token iz storage-a (sprema se u LoginScreen nakon uspješnog logina)
+    const savedClientId = await authStorage.getClientId();
+    const savedToken = await authStorage.getToken();
+    
+    if (!savedClientId) {
+      console.log('[App] No client ID found, showing intake flow');
+      setShowLogin(false);
+      setShowIntakeFlow(true);
+      saveCurrentState('intakeFlow');
+      return;
+    }
+    
+    setLoggedInClientId(savedClientId);
+    
+    // Postavi JWT token za klijenta
+    if (savedToken) {
+      setClientJwtToken(savedToken);
+      console.log('[App] Client JWT token set');
+    }
+    
+    console.log('[App] Client logged in with ID:', savedClientId);
+    
+    // Dohvati podatke klijenta iz baze da provjerimo je li intake završen
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/client/${savedClientId}`);
+      const clientData = await response.json();
+      
+      console.log('[App] Client data from API:', {
+        intakeCompleted: clientData.intakeCompleted,
+        hasCalculations: clientData.hasCalculations,
+        trainerId: clientData.trainer_id,
+      });
+      
+      if (clientData.ok && clientData.intakeCompleted) {
+        // Klijent je već prošao intake - idi na dashboard
+        console.log('[App] Intake already completed, going to dashboard');
+        
+        // Postavi podatke iz baze u state (ako postoje)
+        if (clientData.calculations) {
+          setCalculatorResults({
+            bmr: clientData.calculations.bmr,
+            tdee: clientData.calculations.tdee,
+            targetCalories: clientData.calculations.target_calories,
+            protein: clientData.calculations.protein_grams,
+            carbs: clientData.calculations.carbs_grams,
+            fats: clientData.calculations.fats_grams,
+          });
+        }
+        
+        // Postavi intake podatke iz baze
+        if (clientData.training_frequency || clientData.activities?.length > 0) {
+          setIntakeFormData({
+            name: clientData.name,
+            email: clientData.email,
+            honorific: clientData.honorific,
+            age: clientData.age_range,
+            weight: { value: clientData.weight_value, unit: clientData.weight_unit },
+            height: { value: clientData.height_value, unit: clientData.height_unit },
+            trainingFrequency: clientData.training_frequency?.toString(),
+            favoriteActivities: clientData.activities || [],
+            allergies: clientData.allergies || '',
+            healthConditions: clientData.injuries || clientData.health_conditions || '',
+            foodPreferences: clientData.food_preferences || '',
+            avoidIngredients: clientData.avoid_ingredients || '',
+          });
+        }
+        
+        // Provjeri povezanost s trenerom
+        if (clientData.trainer_id) {
+          setConnectedTrainerId(clientData.trainer_id);
+        }
+        
+        // Idi na dashboard
+        setShowLogin(false);
+        setShowClientDashboard(true);
+        saveCurrentState('clientDashboard');
+        return;
+      }
+      
+      // Intake nije završen - prikaži intake flow
+      console.log('[App] Intake not completed, showing intake flow');
+    } catch (error) {
+      console.log('[App] Error fetching client data, showing intake flow:', error);
+      // Ako API ne radi, nastavi s intake flow-om (sigurno)
+    }
+    
+    // Provjeri povezanost s trenerom nakon logina
+    setTimeout(() => {
+      checkTrainerConnection();
+    }, 500);
+    
+    // Preskoči onboarding i idi direktno na intake flow
     setShowLogin(false);
-    setShowOnboarding(true);
+    setShowIntakeFlow(true);
+    saveCurrentState('intakeFlow');
   };
 
-  const handleSkipLogin = () => {
-    // Preskoči login i idi direktno na onboarding
-    setShowLogin(false);
-    setShowOnboarding(true);
-  };
 
+  // Onboarding je sada preskočen - ova funkcija nije više potrebna
+  // ali je ostavljena za kompatibilnost
   const handleOnboardingComplete = () => {
     console.log("Onboarding complete!");
-    // Prikaži intake flow direktno (cilj je sada dio intake flow-a)
     setShowOnboarding(false);
     setShowIntakeFlow(true);
+    saveCurrentState('intakeFlow');
   };
 
 
@@ -179,9 +421,77 @@ export default function App() {
       await goalStorage.saveGoal(formData.goal);
     }
     
+    // Spremi intake podatke lokalno
+    await appStateStorage.saveIntakeData(formData);
+    
+    // Spremi intake podatke u bazu (ako je korisnik ulogiran)
+    if (loggedInClientId) {
+      try {
+        console.log('[App] Saving intake data to database...');
+        const updateData: any = {
+          clientId: loggedInClientId,
+        };
+        
+        // Osnovni podaci
+        if (formData.name) updateData.name = formData.name;
+        if (formData.email) updateData.email = formData.email;
+        if (formData.honorific) updateData.honorific = formData.honorific;
+        if (formData.age) updateData.ageRange = formData.age.toString();
+        
+        // Fizički podaci
+        if (formData.weight?.value) updateData.weight = parseFloat(formData.weight.value);
+        if (formData.height?.value) updateData.height = parseFloat(formData.height.value);
+        
+        // Intake specifični podaci
+        if (formData.trainingFrequency) {
+          updateData.training_frequency = parseInt(formData.trainingFrequency);
+        }
+        if (formData.favoriteActivities?.length > 0) {
+          updateData.activities = formData.favoriteActivities;
+        }
+        if (formData.allergies) updateData.allergies = formData.allergies;
+        if (formData.healthConditions) {
+          updateData.health_conditions = formData.healthConditions;
+          updateData.injuries = formData.healthConditions; // Legacy polje
+        }
+        if (formData.foodPreferences) updateData.food_preferences = formData.foodPreferences;
+        if (formData.avoidIngredients) updateData.avoid_ingredients = formData.avoidIngredients;
+        
+        // Cilj
+        if (formData.goal) {
+          const goalMap: Record<string, string[]> = {
+            'FAT_LOSS': ['lose-fat'],
+            'RECOMPOSITION': ['recomp'],
+            'MUSCLE_GAIN': ['gain-muscle'],
+            'ENDURANCE': ['endurance'],
+          };
+          updateData.goals = goalMap[formData.goal] || [formData.goal];
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/api/client/update`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updateData),
+        });
+        
+        const result = await response.json();
+        if (result.ok) {
+          console.log('[App] Intake data saved to database successfully');
+        } else {
+          console.error('[App] Error saving intake data:', result.message);
+        }
+      } catch (error) {
+        console.error('[App] Error saving intake data to database:', error);
+        // Nastavi dalje čak i ako spremanje ne uspije
+      }
+    }
+    
     // Prikaži kalkulatore nakon intake flow-a
     setShowIntakeFlow(false);
     setShowCalculator(true);
+    saveCurrentState('calculator');
   };
 
   const getIntakePreferences = () => {
@@ -196,18 +506,80 @@ export default function App() {
     };
   };
 
-  const handleCalculatorComplete = (results: any) => {
+  const handleCalculatorComplete = async (results: any) => {
     console.log("Calculator complete:", results);
     setCalculatorResults(results);
+    
+    // Spremi rezultate kalkulatora lokalno
+    await appStateStorage.saveCalculatorResults(results);
+    
+    // Spremi kalkulacije u bazu (ako je korisnik ulogiran)
+    if (loggedInClientId) {
+      try {
+        console.log('[App] Saving calculator results to database...');
+        
+        // Mapiraj goal na goal_type
+        let goalType = 'maintain';
+        if (intakeFormData?.goal) {
+          const goalMap: Record<string, string> = {
+            'FAT_LOSS': 'lose',
+            'MUSCLE_GAIN': 'gain',
+            'RECOMPOSITION': 'maintain',
+            'ENDURANCE': 'maintain',
+          };
+          goalType = goalMap[intakeFormData.goal] || 'maintain';
+        }
+        
+        // Osiguraj da svi makronutrijenti imaju vrijednosti (baza ih zahtijeva)
+        const targetCalories = results.targetCalories || results.calories || results.tdee || 2000;
+        const proteinGrams = results.protein || results.proteinGrams || Math.round(targetCalories * 0.3 / 4); // 30% od kalorija
+        const carbsGrams = results.carbs || results.carbsGrams || Math.round(targetCalories * 0.4 / 4); // 40% od kalorija
+        const fatsGrams = results.fats || results.fatsGrams || Math.round(targetCalories * 0.3 / 9); // 30% od kalorija
+        
+        const updateData = {
+          clientId: loggedInClientId,
+          bmr: results.bmr || 1500,
+          tdee: results.tdee || 2000,
+          target_calories: targetCalories,
+          goal_type: goalType,
+          protein_grams: proteinGrams,
+          carbs_grams: carbsGrams,
+          fats_grams: fatsGrams,
+        };
+        
+        console.log('[App] Update data:', updateData);
+        
+        const response = await fetch(`${API_BASE_URL}/api/client/update`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updateData),
+        });
+        
+        const result = await response.json();
+        if (result.ok) {
+          console.log('[App] Calculator results saved to database successfully');
+        } else {
+          console.error('[App] Error saving calculator results:', result.message);
+        }
+      } catch (error) {
+        console.error('[App] Error saving calculator results to database:', error);
+        // Nastavi dalje čak i ako spremanje ne uspije
+      }
+    }
+    
     // Prikaži summary ekran nakon kalkulatora
     setShowCalculator(false);
     setShowCalculationsSummary(true);
+    saveCurrentState('calculationsSummary');
   };
 
   const handleGenerateMealPlan = () => {
     // Prikaži generator prehrane s direktnim kalkulacijama
     setShowCalculationsSummary(false);
     setShowMealPlan(true);
+    saveCurrentState('mealPlan');
   };
 
   const handleBackToIntakeFlow = () => {
@@ -269,16 +641,15 @@ export default function App() {
 
   const handleBackFromIntake = () => {
     setShowIntakeFlow(false);
-    setShowOnboarding(true);
-  };
-
-  const handleBackToOnboarding = () => {
-    setShowOnboarding(true);
+    setShowLogin(true);
+    saveCurrentState('login');
   };
 
   const handleBackToLogin = () => {
     setShowOnboarding(false);
+    setShowIntakeFlow(false);
     setShowLogin(true);
+    saveCurrentState('login');
   };
 
   const handleBackToWelcome = () => {
@@ -310,15 +681,15 @@ export default function App() {
     trainerCode: string;
     accessToken: string;
   }) => {
-    // Spremi token i podatke trenera u storage
-    await authStorage.saveToken(trainerData.accessToken);
+    // Spremi token i podatke trenera u storage (poseban trainer token)
+    await authStorage.saveTrainerToken(trainerData.accessToken);
     await authStorage.saveTrainerId(trainerData.id);
     
     // Postavi state za korištenje u aplikaciji
     setTrainerId(trainerData.id);
     setTrainerToken(trainerData.accessToken);
     
-    console.log('[App] Trainer logged in:', trainerData.id);
+    console.log('[App] Trainer logged in:', trainerData.id, 'token:', trainerData.accessToken.substring(0, 30) + '...');
     
     // Prebaci na trainer home
     setShowTrainerRegister(false);
@@ -342,6 +713,42 @@ export default function App() {
     setTrainerToken(null);
     setShowTrainerHome(false);
     setShowLogin(true);
+  };
+
+  // Odjava klijenta
+  const handleClientLogout = async () => {
+    console.log('[App] Client logout');
+    
+    // Obriši spremljene auth podatke
+    await authStorage.clearAuth();
+    await appStateStorage.clearAppState();
+    
+    // Resetiraj SVE screen state-ove na false
+    setShowOnboarding(false);
+    setShowIntakeFlow(false);
+    setShowCalculator(false);
+    setShowCalculationsSummary(false);
+    setShowMealPlan(false);
+    setShowTrainingGenerator(false);
+    setShowClientDashboard(false);
+    setShowWorkoutSession(false);
+    setShowProgressCharts(false);
+    setShowConnectTrainer(false);
+    setShowTrainerCode(false);
+    setShowNotificationSettings(false);
+    
+    // Resetiraj state varijable
+    setConnectedTrainerId(null);
+    setConnectedTrainerName(null);
+    setIntakeFormData(null);
+    setCalculatorResults(null);
+    setSelectedSessionId(null);
+    setSelectedProgramId(null);
+    
+    // Postavi login screen
+    setShowLogin(true);
+    
+    console.log('[App] Client logout complete - returning to login');
   };
 
   const handleTrainerClientPress = (clientId: string) => {
@@ -368,6 +775,20 @@ export default function App() {
     setSelectedPhaseData(null);
     setShowTrainerClientDetail(false);
     setShowTrainingGenerator(true);
+  };
+
+  // Handler za pokretanje workout loga (evidencija treninga)
+  const handleStartWorkoutLog = (clientId: string, clientName: string, sessionId: string, sessionName: string, programId?: string) => {
+    console.log('[App] Starting workout log for:', clientName, sessionName);
+    setWorkoutLogSession({
+      clientId,
+      clientName,
+      sessionId,
+      sessionName,
+      programId,
+    });
+    setShowTrainerClientDetail(false);
+    setShowTrainerWorkoutLog(true);
   };
 
   const handleGenerateProgram = (clientId: string, phaseData?: {
@@ -483,6 +904,180 @@ export default function App() {
     setShowMealPlan(true);
   };
 
+  // Handler za prikaz kalkulacija iz dashboarda - useCallback za stabilnost
+  const handleViewCalculationsFromDashboard = useCallback(() => {
+    console.log('[App] handleViewCalculationsFromDashboard called');
+    
+    // Async operacija wrapped unutar funkcije
+    const fetchAndNavigate = async () => {
+      // Dohvati kalkulacije iz baze ako nisu postavljene
+      if (!calculatorResults && loggedInClientId) {
+        try {
+          console.log('[App] Fetching calculations from API...');
+          const response = await fetch(`${API_BASE_URL}/api/client/${loggedInClientId}`);
+          const clientData = await response.json();
+          
+          console.log('[App] Client data received:', clientData.ok, clientData.calculations ? 'has calculations' : 'no calculations');
+          
+          if (clientData.ok && clientData.calculations) {
+            setCalculatorResults({
+              bmr: clientData.calculations.bmr || 1500,
+              tdee: clientData.calculations.tdee || 2000,
+              targetCalories: clientData.calculations.target_calories || clientData.target_calories || 2000,
+              protein: clientData.calculations.protein_grams,
+              carbs: clientData.calculations.carbs_grams,
+              fats: clientData.calculations.fats_grams,
+              goalType: clientData.calculations.goal_type || 'maintain',
+              macros: {
+                protein: clientData.calculations.protein_grams || 150,
+                carbs: clientData.calculations.carbs_grams || 200,
+                fats: clientData.calculations.fats_grams || 65,
+              },
+            });
+          } else if (clientData.ok && clientData.target_calories) {
+            // Fallback na podatke iz clients tablice
+            setCalculatorResults({
+              bmr: clientData.bmr || 1500,
+              tdee: clientData.tdee || 2000,
+              targetCalories: clientData.target_calories || 2000,
+              protein: clientData.protein_grams || 150,
+              carbs: clientData.carbs_grams || 200,
+              fats: clientData.fats_grams || 65,
+              goalType: clientData.goal_type || 'maintain',
+              macros: {
+                protein: clientData.protein_grams || 150,
+                carbs: clientData.carbs_grams || 200,
+                fats: clientData.fats_grams || 65,
+              },
+            });
+          }
+        } catch (error) {
+          console.error('[App] Error fetching calculations:', error);
+        }
+      }
+      
+      // Prebaci na summary ekran
+      setShowClientDashboard(false);
+      setShowCalculationsSummary(true);
+      saveCurrentState('calculationsSummary');
+    };
+    
+    // Pozovi async funkciju i uhvati eventualne greške
+    fetchAndNavigate().catch(err => {
+      console.error('[App] fetchAndNavigate error:', err);
+      // Ipak navigiraj na summary ekran
+      setShowClientDashboard(false);
+      setShowCalculationsSummary(true);
+    });
+  }, [calculatorResults, loggedInClientId, saveCurrentState]);
+
+  // Handler za generiranje plana prehrane iz dashboarda - useCallback za stabilnost
+  const handleGenerateMealPlanFromDashboard = useCallback(() => {
+    console.log('[App] handleGenerateMealPlanFromDashboard called');
+    
+    // Async funkcija za dohvaćanje kalkulacija ako nisu postavljene
+    const fetchCalculationsAndNavigate = async () => {
+      // Ako kalkulacije nisu postavljene, dohvati ih iz baze
+      if (!calculatorResults && loggedInClientId) {
+        try {
+          console.log('[App] Fetching calculations before meal plan...');
+          const response = await fetch(`${API_BASE_URL}/api/client/${loggedInClientId}`);
+          const clientData = await response.json();
+          
+          if (clientData.ok && clientData.calculations) {
+            setCalculatorResults({
+              bmr: clientData.calculations.bmr || 1500,
+              tdee: clientData.calculations.tdee || 2000,
+              targetCalories: clientData.calculations.target_calories || clientData.target_calories || 2000,
+              protein: clientData.calculations.protein_grams,
+              carbs: clientData.calculations.carbs_grams,
+              fats: clientData.calculations.fats_grams,
+              goalType: clientData.calculations.goal_type || 'maintain',
+              macros: {
+                protein: clientData.calculations.protein_grams || 150,
+                carbs: clientData.calculations.carbs_grams || 200,
+                fats: clientData.calculations.fats_grams || 65,
+              },
+            });
+          } else if (clientData.ok && clientData.target_calories) {
+            // Fallback na podatke iz clients tablice
+            setCalculatorResults({
+              bmr: clientData.bmr || 1500,
+              tdee: clientData.tdee || 2000,
+              targetCalories: clientData.target_calories || 2000,
+              protein: clientData.protein_grams || 150,
+              carbs: clientData.carbs_grams || 200,
+              fats: clientData.fats_grams || 65,
+              goalType: clientData.goal_type || 'maintain',
+              macros: {
+                protein: clientData.protein_grams || 150,
+                carbs: clientData.carbs_grams || 200,
+                fats: clientData.fats_grams || 65,
+              },
+            });
+          } else {
+            // Nema kalkulacija - postavi default vrijednosti
+            console.log('[App] No calculations found, using defaults');
+            setCalculatorResults({
+              bmr: 1500,
+              tdee: 2000,
+              targetCalories: 2000,
+              protein: 150,
+              carbs: 200,
+              fats: 65,
+              goalType: 'maintain',
+              macros: { protein: 150, carbs: 200, fats: 65 },
+            });
+          }
+        } catch (error) {
+          console.error('[App] Error fetching calculations:', error);
+          // Postavi default vrijednosti
+          setCalculatorResults({
+            bmr: 1500,
+            tdee: 2000,
+            targetCalories: 2000,
+            protein: 150,
+            carbs: 200,
+            fats: 65,
+            goalType: 'maintain',
+            macros: { protein: 150, carbs: 200, fats: 65 },
+          });
+        }
+      }
+      
+      // Navigiraj na meal plan
+      setShowClientDashboard(false);
+      setShowMealPlan(true);
+      saveCurrentState('mealPlan');
+    };
+    
+    fetchCalculationsAndNavigate().catch(err => {
+      console.error('[App] fetchCalculationsAndNavigate error:', err);
+    });
+  }, [calculatorResults, loggedInClientId, saveCurrentState]);
+
+  // Handler za view progress
+  const handleViewProgressFromDashboard = useCallback(() => {
+    console.log('[App] handleViewProgressFromDashboard called');
+    setShowClientDashboard(false);
+    setShowProgressCharts(true);
+  }, []);
+
+  // Handler za settings
+  const handleSettingsFromDashboard = useCallback(() => {
+    console.log('[App] handleSettingsFromDashboard called');
+    setShowClientDashboard(false);
+    setShowNotificationSettings(true);
+  }, []);
+
+  // Handler za start workout
+  const handleStartWorkoutFromDashboard = useCallback((sessionId: string) => {
+    console.log('[App] handleStartWorkoutFromDashboard called:', sessionId);
+    setSelectedSessionId(sessionId);
+    setShowClientDashboard(false);
+    setShowWorkoutSession(true);
+  }, []);
+
   const handleStartWorkout = (sessionId: string) => {
     // TODO: Implementirati WorkoutSessionScreen
     Alert.alert('Info', `Započinjem trening: ${sessionId}`);
@@ -549,19 +1144,49 @@ export default function App() {
     setShowTrainerHome(true);
   };
 
+  // DEBUG: Loguj trenutno stanje
+  console.log('[App] Render - state:', {
+    isLoading,
+    showTrainerHome,
+    showLogin,
+    showIntakeFlow,
+    showCalculator,
+    showCalculationsSummary,
+    showMealPlan,
+  });
+
   // Summary ekran nakon kalkulatora
-  if (showCalculationsSummary && calculatorResults) {
+  if (showCalculationsSummary) {
+    // Ako nema kalkulacija, prikaži s default vrijednostima ili vodi na calculator
+    const calcs = calculatorResults || {
+      bmr: 1500,
+      tdee: 2000,
+      targetCalories: 2000,
+      macros: { protein: 150, carbs: 200, fats: 65 },
+      goalType: 'maintain',
+    };
+    
     return (
       <CalculationsSummaryScreen
         calculations={{
-          bmr: calculatorResults.bmr,
-          tdee: calculatorResults.tdee,
-          targetCalories: calculatorResults.targetCalories,
-          macros: calculatorResults.macros,
-          goalType: calculatorResults.goalType || 'maintain',
+          bmr: calcs.bmr,
+          tdee: calcs.tdee,
+          targetCalories: calcs.targetCalories,
+          macros: calcs.macros,
+          goalType: calcs.goalType || 'maintain',
         }}
         onGenerate={handleGenerateMealPlan}
-        onBack={handleBackToCalculator}
+        onBack={() => {
+          setShowCalculationsSummary(false);
+          // Vrati na dashboard ako je korisnik došao odatle
+          if (loggedInClientId) {
+            setShowClientDashboard(true);
+            saveCurrentState('clientDashboard');
+          } else {
+            setShowCalculator(true);
+            saveCurrentState('calculator');
+          }
+        }}
       />
     );
   }
@@ -594,6 +1219,29 @@ export default function App() {
           console.log('[App] Generating all phases:', phases.length, 'for client:', cId);
           const results: {phaseType: string; phaseName: string; programId: string | null; success: boolean; error?: string}[] = [];
           let previousProgramId: string | null = null;
+          
+          // Dohvati client podatke da dobijemo gender
+          let clientGender: 'male' | 'female' = 'male'; // Default
+          try {
+            const clientResponse = await fetch(`${API_BASE_URL}/api/trainer/client/${cId}`, {
+              headers: {
+                'Authorization': `Bearer ${trainerToken || ''}`,
+                'Content-Type': 'application/json',
+              },
+            });
+            if (clientResponse.ok) {
+              const clientData = await clientResponse.json();
+              if (clientData.success && clientData.data?.gender) {
+                // Mapiraj gender iz API response (može biti 'male', 'female', 'other')
+                const gender = clientData.data.gender;
+                clientGender = gender === 'female' ? 'female' : 'male'; // Default na 'male' ako je 'other'
+                console.log('[App] Client gender:', clientGender);
+              }
+            }
+          } catch (error) {
+            console.error('[App] Error fetching client data for gender:', error);
+            // Nastavi s default 'male'
+          }
           
           for (let i = 0; i < phases.length; i++) {
             const phase = phases[i];
@@ -630,10 +1278,11 @@ export default function App() {
               }
               
               const requestBody: Record<string, unknown> = {
-                klijentId: cId,
+                clientId: cId, // POPRAVKA: koristi clientId umjesto klijentId
+                gender: clientGender, // DODANO: gender parametar
                 cilj: cilj,
-                razina: 'srednji', // FIXED: bilo je 'srednja', treba biti 'srednji'
-                frekvencija: 4,
+                razina: 'srednji',
+                treninziTjedno: 4, // POPRAVKA: koristi treninziTjedno umjesto frekvencija
                 splitTip: 'upper_lower',
                 trajanjeTjedana: phase.durationWeeks,
                 dostupnaOprema: ['barbell', 'dumbbell', 'cable', 'machine'],
@@ -721,6 +1370,38 @@ export default function App() {
           setShowTrainerClientResults(true);
         }}
         onViewProgram={handleViewProgram}
+        onDeleteClient={() => {
+          // Nakon brisanja, vrati se na trainer home
+          setSelectedClientId(null);
+          setSelectedClientName(null);
+          setShowTrainerClientDetail(false);
+          setShowTrainerHome(true);
+        }}
+        onStartWorkoutLog={handleStartWorkoutLog}
+      />
+    );
+  }
+
+  // Trainer Workout Log ekran (evidencija treninga)
+  if (showTrainerWorkoutLog && workoutLogSession) {
+    return (
+      <TrainerWorkoutLogScreen
+        authToken={trainerToken || ''}
+        clientId={workoutLogSession.clientId}
+        clientName={workoutLogSession.clientName}
+        sessionId={workoutLogSession.sessionId}
+        sessionName={workoutLogSession.sessionName}
+        programId={workoutLogSession.programId}
+        onBack={() => {
+          setShowTrainerWorkoutLog(false);
+          setWorkoutLogSession(null);
+          setShowTrainerClientDetail(true);
+        }}
+        onComplete={() => {
+          setShowTrainerWorkoutLog(false);
+          setWorkoutLogSession(null);
+          setShowTrainerClientDetail(true);
+        }}
       />
     );
   }
@@ -816,19 +1497,12 @@ export default function App() {
         trainerName={connectedTrainerName || undefined}
         onBack={handleBackFromClientDashboard}
         onDisconnect={handleDisconnectFromTrainer}
-        onStartWorkout={(sessionId) => {
-          setSelectedSessionId(sessionId);
-          setShowClientDashboard(false);
-          setShowWorkoutSession(true);
-        }}
-        onViewProgress={() => {
-          setShowClientDashboard(false);
-          setShowProgressCharts(true);
-        }}
-        onSettings={() => {
-          setShowClientDashboard(false);
-          setShowNotificationSettings(true);
-        }}
+        onStartWorkout={handleStartWorkoutFromDashboard}
+        onViewProgress={handleViewProgressFromDashboard}
+        onSettings={handleSettingsFromDashboard}
+        onLogout={handleClientLogout}
+        onGenerateMealPlan={handleGenerateMealPlanFromDashboard}
+        onViewCalculations={handleViewCalculationsFromDashboard}
       />
     );
   }
@@ -861,7 +1535,7 @@ export default function App() {
   if (showConnectTrainer) {
     // Pripremi intake podatke za slanje treneru
     const preparedIntakeData = intakeFormData ? {
-      name: intakeFormData.name || userName || undefined,
+      name: intakeFormData.name || undefined,
       email: intakeFormData.email || undefined,
       honorific: intakeFormData.honorific || undefined,
       age: intakeFormData.age ? parseInt(intakeFormData.age) : undefined,
@@ -912,6 +1586,16 @@ export default function App() {
         authToken={trainerToken || ''}
         onBack={handleBackFromTrainerCode}
       />
+    );
+  }
+
+  // PRIKAŽI LOADING SCREEN PRIJE SVEGA - osigurava da se uvijek renderira nešto
+  // Ako je isLoading, prikaži welcome screen (ne čekaj)
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }]}>
+        <WelcomeScreen onGetStarted={handleGetStarted} />
+      </View>
     );
   }
 
@@ -1003,36 +1687,18 @@ export default function App() {
     );
   }
 
-  // Ako još nije login, prikaži welcome s animacijom
-  if (!showLogin && !showOnboarding && !showIntakeFlow && !showTrainerRegister) {
+  // Ako još nije login, prikaži welcome screen - bez animacije za pouzdanost
+  if (!showLogin && !showOnboarding && !showIntakeFlow && !showTrainerRegister && !showTrainerHome && !showCalculator && !showCalculationsSummary && !showMealPlan && !showClientDashboard) {
     return (
-      <Animated.View
-        style={[
-          styles.container,
-          {
-            opacity: slideAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [1, 0],
-            }),
-            transform: [
-              {
-                translateY: slideAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, -50],
-                }),
-              },
-            ],
-          },
-        ]}
-      >
+      <View style={styles.container}>
         <WelcomeScreen onGetStarted={handleGetStarted} />
-      </Animated.View>
+      </View>
     );
   }
 
   // Intake flow ekran (uključuje i odabir cilja)
   if (showIntakeFlow) {
-    return <IntakeFlowScreen onComplete={handleIntakeComplete} onBack={handleBackFromIntake} />;
+    return <IntakeFlowScreen onComplete={handleIntakeComplete} onBack={handleBackFromIntake} onLogout={handleClientLogout} />;
   }
 
   // Onboarding ekran nakon login-a
@@ -1050,32 +1716,25 @@ export default function App() {
     );
   }
 
-  // Login ekran s fade-in animacijom
+  // Login ekran - bez animacije da bude uvijek vidljiv
+  if (showLogin) {
+    return (
+      <View style={styles.container}>
+        <LoginScreen 
+          onLoginSuccess={handleLoginSuccess} 
+          onBack={handleBackToWelcome} 
+          onTrainerRegister={handleShowTrainerRegister}
+          onTrainerLoginSuccess={handleTrainerRegisterSuccess}
+        />
+      </View>
+    );
+  }
+
+  // Fallback - ako ništa nije aktivno, prikaži WelcomeScreen
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          opacity: slideAnim,
-          transform: [
-            {
-              translateY: slideAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [50, 0],
-              }),
-            },
-          ],
-        },
-      ]}
-    >
-      <LoginScreen 
-        onLoginSuccess={handleLoginSuccess} 
-        onSkipLogin={handleSkipLogin} 
-        onBack={handleBackToWelcome} 
-        onTrainerRegister={handleShowTrainerRegister}
-        onTrainerLoginSuccess={handleTrainerRegisterSuccess}
-      />
-    </Animated.View>
+    <View style={styles.container}>
+      <WelcomeScreen onGetStarted={handleGetStarted} />
+    </View>
   );
 }
 

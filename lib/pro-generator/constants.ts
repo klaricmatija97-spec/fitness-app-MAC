@@ -256,7 +256,7 @@ export const SPLIT_KONFIGURACIJE: Record<TipSplita, SplitKonfiguracija> = {
     opisHr: 'Izolirani dijelovi - svaki dan fokus na jednu ili dvije mišićne grupe',
     daniPoTjednu: [5, 6],
     daniStruktura: [
-      ['prsa_triceps', 'ledja_biceps', 'ramena', 'noge', 'arms'],  // 5 dana
+      ['prsa_triceps', 'ledja_biceps', 'ramena', 'noge', 'ruke'],  // 5 dana
       ['prsa', 'ledja', 'ramena', 'ruke', 'noge', 'weak_points'],  // 6 dana
     ],
     misicneGrupePoTreningu: {

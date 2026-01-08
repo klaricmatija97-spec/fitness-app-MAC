@@ -52,6 +52,7 @@ export default function LoginSlideContent({ onNext, nextSlideIndex, onBack }: Lo
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
   const [registerError, setRegisterError] = useState("");
   const [registerLoading, setRegisterLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   // Rotiraj pozadinske slike
   useEffect(() => {
@@ -154,6 +155,11 @@ export default function LoginSlideContent({ onNext, nextSlideIndex, onBack }: Lo
 
     if (registerPassword.length < 6) {
       setRegisterError("Lozinka mora imati najmanje 6 znakova");
+      return;
+    }
+
+    if (!acceptedTerms) {
+      setRegisterError("Morate prihvatiti uvjete korištenja");
       return;
     }
 
@@ -490,6 +496,53 @@ export default function LoginSlideContent({ onNext, nextSlideIndex, onBack }: Lo
                     required
                     placeholder="••••••••"
                   />
+                </motion.div>
+
+                {/* Terms Checkbox */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.52 }}
+                  className="pt-4 pb-2"
+                >
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={acceptedTerms}
+                      onChange={(e) => setAcceptedTerms(e.target.checked)}
+                      className="mt-0.5 w-5 h-5 rounded border-2 border-white/40 bg-transparent checked:bg-white checked:border-white focus:ring-2 focus:ring-white/50 focus:ring-offset-0 cursor-pointer flex-shrink-0"
+                      style={{ accentColor: 'white' }}
+                    />
+                    <span className="text-white/70 text-sm leading-relaxed group-hover:text-white transition-colors">
+                      Prihvaćam{" "}
+                      <a 
+                        href="/pravno/uvjeti-koristenja" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-white underline hover:text-white/80 transition-colors"
+                      >
+                        uvjete korištenja
+                      </a>
+                      ,{" "}
+                      <a 
+                        href="/pravno/privatnost" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-white underline hover:text-white/80 transition-colors"
+                      >
+                        politiku privatnosti
+                      </a>
+                      {" "}i{" "}
+                      <a 
+                        href="/pravno/zdravstveno-upozorenje" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-white underline hover:text-white/80 transition-colors"
+                      >
+                        zdravstveno upozorenje
+                      </a>
+                    </span>
+                  </label>
                 </motion.div>
 
                 {/* Error */}

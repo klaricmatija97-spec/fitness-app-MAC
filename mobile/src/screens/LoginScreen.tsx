@@ -13,23 +13,23 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Image,
   ScrollView,
   Animated,
   PanResponder,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Video, ResizeMode } from 'expo-av';
 
-// Besplatni fitness video s Pexels (licenca: besplatna za komercijalnu upotrebu)
-const BACKGROUND_VIDEO_URL = 'https://videos.pexels.com/video-files/4761434/4761434-hd_1080_1920_25fps.mp4';
-
-// Fallback slike ako video ne radi
-const fallbackImage = 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=1920&h=1080&fit=crop&q=80';
+// Premium sportske slike - iste kao na onboarding
+const backgroundImages = [
+  'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=1920&h=1080&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1517963879433-6ad2b056d712?w=1920&h=1080&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=1920&h=1080&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?w=1920&h=1080&fit=crop&q=80',
+];
 
 interface LoginScreenProps {
   onLoginSuccess?: () => void;
-  onSkipLogin?: () => void;
   onBack?: () => void;
   onTrainerRegister?: () => void;
   onTrainerLoginSuccess?: (trainerData: {
@@ -41,7 +41,7 @@ interface LoginScreenProps {
   }) => void;
 }
 
-export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTrainerRegister, onTrainerLoginSuccess }: LoginScreenProps) {
+export default function LoginScreen({ onLoginSuccess, onBack, onTrainerRegister, onTrainerLoginSuccess }: LoginScreenProps) {
   const [isLoginMode, setIsLoginMode] = useState(true);
   
   // Login state
@@ -59,12 +59,43 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
   const [registerError, setRegisterError] = useState('');
   const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerSuccess, setRegisterSuccess] = useState(false);
 
-  // Animacije - fade-in (sinkronizirano s pozadinskom slikom)
-  const logoOpacity = React.useRef(new Animated.Value(0)).current;
-  const titleOpacity = React.useRef(new Animated.Value(0)).current;
-  const formOpacity = React.useRef(new Animated.Value(0)).current;
-  const backgroundOpacity = React.useRef(new Animated.Value(0)).current;
+  // Animacije - sve vidljivo odmah
+  const logoOpacity = React.useRef(new Animated.Value(1)).current;
+  const titleOpacity = React.useRef(new Animated.Value(1)).current;
+  const formOpacity = React.useRef(new Animated.Value(1)).current;
+  
+  // Rotirajuće pozadinske slike
+  const [currentBgImage, setCurrentBgImage] = useState(0);
+  const imageOpacities = useRef(
+    backgroundImages.map((_, idx) => new Animated.Value(idx === 0 ? 1 : 0))
+  ).current;
+  
+  // Rotacija slika svakih 6 sekundi
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const nextIndex = (currentBgImage + 1) % backgroundImages.length;
+      
+      // Fade out trenutne slike
+      Animated.timing(imageOpacities[currentBgImage], {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }).start();
+      
+      // Fade in sljedeće slike
+      Animated.timing(imageOpacities[nextIndex], {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }).start();
+      
+      setCurrentBgImage(nextIndex);
+    }, 6000);
+    
+    return () => clearInterval(interval);
+  }, [currentBgImage]);
 
   // PanResponder za swipe-down navigaciju (samo kada nije scroll)
   const panResponder = useRef(
@@ -85,38 +116,8 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
   ).current;
 
 
-  // Pokreni animacije pri učitavanju - sinkronizirano s pozadinskom slikom
-  useEffect(() => {
-    // Pozadinska slika i logo zajedno - prvi (0ms)
-    Animated.parallel([
-      Animated.timing(backgroundOpacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.timing(logoOpacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Title - drugi (200ms)
-    Animated.timing(titleOpacity, {
-      toValue: 1,
-      duration: 600,
-      delay: 200,
-      useNativeDriver: true,
-    }).start();
-
-    // Form - treći (400ms)
-    Animated.timing(formOpacity, {
-      toValue: 1,
-      duration: 600,
-      delay: 400,
-      useNativeDriver: true,
-    }).start();
-  }, [isLoginMode]); // Reset animacije kada se mijenja mod (login/register)
+  // Animacije su uklonjene - sav sadržaj je odmah vidljiv
+  // Ovo osigurava da nema crnog ekrana
 
   // Login handler
   const handleLogin = async () => {
@@ -219,7 +220,7 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
       });
       
       if (result.ok && result.token && result.clientId) {
-        // Spremi token i clientId
+        // Spremi token i clientId (za slučaj da korisnik želi ostati prijavljen)
         await authStorage.saveToken(result.token);
         await authStorage.saveClientId(result.clientId);
         if (result.username) {
@@ -227,11 +228,21 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
         }
         
         setRegisterLoading(false);
+        setRegisterError('');
+        setRegisterSuccess(true);
+        
+        // Prebaci na login ekran i pripremi podatke
         setIsLoginMode(true);
         setUsername(registerUsername);
-        setRegisterError('');
-        // Automatski prijavi korisnika nakon registracije
-        onLoginSuccess?.();
+        setPassword(''); // Očisti lozinku
+        
+        // Očisti success poruku nakon 5 sekundi
+        setTimeout(() => {
+          setRegisterSuccess(false);
+        }, 5000);
+        
+        // NE pozivamo automatski onLoginSuccess - korisnik se mora ručno prijaviti
+        // Ovo omogućava korisniku da se ručno prijavi nakon registracije
       } else {
         setRegisterError(result.message || 'Greška pri registraciji');
         setRegisterLoading(false);
@@ -248,36 +259,31 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       {...panResponder.panHandlers}
     >
-      {/* Rotirajuće pozadinske slike - sinkronizirano s animacijom */}
-      <Animated.View 
-        style={[
-          styles.backgroundContainer,
-          { opacity: backgroundOpacity }
-        ]}
-      >
-        {/* Video pozadina */}
-        <Video
-          source={{ uri: BACKGROUND_VIDEO_URL }}
-          style={styles.backgroundVideo}
-          resizeMode={ResizeMode.COVER}
-          shouldPlay
-          isLooping
-          isMuted
-          onError={() => console.log('Video error - using fallback')}
-        />
-        {/* Fallback slika dok se video učitava */}
-        <Image
-          source={{ uri: fallbackImage }}
-          style={[styles.image, styles.fallbackImage]}
-          resizeMode="cover"
-        />
-        {/* Overlay za čitljivost */}
-        <View style={styles.imageOverlay} />
-      </Animated.View>
-
+      {/* Rotirajuće pozadinske slike */}
+      <View style={styles.backgroundContainer}>
+        {backgroundImages.map((imageUrl, idx) => (
+          <Animated.View
+            key={idx}
+            style={[
+              styles.backgroundImage,
+              { opacity: imageOpacities[idx] },
+            ]}
+          >
+            <Image
+              source={{ uri: imageUrl }}
+              style={styles.image}
+              resizeMode="cover"
+            />
+          </Animated.View>
+        ))}
+      </View>
+      
+      {/* Overlay za čitljivost teksta */}
+      <View style={styles.imageOverlay} />
+      
       {/* Gradient overlay */}
       <LinearGradient
-        colors={['rgba(0,0,0,0.6)', 'transparent', 'rgba(0,0,0,0.8)']}
+        colors={['rgba(0,0,0,0.5)', 'transparent', 'rgba(0,0,0,0.7)']}
         style={styles.gradient}
       />
 
@@ -346,7 +352,10 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
                 {/* Switch to register */}
                 <TouchableOpacity
                   style={styles.switchButton}
-                  onPress={() => setIsLoginMode(false)}
+                  onPress={() => {
+                    setIsLoginMode(false);
+                    setRegisterSuccess(false); // Očisti success poruku
+                  }}
                 >
                   <Text style={styles.switchButtonText}>
                     Nemaš račun? Registriraj se →
@@ -365,17 +374,6 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
                   </TouchableOpacity>
                 )}
 
-                {/* Skip login */}
-                {onSkipLogin && (
-                  <TouchableOpacity
-                    style={styles.skipButton}
-                    onPress={onSkipLogin}
-                  >
-                    <Text style={styles.skipButtonText}>
-                      Preskoči prijavu →
-                    </Text>
-                  </TouchableOpacity>
-                )}
               </View>
             </Animated.View>
           ) : (
@@ -466,6 +464,13 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
 
                 {/* Error */}
                 {registerError ? <Text style={styles.error}>{registerError}</Text> : null}
+                
+                {/* Success message */}
+                {registerSuccess ? (
+                  <Text style={styles.success}>
+                    ✅ Registracija uspješna! Sada se možete prijaviti.
+                  </Text>
+                ) : null}
 
                 {/* Submit button */}
                 <TouchableOpacity
@@ -483,7 +488,10 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
                 {/* Switch to login */}
                 <TouchableOpacity
                   style={styles.switchButton}
-                  onPress={() => setIsLoginMode(true)}
+                  onPress={() => {
+                    setIsLoginMode(true);
+                    setRegisterSuccess(false); // Očisti success poruku
+                  }}
                 >
                   <Text style={styles.switchButtonText}>
                     ← Već imaš račun? Prijavi se
@@ -502,17 +510,6 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
                   </TouchableOpacity>
                 )}
 
-                {/* Skip login */}
-                {onSkipLogin && (
-                  <TouchableOpacity
-                    style={styles.skipButton}
-                    onPress={onSkipLogin}
-                  >
-                    <Text style={styles.skipButtonText}>
-                      Preskoči prijavu →
-                    </Text>
-                  </TouchableOpacity>
-                )}
               </View>
             </Animated.View>
           )}
@@ -528,7 +525,15 @@ export default function LoginScreen({ onLoginSuccess, onSkipLogin, onBack, onTra
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#0F172A', // Tamno plava pozadina uvijek vidljiva
+  },
+  absoluteFill: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  backgroundImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
   },
   backgroundContainer: {
     ...StyleSheet.absoluteFillObject,
@@ -622,6 +627,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
   },
+  success: {
+    color: 'rgba(76,175,80,0.9)',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
+    fontWeight: '500',
+  },
   button: {
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
@@ -658,17 +670,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.5)',
     fontSize: 12,
     letterSpacing: 0.5,
-  },
-  skipButton: {
-    paddingVertical: 12,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  skipButtonText: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 11,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
   },
   bottomLine: {
     position: 'absolute',

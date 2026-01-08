@@ -169,6 +169,7 @@ export interface GeneratorInput {
   razina: RazinaKorisnika;
   treninziTjedno: number;      // 2-6
   trajanjeTjedana: number;     // 4-12
+  gender: 'male' | 'female';   // Spol klijenta - bitno za odabir vježbi i programiranje
   
   // Opcionalni parametri
   trenerId?: string;

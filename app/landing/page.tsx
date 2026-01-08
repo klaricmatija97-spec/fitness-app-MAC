@@ -2,6 +2,7 @@
 
 import HeroSection from "../app/components/HeroSection";
 import FadeInSection from "../app/components/FadeInSection";
+import Footer from "../components/Footer";
 
 export default function LandingPage() {
   const handleCtaClick = () => {
@@ -10,7 +11,7 @@ export default function LandingPage() {
   };
 
   return (
-    <main>
+    <>
       {/* Hero Section */}
       <HeroSection
         backgroundImage="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1920&q=80&auto=format&fit=crop"
@@ -49,6 +50,8 @@ export default function LandingPage() {
         </section>
       </FadeInSection>
     </main>
+    <Footer />
+    </>
   );
 }
 

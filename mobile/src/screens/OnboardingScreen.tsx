@@ -410,8 +410,9 @@ export default function OnboardingScreen({ onComplete, onBack }: OnboardingScree
         }
         
         // Provjeri brzinu i pomak za odluku o navigaciji
-        const threshold = 50;
-        const velocityThreshold = 0.5;
+        // POVEĆANI PRAGOVI - sprječava slučajne prelaze
+        const threshold = 150; // Povećano sa 50 na 150px
+        const velocityThreshold = 1.2; // Povećano sa 0.5 na 1.2
         
         // Swipe prema gore - sljedeća poruka ili završetak onboardinga
         if (dy < -threshold || vy < -velocityThreshold) {
@@ -445,32 +446,12 @@ export default function OnboardingScreen({ onComplete, onBack }: OnboardingScree
             handleCompleteWithAnimation();
           }
         }
-        // Swipe prema dolje - direktno povratak na login (bez prelistavanja poruka)
-        else if ((dy > threshold || vy > velocityThreshold)) {
-          // Na bilo kojoj poruci, swipe dolje vraća direktno na login
-          if (isAnimating.current) return;
-          
-          isAnimating.current = true;
-          
-          // Ista animacija kao za naprijed - fade out i pomak dolje
-          Animated.parallel([
-            Animated.timing(messageOpacity, {
-              toValue: 0,
-              duration: 300,
-              easing: Easing.out(Easing.ease),
-              useNativeDriver: true,
-            }),
-            Animated.timing(messageTranslateY, {
-              toValue: 30,
-              duration: 300,
-              easing: Easing.out(Easing.ease),
-              useNativeDriver: true,
-            }),
-          ]).start(() => {
-            isAnimating.current = false;
-            onBack?.();
-          });
-        } else {
+        // ONEMOGUĆEN swipe dolje za povratak na login - previše osjetljivo
+        // Korisnik može koristiti back gumb ako želi natrag
+        // else if ((dy > threshold || vy > velocityThreshold)) { ... }
+        
+        // Ako nije dovoljno pomaknuto prema gore, vrati na početnu poziciju
+        else {
           // Vrati na početnu poziciju ako nije dovoljno pomaknuto - blaža animacija
           Animated.parallel([
             Animated.timing(messageOpacity, {

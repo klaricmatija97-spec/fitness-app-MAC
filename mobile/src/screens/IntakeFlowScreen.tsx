@@ -17,6 +17,8 @@ import {
   ScrollView,
   Keyboard,
   TouchableWithoutFeedback,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -130,6 +132,7 @@ interface IntakeFormState {
 interface IntakeFlowScreenProps {
   onComplete: (formData: IntakeFormState) => void;
   onBack?: () => void;
+  onLogout?: () => void;
 }
 
 const slideOrder: SlideId[] = [
@@ -146,10 +149,11 @@ const slideOrder: SlideId[] = [
   'allergies',
 ];
 
-export default function IntakeFlowScreen({ onComplete, onBack }: IntakeFlowScreenProps) {
+export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: IntakeFlowScreenProps) {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [currentBgImage, setCurrentBgImage] = useState(0);
   const [showWeightInput, setShowWeightInput] = useState(true);
+  const [menuVisible, setMenuVisible] = useState(false);
   const [intakeForm, setIntakeForm] = useState<IntakeFormState>({
     goal: '',
     honorific: '',
@@ -177,29 +181,29 @@ export default function IntakeFlowScreen({ onComplete, onBack }: IntakeFlowScree
   const [isEditingHeight, setIsEditingHeight] = useState(false);
   const [tempValue, setTempValue] = useState('');
 
-  // PanResponder za swipe navigaciju - striktnije pragove
+  // PanResponder za swipe navigaciju - VRLO striktni pragovi
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false, // Nikad ne uzimaj na početku
       onMoveShouldSetPanResponder: (_, gestureState) => {
         if (isAnimating.current) return false;
-        // Mora biti izrazito vertikalan swipe (dy > 3x dx) i minimum 50px pomaka
-        const isVertical = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 3;
-        const isSignificant = Math.abs(gestureState.dy) > 50;
+        // Mora biti izrazito vertikalan swipe (dy > 4x dx) i minimum 100px pomaka
+        const isVertical = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 4;
+        const isSignificant = Math.abs(gestureState.dy) > 100;
         return isVertical && isSignificant;
       },
       onPanResponderRelease: (_, gestureState) => {
         if (isAnimating.current) return;
         const { dy, vy } = gestureState;
         
-        // Striktiji pragovi: 120px ili brzina 0.8
-        if (dy > 120 && vy > 0.3) {
+        // POVEĆANI pragovi: 200px I brzina 1.0 (oba uvjeta moraju biti zadovoljena)
+        if (dy > 200 && vy > 1.0) {
           // Swipe down - nazad (samo ako nije prvi slide)
           if (currentSlideIndex > 0) {
             goToPrevious();
           }
-          // MAKNUT onBack() - ne izlazi iz onboardinga na swipe
-        } else if (dy < -120 && vy < -0.3) {
+          // NE izlazi iz intake flow-a na swipe
+        } else if (dy < -200 && vy < -1.0) {
           // Swipe up - naprijed
           if (canGoNext()) {
             goToNext();
@@ -1040,6 +1044,42 @@ export default function IntakeFlowScreen({ onComplete, onBack }: IntakeFlowScree
         style={styles.gradient}
       />
 
+      {/* Hamburger Menu Button */}
+      {onLogout && (
+        <>
+          <TouchableOpacity 
+            style={styles.menuButton} 
+            onPress={() => setMenuVisible(true)}
+          >
+            <View style={styles.menuLines}>
+              <View style={styles.menuLine} />
+              <View style={styles.menuLine} />
+              <View style={styles.menuLine} />
+            </View>
+          </TouchableOpacity>
+
+          {/* Hamburger Menu Modal */}
+          <Modal
+            visible={menuVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setMenuVisible(false)}
+          >
+            <Pressable style={styles.menuOverlay} onPress={() => setMenuVisible(false)}>
+              <View style={styles.menuContainer}>
+                <TouchableOpacity 
+                  style={styles.menuItem} 
+                  onPress={() => { setMenuVisible(false); onLogout(); }}
+                >
+                  <Text style={styles.menuItemIcon}>🚪</Text>
+                  <Text style={[styles.menuItemText, styles.menuItemLogout]}>Odjava</Text>
+                </TouchableOpacity>
+              </View>
+            </Pressable>
+          </Modal>
+        </>
+      )}
+
       {/* Content */}
       <View style={styles.content}>
         {renderSlide()}
@@ -1670,6 +1710,73 @@ const styles = StyleSheet.create({
   },
   frequencyLabelSelected: {
     color: 'rgba(255,255,255,0.8)',
+  },
+  // Hamburger Menu Styles
+  menuButton: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(24, 24, 27, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  menuLines: {
+    width: 20,
+    height: 14,
+    justifyContent: 'space-between',
+  },
+  menuLine: {
+    width: '100%',
+    height: 2,
+    backgroundColor: '#fff',
+    borderRadius: 1,
+  },
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: 100,
+    paddingRight: 20,
+  },
+  menuContainer: {
+    backgroundColor: '#1C1C1E',
+    borderRadius: 16,
+    padding: 8,
+    width: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  menuItemIcon: {
+    fontSize: 18,
+    marginRight: 12,
+  },
+  menuItemText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '500',
+  },
+  menuItemLogout: {
+    color: '#EF4444',
   },
 });
 

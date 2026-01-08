@@ -86,19 +86,60 @@ interface Props {
   onGenerateProgram?: (clientId: string) => void;
   onViewResults?: (clientId: string, clientName: string) => void;
   onViewProgram?: (programId: string, clientName: string) => void;
+  onDeleteClient?: (clientId: string) => void;
+  onStartWorkoutLog?: (clientId: string, clientName: string, sessionId: string, sessionName: string, programId?: string) => void;
 }
 
-export default function TrainerClientDetailScreen({ authToken, clientId, onBack, onAnnualPlanPress, onGenerateProgram, onViewResults, onViewProgram }: Props) {
+export default function TrainerClientDetailScreen({ authToken, clientId, onBack, onAnnualPlanPress, onGenerateProgram, onViewResults, onViewProgram, onDeleteClient, onStartWorkoutLog }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState<any>(null);
   const [workoutLogs, setWorkoutLogs] = useState<any[]>([]);
   const [workoutLogsLoading, setWorkoutLogsLoading] = useState(false);
   const [showWorkoutLogs, setShowWorkoutLogs] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadData();
   }, []);
+  
+  // Funkcija za brisanje klijenta
+  async function handleDeleteClient() {
+    Alert.alert(
+      '⚠️ Obriši klijenta',
+      `Jeste li sigurni da želite obrisati klijenta "${data?.name}"?\n\nOva akcija će obrisati sve podatke klijenta uključujući:\n• Programe treninga\n• Planove prehrane\n• Workout logove\n• Korisnički račun\n\nOva akcija se NE MOŽE poništiti!`,
+      [
+        { text: 'Odustani', style: 'cancel' },
+        {
+          text: 'Obriši',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              const response = await fetch(`${API_BASE_URL}/api/trainer/clients?clientId=${clientId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${authToken}` },
+              });
+              const result = await response.json();
+              
+              if (result.success) {
+                Alert.alert('✅ Uspjeh', result.message || 'Klijent je obrisan', [
+                  { text: 'OK', onPress: () => onDeleteClient?.(clientId) || onBack?.() }
+                ]);
+              } else {
+                Alert.alert('❌ Greška', result.error || 'Nije moguće obrisati klijenta');
+              }
+            } catch (error) {
+              Alert.alert('❌ Greška', 'Došlo je do greške pri brisanju');
+              console.error('Delete client error:', error);
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  }
 
   async function loadData() {
     setLoading(true);
@@ -237,7 +278,13 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
             <Text style={styles.backText}>← Natrag</Text>
           </TouchableOpacity>
           <Text style={styles.title}>{data.client.name}</Text>
-          <View style={styles.placeholder} />
+          <TouchableOpacity 
+            onPress={handleDeleteClient} 
+            style={styles.deleteButton}
+            disabled={deleting}
+          >
+            <Text style={styles.deleteButtonText}>{deleting ? '...' : '🗑️'}</Text>
+          </TouchableOpacity>
         </View>
 
         <ScrollView
@@ -526,9 +573,32 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
           )}
 
           {/* ============================================ */}
-          {/* PROGRAM INFO */}
+          {/* SVI PROGRAMI KLIJENTA */}
           {/* ============================================ */}
-          {data.program && (
+          {data.allPrograms && data.allPrograms.length > 0 && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>📋 Programi ({data.allPrograms.length})</Text>
+              {data.allPrograms.map((prog: any) => (
+                <TouchableOpacity 
+                  key={prog.id}
+                  style={styles.programItem}
+                  onPress={() => onViewProgram?.(prog.id, data.client?.name || 'Klijent')}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.programItemContent}>
+                    <Text style={styles.programItemName}>{prog.name}</Text>
+                    <Text style={styles.programItemMeta}>
+                      {prog.durationWeeks} tjedana • {prog.status}
+                    </Text>
+                  </View>
+                  <Text style={styles.programItemArrow}>→</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+          
+          {/* Fallback za stari prikaz ako nema allPrograms */}
+          {(!data.allPrograms || data.allPrograms.length === 0) && data.program && (
             <TouchableOpacity 
               style={styles.card}
               onPress={() => onViewProgram?.(data.program.id, data.client?.name || 'Klijent')}
@@ -546,6 +616,62 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
                 Tjedan {data.program.currentWeek} / {data.program.totalWeeks}
               </Text>
             </TouchableOpacity>
+          )}
+
+          {/* ============================================ */}
+          {/* START WORKOUT LOG - Evidentiraj trening */}
+          {/* ============================================ */}
+          {data.program && onStartWorkoutLog && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>📝 Evidentiraj trening</Text>
+              <Text style={styles.cardSubtitle}>Pokreni evidenciju za današnji trening</Text>
+              
+              {data.todaySession ? (
+                <TouchableOpacity
+                  style={styles.startWorkoutButton}
+                  onPress={() => onStartWorkoutLog(
+                    clientId,
+                    data.client?.name || 'Klijent',
+                    data.todaySession.id,
+                    data.todaySession.split_name || data.todaySession.name || 'Trening',
+                    data.program.id
+                  )}
+                >
+                  <Text style={styles.startWorkoutButtonText}>
+                    ▶️ Započni: {data.todaySession.split_name || data.todaySession.name}
+                  </Text>
+                </TouchableOpacity>
+              ) : data.upcomingSessions && data.upcomingSessions.length > 0 ? (
+                <>
+                  <Text style={styles.upcomingSessionsLabel}>Nadolazeće sesije:</Text>
+                  {data.upcomingSessions.slice(0, 3).map((session: any, index: number) => (
+                    <TouchableOpacity
+                      key={session.id || index}
+                      style={styles.sessionLogButton}
+                      onPress={() => onStartWorkoutLog(
+                        clientId,
+                        data.client?.name || 'Klijent',
+                        session.id,
+                        session.split_name || session.name || 'Trening',
+                        data.program.id
+                      )}
+                    >
+                      <View style={styles.sessionLogButtonContent}>
+                        <Text style={styles.sessionLogButtonText}>
+                          {session.split_name || session.name}
+                        </Text>
+                        <Text style={styles.sessionLogButtonDay}>
+                          Dan {session.day_of_week}
+                        </Text>
+                      </View>
+                      <Text style={styles.sessionLogButtonArrow}>▶</Text>
+                    </TouchableOpacity>
+                  ))}
+                </>
+              ) : (
+                <Text style={styles.noSessionsText}>Nema dostupnih sesija za evidenciju</Text>
+              )}
+            </View>
           )}
 
           {/* ============================================ */}
@@ -800,6 +926,17 @@ const styles = StyleSheet.create({
   backText: { color: '#FFFFFF', fontSize: 16 },
   title: { fontSize: 20, fontWeight: 'bold', color: '#FFF' },
   placeholder: { width: 80 },
+  deleteButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteButtonText: {
+    fontSize: 20,
+  },
   content: { flex: 1, paddingHorizontal: 20 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -815,6 +952,64 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 14, color: '#FFFFFF', marginBottom: 12, fontWeight: '600' },
   cardValue: { fontSize: 20, fontWeight: 'bold', color: '#FFF', marginBottom: 8 },
   cardLabel: { fontSize: 14, color: '#D4D4D8', marginTop: 4 },
+  cardSubtitle: { fontSize: 14, color: '#888888', marginBottom: 16 },
+  
+  // Start Workout Log
+  startWorkoutButton: {
+    backgroundColor: '#00FF88',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  startWorkoutButtonText: {
+    color: '#000000',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  upcomingSessionsLabel: {
+    color: '#888888',
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 12,
+  },
+  sessionLogButton: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#333333',
+  },
+  sessionLogButtonContent: {
+    flex: 1,
+  },
+  sessionLogButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  sessionLogButtonDay: {
+    color: '#888888',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  sessionLogButtonArrow: {
+    color: '#00FF88',
+    fontSize: 16,
+    marginLeft: 12,
+  },
+  noSessionsText: {
+    color: '#666666',
+    fontSize: 14,
+    textAlign: 'center',
+    paddingVertical: 20,
+  },
   
   // Program card
   programCardHeader: {
@@ -827,6 +1022,34 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#60A5FA',
     fontWeight: '600',
+  },
+  programItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  programItemContent: {
+    flex: 1,
+  },
+  programItemName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 2,
+  },
+  programItemMeta: {
+    fontSize: 12,
+    color: '#888',
+  },
+  programItemArrow: {
+    fontSize: 16,
+    color: '#60A5FA',
+    marginLeft: 8,
   },
   
   // Info rows

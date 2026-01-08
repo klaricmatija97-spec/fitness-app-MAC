@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import { generateTokens } from "@/lib/auth/jwt";
 
 // Stroža validacija emaila - provjerava format, domenu i strukturu
 const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
@@ -435,9 +436,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generiraj jednostavan token (u produkciji koristi JWT)
-    console.log("[auth/register] Generating token...");
-    const token = Buffer.from(`${clientId}:${Date.now()}`).toString("base64");
+    // Generiraj JWT tokene (produkcijski sigurno)
+    console.log("[auth/register] Generating JWT tokens...");
+    const tokens = generateTokens({
+      userId: clientId,
+      userType: 'client',
+      username,
+    });
 
     console.log("[auth/register] ✅ Registration successful!");
     console.log("[auth/register] Client ID:", clientId);
@@ -445,9 +450,16 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      token,
-      clientId,
+      userType: 'client',
+      userId: clientId,
+      clientId, // Backward compatibility
       username,
+      // JWT tokeni
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: tokens.expiresIn,
+      // Backward compatibility
+      token: tokens.accessToken,
       message: "Registracija uspješna",
     });
   } catch (error) {

@@ -53,7 +53,11 @@ export async function GET(request: NextRequest) {
       const normalizedDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek; // Convert Sunday to 7
 
       // Dohvati današnji session
-      const { data: session } = await supabase
+      let session = null;
+      let isNextSession = false;
+      
+      // Prvo pokušaj današnji trening
+      const { data: todaySessionData } = await supabase
         .from('program_sessions')
         .select('id, split_name, week_number, day_of_week, estimated_duration_minutes')
         .eq('program_id', program.id)
@@ -61,6 +65,42 @@ export async function GET(request: NextRequest) {
         .eq('day_of_week', normalizedDayOfWeek)
         .limit(1)
         .maybeSingle();
+      
+      session = todaySessionData;
+      
+      // Ako nema danas, pronađi sljedeći trening
+      if (!session) {
+        // Pronađi sljedeći trening ovaj tjedan
+        const { data: nextSessionThisWeek } = await supabase
+          .from('program_sessions')
+          .select('id, split_name, week_number, day_of_week, estimated_duration_minutes')
+          .eq('program_id', program.id)
+          .eq('week_number', currentWeek)
+          .gt('day_of_week', normalizedDayOfWeek)
+          .order('day_of_week', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        
+        if (nextSessionThisWeek) {
+          session = nextSessionThisWeek;
+          isNextSession = true;
+        } else {
+          // Ako nema ovaj tjedan, pronađi prvi trening sljedećeg tjedna
+          const { data: nextWeekSession } = await supabase
+            .from('program_sessions')
+            .select('id, split_name, week_number, day_of_week, estimated_duration_minutes')
+            .eq('program_id', program.id)
+            .eq('week_number', currentWeek + 1)
+            .order('day_of_week', { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          
+          if (nextWeekSession) {
+            session = nextWeekSession;
+            isNextSession = true;
+          }
+        }
+      }
 
       if (session) {
         // Dohvati exercises count
@@ -69,17 +109,23 @@ export async function GET(request: NextRequest) {
           .select('id', { count: 'exact', head: true })
           .eq('session_id', session.id);
 
+        // Izračunaj koji je to dan
+        const dayNames = ['', 'Ponedjeljak', 'Utorak', 'Srijeda', 'Četvrtak', 'Petak', 'Subota', 'Nedjelja'];
+        const sessionDayName = dayNames[session.day_of_week] || '';
+
         // TODO: Dohvati session status iz workout_logs (pending/in_progress/completed)
         todaySession = {
           id: session.id,
           name: session.split_name || 'Trening',
           weekNumber: session.week_number,
           dayOfWeek: session.day_of_week,
+          dayName: sessionDayName,
           estimatedDuration: session.estimated_duration_minutes || 60,
           exercisesCount: exercisesCount || 0,
           status: 'pending', // TODO: iz workout_logs
           startedAt: null, // TODO: iz workout_logs
           completedAt: null, // TODO: iz workout_logs
+          isNextSession, // Označava je li ovo sljedeći trening (ne današnji)
         };
       }
 

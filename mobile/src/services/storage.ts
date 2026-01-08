@@ -9,9 +9,13 @@ const STORAGE_KEYS = {
   AUTH_TOKEN: 'authToken',
   CLIENT_ID: 'clientId',
   TRAINER_ID: 'trainerId',
+  TRAINER_TOKEN: 'trainerToken', // Poseban token za trenera
   USERNAME: 'username',
   USER_DATA: 'userData',
   SELECTED_GOAL: 'selectedGoal',
+  APP_STATE: 'appState',
+  INTAKE_DATA: 'intakeData',
+  CALCULATOR_RESULTS: 'calculatorResults',
 } as const;
 
 /**
@@ -42,6 +46,14 @@ export const authStorage = {
     return await AsyncStorage.getItem(STORAGE_KEYS.TRAINER_ID);
   },
 
+  async saveTrainerToken(token: string) {
+    await AsyncStorage.setItem(STORAGE_KEYS.TRAINER_TOKEN, token);
+  },
+
+  async getTrainerToken(): Promise<string | null> {
+    return await AsyncStorage.getItem(STORAGE_KEYS.TRAINER_TOKEN);
+  },
+
   async saveUsername(username: string) {
     await AsyncStorage.setItem(STORAGE_KEYS.USERNAME, username);
   },
@@ -55,6 +67,7 @@ export const authStorage = {
       STORAGE_KEYS.AUTH_TOKEN,
       STORAGE_KEYS.CLIENT_ID,
       STORAGE_KEYS.TRAINER_ID,
+      STORAGE_KEYS.TRAINER_TOKEN,
       STORAGE_KEYS.USERNAME,
     ]);
   },
@@ -92,6 +105,80 @@ export const userDataStorage = {
 
   async clearUserData() {
     await AsyncStorage.removeItem(STORAGE_KEYS.USER_DATA);
+  },
+};
+
+/**
+ * App state storage - sprema trenutni screen i podatke
+ */
+export type AppScreen = 
+  | 'welcome' 
+  | 'login' 
+  | 'onboarding' 
+  | 'intakeFlow' 
+  | 'calculator' 
+  | 'calculationsSummary' 
+  | 'mealPlan'
+  | 'trainerHome'
+  | 'clientDashboard';
+
+export interface AppStateData {
+  currentScreen: AppScreen;
+  intakeFormData?: any;
+  calculatorResults?: any;
+  connectedTrainerId?: string | null;
+  connectedTrainerName?: string | null;
+  lastUpdated: number;
+}
+
+export const appStateStorage = {
+  async saveAppState(state: AppStateData) {
+    await AsyncStorage.setItem(STORAGE_KEYS.APP_STATE, JSON.stringify({
+      ...state,
+      lastUpdated: Date.now(),
+    }));
+  },
+
+  async getAppState(): Promise<AppStateData | null> {
+    try {
+      const data = await AsyncStorage.getItem(STORAGE_KEYS.APP_STATE);
+      if (!data) return null;
+      
+      const parsed = JSON.parse(data) as AppStateData;
+      
+      // Ako je starije od 7 dana, ignoriraj
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+      if (Date.now() - parsed.lastUpdated > sevenDaysMs) {
+        await this.clearAppState();
+        return null;
+      }
+      
+      return parsed;
+    } catch {
+      return null;
+    }
+  },
+
+  async clearAppState() {
+    await AsyncStorage.removeItem(STORAGE_KEYS.APP_STATE);
+  },
+
+  async saveIntakeData(data: any) {
+    await AsyncStorage.setItem(STORAGE_KEYS.INTAKE_DATA, JSON.stringify(data));
+  },
+
+  async getIntakeData(): Promise<any | null> {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.INTAKE_DATA);
+    return data ? JSON.parse(data) : null;
+  },
+
+  async saveCalculatorResults(results: any) {
+    await AsyncStorage.setItem(STORAGE_KEYS.CALCULATOR_RESULTS, JSON.stringify(results));
+  },
+
+  async getCalculatorResults(): Promise<any | null> {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.CALCULATOR_RESULTS);
+    return data ? JSON.parse(data) : null;
   },
 };
 

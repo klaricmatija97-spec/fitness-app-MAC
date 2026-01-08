@@ -62,6 +62,7 @@ const SPLIT_MAP: Record<string, string> = {
   upper_lower: 'upper_lower',
   push_pull_legs: 'push_pull_legs',
   body_part_split: 'bro_split',
+  custom: 'custom',
 };
 
 const MEZOCIKLUS_TIP_MAP: Record<string, string> = {

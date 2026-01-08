@@ -225,9 +225,18 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    // DEBUG: Provjeri token
+    const authHeader = request.headers.get('authorization');
+    console.log('[trainer/clients] GET - Authorization header present:', !!authHeader);
+    if (authHeader) {
+      const tokenPreview = authHeader.substring(0, 50);
+      console.log('[trainer/clients] GET - Token preview:', tokenPreview + '...');
+    }
+    
     // Provjeri autentifikaciju
     const auth = requireTrainer(request);
     if (!auth) {
+      console.error('[trainer/clients] GET - No auth returned from requireTrainer');
       return NextResponse.json(
         {
           success: false,
@@ -240,15 +249,39 @@ export async function GET(request: NextRequest) {
 
     const trainerId = auth.userId;
     console.log('[trainer/clients] GET - Trainer ID:', trainerId);
+    console.log('[trainer/clients] GET - Trainer ID type:', typeof trainerId);
+    console.log('[trainer/clients] GET - Trainer ID length:', trainerId?.length);
+    console.log('[trainer/clients] GET - Auth object:', {
+      userId: auth.userId,
+      userType: auth.userType,
+      username: auth.username,
+    });
+
+    // Validiraj da je trainerId validan UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(trainerId)) {
+      console.error('[trainer/clients] Invalid trainer ID format (not UUID):', trainerId?.substring(0, 50));
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid trainer authentication. Please log in again.",
+          code: "INVALID_TOKEN",
+        },
+        { status: 401 }
+      );
+    }
 
     // Dohvati sve klijente dodijeljene ovom treneru
     const { data: clients, error: clientsError } = await supabase
       .from("clients")
-      .select("id, name, email, phone, trainer_id")
+      .select("id, name, email, phone, trainer_id, connected_at")
       .eq("trainer_id", trainerId)
       .order("name");
 
     console.log('[trainer/clients] GET - Clients found:', clients?.length || 0);
+    if (clients && clients.length > 0) {
+      console.log('[trainer/clients] GET - Client IDs:', clients.map(c => ({ id: c.id, name: c.name, trainer_id: c.trainer_id })));
+    }
     if (clientsError) {
       console.error('[trainer/clients] GET - Error:', clientsError);
     }
@@ -373,6 +406,108 @@ export async function GET(request: NextRequest) {
         code: "SERVER_ERROR",
       },
       { status: 500 },
+    );
+  }
+}
+
+/**
+ * DELETE /api/trainer/clients?clientId=...
+ * Briše klijenta (samo ako pripada treneru)
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    // Provjeri autentifikaciju
+    const auth = requireTrainer(request);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized", code: "UNAUTHORIZED" },
+        { status: 401 }
+      );
+    }
+
+    const trainerId = auth.userId;
+    
+    // Dohvati clientId iz URL query parametra
+    const { searchParams } = new URL(request.url);
+    const clientId = searchParams.get('clientId');
+    
+    if (!clientId) {
+      return NextResponse.json(
+        { success: false, error: "clientId je obavezan", code: "MISSING_CLIENT_ID" },
+        { status: 400 }
+      );
+    }
+
+    // Provjeri da klijent pripada ovom treneru
+    const { data: client, error: clientError } = await supabase
+      .from("clients")
+      .select("id, name, trainer_id")
+      .eq("id", clientId)
+      .single();
+
+    if (clientError || !client) {
+      return NextResponse.json(
+        { success: false, error: "Klijent nije pronađen", code: "CLIENT_NOT_FOUND" },
+        { status: 404 }
+      );
+    }
+
+    if (client.trainer_id !== trainerId) {
+      return NextResponse.json(
+        { success: false, error: "Nemate pravo brisati ovog klijenta", code: "FORBIDDEN" },
+        { status: 403 }
+      );
+    }
+
+    // Obriši sve povezane podatke (kaskadno)
+    // 1. Obriši workout_logs
+    await supabase.from("workout_logs").delete().eq("client_id", clientId);
+    
+    // 2. Obriši program_sessions (preko programa)
+    const { data: programs } = await supabase
+      .from("training_programs")
+      .select("id")
+      .eq("client_id", clientId);
+    
+    if (programs && programs.length > 0) {
+      const programIds = programs.map(p => p.id);
+      await supabase.from("program_sessions").delete().in("program_id", programIds);
+    }
+    
+    // 3. Obriši training_programs
+    await supabase.from("training_programs").delete().eq("client_id", clientId);
+    
+    // 4. Obriši meal_plans
+    await supabase.from("meal_plans").delete().eq("client_id", clientId);
+    
+    // 5. Obriši user_accounts (ako postoji)
+    await supabase.from("user_accounts").delete().eq("client_id", clientId);
+    
+    // 6. Konačno obriši klijenta
+    const { error: deleteError } = await supabase
+      .from("clients")
+      .delete()
+      .eq("id", clientId);
+
+    if (deleteError) {
+      console.error("[trainer/clients] Error deleting client:", deleteError);
+      return NextResponse.json(
+        { success: false, error: deleteError.message, code: "DELETE_ERROR" },
+        { status: 500 }
+      );
+    }
+
+    console.log(`[trainer/clients] Client ${clientId} (${client.name}) deleted by trainer ${trainerId}`);
+
+    return NextResponse.json({
+      success: true,
+      message: `Klijent ${client.name} je uspješno obrisan`,
+    });
+  } catch (error) {
+    console.error("[trainer/clients] DELETE error:", error);
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : "Unknown error", code: "SERVER_ERROR" },
+      { status: 500 }
     );
   }
 }

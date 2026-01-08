@@ -14,6 +14,8 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { API_BASE_URL } from '../services/api';
@@ -26,15 +28,25 @@ interface Props {
   onStartWorkout?: (sessionId: string) => void;
   onViewProgress?: () => void;
   onSettings?: () => void;
+  onLogout?: () => void;
+  // Novi props za generatore
+  onGenerateMealPlan?: () => void;
+  onGenerateTraining?: () => void;
+  onViewCalculations?: () => void;
 }
 
 interface TodayWorkout {
   id: string;
   name: string;
-  sessionType: string;
+  sessionType?: string;
   estimatedDuration: number;
-  exerciseCount: number;
+  exerciseCount?: number;
+  exercisesCount?: number; // API vraća ovo
   status: 'pending' | 'in_progress' | 'completed' | 'skipped';
+  isNextSession?: boolean; // True ako je ovo sljedeći trening, a ne današnji
+  dayName?: string; // Naziv dana (npr. "Petak")
+  dayOfWeek?: number;
+  weekNumber?: number;
 }
 
 interface ClientProgram {
@@ -71,10 +83,15 @@ export default function ClientDashboardScreen({
   onStartWorkout,
   onViewProgress,
   onSettings,
+  onLogout,
+  onGenerateMealPlan,
+  onGenerateTraining,
+  onViewCalculations,
 }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState<ClientData | null>(null);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -178,9 +195,85 @@ export default function ClientDashboardScreen({
               <Text style={styles.backText}>← Natrag</Text>
             </TouchableOpacity>
           )}
+          {!onBack && <View style={styles.placeholder} />}
           <Text style={styles.title}>Moj Program</Text>
-          <View style={styles.placeholder} />
+          <TouchableOpacity style={styles.menuButton} onPress={() => setMenuVisible(true)}>
+            <View style={styles.menuLines}>
+              <View style={styles.menuLine} />
+              <View style={styles.menuLine} />
+              <View style={styles.menuLine} />
+            </View>
+          </TouchableOpacity>
         </View>
+
+        {/* Hamburger Menu Modal */}
+        <Modal
+          visible={menuVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setMenuVisible(false)}
+        >
+          <Pressable style={styles.menuOverlay} onPress={() => setMenuVisible(false)}>
+            <View style={styles.menuContainer}>
+              {onGenerateMealPlan && (
+                <TouchableOpacity 
+                  style={styles.menuItem} 
+                  onPress={() => { setMenuVisible(false); onGenerateMealPlan(); }}
+                >
+                  <Text style={styles.menuItemIcon}>🍽️</Text>
+                  <Text style={styles.menuItemText}>Plan prehrane</Text>
+                </TouchableOpacity>
+              )}
+              
+              {onGenerateTraining && (
+                <TouchableOpacity 
+                  style={styles.menuItem} 
+                  onPress={() => { setMenuVisible(false); onGenerateTraining(); }}
+                >
+                  <Text style={styles.menuItemIcon}>💪</Text>
+                  <Text style={styles.menuItemText}>Plan treninga</Text>
+                </TouchableOpacity>
+              )}
+              
+              {onViewCalculations && (
+                <TouchableOpacity 
+                  style={styles.menuItem} 
+                  onPress={() => { setMenuVisible(false); onViewCalculations(); }}
+                >
+                  <Text style={styles.menuItemIcon}>📊</Text>
+                  <Text style={styles.menuItemText}>Moje kalkulacije</Text>
+                </TouchableOpacity>
+              )}
+              
+              {(onGenerateMealPlan || onGenerateTraining || onViewCalculations) && (
+                <View style={styles.menuDivider} />
+              )}
+              
+              {onSettings && (
+                <TouchableOpacity 
+                  style={styles.menuItem} 
+                  onPress={() => { setMenuVisible(false); onSettings(); }}
+                >
+                  <Text style={styles.menuItemIcon}>⚙️</Text>
+                  <Text style={styles.menuItemText}>Postavke</Text>
+                </TouchableOpacity>
+              )}
+              
+              {onLogout && (
+                <>
+                  <View style={styles.menuDivider} />
+                  <TouchableOpacity 
+                    style={styles.menuItem} 
+                    onPress={() => { setMenuVisible(false); onLogout(); }}
+                  >
+                    <Text style={styles.menuItemIcon}>🚪</Text>
+                    <Text style={[styles.menuItemText, styles.menuItemLogout]}>Odjava</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          </Pressable>
+        </Modal>
 
         <ScrollView 
           style={styles.content}
@@ -220,6 +313,14 @@ export default function ClientDashboardScreen({
                 style={styles.workoutCard}
                 onPress={() => onStartWorkout?.(data.todayWorkout!.id)}
               >
+                {/* Ako je sljedeći trening a ne današnji, prikaži oznaku */}
+                {data.todayWorkout.isNextSession && (
+                  <View style={styles.nextSessionBadge}>
+                    <Text style={styles.nextSessionBadgeText}>
+                      📅 Sljedeći trening: {data.todayWorkout.dayName}
+                    </Text>
+                  </View>
+                )}
                 <View style={styles.workoutHeader}>
                   <Text style={styles.workoutName}>{data.todayWorkout.name}</Text>
                   <View style={[
@@ -230,6 +331,7 @@ export default function ClientDashboardScreen({
                     <Text style={styles.workoutStatusText}>
                       {data.todayWorkout.status === 'completed' ? ' Završeno' :
                        data.todayWorkout.status === 'in_progress' ? ' U tijeku' :
+                       data.todayWorkout.isNextSession ? '📅 Nadolazeći' :
                        '⏳ Čeka'}
                     </Text>
                   </View>
@@ -239,7 +341,7 @@ export default function ClientDashboardScreen({
                     ⏱️ {data.todayWorkout.estimatedDuration} min
                   </Text>
                   <Text style={styles.workoutMetaText}>
-                     {data.todayWorkout.exerciseCount} vježbi
+                     {data.todayWorkout.exercisesCount || data.todayWorkout.exerciseCount} vježbi
                   </Text>
                 </View>
                 <TouchableOpacity 
@@ -247,7 +349,8 @@ export default function ClientDashboardScreen({
                   onPress={() => onStartWorkout?.(data.todayWorkout!.id)}
                 >
                   <Text style={styles.startButtonText}>
-                    {data.todayWorkout.status === 'completed' ? 'Pogledaj' : 'Započni trening'}
+                    {data.todayWorkout.status === 'completed' ? 'Pogledaj' : 
+                     data.todayWorkout.isNextSession ? 'Pregled treninga' : 'Započni trening'}
                   </Text>
                 </TouchableOpacity>
               </TouchableOpacity>
@@ -259,6 +362,42 @@ export default function ClientDashboardScreen({
               </View>
             )}
           </View>
+
+          {/* Quick Actions - generatori */}
+          {(onGenerateMealPlan || onGenerateTraining) && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>⚡ Brze akcije</Text>
+              <View style={styles.quickActionsContainer}>
+                {onGenerateMealPlan && (
+                  <TouchableOpacity 
+                    style={styles.quickActionButton}
+                    onPress={onGenerateMealPlan}
+                  >
+                    <Text style={styles.quickActionIcon}>🍽️</Text>
+                    <Text style={styles.quickActionText}>Generiraj plan prehrane</Text>
+                  </TouchableOpacity>
+                )}
+                {onGenerateTraining && (
+                  <TouchableOpacity 
+                    style={styles.quickActionButton}
+                    onPress={onGenerateTraining}
+                  >
+                    <Text style={styles.quickActionIcon}>💪</Text>
+                    <Text style={styles.quickActionText}>Generiraj plan treninga</Text>
+                  </TouchableOpacity>
+                )}
+                {onViewCalculations && (
+                  <TouchableOpacity 
+                    style={styles.quickActionButton}
+                    onPress={onViewCalculations}
+                  >
+                    <Text style={styles.quickActionIcon}>📊</Text>
+                    <Text style={styles.quickActionText}>Vidi kalkulacije</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          )}
 
           {/* Program Info */}
           {data?.program && (
@@ -352,6 +491,68 @@ const styles = StyleSheet.create({
   backText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   title: { color: '#FFF', fontSize: 20, fontWeight: '700' },
   placeholder: { width: 60 },
+  menuButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#18181B',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuLines: {
+    width: 20,
+    height: 14,
+    justifyContent: 'space-between',
+  },
+  menuLine: {
+    width: '100%',
+    height: 2,
+    backgroundColor: '#fff',
+    borderRadius: 1,
+  },
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: 100,
+    paddingRight: 20,
+  },
+  menuContainer: {
+    backgroundColor: '#1C1C1E',
+    borderRadius: 16,
+    padding: 8,
+    width: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  menuItemIcon: {
+    fontSize: 18,
+    marginRight: 12,
+  },
+  menuItemText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '500',
+  },
+  menuItemLogout: {
+    color: '#EF4444',
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginVertical: 4,
+  },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { color: '#FFF', marginTop: 10, fontSize: 16 },
   content: { flex: 1, paddingHorizontal: 20 },
@@ -403,6 +604,19 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#FFFFFF',
   },
+  nextSessionBadge: {
+    backgroundColor: '#3B82F6',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    alignSelf: 'flex-start',
+  },
+  nextSessionBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   workoutHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -438,6 +652,29 @@ const styles = StyleSheet.create({
   noWorkoutIcon: { fontSize: 48, marginBottom: 12 },
   noWorkoutText: { color: '#FFF', fontSize: 18, fontWeight: '600', marginBottom: 8 },
   noWorkoutSubtext: { color: '#71717A', fontSize: 14, textAlign: 'center' },
+  
+  // Quick Actions
+  quickActionsContainer: {
+    gap: 12,
+  },
+  quickActionButton: {
+    backgroundColor: '#18181B',
+    borderRadius: 16,
+    padding: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#27272A',
+  },
+  quickActionIcon: {
+    fontSize: 24,
+    marginRight: 14,
+  },
+  quickActionText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   
   // Program Card
   programCard: {

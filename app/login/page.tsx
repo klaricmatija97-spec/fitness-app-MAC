@@ -153,6 +153,8 @@ function LoginPageContent() {
   const handleSkipLogin = () => {
     localStorage.setItem("authToken", "test-token");
     localStorage.setItem("clientId", "00000000-0000-0000-0000-000000000000");
+    // Postavi currentSlide na honorific (prvi screen upitnika, index 1)
+    localStorage.setItem("appCurrentSlide", "1");
     router.push("/app?preview=true");
   };
 

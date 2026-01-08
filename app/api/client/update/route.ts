@@ -30,6 +30,12 @@ const updateClientSchema = z.object({
   dietCleanliness: z.number().optional(),
   notes: z.string().optional(),
   allergies: z.string().optional().nullable(),
+  // Intake podaci
+  training_frequency: z.number().optional().nullable(),
+  health_conditions: z.string().optional().nullable(),
+  food_preferences: z.string().optional().nullable(),
+  avoid_ingredients: z.string().optional().nullable(),
+  injuries: z.string().optional().nullable(),
 });
 
 export async function POST(request: Request) {
@@ -126,6 +132,12 @@ export async function POST(request: Request) {
     if (data.dietCleanliness !== undefined) updateData.diet_cleanliness = data.dietCleanliness;
     if (data.notes !== undefined) updateData.notes = data.notes;
     if (data.allergies !== undefined) updateData.allergies = data.allergies;
+    // Intake podaci
+    if (data.training_frequency !== undefined) updateData.training_frequency = data.training_frequency;
+    if (data.health_conditions !== undefined) updateData.health_conditions = data.health_conditions;
+    if (data.food_preferences !== undefined) updateData.food_preferences = data.food_preferences;
+    if (data.avoid_ingredients !== undefined) updateData.avoid_ingredients = data.avoid_ingredients;
+    if (data.injuries !== undefined) updateData.injuries = data.injuries;
 
     // Ažuriraj klijenta koristeći update (ne upsert)
     const { error: clientUpdateError } = await supabase

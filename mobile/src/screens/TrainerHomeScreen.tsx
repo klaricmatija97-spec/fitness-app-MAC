@@ -18,6 +18,7 @@ import {
   FlatList,
   Modal,
   Pressable,
+  SafeAreaView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -57,7 +58,13 @@ interface TrainerHomeData {
 
 import { API_BASE_URL } from '../services/api';
 
-async function fetchClients(token: string): Promise<TrainerHomeData | null> {
+interface FetchResult {
+  data: TrainerHomeData | null;
+  authError: boolean;
+  errorMessage?: string;
+}
+
+async function fetchClients(token: string): Promise<FetchResult> {
   try {
     console.log('[TrainerHomeScreen] Fetching clients from:', `${API_BASE_URL}/api/trainer/clients`);
     const response = await fetch(`${API_BASE_URL}/api/trainer/clients`, {
@@ -71,16 +78,22 @@ async function fetchClients(token: string): Promise<TrainerHomeData | null> {
     const data = await response.json();
     console.log('[TrainerHomeScreen] Response data:', JSON.stringify(data, null, 2));
 
+    // Provjeri za auth greške (401 Unauthorized)
+    if (response.status === 401 || data.code === 'UNAUTHORIZED' || data.code === 'INVALID_TOKEN') {
+      console.log('[TrainerHomeScreen] Authentication error - session expired');
+      return { data: null, authError: true, errorMessage: data.error || 'Sesija je istekla' };
+    }
+
     if (data.success) {
       console.log('[TrainerHomeScreen] Clients fetched:', data.data?.clients?.length || 0);
-      return data.data;
+      return { data: data.data, authError: false };
     } else {
       console.error('[TrainerHomeScreen] API returned error:', data.error, data.code);
-      return null;
+      return { data: null, authError: false, errorMessage: data.error };
     }
   } catch (error) {
     console.error('[TrainerHomeScreen] Error fetching clients:', error);
-    return null;
+    return { data: null, authError: false, errorMessage: 'Greška pri povezivanju' };
   }
 }
 
@@ -104,6 +117,7 @@ export default function TrainerHomeScreen({ authToken, onClientPress, onNewClien
   const [data, setData] = useState<TrainerHomeData | null>(null);
   const [filter, setFilter] = useState<'all' | 'active' | 'needsAttention'>('all');
   const [menuVisible, setMenuVisible] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -114,7 +128,16 @@ export default function TrainerHomeScreen({ authToken, onClientPress, onNewClien
     console.log('[TrainerHomeScreen] Loading data with token:', authToken?.substring(0, 20) + '...');
     const result = await fetchClients(authToken);
     console.log('[TrainerHomeScreen] Loaded data:', result);
-    setData(result);
+    
+    // Provjeri je li sesija istekla
+    if (result.authError) {
+      console.log('[TrainerHomeScreen] Session expired, showing re-login prompt');
+      setSessionExpired(true);
+      setLoading(false);
+      return;
+    }
+    
+    setData(result.data);
     setLoading(false);
   }
 
@@ -122,6 +145,30 @@ export default function TrainerHomeScreen({ authToken, onClientPress, onNewClien
     setRefreshing(true);
     await loadData();
     setRefreshing(false);
+  }
+  
+  // Ako je sesija istekla, prikaži poruku i opciju za ponovnu prijavu
+  if (sessionExpired) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.sessionExpiredContainer}>
+          <Text style={styles.sessionExpiredIcon}>🔐</Text>
+          <Text style={styles.sessionExpiredTitle}>Sesija je istekla</Text>
+          <Text style={styles.sessionExpiredText}>
+            Molimo prijavite se ponovno kako biste nastavili.
+          </Text>
+          <TouchableOpacity 
+            style={styles.reloginButton}
+            onPress={() => {
+              setSessionExpired(false);
+              onLogout?.();
+            }}
+          >
+            <Text style={styles.reloginButtonText}>Prijavi se ponovno</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   function getStatusColor(status: string): string {
@@ -605,6 +652,42 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
   },
   fabText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  // Session expired styles
+  sessionExpiredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#09090B',
+    padding: 40,
+  },
+  sessionExpiredIcon: {
+    fontSize: 64,
+    marginBottom: 20,
+  },
+  sessionExpiredTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFF',
+    marginBottom: 12,
+  },
+  sessionExpiredText: {
+    fontSize: 16,
+    color: '#A1A1AA',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 24,
+  },
+  reloginButton: {
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 12,
+  },
+  reloginButtonText: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',

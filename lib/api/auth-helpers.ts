@@ -54,6 +54,22 @@ export function getUserFromRequest(request: NextRequest): AuthResult {
   const jwtResult = verifyAccessToken(token);
   
   if (jwtResult.valid && jwtResult.payload) {
+    // Debug: provjeri da je userId validan UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(jwtResult.payload.userId)) {
+      console.error('[auth-helpers] JWT payload userId is not a valid UUID:', {
+        userId: jwtResult.payload.userId,
+        userType: jwtResult.payload.userType,
+        tokenPreview: token.substring(0, 50),
+      });
+      // Ako userId nije validan UUID, ne vraćaj authenticated
+      return {
+        authenticated: false,
+        user: null,
+        error: 'Invalid token payload - userId is not a valid UUID',
+      };
+    }
+    
     return {
       authenticated: true,
       user: {
@@ -65,6 +81,15 @@ export function getUserFromRequest(request: NextRequest): AuthResult {
     };
   }
   
+  // Debug: loguj zašto JWT verifikacija nije uspjela
+  if (!jwtResult.valid) {
+    console.error('[auth-helpers] JWT verification failed:', {
+      error: jwtResult.error,
+      expired: jwtResult.expired,
+      tokenPreview: token.substring(0, 50),
+    });
+  }
+  
   // Fallback: Probaj dekodirati kao legacy base64 token
   // Format: base64(userId:timestamp)
   try {
@@ -72,6 +97,21 @@ export function getUserFromRequest(request: NextRequest): AuthResult {
     const [userId, timestamp] = decoded.split(':');
     
     if (userId && timestamp) {
+      // Validiraj da je userId validan UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(userId)) {
+        console.error('[auth-helpers] Legacy token userId is not a valid UUID:', {
+          userId,
+          tokenPreview: token.substring(0, 50),
+        });
+        // Ne vraćaj authenticated ako userId nije validan UUID
+        return {
+          authenticated: false,
+          user: null,
+          error: 'Invalid token format',
+        };
+      }
+      
       // Legacy token - pretpostavljamo da je trainer za backward compatibility
       // jer su klijenti koristili user_accounts s JWT-om
       return {
@@ -84,8 +124,9 @@ export function getUserFromRequest(request: NextRequest): AuthResult {
         },
       };
     }
-  } catch {
+  } catch (error) {
     // Nije ni JWT ni legacy token
+    console.error('[auth-helpers] Failed to decode as legacy token:', error);
   }
   
   return {
@@ -119,15 +160,26 @@ export function requireAuth(request: NextRequest): AuthUser | null {
 export function requireTrainer(request: NextRequest): AuthUser | null {
   const auth = getUserFromRequest(request);
   
+  console.log('[requireTrainer] Auth result:', {
+    authenticated: auth.authenticated,
+    hasUser: !!auth.user,
+    userType: auth.user?.userType,
+    userId: auth.user?.userId?.substring(0, 20) + '...',
+    error: auth.error,
+  });
+  
   if (!auth.authenticated || !auth.user) {
+    console.log('[requireTrainer] Not authenticated or no user');
     return null;
   }
   
   // Legacy tokeni su bili za trenere
   if (auth.user.userType === 'trainer') {
+    console.log('[requireTrainer] User is trainer, returning auth');
     return auth.user;
   }
   
+  console.log('[requireTrainer] User is not trainer, userType:', auth.user.userType);
   return null;
 }
 

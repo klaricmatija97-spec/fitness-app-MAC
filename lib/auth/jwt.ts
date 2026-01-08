@@ -3,9 +3,11 @@
  * ============================
  * Funkcije za generiranje i verifikaciju JWT tokena
  * 
- * Tokeni:
- * - Access Token: kratkotrajan (15 min), za API pozive
- * - Refresh Token: dugotrajan (7 dana), za obnovu access tokena
+ * PRODUKCIJSKA KONFIGURACIJA:
+ * - Access Token: 1 godina - trener ostaje trajno prijavljen
+ * - Refresh Token: 1 godina
+ * 
+ * Korisnik se odjavljuje samo kada eksplicitno klikne "Odjava"
  */
 
 import jwt from 'jsonwebtoken';
@@ -18,8 +20,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fitness-app-jwt-secret-change-in-p
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'fitness-app-refresh-secret-change-in-production';
 
 // Token trajanja
-const ACCESS_TOKEN_EXPIRY = '15m';  // 15 minuta
-const REFRESH_TOKEN_EXPIRY = '7d';  // 7 dana
+// PRODUKCIJA: Dugi tokeni za stabilnu sesiju
+const ACCESS_TOKEN_EXPIRY = '365d';  // 1 godina - trener ostaje prijavljen
+const REFRESH_TOKEN_EXPIRY = '365d'; // 1 godina
 
 // ============================================
 // TIPOVI
@@ -69,7 +72,7 @@ export function generateTokens(payload: Omit<JWTPayload, 'iat' | 'exp'>): TokenP
   return {
     accessToken,
     refreshToken,
-    expiresIn: 15 * 60, // 15 minuta u sekundama
+    expiresIn: 365 * 24 * 60 * 60, // 1 godina u sekundama
   };
 }
 
@@ -93,7 +96,28 @@ export function generateAccessToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): s
  */
 export function verifyAccessToken(token: string): VerifyResult {
   try {
+    // Debug: log token info
+    console.log('[JWT] Verifying token, length:', token?.length, 'preview:', token?.substring(0, 30) + '...');
+    
+    // Provjeri da JWT_SECRET postoji
+    if (!JWT_SECRET || JWT_SECRET === 'fitness-app-jwt-secret-change-in-production') {
+      console.warn('[JWT] Using default JWT_SECRET - this should be changed in production');
+    }
+    
     const payload = jwt.verify(token, JWT_SECRET) as JWTPayload;
+    console.log('[JWT] Token verified successfully, userId:', payload.userId, 'userType:', payload.userType);
+    
+    // Provjeri da payload ima sve potrebne podatke
+    if (!payload.userId || !payload.userType) {
+      console.error('[JWT] Invalid payload structure:', payload);
+      return {
+        valid: false,
+        expired: false,
+        payload: null,
+        error: 'Invalid token payload',
+      };
+    }
+    
     return {
       valid: true,
       expired: false,
@@ -101,6 +125,7 @@ export function verifyAccessToken(token: string): VerifyResult {
     };
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
+      console.error('[JWT] Token expired');
       return {
         valid: false,
         expired: true,
@@ -109,13 +134,15 @@ export function verifyAccessToken(token: string): VerifyResult {
       };
     }
     if (error instanceof jwt.JsonWebTokenError) {
+      console.error('[JWT] Invalid token:', error.message);
       return {
         valid: false,
         expired: false,
         payload: null,
-        error: 'Nevažeći token',
+        error: `Nevažeći token: ${error.message}`,
       };
     }
+    console.error('[JWT] Verification error:', error);
     return {
       valid: false,
       expired: false,
