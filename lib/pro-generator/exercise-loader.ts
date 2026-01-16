@@ -5,10 +5,10 @@
  * Mapiranje na IFT parametre i HR nazive
  */
 
-import { promises as fs } from 'fs';
-import path from 'path';
 import type { VjezbaLibrary, VjezbaProširena, ObrazacPokreta } from './types';
 import { MISICNA_GRUPA_PRIJEVOD, OPREMA_PRIJEVOD } from './constants';
+// Direktno importamo JSON da radi na Vercel serverless
+import exerciseDatabase from '@/data/exercises/wrkout-database.json';
 
 // ============================================
 // CACHE ZA VJEŽBE
@@ -136,7 +136,7 @@ function generirajHRNaziv(name: string): string {
 // ============================================
 
 /**
- * Učitava sve vježbe iz JSON datoteke
+ * Učitava sve vježbe iz importanog JSON-a (radi na Vercel serverless)
  */
 export async function ucitajVjezbe(): Promise<VjezbaProširena[]> {
   if (vjezbeCache) {
@@ -144,10 +144,8 @@ export async function ucitajVjezbe(): Promise<VjezbaProširena[]> {
   }
   
   try {
-    // Putanja do JSON datoteke
-    const jsonPath = path.join(process.cwd(), 'data', 'exercises', 'wrkout-database.json');
-    const jsonData = await fs.readFile(jsonPath, 'utf-8');
-    const rawVjezbe: VjezbaLibrary[] = JSON.parse(jsonData);
+    // Koristi importani JSON umjesto fs.readFile (za Vercel kompatibilnost)
+    const rawVjezbe = exerciseDatabase as VjezbaLibrary[];
     
     // Obogati svaku vježbu
     vjezbeCache = rawVjezbe.map(vjezba => ({
