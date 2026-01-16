@@ -60,6 +60,8 @@ const GeneratorInputSchema = z.object({
   ozljede: z.array(z.string()).optional(),
   maksCiljanoTrajanje: z.number().int().min(30).max(120).optional(),
   napomeneTrenera: z.string().max(1000).optional(),
+  // Odabrani dani treninga (1=Pon, 2=Uto, ..., 7=Ned)
+  daniTreninga: z.array(z.number().int().min(1).max(7)).optional(),
   // Povezivanje programa (za godišnji plan)
   annualProgramId: z.string().uuid().optional(),
   previousProgramId: z.string().uuid().optional(),

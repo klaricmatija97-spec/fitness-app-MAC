@@ -432,7 +432,7 @@ interface BuildSessionsInput extends BuildWeeksInput {
 }
 
 async function buildSessions(input: BuildSessionsInput): Promise<TrenigSesija[]> {
-  const { treninziTjedno, splitTip, jeDeload, customSplit } = input;
+  const { treninziTjedno, splitTip, jeDeload, customSplit, daniTreninga } = input;
   
   // Ako je custom split, konvertiraj ga u SplitKonfiguracija format
   let splitConfig: typeof SPLIT_KONFIGURACIJE[TipSplita];
@@ -449,7 +449,10 @@ async function buildSessions(input: BuildSessionsInput): Promise<TrenigSesija[]>
   
   for (let i = 0; i < treninziTjedno; i++) {
     const tipTreninga = daniStruktura[i] || 'full_body';
-    const danUTjednu = odrediDanUTjednu(i, treninziTjedno);
+    // Koristi odabrane dane ako su proslijeđeni, inače automatski raspored
+    const danUTjednu = daniTreninga && daniTreninga[i] 
+      ? daniTreninga[i] 
+      : odrediDanUTjednu(i, treninziTjedno);
     
     // Dohvati mišićne grupe za ovaj tip treninga
     const misicneGrupe = splitConfig.misicneGrupePoTreningu[tipTreninga] || [];

@@ -182,6 +182,9 @@ export interface GeneratorInput {
   maksCiljanoTrajanje?: number; // Minuta po treningu
   napomeneTrenera?: string;
   
+  // Odabrani dani treninga (1=Pon, 2=Uto, ..., 7=Ned)
+  daniTreninga?: number[];     // Ako nije zadan, automatski se raspoređuje
+  
   // Povezivanje programa (za godišnji plan)
   annualProgramId?: string;    // ID godišnjeg plana
   previousProgramId?: string;  // ID prethodnog programa u sekvenci

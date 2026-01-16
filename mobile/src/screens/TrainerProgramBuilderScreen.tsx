@@ -221,6 +221,52 @@ const KARDIO_SIMPLE = [
   { value: 'hiit' as KardioTip, label: 'HIIT', description: '15-20 min, visok intenzitet' },
 ];
 
+// ============================================
+// PREDLOŽENI RASPOREDI DANA - IFT Metodika
+// Svi rasporedi osiguravaju minimalno 48h oporavka
+// ============================================
+
+const DANI_NAZIVI = ['', 'Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub', 'Ned'];
+
+interface RasporedOpcija {
+  id: string;
+  label: string;
+  dani: number[]; // 1=Pon, 2=Uto, ..., 7=Ned
+  opis: string;
+}
+
+const RASPOREDI_PO_FREKVENCIJI: Record<number, RasporedOpcija[]> = {
+  2: [
+    { id: '2a', label: 'Pon - Čet', dani: [1, 4], opis: 'Klasični 2x tjedno' },
+    { id: '2b', label: 'Uto - Pet', dani: [2, 5], opis: 'Sredina tjedna' },
+    { id: '2c', label: 'Sri - Sub', dani: [3, 6], opis: 'Kasni start' },
+    { id: '2d', label: 'Pon - Pet', dani: [1, 5], opis: 'Vikend slobodan' },
+  ],
+  3: [
+    { id: '3a', label: 'Pon - Sri - Pet', dani: [1, 3, 5], opis: 'Klasični raspored' },
+    { id: '3b', label: 'Uto - Čet - Sub', dani: [2, 4, 6], opis: 'Vikend djelomično' },
+    { id: '3c', label: 'Pon - Uto - Čet', dani: [1, 2, 4], opis: 'Rani tjedan' },
+    { id: '3d', label: 'Pon - Sri - Sub', dani: [1, 3, 6], opis: 'Subota uključena' },
+  ],
+  4: [
+    { id: '4a', label: 'Pon - Uto - Čet - Pet', dani: [1, 2, 4, 5], opis: 'Klasični Upper/Lower' },
+    { id: '4b', label: 'Pon - Sri - Pet - Sub', dani: [1, 3, 5, 6], opis: 'Svaki drugi dan' },
+    { id: '4c', label: 'Uto - Sri - Pet - Sub', dani: [2, 3, 5, 6], opis: 'Ponedjeljak slobodan' },
+    { id: '4d', label: 'Pon - Uto - Čet - Sub', dani: [1, 2, 4, 6], opis: 'Petak slobodan' },
+  ],
+  5: [
+    { id: '5a', label: 'Pon - Uto - Sri - Pet - Sub', dani: [1, 2, 3, 5, 6], opis: 'Čet odmor' },
+    { id: '5b', label: 'Pon - Uto - Čet - Pet - Sub', dani: [1, 2, 4, 5, 6], opis: 'Sri odmor' },
+    { id: '5c', label: 'Pon - Sri - Čet - Pet - Sub', dani: [1, 3, 4, 5, 6], opis: 'Uto odmor' },
+    { id: '5d', label: 'Pon - Uto - Sri - Čet - Pet', dani: [1, 2, 3, 4, 5], opis: 'Vikend slobodan' },
+  ],
+  6: [
+    { id: '6a', label: 'Pon - Sub (Ned odmor)', dani: [1, 2, 3, 4, 5, 6], opis: 'Nedjelja odmor' },
+    { id: '6b', label: 'Pon - Pet + Ned', dani: [1, 2, 3, 4, 5, 7], opis: 'Subota odmor' },
+    { id: '6c', label: 'Uto - Ned (Pon odmor)', dani: [2, 3, 4, 5, 6, 7], opis: 'Ponedjeljak odmor' },
+  ],
+};
+
 /**
  * IFT Metodika - Tipovi mezociklusa za periodizaciju
  */
@@ -297,6 +343,16 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
   const [showCustomSplitBuilder, setShowCustomSplitBuilder] = useState(false);
   const [durationWeeks, setDurationWeeks] = useState(phaseData?.durationWeeks || 12);
   const [equipment, setEquipment] = useState(EQUIPMENT_OPTIONS.map(e => ({ ...e })));
+  
+  // Odabir rasporeda dana treninga
+  const [selectedScheduleId, setSelectedScheduleId] = useState<string>('4a'); // Default: Pon-Uto-Čet-Pet za 4x tjedno
+  
+  // Dohvati odabrane dane iz rasporeda
+  const getSelectedTrainingDays = (): number[] => {
+    const rasporedi = RASPOREDI_PO_FREKVENCIJI[trainingFrequency] || [];
+    const odabrani = rasporedi.find(r => r.id === selectedScheduleId);
+    return odabrani?.dani || rasporedi[0]?.dani || [1, 3, 5];
+  };
   
   // Kardio postavke - IFT Metodika
   const [kardioTip, setKardioTip] = useState<KardioTip>('none');
@@ -517,6 +573,12 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
       const recommended = FREQUENCY_OPTIONS.find(f => f.value === freq)?.recommendedSplit || 'upper_lower';
       setSplitType(recommended);
     }
+    
+    // Auto-postavi prvi raspored za novu frekvenciju
+    const rasporedi = RASPOREDI_PO_FREKVENCIJI[freq];
+    if (rasporedi && rasporedi.length > 0) {
+      setSelectedScheduleId(rasporedi[0].id);
+    }
   };
   
   const handleSplitManualChange = (split: SplitType) => {
@@ -579,6 +641,8 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
           trajanjeTjedana: totalWeeks,
           mezociklusTip: phaseType,
           dostupnaOprema: equipment.filter(e => e.selected).map(e => e.id),
+          // Odabrani dani treninga (1=Pon, 2=Uto, ..., 7=Ned)
+          daniTreninga: getSelectedTrainingDays(),
           // Kardio - IFT Metodika
           kardio: kardioTip !== 'none' ? {
             tip: kardioTip,
@@ -1062,6 +1126,33 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
         </View>
         <Text style={styles.frequencyDescription}>
           {FREQUENCY_OPTIONS.find(f => f.value === trainingFrequency)?.description}
+        </Text>
+
+        {/* Raspored dana treninga */}
+        <Text style={styles.sectionTitle}>Raspored dana</Text>
+        <Text style={styles.sectionSubtitle}>Odaberi koji dani u tjednu odgovaraju klijentu</Text>
+        <View style={styles.scheduleOptionsContainer}>
+          {(RASPOREDI_PO_FREKVENCIJI[trainingFrequency] || []).map((raspored) => (
+            <TouchableOpacity
+              key={raspored.id}
+              style={[
+                styles.scheduleOption,
+                selectedScheduleId === raspored.id && styles.scheduleOptionSelected,
+              ]}
+              onPress={() => setSelectedScheduleId(raspored.id)}
+            >
+              <Text style={[
+                styles.scheduleOptionLabel,
+                selectedScheduleId === raspored.id && styles.scheduleOptionLabelSelected,
+              ]}>
+                {raspored.label}
+              </Text>
+              <Text style={styles.scheduleOptionDesc}>{raspored.opis}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <Text style={styles.scheduleHint}>
+          ✅ Svi rasporedi osiguravaju optimalan oporavak (min. 48h između istih mišićnih grupa)
         </Text>
 
         {/* Split Selection */}
@@ -1563,6 +1654,8 @@ export default function TrainerProgramBuilderScreen({ authToken, clientId, phase
                       trajanjeTjedana: phaseDuration,
                       splitTip: splitType || 'upper_lower',
                       dostupnaOprema: selectedEquipment.length > 0 ? selectedEquipment : ['sipka', 'bucice', 'sprava'],
+                      // Odabrani dani treninga
+                      daniTreninga: getSelectedTrainingDays(),
                       // Poveži s prethodnom fazom - samo ako su validni UUID-ovi
                       ...(annualProgramId && isValidUUID(annualProgramId) && { annualProgramId }),
                       ...(previousProgramId && isValidUUID(previousProgramId) && { previousProgramId }),
@@ -3243,6 +3336,46 @@ const styles = StyleSheet.create({
     fontSize: 12, 
     textAlign: 'center',
     marginBottom: 16,
+  },
+
+  // Schedule options
+  sectionSubtitle: {
+    color: '#71717A',
+    fontSize: 13,
+    marginBottom: 12,
+  },
+  scheduleOptionsContainer: {
+    gap: 8,
+  },
+  scheduleOption: {
+    backgroundColor: '#18181B',
+    borderRadius: 10,
+    padding: 14,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  scheduleOptionSelected: {
+    borderColor: '#FFFFFF',
+    backgroundColor: '#27272A',
+  },
+  scheduleOptionLabel: {
+    color: '#A1A1AA',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  scheduleOptionLabelSelected: {
+    color: '#FFFFFF',
+  },
+  scheduleOptionDesc: {
+    color: '#71717A',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  scheduleHint: {
+    color: '#22C55E',
+    fontSize: 11,
+    marginTop: 8,
+    marginBottom: 8,
   },
 
   // Duration

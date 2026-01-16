@@ -15,11 +15,14 @@
     },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.corpex.fitness",
+      "buildNumber": "1",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
           "NSAllowsLocalNetworking": true
-        }
+        },
+        "CFBundleDisplayName": "CORPEX Fitness"
       }
     },
     "android": {
@@ -32,6 +35,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "77c4e660-b926-4c00-b1d2-7cfb627f77e7"
+      }
     }
   }
 }
