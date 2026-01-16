@@ -87,6 +87,23 @@ interface ClientResultsData {
     volume: number;
     workouts: number;
   }[];
+  exerciseProgress?: {
+    exerciseId: string;
+    exerciseName: string;
+    data: {
+      date: string;
+      weight: number;
+      reps: number;
+      volume: number;
+    }[];
+    personalBest: {
+      weight: number;
+      reps: number;
+      volume: number;
+      date: string;
+    } | null;
+    improvement: number;
+  }[];
 }
 
 export default function TrainerClientResultsScreen({ 
@@ -100,6 +117,7 @@ export default function TrainerClientResultsScreen({
   const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState<ClientResultsData | null>(null);
   const [selectedTab, setSelectedTab] = useState<'overview' | 'workouts' | 'prs'>('overview');
+  const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -186,102 +204,51 @@ export default function TrainerClientResultsScreen({
           })),
           adherenceTrend: progress.adherenceTrend || [],
           volumeTrend: progress.volumeTrend || [],
+          exerciseProgress: progress.exerciseProgress || [],
         };
 
         setData(transformedData);
+        
+        // Postavi prvu vježbu kao odabranu ako postoje podaci
+        if (progress.exerciseProgress && progress.exerciseProgress.length > 0 && !selectedExercise) {
+          setSelectedExercise(progress.exerciseProgress[0].exerciseId);
+        }
       } else {
-        // Fallback na mock podatke ako API ne radi
-        setData(generateMockData());
+        // Prazni podaci ako API ne vrati uspješan odgovor
+        setData(generateEmptyData());
       }
     } catch (error) {
       console.error('Error loading client results:', error);
-      setData(generateMockData());
+      setData(generateEmptyData());
     } finally {
       setLoading(false);
     }
   }
 
-  function generateMockData(): ClientResultsData {
+  function generateEmptyData(): ClientResultsData {
     return {
       client: {
         id: clientId,
         name: clientName,
-        email: 'klijent@email.com',
-        connectedSince: '2024-01-01',
+        email: '',
+        connectedSince: new Date().toISOString(),
       },
       summary: {
-        totalWorkouts: 28,
-        adherenceRate: 87,
-        avgSessionDuration: 62,
-        totalVolumeKg: 168500,
-        personalBests: 12,
-        missedWorkouts: 4,
-        currentStreak: 8,
+        totalWorkouts: 0,
+        adherenceRate: 0,
+        avgSessionDuration: 0,
+        totalVolumeKg: 0,
+        personalBests: 0,
+        missedWorkouts: 0,
+        currentStreak: 0,
       },
-      recentWorkouts: [
-        {
-          id: '1',
-          date: '2024-01-28',
-          sessionName: 'Push Day A',
-          duration: 65,
-          exercisesCompleted: 6,
-          totalExercises: 6,
-          totalVolume: 8500,
-          averageRIR: 1.5,
-          flagged: false,
-        },
-        {
-          id: '2',
-          date: '2024-01-26',
-          sessionName: 'Pull Day A',
-          duration: 58,
-          exercisesCompleted: 6,
-          totalExercises: 6,
-          totalVolume: 7800,
-          averageRIR: 2.0,
-          flagged: false,
-        },
-        {
-          id: '3',
-          date: '2024-01-24',
-          sessionName: 'Leg Day A',
-          duration: 72,
-          exercisesCompleted: 5,
-          totalExercises: 6,
-          totalVolume: 12000,
-          averageRIR: 1.0,
-          flagged: true,
-          flagReason: 'Preskočio Leg Curl - bol u koljenu',
-        },
-        {
-          id: '4',
-          date: '2024-01-22',
-          sessionName: 'Push Day B',
-          duration: 55,
-          exercisesCompleted: 6,
-          totalExercises: 6,
-          totalVolume: 7200,
-          averageRIR: 2.5,
-          flagged: false,
-        },
-      ],
-      personalBests: [
-        { exercise: 'Bench Press', weight: 100, date: '2024-01-28', previousBest: 95 },
-        { exercise: 'Squat', weight: 140, date: '2024-01-24', previousBest: 130 },
-        { exercise: 'Deadlift', weight: 160, date: '2024-01-20', previousBest: 150 },
-        { exercise: 'Overhead Press', weight: 65, date: '2024-01-15', previousBest: 60 },
-      ],
-      alerts: [
-        { type: 'warning', message: 'Klijent je prijavio bol u koljenu na Leg Day', date: '2024-01-24' },
-        { type: 'success', message: 'Novi PR na Bench Press! 100kg', date: '2024-01-28' },
-        { type: 'info', message: 'Adherence iznad 85% već 3 tjedna', date: '2024-01-28' },
-      ],
-      weeklyProgress: [
-        { week: 'T1', volume: 32000, adherence: 100, avgRIR: 2.5 },
-        { week: 'T2', volume: 35000, adherence: 83, avgRIR: 2.0 },
-        { week: 'T3', volume: 38000, adherence: 100, avgRIR: 1.8 },
-        { week: 'T4', volume: 41000, adherence: 83, avgRIR: 1.5 },
-      ],
+      recentWorkouts: [],
+      personalBests: [],
+      alerts: [],
+      weeklyProgress: [],
+      adherenceTrend: [],
+      volumeTrend: [],
+      exerciseProgress: [],
     };
   }
 
@@ -380,8 +347,22 @@ export default function TrainerClientResultsScreen({
           style={styles.content}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         >
+          {/* Prazno stanje - nema evidentiranih treninga */}
+          {data && data.summary.totalWorkouts === 0 && (
+            <View style={styles.emptyStateContainer}>
+              <Text style={styles.emptyStateIcon}>📊</Text>
+              <Text style={styles.emptyStateTitle}>Nema evidentiranih treninga</Text>
+              <Text style={styles.emptyStateText}>
+                Kada evidentirate treninge za ovog klijenta, ovdje će se prikazivati statistike, grafovi i napredak.
+              </Text>
+              <Text style={styles.emptyStateHint}>
+                Idite na karton klijenta → Evidentiraj trening
+              </Text>
+            </View>
+          )}
+
           {/* Overview Tab */}
-          {selectedTab === 'overview' && data && (
+          {selectedTab === 'overview' && data && data.summary.totalWorkouts > 0 && (
             <>
               {/* Summary Cards */}
               <View style={styles.summaryGrid}>
@@ -493,6 +474,133 @@ export default function TrainerClientResultsScreen({
                 </View>
               )}
 
+              {/* Exercise Progress Chart - Graf napretka po vježbi */}
+              {data.exerciseProgress && data.exerciseProgress.length > 0 && (
+                <View style={styles.chartSection}>
+                  <Text style={styles.sectionTitle}>🏋️ Napredak po vježbi</Text>
+                  
+                  {/* Exercise selector */}
+                  <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.exerciseSelectorContainer}
+                    contentContainerStyle={styles.exerciseSelectorContent}
+                  >
+                    {data.exerciseProgress.slice(0, 5).map((ex) => (
+                      <TouchableOpacity
+                        key={ex.exerciseId}
+                        style={[
+                          styles.exerciseSelectorButton,
+                          selectedExercise === ex.exerciseId && styles.exerciseSelectorButtonActive
+                        ]}
+                        onPress={() => setSelectedExercise(ex.exerciseId)}
+                      >
+                        <Text style={[
+                          styles.exerciseSelectorText,
+                          selectedExercise === ex.exerciseId && styles.exerciseSelectorTextActive
+                        ]}>
+                          {ex.exerciseName}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+
+                  {/* Exercise progress chart */}
+                  {(() => {
+                    const selectedEx = data.exerciseProgress?.find(ex => ex.exerciseId === selectedExercise);
+                    if (!selectedEx || selectedEx.data.length === 0) {
+                      return <Text style={styles.emptyChartText}>Odaberi vježbu</Text>;
+                    }
+
+                    const chartData = selectedEx.data.slice(-10); // Zadnjih 10 unosa
+                    const maxWeight = Math.max(...chartData.map(d => d.weight), 1);
+                    const minWeight = Math.min(...chartData.map(d => d.weight));
+                    const weightRange = maxWeight - minWeight || 1;
+                    
+                    const firstWeight = chartData[0]?.weight || 0;
+                    const lastWeight = chartData[chartData.length - 1]?.weight || 0;
+                    const improvement = firstWeight > 0 
+                      ? Math.round(((lastWeight - firstWeight) / firstWeight) * 100) 
+                      : 0;
+
+                    return (
+                      <>
+                        {/* Y-axis labels */}
+                        <View style={styles.exerciseChartContainer}>
+                          <View style={styles.exerciseYAxis}>
+                            <Text style={styles.exerciseYAxisLabel}>{maxWeight}kg</Text>
+                            <Text style={styles.exerciseYAxisLabel}>{Math.round((maxWeight + minWeight) / 2)}kg</Text>
+                            <Text style={styles.exerciseYAxisLabel}>{minWeight}kg</Text>
+                          </View>
+                          
+                          {/* Chart area */}
+                          <View style={styles.exerciseChartArea}>
+                            {/* Line chart with dots */}
+                            <View style={styles.exerciseLineChart}>
+                              {chartData.map((point, index) => {
+                                const heightPercent = ((point.weight - minWeight) / weightRange) * 100;
+                                const date = new Date(point.date);
+                                const label = `${date.getDate()}/${date.getMonth() + 1}`;
+                                
+                                return (
+                                  <View key={index} style={styles.exerciseChartColumn}>
+                                    <View style={styles.exerciseChartColumnInner}>
+                                      <View 
+                                        style={[
+                                          styles.exerciseChartDot,
+                                          { bottom: `${heightPercent}%` }
+                                        ]} 
+                                      />
+                                      {/* Connecting line to next point */}
+                                      {index < chartData.length - 1 && (
+                                        <View 
+                                          style={[
+                                            styles.exerciseChartLine,
+                                            { 
+                                              bottom: `${heightPercent}%`,
+                                              height: 2,
+                                            }
+                                          ]} 
+                                        />
+                                      )}
+                                    </View>
+                                    <Text style={styles.exerciseChartLabel}>{label}</Text>
+                                    <Text style={styles.exerciseChartWeight}>{point.weight}</Text>
+                                  </View>
+                                );
+                              })}
+                            </View>
+                          </View>
+                        </View>
+
+                        {/* Stats row */}
+                        <View style={styles.exerciseStatsRow}>
+                          <View style={styles.exerciseStatItem}>
+                            <Text style={styles.exerciseStatValue}>
+                              {selectedEx.personalBest?.weight || 0}kg
+                            </Text>
+                            <Text style={styles.exerciseStatLabel}>🏆 PR</Text>
+                          </View>
+                          <View style={styles.exerciseStatItem}>
+                            <Text style={[
+                              styles.exerciseStatValue,
+                              improvement >= 0 ? styles.exerciseStatPositive : styles.exerciseStatNegative
+                            ]}>
+                              {improvement >= 0 ? '+' : ''}{improvement}%
+                            </Text>
+                            <Text style={styles.exerciseStatLabel}>📈 Napredak</Text>
+                          </View>
+                          <View style={styles.exerciseStatItem}>
+                            <Text style={styles.exerciseStatValue}>{chartData.length}</Text>
+                            <Text style={styles.exerciseStatLabel}>📝 Unosa</Text>
+                          </View>
+                        </View>
+                      </>
+                    );
+                  })()}
+                </View>
+              )}
+
               {/* Stats Details */}
               <View style={styles.statsSection}>
                 <Text style={styles.sectionTitle}> Detalji</Text>
@@ -523,10 +631,12 @@ export default function TrainerClientResultsScreen({
           )}
 
           {/* Workouts Tab */}
-          {selectedTab === 'workouts' && data && (
+          {selectedTab === 'workouts' && data && data.summary.totalWorkouts > 0 && (
             <>
               <Text style={styles.sectionTitle}>Nedavni treninzi</Text>
-              {data.recentWorkouts.map((workout) => (
+              {data.recentWorkouts.length === 0 ? (
+                <Text style={styles.emptyTabText}>Nema evidentiranih treninga</Text>
+              ) : data.recentWorkouts.map((workout) => (
                 <View 
                   key={workout.id} 
                   style={[
@@ -572,10 +682,12 @@ export default function TrainerClientResultsScreen({
           )}
 
           {/* PRs Tab */}
-          {selectedTab === 'prs' && data && (
+          {selectedTab === 'prs' && data && data.summary.totalWorkouts > 0 && (
             <>
               <Text style={styles.sectionTitle}> Personal Records</Text>
-              {data.personalBests.map((pr, index) => (
+              {data.personalBests.length === 0 ? (
+                <Text style={styles.emptyTabText}>Nema zabilježenih PR-ova</Text>
+              ) : data.personalBests.map((pr, index) => (
                 <View key={index} style={styles.prCard}>
                   <View style={styles.prMedal}>
                     <Text style={styles.prMedalText}>
@@ -625,6 +737,44 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { color: '#FFF', marginTop: 10, fontSize: 16 },
   content: { flex: 1, paddingHorizontal: 20 },
+
+  // Empty State
+  emptyStateContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  emptyStateIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  emptyStateTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyStateText: {
+    color: '#71717A',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  emptyStateHint: {
+    color: '#3B82F6',
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  emptyTabText: {
+    color: '#71717A',
+    fontSize: 14,
+    textAlign: 'center',
+    paddingVertical: 40,
+  },
 
   // Alerts
   alertsContainer: {
@@ -767,6 +917,122 @@ const styles = StyleSheet.create({
   },
   weekLabel: { color: '#FFF', fontSize: 12, fontWeight: '600' },
   weekVolume: { color: '#71717A', fontSize: 10 },
+
+  // Exercise Progress Chart
+  exerciseSelectorContainer: {
+    marginBottom: 16,
+    marginHorizontal: -4,
+  },
+  exerciseSelectorContent: {
+    paddingHorizontal: 4,
+    gap: 8,
+  },
+  exerciseSelectorButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: '#27272A',
+    borderRadius: 20,
+  },
+  exerciseSelectorButtonActive: {
+    backgroundColor: '#3B82F6',
+  },
+  exerciseSelectorText: {
+    color: '#71717A',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  exerciseSelectorTextActive: {
+    color: '#FFFFFF',
+  },
+  exerciseChartContainer: {
+    flexDirection: 'row',
+    height: 140,
+    marginBottom: 16,
+  },
+  exerciseYAxis: {
+    width: 45,
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingRight: 8,
+    paddingVertical: 10,
+  },
+  exerciseYAxisLabel: {
+    color: '#71717A',
+    fontSize: 10,
+  },
+  exerciseChartArea: {
+    flex: 1,
+    borderLeftWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#333',
+  },
+  exerciseLineChart: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingTop: 10,
+  },
+  exerciseChartColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  exerciseChartColumnInner: {
+    flex: 1,
+    width: '100%',
+    position: 'relative',
+  },
+  exerciseChartDot: {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#22C55E',
+    alignSelf: 'center',
+    marginLeft: -5,
+    left: '50%',
+  },
+  exerciseChartLine: {
+    position: 'absolute',
+    width: '100%',
+    backgroundColor: '#22C55E',
+    opacity: 0.4,
+  },
+  exerciseChartLabel: {
+    color: '#71717A',
+    fontSize: 9,
+    marginTop: 4,
+  },
+  exerciseChartWeight: {
+    color: '#22C55E',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  exerciseStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+  },
+  exerciseStatItem: {
+    alignItems: 'center',
+  },
+  exerciseStatValue: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  exerciseStatPositive: {
+    color: '#22C55E',
+  },
+  exerciseStatNegative: {
+    color: '#DC2626',
+  },
+  exerciseStatLabel: {
+    color: '#71717A',
+    fontSize: 11,
+    marginTop: 4,
+  },
 
   // Stats
   statsSection: {

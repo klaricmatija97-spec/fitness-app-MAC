@@ -242,7 +242,7 @@ export async function POST(request: NextRequest) {
       if (intakeData.name && intakeData.name.trim()) {
         // Samo ažuriraj ako postojeće ime ne postoji ili je "Novi klijent"
         if (!existingClient.name || existingClient.name === 'Novi klijent' || existingClient.name.trim() === '') {
-          updateData.name = intakeData.name.trim();
+        updateData.name = intakeData.name.trim();
         }
         // Inače ZADRŽI postojeće ime - ne prepisuj ga!
       }

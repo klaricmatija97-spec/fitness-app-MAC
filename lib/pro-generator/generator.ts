@@ -2142,12 +2142,14 @@ export async function fillProgramGaps(input: HybridGeneratorInput): Promise<{
     
     // 8. Generiraj vježbe za sesije bez vježbi (ako treba)
     if (input.popuniSamo === 'vjezbe' || input.popuniSamo === 'sve' || !input.popuniSamo) {
-      // Dohvati sve sesije
-      // Dohvati sve sesije (is_manual filter možda ne postoji)
+      // Dohvati sve sesije s week_number za progresiju volumena
       const { data: sveSesije } = await supabase
         .from('program_sessions')
-        .select('id, split_name, session_type, mesocycle_id')
+        .select('id, split_name, session_type, mesocycle_id, week_number')
         .eq('program_id', input.programId);
+      
+      // Odredi ukupan broj tjedana u programu
+      const maxWeek = Math.max(...(sveSesije || []).map(s => s.week_number || 1), 1);
       
       for (const sesija of sveSesije || []) {
         // Provjeri ima li sesija vježbe
@@ -2163,22 +2165,31 @@ export async function fillProgramGaps(input: HybridGeneratorInput): Promise<{
           const tipTreninga = sesija.split_name || sesija.session_type || 'full_body';
           const misicneGrupe = splitConfig.misicneGrupePoTreningu[tipTreninga] || ['prsa', 'ledja'];
           
-          // Odaberi vježbe koristeći postojeću logiku
+          // Izračunaj volumen modifikator za ovaj tjedan (progresija)
+          const tjedanBroj = sesija.week_number || 1;
+          const jeDeload = tjedanBroj === maxWeek && maxWeek >= 4; // Zadnji tjedan je deload ako ima 4+ tjedna
+          const progresija = izracunajValnuProgresiju(tjedanBroj, maxWeek, 'valna');
+          const volumenMod = progresija.volumenMultiplikator;
+          const intenzitetMod = progresija.intenzitetMultiplikator;
+          
+          log('debug', `Generiram vježbe za tjedan ${tjedanBroj}/${maxWeek}, volumen mod: ${volumenMod}, deload: ${jeDeload}`);
+          
+          // Odaberi vježbe koristeći postojeću logiku s pravom progresijom
           const vjezbeZaSesiju = await selectExercises({
             ...input,
             splitTip: program.split_type as TipSplita,
             tipTreninga,
             misicneGrupe,
             redniBrojTreninga: 1,
-            mezociklusTip: 'akumulacija',
-            brojTjedana: 4,
+            mezociklusTip: jeDeload ? 'deload' : 'akumulacija',
+            brojTjedana: maxWeek,
             pocetniVolumen: {},
             zavrsniVolumen: {},
-            tjedanBroj: 1,
-            jeDeload: false,
+            tjedanBroj,
+            jeDeload,
             volumenPoGrupi: {},
-            volumenModifikator: 1.0,
-            intenzitetModifikator: 1.0,
+            volumenModifikator: volumenMod,
+            intenzitetModifikator: intenzitetMod,
           });
           
           // Spremi vježbe

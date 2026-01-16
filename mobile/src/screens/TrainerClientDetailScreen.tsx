@@ -57,7 +57,6 @@ interface ClientData {
     experienceLabel: string | null;
   };
   nutrition: {
-    dietCleanliness: number | null;
     mealFrequency: string | null;
     allergies: string | null;
     foodPreferences: string | null;
@@ -98,6 +97,10 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
   const [workoutLogsLoading, setWorkoutLogsLoading] = useState(false);
   const [showWorkoutLogs, setShowWorkoutLogs] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deletingProgramId, setDeletingProgramId] = useState<string | null>(null);
+  const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
+  const [programSessions, setProgramSessions] = useState<any[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -183,6 +186,69 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
     }
   }
 
+  // Učitaj sesije za odabrani program
+  async function loadProgramSessions(programId: string) {
+    setLoadingSessions(true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/trainer/program/${programId}`,
+        { headers: { 'Authorization': `Bearer ${authToken}` } }
+      );
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Dohvati sve sesije iz programa
+        const allSessions: any[] = [];
+        const program = result.data;
+        
+        // Izračunaj trenutni tjedan
+        const startDate = program.startDate ? new Date(program.startDate) : new Date();
+        const currentWeek = Math.max(1, Math.floor((Date.now() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1);
+        const today = new Date();
+        const dayOfWeek = today.getDay();
+        const normalizedDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
+        
+        // Pronađi sesije iz trenutnog tjedna
+        if (program.weeks) {
+          program.weeks.forEach((week: any) => {
+            if (week.sessions) {
+              week.sessions.forEach((session: any) => {
+                allSessions.push({
+                  ...session,
+                  weekNumber: week.weekNumber,
+                  isToday: week.weekNumber === currentWeek && session.dayOfWeek === normalizedDayOfWeek,
+                  isUpcoming: week.weekNumber > currentWeek || 
+                    (week.weekNumber === currentWeek && session.dayOfWeek > normalizedDayOfWeek),
+                });
+              });
+            }
+          });
+        }
+        
+        setProgramSessions(allSessions);
+      }
+    } catch (error) {
+      console.error('Error loading program sessions:', error);
+    } finally {
+      setLoadingSessions(false);
+    }
+  }
+
+  // Kada se promijeni odabrani program, učitaj njegove sesije
+  useEffect(() => {
+    if (selectedProgramId) {
+      loadProgramSessions(selectedProgramId);
+      loadWorkoutLogs(selectedProgramId);
+    }
+  }, [selectedProgramId]);
+
+  // Postavi prvi program kao odabrani kada se učitaju podaci
+  useEffect(() => {
+    if (data?.allPrograms?.length > 0 && !selectedProgramId) {
+      setSelectedProgramId(data.allPrograms[0].id);
+    }
+  }, [data?.allPrograms]);
+
   async function handleRefresh() {
     setRefreshing(true);
     await loadData();
@@ -199,8 +265,8 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
     }
 
     Alert.alert(
-      'Regeneriraj tjedan',
-      'Želite li regenerirati sljedeći tjedan programa?',
+      'Dopuni program',
+      'Želite li dopuniti program? Ovo će popuniti praznine - dodati vježbe u prazne sesije.',
       [
         { text: 'Odustani', style: 'cancel' },
         {
@@ -242,6 +308,44 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
       'Kopiraj program',
       'Funkcionalnost za kopiranje programa između klijenata dolazi uskoro.',
       [{ text: 'OK' }]
+    );
+  }
+
+  // Funkcija za brisanje pojedinačnog programa
+  async function handleDeleteProgram(programId: string, programName: string) {
+    Alert.alert(
+      '🗑️ Obriši program',
+      `Jeste li sigurni da želite obrisati program "${programName}"?\n\nOva akcija će obrisati:\n• Sve sesije programa\n• Sve vježbe\n• Sve workout logove\n\nOva akcija se NE MOŽE poništiti!`,
+      [
+        { text: 'Odustani', style: 'cancel' },
+        {
+          text: 'Obriši',
+          style: 'destructive',
+          onPress: async () => {
+            setDeletingProgramId(programId);
+            try {
+              const response = await fetch(`${API_BASE_URL}/api/trainer/program/${programId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${authToken}` },
+              });
+              const result = await response.json();
+              
+              if (result.success) {
+                Alert.alert('✅ Uspjeh', result.message || 'Program je obrisan');
+                // Refresh podataka
+                await loadData();
+              } else {
+                Alert.alert('❌ Greška', result.error || 'Nije moguće obrisati program');
+              }
+            } catch (error) {
+              Alert.alert('❌ Greška', 'Došlo je do greške pri brisanju');
+              console.error('Delete program error:', error);
+            } finally {
+              setDeletingProgramId(null);
+            }
+          },
+        },
+      ]
     );
   }
 
@@ -505,19 +609,6 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
           {data.client.nutrition && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Prehrana</Text>
-              {data.client.nutrition.dietCleanliness !== null && (
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Kvaliteta prehrane:</Text>
-                  <Text style={[
-                    styles.infoValue,
-                    data.client.nutrition.dietCleanliness < 40 && styles.dietPoor,
-                    data.client.nutrition.dietCleanliness >= 40 && data.client.nutrition.dietCleanliness < 70 && styles.dietAverage,
-                    data.client.nutrition.dietCleanliness >= 70 && styles.dietGood,
-                  ]}>
-                    {data.client.nutrition.dietCleanliness}%
-                  </Text>
-                </View>
-              )}
               {data.client.nutrition.mealFrequency && (
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>Obroci dnevno:</Text>
@@ -579,20 +670,30 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
             <View style={styles.card}>
               <Text style={styles.cardTitle}>📋 Programi ({data.allPrograms.length})</Text>
               {data.allPrograms.map((prog: any) => (
-                <TouchableOpacity 
-                  key={prog.id}
-                  style={styles.programItem}
-                  onPress={() => onViewProgram?.(prog.id, data.client?.name || 'Klijent')}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.programItemContent}>
-                    <Text style={styles.programItemName}>{prog.name}</Text>
-                    <Text style={styles.programItemMeta}>
-                      {prog.durationWeeks} tjedana • {prog.status}
+                <View key={prog.id} style={styles.programItemContainer}>
+                  <TouchableOpacity 
+                    style={styles.programItem}
+                    onPress={() => onViewProgram?.(prog.id, data.client?.name || 'Klijent')}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.programItemContent}>
+                      <Text style={styles.programItemName}>{prog.name}</Text>
+                      <Text style={styles.programItemMeta}>
+                        {prog.durationWeeks} tjedana • {prog.status}
+                      </Text>
+                    </View>
+                    <Text style={styles.programItemArrow}>→</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.deleteProgramButton}
+                    onPress={() => handleDeleteProgram(prog.id, prog.name)}
+                    disabled={deletingProgramId === prog.id}
+                  >
+                    <Text style={styles.deleteProgramButtonText}>
+                      {deletingProgramId === prog.id ? '...' : '🗑️'}
                     </Text>
-                  </View>
-                  <Text style={styles.programItemArrow}>→</Text>
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                </View>
               ))}
             </View>
           )}
@@ -621,55 +722,149 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
           {/* ============================================ */}
           {/* START WORKOUT LOG - Evidentiraj trening */}
           {/* ============================================ */}
-          {data.program && onStartWorkoutLog && (
+          {data.allPrograms && data.allPrograms.length > 0 && onStartWorkoutLog && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>📝 Evidentiraj trening</Text>
-              <Text style={styles.cardSubtitle}>Pokreni evidenciju za današnji trening</Text>
               
-              {data.todaySession ? (
-                <TouchableOpacity
-                  style={styles.startWorkoutButton}
-                  onPress={() => onStartWorkoutLog(
-                    clientId,
-                    data.client?.name || 'Klijent',
-                    data.todaySession.id,
-                    data.todaySession.split_name || data.todaySession.name || 'Trening',
-                    data.program.id
-                  )}
-                >
-                  <Text style={styles.startWorkoutButtonText}>
-                    ▶️ Započni: {data.todaySession.split_name || data.todaySession.name}
+              {/* Program Selector - ako ima više programa */}
+              {data.allPrograms.length > 1 && (
+                <View style={styles.programSelectorContainer}>
+                  <Text style={styles.programSelectorLabel}>Odaberi program:</Text>
+                  <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.programSelectorScroll}
+                    contentContainerStyle={styles.programSelectorContent}
+                  >
+                    {data.allPrograms.map((prog: any) => (
+                      <TouchableOpacity
+                        key={prog.id}
+                        style={[
+                          styles.programSelectorButton,
+                          selectedProgramId === prog.id && styles.programSelectorButtonActive
+                        ]}
+                        onPress={() => setSelectedProgramId(prog.id)}
+                      >
+                        <Text style={[
+                          styles.programSelectorText,
+                          selectedProgramId === prog.id && styles.programSelectorTextActive
+                        ]}>
+                          {prog.name}
+                        </Text>
+                        <Text style={styles.programSelectorGoal}>
+                          {prog.goal === 'hipertrofija' ? '💪' : 
+                           prog.goal === 'snaga' || prog.goal === 'jakost' ? '🏋️' : 
+                           prog.goal === 'izdrzljivost' ? '🏃' : '📋'}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+
+              {/* Prikaz odabranog programa */}
+              {selectedProgramId && (
+                <View style={styles.selectedProgramInfo}>
+                  <Text style={styles.selectedProgramName}>
+                    {data.allPrograms.find((p: any) => p.id === selectedProgramId)?.name || 'Program'}
                   </Text>
-                </TouchableOpacity>
-              ) : data.upcomingSessions && data.upcomingSessions.length > 0 ? (
-                <>
-                  <Text style={styles.upcomingSessionsLabel}>Nadolazeće sesije:</Text>
-                  {data.upcomingSessions.slice(0, 3).map((session: any, index: number) => (
-                    <TouchableOpacity
-                      key={session.id || index}
-                      style={styles.sessionLogButton}
-                      onPress={() => onStartWorkoutLog(
-                        clientId,
-                        data.client?.name || 'Klijent',
-                        session.id,
-                        session.split_name || session.name || 'Trening',
-                        data.program.id
-                      )}
-                    >
-                      <View style={styles.sessionLogButtonContent}>
-                        <Text style={styles.sessionLogButtonText}>
-                          {session.split_name || session.name}
-                        </Text>
-                        <Text style={styles.sessionLogButtonDay}>
-                          Dan {session.day_of_week}
-                        </Text>
-                      </View>
-                      <Text style={styles.sessionLogButtonArrow}>▶</Text>
-                    </TouchableOpacity>
-                  ))}
-                </>
+                </View>
+              )}
+
+              {/* Loading indikator */}
+              {loadingSessions ? (
+                <ActivityIndicator size="small" color="#00FF88" style={{ marginVertical: 20 }} />
               ) : (
-                <Text style={styles.noSessionsText}>Nema dostupnih sesija za evidenciju</Text>
+                <>
+                  {/* Današnja sesija iz odabranog programa */}
+                  {(() => {
+                    const todaySession = programSessions.find(s => s.isToday);
+                    const upcomingSessions = programSessions.filter(s => s.isUpcoming).slice(0, 5);
+                    
+                    if (todaySession) {
+                      return (
+                        <TouchableOpacity
+                          style={styles.startWorkoutButton}
+                          onPress={() => onStartWorkoutLog(
+                            clientId,
+                            data.client?.name || 'Klijent',
+                            todaySession.id,
+                            todaySession.splitName || todaySession.name || 'Trening',
+                            selectedProgramId!
+                          )}
+                        >
+                          <Text style={styles.startWorkoutButtonText}>
+                            ▶️ Započni: {todaySession.splitName || todaySession.name}
+                          </Text>
+                          <Text style={styles.startWorkoutButtonSub}>
+                            Tjedan {todaySession.weekNumber}, Dan {todaySession.dayOfWeek}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    } else if (upcomingSessions.length > 0) {
+                      return (
+                        <>
+                          <Text style={styles.upcomingSessionsLabel}>Nadolazeće sesije:</Text>
+                          {upcomingSessions.map((session: any, index: number) => (
+                            <TouchableOpacity
+                              key={session.id || index}
+                              style={styles.sessionLogButton}
+                              onPress={() => onStartWorkoutLog(
+                                clientId,
+                                data.client?.name || 'Klijent',
+                                session.id,
+                                session.splitName || session.name || 'Trening',
+                                selectedProgramId!
+                              )}
+                            >
+                              <View style={styles.sessionLogButtonContent}>
+                                <Text style={styles.sessionLogButtonText}>
+                                  {session.splitName || session.name}
+                                </Text>
+                                <Text style={styles.sessionLogButtonDay}>
+                                  Tjedan {session.weekNumber}, Dan {session.dayOfWeek}
+                                </Text>
+                              </View>
+                              <Text style={styles.sessionLogButtonArrow}>▶</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </>
+                      );
+                    } else if (programSessions.length > 0) {
+                      // Prikaži bilo koje sesije ako nema današnjih ili nadolazećih
+                      return (
+                        <>
+                          <Text style={styles.upcomingSessionsLabel}>Sve sesije programa:</Text>
+                          {programSessions.slice(0, 5).map((session: any, index: number) => (
+                            <TouchableOpacity
+                              key={session.id || index}
+                              style={styles.sessionLogButton}
+                              onPress={() => onStartWorkoutLog(
+                                clientId,
+                                data.client?.name || 'Klijent',
+                                session.id,
+                                session.splitName || session.name || 'Trening',
+                                selectedProgramId!
+                              )}
+                            >
+                              <View style={styles.sessionLogButtonContent}>
+                                <Text style={styles.sessionLogButtonText}>
+                                  {session.splitName || session.name}
+                                </Text>
+                                <Text style={styles.sessionLogButtonDay}>
+                                  Tjedan {session.weekNumber}, Dan {session.dayOfWeek}
+                                </Text>
+                              </View>
+                              <Text style={styles.sessionLogButtonArrow}>▶</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </>
+                      );
+                    } else {
+                      return <Text style={styles.noSessionsText}>Nema dostupnih sesija za evidenciju</Text>;
+                    }
+                  })()}
+                </>
               )}
             </View>
           )}
@@ -768,78 +963,111 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
               ) : showWorkoutLogs ? (
                 <>
                   {workoutLogs.map((log: any, index: number) => (
-                    <View key={log.id || index} style={styles.workoutLogItem}>
-                      <View style={styles.workoutLogHeader}>
-                        <View>
-                          <Text style={styles.workoutLogDate}>
-                            {new Date(log.started_at).toLocaleDateString('hr-HR', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
-                          </Text>
-                          <Text style={styles.workoutLogTime}>
-                            {new Date(log.started_at).toLocaleTimeString('hr-HR', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })} - {log.duration_minutes} min
-                          </Text>
+                    <View key={log.id || index} style={styles.workoutLogItemContainer}>
+                      <TouchableOpacity 
+                        style={styles.workoutLogItem}
+                        onPress={() => {
+                          // Nastavi trening ako je in_progress
+                          if (log.status === 'in_progress' && onStartWorkoutLog && log.session_id) {
+                            onStartWorkoutLog(
+                              clientId,
+                              data.client?.name || 'Klijent',
+                              log.session_id,
+                              log.session?.split_name || 'Trening',
+                              data.program?.id
+                            );
+                          } else {
+                            Alert.alert('Info', 'Ovaj trening je već završen ili nema sesiju');
+                          }
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <View style={styles.workoutLogHeader}>
+                          <View>
+                            <Text style={styles.workoutLogDate}>
+                              {new Date(log.started_at).toLocaleDateString('hr-HR', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                            </Text>
+                            <Text style={styles.workoutLogTime}>
+                              {new Date(log.started_at).toLocaleTimeString('hr-HR', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })} - {log.duration_minutes || 0} min
+                            </Text>
+                          </View>
                         </View>
-                        <View
-                          style={[
-                            styles.workoutLogStatusBadge,
-                            log.status === 'completed' && styles.workoutLogStatusCompleted,
-                            log.status === 'partial' && styles.workoutLogStatusPartial,
-                            log.status === 'skipped' && styles.workoutLogStatusSkipped,
-                          ]}
-                        >
-                          <Text style={styles.workoutLogStatusText}>
-                            {log.status === 'completed' ? '✓' :
-                             log.status === 'partial' ? '~' : '✕'}
-                          </Text>
-                        </View>
-                      </View>
-                      
-                      <View style={styles.workoutLogStats}>
-                        <View style={styles.workoutLogStat}>
-                          <Text style={styles.workoutLogStatValue}>
-                            {log.completed_exercises}/{log.total_exercises}
-                          </Text>
-                          <Text style={styles.workoutLogStatLabel}>Vježbe</Text>
-                        </View>
-                        <View style={styles.workoutLogStat}>
-                          <Text style={styles.workoutLogStatValue}>
-                            {log.completed_sets}/{log.total_sets}
-                          </Text>
-                          <Text style={styles.workoutLogStatLabel}>Setovi</Text>
-                        </View>
-                        <View style={styles.workoutLogStat}>
-                          <Text style={styles.workoutLogStatValue}>
-                            {log.adherence_score?.toFixed(0) || 0}%
-                          </Text>
-                          <Text style={styles.workoutLogStatLabel}>Adherence</Text>
-                        </View>
-                        {log.total_volume > 0 && (
+                        
+                        <View style={styles.workoutLogStats}>
                           <View style={styles.workoutLogStat}>
                             <Text style={styles.workoutLogStatValue}>
-                              {log.total_volume.toFixed(0)}kg
+                              {log.completed_exercises || 0}/{log.total_exercises || 0}
                             </Text>
-                            <Text style={styles.workoutLogStatLabel}>Volumen</Text>
+                            <Text style={styles.workoutLogStatLabel}>Vježbe</Text>
                           </View>
+                          <View style={styles.workoutLogStat}>
+                            <Text style={styles.workoutLogStatValue}>
+                              {log.completed_sets || 0}/{log.total_sets || 0}
+                            </Text>
+                            <Text style={styles.workoutLogStatLabel}>Setovi</Text>
+                          </View>
+                          <View style={styles.workoutLogStat}>
+                            <Text style={styles.workoutLogStatValue}>
+                              {log.adherence_score?.toFixed(0) || 100}%
+                            </Text>
+                            <Text style={styles.workoutLogStatLabel}>Adherence</Text>
+                          </View>
+                        </View>
+                        
+                        {log.session?.split_name && (
+                          <Text style={styles.workoutLogSessionName}>
+                            {log.session.split_name}
+                          </Text>
                         )}
-                      </View>
+                      </TouchableOpacity>
                       
-                      {log.session?.split_name && (
-                        <Text style={styles.workoutLogSessionName}>
-                          {log.session.split_name}
-                        </Text>
-                      )}
-                      
-                      {log.client_notes && (
-                        <Text style={styles.workoutLogNotes}>
-                          📝 {log.client_notes}
-                        </Text>
-                      )}
+                      {/* X gumb za brisanje */}
+                      <TouchableOpacity
+                        style={styles.deleteWorkoutLogButton}
+                        onPress={() => {
+                          Alert.alert(
+                            '🗑️ Obriši workout log',
+                            'Jeste li sigurni da želite obrisati ovaj workout log?',
+                            [
+                              { text: 'Odustani', style: 'cancel' },
+                              {
+                                text: 'Obriši',
+                                style: 'destructive',
+                                onPress: async () => {
+                                  try {
+                                    const response = await fetch(
+                                      `${API_BASE_URL}/api/trainer/workout-log/${log.id}`,
+                                      {
+                                        method: 'DELETE',
+                                        headers: { 'Authorization': `Bearer ${authToken}` },
+                                      }
+                                    );
+                                    const result = await response.json();
+                                    if (result.success) {
+                                      // Refresh sve podatke (uključujući recentSessions)
+                                      await loadData();
+                                      loadWorkoutLogs(data.program?.id);
+                                    } else {
+                                      Alert.alert('Greška', result.error || 'Nije moguće obrisati');
+                                    }
+                                  } catch (error) {
+                                    Alert.alert('Greška', 'Došlo je do greške');
+                                  }
+                                },
+                              },
+                            ]
+                          );
+                        }}
+                      >
+                        <Text style={styles.deleteWorkoutLogButtonText}>✕</Text>
+                      </TouchableOpacity>
                     </View>
                   ))}
                   
@@ -882,7 +1110,7 @@ export default function TrainerClientDetailScreen({ authToken, clientId, onBack,
                   style={styles.actionButton}
                   onPress={handleRegenerateWeek}
                 >
-                  <Text style={styles.actionButtonText}>Regeneriraj tjedan</Text>
+                  <Text style={styles.actionButtonText}>Dopuni program</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.actionButton, styles.actionButtonSecondary]}
@@ -967,6 +1195,67 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+  startWorkoutButtonSub: {
+    color: '#000000',
+    fontSize: 12,
+    opacity: 0.7,
+    marginTop: 4,
+  },
+  
+  // Program Selector
+  programSelectorContainer: {
+    marginBottom: 16,
+  },
+  programSelectorLabel: {
+    color: '#888888',
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 10,
+  },
+  programSelectorScroll: {
+    marginHorizontal: -4,
+  },
+  programSelectorContent: {
+    paddingHorizontal: 4,
+    gap: 8,
+  },
+  programSelectorButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: '#27272A',
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    gap: 6,
+  },
+  programSelectorButtonActive: {
+    borderColor: '#00FF88',
+    backgroundColor: '#1a2f1f',
+  },
+  programSelectorText: {
+    color: '#A1A1AA',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  programSelectorTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  programSelectorGoal: {
+    fontSize: 14,
+  },
+  selectedProgramInfo: {
+    marginBottom: 12,
+  },
+  selectedProgramName: {
+    color: '#00FF88',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  
   upcomingSessionsLabel: {
     color: '#888888',
     fontSize: 12,
@@ -1023,7 +1312,13 @@ const styles = StyleSheet.create({
     color: '#60A5FA',
     fontWeight: '600',
   },
+  programItemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
   programItem: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -1031,7 +1326,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     backgroundColor: '#1a1a1a',
     borderRadius: 8,
-    marginTop: 8,
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
   },
   programItemContent: {
     flex: 1,
@@ -1050,6 +1346,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#60A5FA',
     marginLeft: 8,
+  },
+  deleteProgramButton: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 48,
+  },
+  deleteProgramButtonText: {
+    fontSize: 18,
   },
   
   // Info rows
@@ -1145,10 +1455,6 @@ const styles = StyleSheet.create({
   experienceIntermediate: { color: '#71717A' },
   experienceAdvanced: { color: '#F44336' },
   
-  // Diet quality
-  dietPoor: { color: '#F44336' },
-  dietAverage: { color: '#71717A' },
-  dietGood: { color: '#3F3F46' },
   
   // Allergies box
   allergiesBox: {
@@ -1269,11 +1575,32 @@ const styles = StyleSheet.create({
   },
   
   // Workout Logs
+  workoutLogItemContainer: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    marginBottom: 12,
+  },
   workoutLogItem: {
+    flex: 1,
     backgroundColor: '#27272A',
     borderRadius: 8,
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
     padding: 16,
-    marginBottom: 12,
+  },
+  deleteWorkoutLogButton: {
+    backgroundColor: '#3F3F46',
+    borderRadius: 8,
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+    width: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteWorkoutLogButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
   },
   workoutLogHeader: {
     flexDirection: 'row',

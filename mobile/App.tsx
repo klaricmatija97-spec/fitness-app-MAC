@@ -110,7 +110,7 @@ export default function App() {
     // Fallback na legacy token (samo za neulogirane korisnike)
     const token = typeof btoa !== 'undefined' 
       ? btoa(`${ACTUAL_CLIENT_ID}:${Date.now()}`)
-      : "YzEyMzQ1NjctODlhYi1jZGVmLTAxMjMtNDU2Nzg5YWJjZGVmOjE3MzY3MDQ2NzUwNTk=";
+    : "YzEyMzQ1NjctODlhYi1jZGVmLTAxMjMtNDU2Nzg5YWJjZGVmOjE3MzY3MDQ2NzUwNTk=";
     console.log('[App] Using legacy token for:', ACTUAL_CLIENT_ID);
     return token;
   }, [ACTUAL_CLIENT_ID, clientJwtToken]); // Mijenja se kad se promijeni client ID ili JWT token
@@ -193,8 +193,8 @@ export default function App() {
           }
         }
         
-        // 1. Učitaj trener podatke
-        const savedTrainerId = await authStorage.getTrainerId();
+      // 1. Učitaj trener podatke
+      const savedTrainerId = await authStorage.getTrainerId();
         const savedTrainerToken = await authStorage.getTrainerToken();
         
         console.log('[App] Checking trainer data:', {
@@ -202,63 +202,63 @@ export default function App() {
           hasTrainerToken: !!savedTrainerToken,
           tokenPreview: savedTrainerToken ? savedTrainerToken.substring(0, 30) + '...' : 'null',
         });
-        
+      
         if (savedTrainerId && savedTrainerToken) {
-          setTrainerId(savedTrainerId);
+        setTrainerId(savedTrainerId);
           setTrainerToken(savedTrainerToken);
-          console.log('[App] Loaded trainer data:', savedTrainerId);
-          // Ako je trener, prikaži trainer home
-          setShowTrainerHome(true);
-          return;
+        console.log('[App] Loaded trainer data:', savedTrainerId);
+        // Ako je trener, prikaži trainer home
+        setShowTrainerHome(true);
+        return;
+      }
+      
+      // 2. Učitaj stanje aplikacije za klijente
+      const savedState = await appStateStorage.getAppState();
+      if (savedState) {
+        console.log('[App] Restoring saved state:', savedState.currentScreen);
+        
+        // Vrati spremljene podatke
+        if (savedState.intakeFormData) {
+          setIntakeFormData(savedState.intakeFormData);
+        }
+        if (savedState.calculatorResults) {
+          setCalculatorResults(savedState.calculatorResults);
+        }
+        if (savedState.connectedTrainerId) {
+          setConnectedTrainerId(savedState.connectedTrainerId);
+          setConnectedTrainerName(savedState.connectedTrainerName || null);
         }
         
-        // 2. Učitaj stanje aplikacije za klijente
-        const savedState = await appStateStorage.getAppState();
-        if (savedState) {
-          console.log('[App] Restoring saved state:', savedState.currentScreen);
-          
-          // Vrati spremljene podatke
-          if (savedState.intakeFormData) {
-            setIntakeFormData(savedState.intakeFormData);
-          }
-          if (savedState.calculatorResults) {
-            setCalculatorResults(savedState.calculatorResults);
-          }
-          if (savedState.connectedTrainerId) {
-            setConnectedTrainerId(savedState.connectedTrainerId);
-            setConnectedTrainerName(savedState.connectedTrainerName || null);
-          }
-          
-          // Vrati na spremljeni screen
-          switch (savedState.currentScreen) {
-            case 'intakeFlow':
-              setShowIntakeFlow(true);
-              break;
-            case 'calculator':
-              setShowIntakeFlow(false);
-              setShowCalculator(true);
-              break;
-            case 'calculationsSummary':
-              setShowCalculationsSummary(true);
-              break;
-            case 'mealPlan':
-              setShowMealPlan(true);
-              break;
-            case 'clientDashboard':
-              setShowClientDashboard(true);
-              break;
-            case 'onboarding':
+        // Vrati na spremljeni screen
+        switch (savedState.currentScreen) {
+          case 'intakeFlow':
+            setShowIntakeFlow(true);
+            break;
+          case 'calculator':
+            setShowIntakeFlow(false);
+            setShowCalculator(true);
+            break;
+          case 'calculationsSummary':
+            setShowCalculationsSummary(true);
+            break;
+          case 'mealPlan':
+            setShowMealPlan(true);
+            break;
+          case 'clientDashboard':
+            setShowClientDashboard(true);
+            break;
+          case 'onboarding':
               // PRESKOČI onboarding ako ima problema - idi direktno na intakeFlow
               console.log('[App] Skipping onboarding, going to intakeFlow');
               setShowIntakeFlow(true);
-              break;
-            case 'login':
+            break;
+          case 'login':
               // Login je tranzicija - vrati na welcome umjesto da zapneš na loginu
               // Korisnik može ponovno kliknuti "Započni"
               console.log('[App] Login state found, showing welcome instead');
-              break;
-            // 'welcome' je default, ne treba ništa
-          }
+            break;
+          // 'welcome' je default, ne treba ništa
+        }
         }
       } catch (error) {
         console.error('[App] Error loading saved data:', error);
@@ -310,7 +310,7 @@ export default function App() {
     
     if (!savedClientId) {
       console.log('[App] No client ID found, showing intake flow');
-      setShowLogin(false);
+    setShowLogin(false);
       setShowIntakeFlow(true);
       saveCurrentState('intakeFlow');
       return;
@@ -377,7 +377,7 @@ export default function App() {
         }
         
         // Idi na dashboard
-        setShowLogin(false);
+    setShowLogin(false);
         setShowClientDashboard(true);
         saveCurrentState('clientDashboard');
         return;

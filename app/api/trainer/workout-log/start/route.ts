@@ -121,18 +121,79 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (existingLog?.status === 'in_progress') {
-      // Vrati postojeći aktivni log
+      // Vrati postojeći aktivni log s vježbama
+      let { data: existingExercises } = await supabase
+        .from('workout_log_exercises')
+        .select('id, exercise_name, planned_sets, planned_reps_min, planned_reps_max, planned_rir')
+        .eq('workout_log_id', existingLog.id)
+        .order('created_at');
+      
+      // Ako nema vježbi u logu, ali ima u sesiji - dodaj ih
+      console.log('[workout-log/start] Checking exercises:', { existingCount: existingExercises?.length, sessionCount: exercises.length });
+      if ((!existingExercises || existingExercises.length === 0) && exercises.length > 0) {
+        console.log('[workout-log/start] Existing log has no exercises, adding from session...');
+        
+        // Parse reps_target (format "6-8") to get min and max
+        const parseRepsRange = (repsTarget: string | null): { min: number | null; max: number | null } => {
+          if (!repsTarget) return { min: null, max: null };
+          const parts = repsTarget.split('-').map(p => parseInt(p.trim(), 10));
+          if (parts.length === 2) {
+            return { min: parts[0], max: parts[1] };
+          } else if (parts.length === 1 && !isNaN(parts[0])) {
+            return { min: parts[0], max: parts[0] };
+          }
+          return { min: null, max: null };
+        };
+        
+        const exercisesToInsert = exercises.map((ex: any) => {
+          const reps = parseRepsRange(ex.reps_target);
+          return {
+            workout_log_id: existingLog.id,
+            exercise_name: ex.exercise_name_hr || ex.exercise_name || 'Nepoznata vježba',
+            exercise_name_en: ex.exercise_name,
+            primary_muscles: ex.primary_muscles || [],
+            planned_sets: ex.sets || 3,
+            planned_reps_min: reps.min,
+            planned_reps_max: reps.max,
+            planned_rir: ex.target_rir,
+            completed_sets: 0,
+          };
+        });
+        
+        console.log('[workout-log/start] Inserting exercises:', exercisesToInsert);
+        const { error: insertError } = await supabase.from('workout_log_exercises').insert(exercisesToInsert);
+        if (insertError) {
+          console.error('[workout-log/start] Insert error:', insertError);
+        }
+        
+        // Dohvati ponovno
+        const { data: newExercises, error: fetchError } = await supabase
+          .from('workout_log_exercises')
+          .select('id, exercise_name, planned_sets, planned_reps_min, planned_reps_max, planned_rir')
+          .eq('workout_log_id', existingLog.id)
+          .order('created_at');
+        
+        console.log('[workout-log/start] After insert, fetched:', newExercises?.length, fetchError);
+        existingExercises = newExercises;
+      }
+      
       return NextResponse.json({
         success: true,
         data: {
           workoutLogId: existingLog.id,
+          clientName: client.name,
+          sessionName: session.split_name,
+          weekNumber: session.week_number,
+          dayOfWeek: session.day_of_week,
+          exercises: existingExercises || [],
           resumed: true,
           message: 'Resumed existing workout log',
         },
       });
     }
 
-    // Kreiraj novi workout log
+    // Kreiraj novi workout log - status: 'in_progress' dok se ne završi
+    const startedAt = new Date().toISOString();
     const { data: workoutLog, error: logError } = await supabase
       .from('workout_logs')
       .insert({
@@ -140,10 +201,10 @@ export async function POST(request: NextRequest) {
         program_id: programId || session.program_id,
         session_id: sessionId,
         week_number: session.week_number,
-        started_at: new Date().toISOString(),
-        completed_at: new Date().toISOString(), // Placeholder, update on complete
+        started_at: startedAt,
+        completed_at: startedAt, // Placeholder - ažurira se kad se trening završi
         duration_minutes: 0,
-        status: 'completed', // Dozvoljeni statusi: completed, partial, skipped
+        status: 'in_progress', // Trening u tijeku - mijenja se u 'completed' kad završi
         total_exercises: exercises.length,
         completed_exercises: 0,
         total_sets: exercises.reduce((sum: number, ex: any) => sum + (ex.sets || 0), 0),
@@ -162,16 +223,35 @@ export async function POST(request: NextRequest) {
     }
 
     // Kreiraj workout_log_exercises za svaku vježbu
-    const exercisesToInsert = exercises.map((ex: any) => ({
-      workout_log_id: workoutLog.id,
-      exercise_name: ex.exercise_name_hr || ex.exercise_name || 'Nepoznata vježba',
-      exercise_name_en: ex.exercise_name,
-      primary_muscles: ex.primary_muscles || [],
-      planned_sets: ex.sets || 3,
-      planned_reps_max: ex.reps_target,
-      planned_rir: ex.target_rir,
-      completed_sets: 0,
-    }));
+    console.log('[workout-log/start] Creating exercises for new log, count:', exercises.length);
+    
+    // Parse reps_target (format "6-8") to get min and max
+    const parseRepsRange = (repsTarget: string | null): { min: number | null; max: number | null } => {
+      if (!repsTarget) return { min: null, max: null };
+      const parts = repsTarget.split('-').map(p => parseInt(p.trim(), 10));
+      if (parts.length === 2) {
+        return { min: parts[0], max: parts[1] };
+      } else if (parts.length === 1 && !isNaN(parts[0])) {
+        return { min: parts[0], max: parts[0] };
+      }
+      return { min: null, max: null };
+    };
+    
+    const exercisesToInsert = exercises.map((ex: any) => {
+      const reps = parseRepsRange(ex.reps_target);
+      return {
+        workout_log_id: workoutLog.id,
+        exercise_name: ex.exercise_name_hr || ex.exercise_name || 'Nepoznata vježba',
+        exercise_name_en: ex.exercise_name,
+        primary_muscles: ex.primary_muscles || [],
+        planned_sets: ex.sets || 3,
+        planned_reps_min: reps.min,
+        planned_reps_max: reps.max,
+        planned_rir: ex.target_rir,
+        completed_sets: 0,
+      };
+    });
+    console.log('[workout-log/start] Exercises to insert:', JSON.stringify(exercisesToInsert.map(e => e.exercise_name)));
 
     if (exercisesToInsert.length > 0) {
       const { error: exercisesError } = await supabase
@@ -181,6 +261,8 @@ export async function POST(request: NextRequest) {
       if (exercisesError) {
         console.error('[workout-log/start] Error creating exercises:', exercisesError);
         // Ne failaj cijeli request, log je kreiran
+      } else {
+        console.log('[workout-log/start] Exercises inserted successfully');
       }
     }
 

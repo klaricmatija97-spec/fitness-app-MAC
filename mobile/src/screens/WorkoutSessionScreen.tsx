@@ -64,6 +64,15 @@ export default function WorkoutSessionScreen({ authToken, sessionId, onComplete,
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [session, setSession] = useState<SessionData | null>(null);
+  
+  // Debug: loguj props
+  useEffect(() => {
+    console.log('[WorkoutSession] Mounted with:', {
+      sessionId,
+      hasToken: !!authToken,
+      tokenPreview: authToken ? authToken.substring(0, 30) + '...' : 'NO TOKEN',
+    });
+  }, []);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [showSetModal, setShowSetModal] = useState(false);
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
@@ -97,22 +106,49 @@ export default function WorkoutSessionScreen({ authToken, sessionId, onComplete,
   async function loadSession() {
     setLoading(true);
     try {
+      console.log('[WorkoutSession] Loading session:', sessionId);
       const response = await fetch(`${API_BASE_URL}/api/client/session/${sessionId}`, {
         headers: { 'Authorization': `Bearer ${authToken}` },
       });
+      
+      if (!response.ok) {
+        console.error('[WorkoutSession] Response not OK:', response.status, response.statusText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       const result = await response.json();
+      console.log('[WorkoutSession] API result:', result.success ? 'SUCCESS' : 'FAILED', result);
 
-      if (result.success) {
-        // Inicijaliziraj completedSets za svaku vježbu
-        const exercisesWithTracking = result.data.exercises.map((ex: any) => ({
-          ...ex,
+      if (result.success && result.data?.session) {
+        const sessionData = result.data.session;
+        
+        // Mapiraj vježbe iz API formata u format koji očekuje UI
+        const exercisesWithTracking = (sessionData.exercises || []).map((ex: any) => ({
+          id: ex.id || ex.exerciseId,
+          name: ex.nameHr || ex.name || 'Nepoznata vježba',
+          nameEn: ex.name || ex.nameHr || 'Unknown exercise',
+          sets: ex.sets || 3,
+          reps: ex.repsTarget || '8-12',
+          restSeconds: ex.restSeconds || 60,
+          tempo: ex.tempo || null,
+          rir: ex.targetRIR || ex.targetRir || null,
+          equipment: ex.equipment || 'Bodyweight',
+          primaryMuscles: ex.primaryMuscles || [],
+          notes: ex.notes || null,
           completedSets: [],
           isCompleted: false,
         }));
+        
         setSession({
-          ...result.data,
+          id: sessionData.id,
+          name: sessionData.name || 'Trening',
+          sessionType: 'strength',
+          estimatedDuration: sessionData.estimatedDuration || 60,
+          status: 'pending',
           exercises: exercisesWithTracking,
         });
+        
+        console.log('[WorkoutSession] Session loaded:', sessionData.name, exercisesWithTracking.length, 'exercises');
       } else {
         // Mock podaci za testiranje
         setSession({
@@ -192,8 +228,16 @@ export default function WorkoutSessionScreen({ authToken, sessionId, onComplete,
         });
       }
     } catch (error) {
-      console.error('Error loading session:', error);
-      Alert.alert('Greška', 'Nije moguće učitati trening.');
+      console.error('[WorkoutSession] Error loading session:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Nepoznata greška';
+      Alert.alert(
+        'Greška', 
+        `Nije moguće učitati trening.\n\n${errorMessage}\n\nProvjeri internetsku vezu i pokušaj ponovno.`,
+        [
+          { text: 'Pokušaj ponovno', onPress: () => loadSession() },
+          { text: 'Natrag', onPress: () => onBack?.() },
+        ]
+      );
     } finally {
       setLoading(false);
     }

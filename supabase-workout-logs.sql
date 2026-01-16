@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS workout_logs (
   duration_minutes INTEGER NOT NULL, -- Izračunato: (completed_at - started_at) / 60
   
   -- Status
-  status TEXT NOT NULL DEFAULT 'completed' CHECK (status IN ('completed', 'partial', 'skipped')),
+  status TEXT NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed', 'partial', 'skipped')),
   adherence_score NUMERIC(5,2) DEFAULT 100.0, -- 0-100, izračunato na temelju completed exercises
   
   -- Statistike

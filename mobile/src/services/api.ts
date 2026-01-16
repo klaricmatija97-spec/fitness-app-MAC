@@ -22,7 +22,7 @@ export const getApiBaseUrl = () => {
     // Simulator može dosegnuti LAN IP bez problema
     
     // Tvoj LAN IP - AŽURIRAJ OVO AKO SE PROMIJENI!
-    const LAN_IP = '192.168.1.11';
+    const LAN_IP = '192.168.1.3';
     
     if (Platform.OS === 'android') {
       // Android emulator koristi 10.0.2.2 za localhost računala
@@ -87,6 +87,9 @@ export interface RegisterResponse {
  */
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   try {
+    console.log('[Login] Attempting login to:', `${API_BASE_URL}/api/auth/login`);
+    console.log('[Login] Credentials:', { username: credentials.username, password: '***' });
+    
     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
@@ -95,13 +98,36 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
       body: JSON.stringify(credentials),
     });
 
+    console.log('[Login] Response status:', response.status, response.statusText);
+    console.log('[Login] Response ok:', response.ok);
+
     const data = await response.json();
+    console.log('[Login] Response data:', { ...data, token: data.token ? '***' : undefined });
+    
+    if (!response.ok) {
+      // Server je vratio error status
+      return {
+        ok: false,
+        message: data.message || `Greška pri prijavi (${response.status})`,
+      };
+    }
+    
     return data;
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('[Login] Network error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Detaljnija poruka o grešci
+    if (errorMessage.includes('Network request failed') || errorMessage.includes('Failed to connect')) {
+      return {
+        ok: false,
+        message: `Nije moguće povezati se sa serverom.\n\nProvjeri:\n1. Je li server pokrenut na ${API_BASE_URL}?\n2. Je li mobilni uređaj na istoj WiFi mreži?\n3. Je li IP adresa točna?`,
+      };
+    }
+    
     return {
       ok: false,
-      message: 'Greška pri prijavi. Provjeri internetsku vezu.',
+      message: `Greška pri prijavi: ${errorMessage}`,
     };
   }
 }

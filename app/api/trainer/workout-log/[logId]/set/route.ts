@@ -252,3 +252,4 @@ async function updateWorkoutLogStats(supabase: any, logId: string) {
     .eq('id', logId);
 }
 
+

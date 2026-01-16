@@ -36,7 +36,8 @@ export async function POST() {
       return NextResponse.json({ error: 'Exercises error', details: exercisesError.message }, { status: 500 });
     }
     
-    // Kreiraj workout log
+    // Kreiraj workout log - status: 'in_progress' (aktivni trening)
+    const startedAt = new Date().toISOString();
     const { data: workoutLog, error: logError } = await supabase
       .from('workout_logs')
       .insert({
@@ -45,10 +46,10 @@ export async function POST() {
         program_id: programId,
         session_id: sessionId,
         week_number: session.week_number,
-        started_at: new Date().toISOString(),
-        completed_at: new Date().toISOString(), // Required field - placeholder
+        started_at: startedAt,
+        completed_at: startedAt, // Placeholder - ažurira se kad se trening završi
         duration_minutes: 0,
-        status: 'completed',
+        status: 'in_progress', // Aktivni trening
         total_exercises: exercises?.length || 0,
         completed_exercises: 0,
         total_sets: exercises?.reduce((sum: number, ex: any) => sum + (ex.sets || 0), 0) || 0,
