@@ -34,12 +34,8 @@ export const getApiBaseUrl = () => {
     return `http://${LAN_IP}:3000`;
   }
   
-  // Production - TODO: Postavi pravi URL
-  // In Expo, environment variables prefixed with EXPO_PUBLIC_ are available at build time
-  const apiUrl = typeof process !== 'undefined' && (process as any).env?.EXPO_PUBLIC_API_URL 
-    ? (process as any).env.EXPO_PUBLIC_API_URL 
-    : 'https://your-production-url.com';
-  return apiUrl;
+  // Production - Vercel deployment
+  return 'https://fitness-app-mac.vercel.app';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
