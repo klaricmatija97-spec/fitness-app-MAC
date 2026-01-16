@@ -196,9 +196,9 @@ export async function DELETE(
     }
     
     const token = authHeader.split(' ')[1];
-    const payload = verifyAccessToken(token);
+    const { payload, valid } = verifyAccessToken(token);
     
-    if (!payload || payload.userType !== 'trainer') {
+    if (!valid || !payload || payload.userType !== 'trainer') {
       return NextResponse.json(
         { success: false, error: 'Samo treneri mogu brisati programe' },
         { status: 403 }
