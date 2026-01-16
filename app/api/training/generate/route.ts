@@ -121,6 +121,18 @@ export async function POST(request: NextRequest) {
     // 2. Generiraj program
     const program = await buildProgram(input);
     
+    // DEBUG: Provjeri strukturu programa prije spremanja
+    let ukupnoVjezbiPrijeSpremanja = 0;
+    for (const mez of program.mezociklusi) {
+      for (const tjedan of mez.tjedni) {
+        for (const trening of tjedan.treninzi) {
+          ukupnoVjezbiPrijeSpremanja += trening.glavniDio.length;
+          console.log(`[API DEBUG] Trening "${trening.naziv}" ima ${trening.glavniDio.length} vježbi`);
+        }
+      }
+    }
+    console.log(`[API DEBUG] UKUPNO VJEŽBI PRIJE SPREMANJA: ${ukupnoVjezbiPrijeSpremanja}`);
+    
     // 3. Spremi u bazu
     const saveResult = await spremiProgram(program);
     

@@ -304,13 +304,19 @@ async function spremiVjezbe(sessionId: string, vjezbe: VjezbaSesije[]): Promise<
     override_reason: null,
   }));
   
+  console.log(`[Database] Spremam ${dbVjezbe.length} vježbi za sesiju ${sessionId}`);
+  console.log(`[Database] Prva vježba:`, dbVjezbe[0]?.exercise_name_hr);
+  
   const { error } = await supabase
     .from('session_exercises')
     .insert(dbVjezbe);
   
   if (error) {
+    console.error(`[Database] GREŠKA pri spremanju vježbi:`, error);
     throw new Error(`Greška pri spremanju vježbi: ${error.message}`);
   }
+  
+  console.log(`[Database] ✅ Uspješno spremljeno ${dbVjezbe.length} vježbi`);
 }
 
 /**
