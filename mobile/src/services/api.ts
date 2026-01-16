@@ -11,31 +11,8 @@ import { Platform } from 'react-native';
 // Koristi localhost za development (Expo Go na istom WiFi-u)
 // Za production, koristi environment varijablu ili postavi pravi URL
 export const getApiBaseUrl = () => {
-  // Check if we're in development mode
-  // In React Native/Expo, __DEV__ is a global boolean
-  const isDev = (typeof (global as any).__DEV__ !== 'undefined' 
-    ? (global as any).__DEV__ 
-    : true) as boolean;
-  
-  if (isDev) {
-    // Development - UVIJEK koristi LAN IP za iOS (radi i na simulatoru i na fizičkom uređaju)
-    // Simulator može dosegnuti LAN IP bez problema
-    
-    // Tvoj LAN IP - AŽURIRAJ OVO AKO SE PROMIJENI!
-    const LAN_IP = '192.168.1.3';
-    
-    if (Platform.OS === 'android') {
-      // Android emulator koristi 10.0.2.2 za localhost računala
-      // Ali LAN IP također radi pa koristimo njega za konzistentnost
-      return `http://${LAN_IP}:3000`;
-    }
-    
-    // iOS (simulator ili fizički uređaj) - uvijek koristi LAN IP
-    return `http://${LAN_IP}:3000`;
-  }
-  
-  // Production - Vercel deployment
-  return 'https://fitness-app-mac.vercel.app';
+  // Koristi EXPO_PUBLIC_API_URL iz .env ako postoji, inače Vercel URL
+  return process.env.EXPO_PUBLIC_API_URL || 'https://fitness-app-mac.vercel.app';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

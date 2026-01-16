@@ -41,10 +41,10 @@ function getSupabase() {
 const CILJ_MAP: Record<string, string> = {
   // IFT ciljevi (novi)
   jakost: 'strength',           // Maksimalna snaga (1-5 rep)
-  snaga: 'power',               // Power/Eksplozivnost (6-8 rep)
+  snaga: 'strength',            // Power/Eksplozivnost → mapira na strength (baza nema 'power')
   hipertrofija: 'hypertrophy',  // Mišićna masa (8-12 rep)
   izdrzljivost: 'endurance',    // Mišićna izdržljivost (12+ rep)
-  rekreacija_zdravlje: 'general_fitness',
+  rekreacija_zdravlje: 'hypertrophy', // Rekreacija → mapira na hypertrophy (baza nema 'general_fitness')
   
   // Legacy podrška (stari nazivi)
   maksimalna_snaga: 'strength',
