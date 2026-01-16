@@ -471,6 +471,11 @@ async function buildSessions(input: BuildSessionsInput): Promise<TrenigSesija[]>
       redniBrojTreninga: i + 1,
     });
     
+    console.log(`[Generator] Trening ${tipTreninga} (${i+1}/${treninziTjedno}): ${vjezbe.length} vježbi odabrano`);
+    if (vjezbe.length === 0) {
+      console.warn(`[Generator] UPOZORENJE: Nema vježbi za ${tipTreninga}! Mišićne grupe: ${misicneGrupe.join(', ')}`);
+    }
+    
     // Kreiraj zagrijavanje i završni dio
     const zagrijavanje = kreirajZagrijavanje(tipTreninga);
     const zavrsniDio = kreirajZavrsniDio(tipTreninga, misicneGrupe);

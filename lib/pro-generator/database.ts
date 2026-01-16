@@ -259,8 +259,12 @@ async function spremiSesiju(
   const sesijaId = data.id;
   
   // Spremi vježbe
+  console.log(`[Database] Sesija ${sesijaId} ima ${trening.glavniDio.length} vježbi za spremiti`);
   if (trening.glavniDio.length > 0) {
     await spremiVjezbe(sesijaId, trening.glavniDio);
+    console.log(`[Database] Vježbe spremljene za sesiju ${sesijaId}`);
+  } else {
+    console.warn(`[Database] UPOZORENJE: Sesija ${sesijaId} (${trening.naziv}) nema vježbi!`);
   }
   
   return sesijaId;
