@@ -128,6 +128,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const supabase = createServiceClient();
     const { data: invite } = await supabase
       .from("trainer_invites")
       .select("status, created_at, approved_at, expires_at")
