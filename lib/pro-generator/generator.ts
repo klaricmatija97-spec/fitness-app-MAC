@@ -245,7 +245,7 @@ export async function buildProgram(input: GeneratorInput): Promise<TreningProgra
     ukupnoTjedana: input.trajanjeTjedana,
     treninziTjedno: input.treninziTjedno,
     opis: generirajOpisPrograma(input, splitConfig),
-    status: 'active', // Programi se kreiraju kao aktivni da klijent odmah vidi
+    status: 'aktivan', // Programi se kreiraju kao aktivni da klijent odmah vidi
     generatorVerzija: GENERATOR_VERSION,
     validacijaRezultat: validacija,
     napomeneTrenera: input.napomeneTrenera,
