@@ -49,8 +49,7 @@ export default function LandingPage() {
           </div>
         </section>
       </FadeInSection>
-    </main>
-    <Footer />
+      <Footer />
     </>
   );
 }
