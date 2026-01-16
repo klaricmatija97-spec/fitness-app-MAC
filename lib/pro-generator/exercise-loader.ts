@@ -8,7 +8,8 @@
 import type { VjezbaLibrary, VjezbaProširena, ObrazacPokreta } from './types';
 import { MISICNA_GRUPA_PRIJEVOD, OPREMA_PRIJEVOD } from './constants';
 // Direktno importamo JSON da radi na Vercel serverless
-import exerciseDatabase from '@/data/exercises/wrkout-database.json';
+// Koristi relativni put umjesto aliasa za sigurnost
+import exerciseDatabase from '../../data/exercises/wrkout-database.json';
 
 // ============================================
 // CACHE ZA VJEŽBE
@@ -146,6 +147,14 @@ export async function ucitajVjezbe(): Promise<VjezbaProširena[]> {
   try {
     // Koristi importani JSON umjesto fs.readFile (za Vercel kompatibilnost)
     const rawVjezbe = exerciseDatabase as VjezbaLibrary[];
+    
+    // Debug log
+    console.log(`[ExerciseLoader] Raw exercises count: ${rawVjezbe?.length || 0}`);
+    
+    if (!rawVjezbe || rawVjezbe.length === 0) {
+      console.error('[ExerciseLoader] KRITIČNA GREŠKA: exerciseDatabase je prazan!');
+      throw new Error('Exercise database je prazan');
+    }
     
     // Obogati svaku vježbu
     vjezbeCache = rawVjezbe.map(vjezba => ({
