@@ -40,7 +40,14 @@ interface NutritionCache {
 // CACHE DATA
 // ============================================
 
-const cache = nutritionCache as unknown as NutritionCache;
+// Safely cast cache with fallback for empty/missing data
+const rawCache = nutritionCache as any;
+const cache: NutritionCache = {
+  lastUpdated: rawCache._metadata?.lastUpdated || rawCache.lastUpdated || '',
+  source: rawCache._metadata?.source || rawCache.source || 'Edamam',
+  totalMeals: Object.keys(rawCache.meals || rawCache.nutritionById || {}).length,
+  nutritionById: rawCache.meals || rawCache.nutritionById || {},
+};
 
 // ============================================
 // FUNCTIONS
