@@ -18,7 +18,7 @@ export async function GET() {
         level: 'intermediate',
         split_type: 'full_body',
         duration_weeks: 4,
-        sessions_per_week: 1,
+        sessions_per_week: 3,
         session_duration_minutes: 60,
         status: 'draft',
       });
