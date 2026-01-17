@@ -19,6 +19,7 @@ export async function GET() {
         split_type: 'full_body',
         duration_weeks: 1,
         sessions_per_week: 1,
+        session_duration_minutes: 60,
         status: 'draft',
       });
     
