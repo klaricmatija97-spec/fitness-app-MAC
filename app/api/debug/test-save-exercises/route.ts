@@ -6,13 +6,26 @@ export async function GET() {
   const supabase = createServiceClient();
   
   try {
+    // Prvo dohvati stvarnog klijenta iz baze
+    const { data: existingClient } = await supabase
+      .from('clients')
+      .select('id')
+      .limit(1)
+      .single();
+    
+    if (!existingClient) {
+      return NextResponse.json({
+        error: 'Nema klijenata u bazi za testiranje',
+      }, { status: 400 });
+    }
+    
     // 1. Kreiraj test program
     const programId = uuidv4();
     const { error: programError } = await supabase
       .from('training_programs')
       .insert({
         id: programId,
-        client_id: '48c3261e-ee17-4ca5-af49-f3e856cdf10a', // Test client ID - promijeni ako treba
+        client_id: existingClient.id, // Koristi stvarnog klijenta
         name: 'TEST - Delete Me',
         goal: 'hypertrophy',
         level: 'intermediate',
