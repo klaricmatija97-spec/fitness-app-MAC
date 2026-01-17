@@ -53,8 +53,9 @@ export async function GET() {
         name: 'Test Mesocycle',
         order_index: 1,
         week_start: 1,
-        week_end: 1,
+        week_end: 4,
         focus: 'volume',
+        progression_type: 'linear',
       });
     
     if (mesocycleError) {
