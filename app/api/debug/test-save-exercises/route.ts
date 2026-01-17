@@ -17,7 +17,7 @@ export async function GET() {
         goal: 'hypertrophy',
         level: 'intermediate',
         split_type: 'full_body',
-        duration_weeks: 1,
+        duration_weeks: 4,
         sessions_per_week: 1,
         session_duration_minutes: 60,
         status: 'draft',
