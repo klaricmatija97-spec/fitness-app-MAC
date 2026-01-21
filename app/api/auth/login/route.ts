@@ -42,8 +42,12 @@ export async function POST(request: Request) {
       );
     }
     
-    const { username, password } = parseResult.data;
+    const { password } = parseResult.data;
+    // VAŽNO: Normaliziraj username na lowercase jer se tako sprema pri registraciji
+    const username = parseResult.data.username.trim().toLowerCase();
     const supabase = createServiceClient();
+    
+    console.log("[auth/login] Attempting login for username:", username);
     
     // ============================================
     // 1. PROVJERI JE LI TRENER
