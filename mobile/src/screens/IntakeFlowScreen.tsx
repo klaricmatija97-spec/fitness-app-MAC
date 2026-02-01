@@ -10,9 +10,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  Animated,
   Platform,
-  PanResponder,
   TextInput,
   ScrollView,
   Keyboard,
@@ -169,9 +167,6 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
   });
 
   const currentSlide = slideOrder[currentSlideIndex];
-  const isAnimating = useRef(false);
-  const slideOpacity = useRef(new Animated.Value(1)).current;
-  const slideTranslateY = useRef(new Animated.Value(0)).current;
   const weightInputTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const heightInputTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -181,43 +176,11 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
   const [isEditingHeight, setIsEditingHeight] = useState(false);
   const [tempValue, setTempValue] = useState('');
 
-  // PanResponder za swipe navigaciju - VRLO striktni pragovi
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false, // Nikad ne uzimaj na početku
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        if (isAnimating.current) return false;
-        // Mora biti izrazito vertikalan swipe (dy > 4x dx) i minimum 100px pomaka
-        const isVertical = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 4;
-        const isSignificant = Math.abs(gestureState.dy) > 100;
-        return isVertical && isSignificant;
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (isAnimating.current) return;
-        const { dy, vy } = gestureState;
-        
-        // POVEĆANI pragovi: 200px I brzina 1.0 (oba uvjeta moraju biti zadovoljena)
-        if (dy > 200 && vy > 1.0) {
-          // Swipe down - nazad (samo ako nije prvi slide)
-          if (currentSlideIndex > 0) {
-            goToPrevious();
-          }
-          // NE izlazi iz intake flow-a na swipe
-        } else if (dy < -200 && vy < -1.0) {
-          // Swipe up - naprijed
-          if (canGoNext()) {
-            goToNext();
-          }
-        }
-      },
-    })
-  ).current;
-
-  // Rotiraj pozadinske slike
+  // Rotiraj pozadinske slike svakih 15 sekundi (usporeno)
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBgImage((prev) => (prev + 1) % backgroundImages.length);
-    }, 8000);
+    }, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -279,84 +242,19 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
   };
 
   const goToNext = () => {
-    if (!canGoNext() || isAnimating.current) return;
+    if (!canGoNext()) return;
     
-    isAnimating.current = true;
-    
-    Animated.parallel([
-      Animated.timing(slideOpacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideTranslateY, {
-        toValue: -30,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      if (currentSlideIndex < slideOrder.length - 1) {
-        setCurrentSlideIndex(currentSlideIndex + 1);
-        slideTranslateY.setValue(30);
-        slideOpacity.setValue(0);
-        
-        Animated.parallel([
-          Animated.timing(slideOpacity, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(slideTranslateY, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start(() => {
-          isAnimating.current = false;
-        });
-      } else {
-        // Završi intake flow
-        onComplete(intakeForm);
-      }
-    });
+    if (currentSlideIndex < slideOrder.length - 1) {
+      setCurrentSlideIndex(currentSlideIndex + 1);
+    } else {
+      // Završi intake flow
+      onComplete(intakeForm);
+    }
   };
 
   const goToPrevious = () => {
-    if (currentSlideIndex === 0 || isAnimating.current) return;
-    
-    isAnimating.current = true;
-    
-    Animated.parallel([
-      Animated.timing(slideOpacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideTranslateY, {
-        toValue: 30,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setCurrentSlideIndex(currentSlideIndex - 1);
-      slideTranslateY.setValue(-30);
-      slideOpacity.setValue(0);
-      
-      Animated.parallel([
-        Animated.timing(slideOpacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideTranslateY, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        isAnimating.current = false;
-      });
-    });
+    if (currentSlideIndex === 0) return;
+    setCurrentSlideIndex(currentSlideIndex - 1);
   };
 
   const updateForm = (field: keyof IntakeFormState, value: any) => {
@@ -370,9 +268,7 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
     
     // Auto-advance nakon kratke pauze
     setTimeout(() => {
-      if (!isAnimating.current) {
-        goToNext();
-      }
+      goToNext();
     }, 300);
   };
 
@@ -383,10 +279,6 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
   };
 
   const renderSlide = () => {
-    const slideStyle = {
-      opacity: slideOpacity,
-      transform: [{ translateY: slideTranslateY }],
-    };
 
     switch (currentSlide) {
       case 'goal':
@@ -394,7 +286,7 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
         const otherGoals = goalOptions.filter(g => !g.isHero);
         
         return (
-          <Animated.View style={[styles.slideContent, slideStyle]}>
+          <View style={styles.slideContent}>
             <Text style={styles.questionText}>Koji je tvoj cilj?</Text>
             <Text style={styles.goalSubtitle}>Možeš ga promijeniti kasnije</Text>
             
@@ -479,12 +371,12 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
                 );
               })}
             </View>
-          </Animated.View>
+          </View>
         );
 
       case 'honorific':
         return (
-          <Animated.View style={[styles.slideContent, slideStyle]}>
+          <View style={styles.slideContent}>
             <Text style={styles.questionText}>Spol</Text>
             <View style={styles.genderContainer}>
               {genderOptions.map((option) => (
@@ -512,13 +404,13 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
                 </TouchableOpacity>
               ))}
             </View>
-          </Animated.View>
+          </View>
         );
 
       case 'age':
         const currentAge = parseInt(intakeForm.age) || 25;
         return (
-          <Animated.View style={[styles.slideContent, slideStyle]}>
+          <View style={styles.slideContent}>
             <Text style={styles.questionText}>Koliko imaš godina?</Text>
             {isEditingAge && (
               <Text style={styles.descriptionText}>Upiši dob i potvrdi</Text>
@@ -597,13 +489,13 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
                 <Text style={styles.confirmInputText}>Gotovo ✓</Text>
               </TouchableOpacity>
             )}
-          </Animated.View>
+          </View>
         );
 
       case 'weight':
         const currentWeight = parseInt(intakeForm.weight.value) || 50;
         return (
-          <Animated.View style={[styles.slideContent, slideStyle]}>
+          <View style={styles.slideContent}>
             <Text style={styles.questionText}>Trenutna težina</Text>
             {isEditingWeight && (
               <Text style={styles.descriptionText}>Upiši težinu i potvrdi</Text>
@@ -704,13 +596,13 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
                 <Text style={styles.confirmInputText}>Gotovo ✓</Text>
               </TouchableOpacity>
             )}
-          </Animated.View>
+          </View>
         );
 
       case 'height':
         const currentHeight = parseInt(intakeForm.height.value) || 150;
         return (
-          <Animated.View style={[styles.slideContent, slideStyle]}>
+          <View style={styles.slideContent}>
             <Text style={styles.questionText}>Visina</Text>
             {isEditingHeight && (
               <Text style={styles.descriptionText}>Upiši visinu i potvrdi</Text>
@@ -811,7 +703,7 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
                 <Text style={styles.confirmInputText}>Gotovo ✓</Text>
               </TouchableOpacity>
             )}
-          </Animated.View>
+          </View>
         );
 
       case 'favoriteActivities':
@@ -826,7 +718,7 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
         };
         
         return (
-          <Animated.View style={[styles.slideContent, slideStyle]}>
+          <View style={styles.slideContent}>
             <Text style={styles.questionText}>Što voliš raditi?</Text>
             <Text style={styles.descriptionText}>Odaberi sportove i aktivnosti koje te zanimaju</Text>
             <ScrollView 
@@ -861,13 +753,13 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
             <Text style={styles.selectedCount}>
               {intakeForm.favoriteActivities.length} odabrano
             </Text>
-          </Animated.View>
+          </View>
         );
 
       case 'foodPreferences':
         return (
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <Animated.View style={[styles.slideContent, slideStyle]}>
+            <View style={styles.slideContent}>
               <Text style={styles.questionText}>Preferiram</Text>
               <Text style={styles.descriptionText}>Što želiš jesti više?</Text>
               <TextInput
@@ -886,14 +778,14 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
               <TouchableOpacity style={styles.dismissKeyboardButton} onPress={Keyboard.dismiss}>
                 <Text style={styles.dismissKeyboardText}>Gotovo ✓</Text>
               </TouchableOpacity>
-            </Animated.View>
+            </View>
           </TouchableWithoutFeedback>
         );
 
       case 'avoidIngredients':
         return (
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <Animated.View style={[styles.slideContent, slideStyle]}>
+            <View style={styles.slideContent}>
               <Text style={styles.questionText}>Ne želim jesti</Text>
               <Text style={styles.descriptionText}>Što ne želiš jesti?</Text>
               <TextInput
@@ -912,14 +804,14 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
               <TouchableOpacity style={styles.dismissKeyboardButton} onPress={Keyboard.dismiss}>
                 <Text style={styles.dismissKeyboardText}>Gotovo ✓</Text>
               </TouchableOpacity>
-            </Animated.View>
+            </View>
           </TouchableWithoutFeedback>
         );
 
       case 'allergies':
         return (
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <Animated.View style={[styles.slideContent, slideStyle]}>
+            <View style={styles.slideContent}>
               <Text style={styles.questionText}>Alergije i intolerancije</Text>
               <Text style={styles.descriptionText}>Što ne smiješ jesti?</Text>
               <TextInput
@@ -938,14 +830,14 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
               <TouchableOpacity style={styles.dismissKeyboardButton} onPress={Keyboard.dismiss}>
                 <Text style={styles.dismissKeyboardText}>Gotovo ✓</Text>
               </TouchableOpacity>
-            </Animated.View>
+            </View>
           </TouchableWithoutFeedback>
         );
 
       case 'healthConditions':
         return (
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <Animated.View style={[styles.slideContent, slideStyle]}>
+            <View style={styles.slideContent}>
               <Text style={styles.questionText}>Ozljede i zdravstvena stanja</Text>
               <Text style={styles.descriptionText}>
                 Imaš li ozljede, bolesti ili stanja koja utječu na trening?
@@ -973,13 +865,13 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
               >
                 <Text style={styles.dismissKeyboardText}>Gotovo ✓</Text>
               </TouchableOpacity>
-            </Animated.View>
+            </View>
           </TouchableWithoutFeedback>
         );
 
       case 'trainingFrequency':
         return (
-          <Animated.View style={[styles.slideContent, slideStyle]}>
+          <View style={styles.slideContent}>
             <Text style={styles.questionText}>Koliko puta tjedno možeš trenirati?</Text>
             <Text style={styles.descriptionText}>Odaberi broj treninga tjedno koje možeš realno uključiti u svoj raspored.</Text>
             <View style={styles.frequencyGrid}>
@@ -1008,7 +900,7 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
                 </TouchableOpacity>
               ))}
             </View>
-          </Animated.View>
+          </View>
         );
 
       default:
@@ -1017,7 +909,7 @@ export default function IntakeFlowScreen({ onComplete, onBack, onLogout }: Intak
   };
 
   return (
-    <View style={styles.container} {...panResponder.panHandlers}>
+    <View style={styles.container}>
       {/* Rotirajuće pozadinske slike */}
       <View style={styles.backgroundContainer}>
         {backgroundImages.map((img, idx) => (

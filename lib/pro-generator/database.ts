@@ -259,12 +259,14 @@ async function spremiSesiju(
   const sesijaId = data.id;
   
   // Spremi vježbe
-  console.log(`[Database] Sesija ${sesijaId} ima ${trening.glavniDio.length} vježbi za spremiti`);
-  if (trening.glavniDio.length > 0) {
+  console.log(`[Database] Sesija ${sesijaId} (${trening.naziv}) - glavniDio ima ${trening.glavniDio?.length ?? 'UNDEFINED'} vježbi`);
+  console.log(`[Database] Prva vježba u glavniDio:`, trening.glavniDio?.[0]?.naziv || 'NEMA');
+  
+  if (trening.glavniDio && trening.glavniDio.length > 0) {
     await spremiVjezbe(sesijaId, trening.glavniDio);
-    console.log(`[Database] Vježbe spremljene za sesiju ${sesijaId}`);
+    console.log(`[Database] ✅ Vježbe spremljene za sesiju ${sesijaId}`);
   } else {
-    console.warn(`[Database] UPOZORENJE: Sesija ${sesijaId} (${trening.naziv}) nema vježbi!`);
+    console.error(`[Database] ❌ UPOZORENJE: Sesija ${sesijaId} (${trening.naziv}) nema vježbi!`);
   }
   
   return sesijaId;
@@ -276,7 +278,21 @@ async function spremiSesiju(
 async function spremiVjezbe(sessionId: string, vjezbe: VjezbaSesije[]): Promise<void> {
   const supabase = getSupabase();
   
-  const dbVjezbe = vjezbe.map((v, index) => ({
+  // Filtriraj vježbe bez exercise_id (ne smiju biti null)
+  const validneVjezbe = vjezbe.filter(v => {
+    if (!v.exerciseLibraryId) {
+      console.warn(`[Database] Vježba "${v.naziv}" nema exerciseLibraryId - preskačem!`);
+      return false;
+    }
+    return true;
+  });
+  
+  if (validneVjezbe.length === 0) {
+    console.warn(`[Database] Nema validnih vježbi za spremiti za sesiju ${sessionId}`);
+    return;
+  }
+  
+  const dbVjezbe = validneVjezbe.map((v, index) => ({
     id: v.id,
     session_id: sessionId,
     exercise_id: v.exerciseLibraryId,
@@ -285,11 +301,15 @@ async function spremiVjezbe(sessionId: string, vjezbe: VjezbaSesije[]): Promise<
     order_index: index + 1,
     superset_group: v.jeSuperser ? 1 : null,
     sets: v.setovi,
-    reps_target: v.ponavljanja,
+    reps_target: typeof v.ponavljanja === 'object' 
+      ? `${v.ponavljanja.min}-${v.ponavljanja.max}` 
+      : v.ponavljanja,
     tempo: v.tempo || null,
-    rest_seconds: v.odmorSekunde,
+    rest_seconds: typeof v.odmorSekunde === 'object'
+      ? v.odmorSekunde.min
+      : v.odmorSekunde,
     target_rpe: v.rpe || null,
-    target_rir: v.rir || null,
+    target_rir: typeof v.rir === 'object' ? v.rir.min : v.rir,
     load_prescription: v.postotak1RM ? `${v.postotak1RM}% 1RM` : null,
     primary_muscles: v.primarneGrupe,
     secondary_muscles: v.sekundarneGrupe,
@@ -299,7 +319,7 @@ async function spremiVjezbe(sessionId: string, vjezbe: VjezbaSesije[]): Promise<
     coaching_cues: null,
     notes: v.napomene || null,
     is_locked: false,
-    is_trainer_override: v.trenerOverride,
+    is_trainer_override: v.trenerOverride || false,
     original_exercise_id: v.originalnaVjezbaId || null,
     override_reason: null,
   }));

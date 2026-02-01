@@ -1,9 +1,9 @@
 /**
  * Login Screen
- * Rotirajuće pozadinske slike, dark mode, login i registracija
+ * Pojednostavljena verzija - bez kompleksnih animacija
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,13 +14,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Animated,
-  PanResponder,
   Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { login, register } from '../services/api';
+import { authStorage } from '../services/storage';
 
-// Premium sportske slike - iste kao na onboarding
+// Premium sportske slike
 const backgroundImages = [
   'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=1920&h=1080&fit=crop&q=80',
   'https://images.unsplash.com/photo-1517963879433-6ad2b056d712?w=1920&h=1080&fit=crop&q=80',
@@ -61,63 +61,15 @@ export default function LoginScreen({ onLoginSuccess, onBack, onTrainerRegister,
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerSuccess, setRegisterSuccess] = useState(false);
 
-  // Animacije - sve vidljivo odmah
-  const logoOpacity = React.useRef(new Animated.Value(1)).current;
-  const titleOpacity = React.useRef(new Animated.Value(1)).current;
-  const formOpacity = React.useRef(new Animated.Value(1)).current;
-  
-  // Rotirajuće pozadinske slike
+  // Pozadinska slika - spora rotacija svakih 15 sekundi
   const [currentBgImage, setCurrentBgImage] = useState(0);
-  const imageOpacities = useRef(
-    backgroundImages.map((_, idx) => new Animated.Value(idx === 0 ? 1 : 0))
-  ).current;
   
-  // Rotacija slika svakih 6 sekundi
   useEffect(() => {
     const interval = setInterval(() => {
-      const nextIndex = (currentBgImage + 1) % backgroundImages.length;
-      
-      // Fade out trenutne slike
-      Animated.timing(imageOpacities[currentBgImage], {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      }).start();
-      
-      // Fade in sljedeće slike
-      Animated.timing(imageOpacities[nextIndex], {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }).start();
-      
-      setCurrentBgImage(nextIndex);
-    }, 6000);
-    
+      setCurrentBgImage((prev) => (prev + 1) % backgroundImages.length);
+    }, 15000);
     return () => clearInterval(interval);
-  }, [currentBgImage]);
-
-  // PanResponder za swipe-down navigaciju (samo kada nije scroll)
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        // Aktiviraj samo ako je swipe-down i nije scroll
-        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx) && 
-               Math.abs(gestureState.dy) > 10 &&
-               gestureState.dy > 0; // Samo swipe down
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy > 80 && onBack) { // Swipe down
-          onBack();
-        }
-      },
-    })
-  ).current;
-
-
-  // Animacije su uklonjene - sav sadržaj je odmah vidljiv
-  // Ovo osigurava da nema crnog ekrana
+  }, []);
 
   // Login handler
   const handleLogin = async () => {
@@ -125,9 +77,6 @@ export default function LoginScreen({ onLoginSuccess, onBack, onTrainerRegister,
     setLoginLoading(true);
 
     try {
-      const { login } = await import('../services/api');
-      const { authStorage } = await import('../services/storage');
-      
       const result = await login({ username, password });
       
       if (result.ok && result.token) {
@@ -208,9 +157,6 @@ export default function LoginScreen({ onLoginSuccess, onBack, onTrainerRegister,
     setRegisterLoading(true);
 
     try {
-      const { register } = await import('../services/api');
-      const { authStorage } = await import('../services/storage');
-      
       const result = await register({
         name: registerName,
         username: registerUsername,
@@ -257,25 +203,14 @@ export default function LoginScreen({ onLoginSuccess, onBack, onTrainerRegister,
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      {...panResponder.panHandlers}
     >
-      {/* Rotirajuće pozadinske slike */}
+      {/* Pozadinska slika - statična */}
       <View style={styles.backgroundContainer}>
-        {backgroundImages.map((imageUrl, idx) => (
-          <Animated.View
-            key={idx}
-            style={[
-              styles.backgroundImage,
-              { opacity: imageOpacities[idx] },
-            ]}
-          >
-            <Image
-              source={{ uri: imageUrl }}
-              style={styles.image}
-              resizeMode="cover"
-            />
-          </Animated.View>
-        ))}
+        <Image
+          source={{ uri: backgroundImages[currentBgImage] }}
+          style={styles.backgroundImage}
+          resizeMode="cover"
+        />
       </View>
       
       {/* Overlay za čitljivost teksta */}
@@ -288,9 +223,9 @@ export default function LoginScreen({ onLoginSuccess, onBack, onTrainerRegister,
       />
 
       {/* CORPEX logo */}
-      <Animated.View style={[styles.logoContainer, { opacity: logoOpacity }]}>
+      <View style={styles.logoContainer}>
         <Text style={styles.logo}>CORPEX</Text>
-      </Animated.View>
+      </View>
 
       {/* Main content */}
       <ScrollView
@@ -299,11 +234,11 @@ export default function LoginScreen({ onLoginSuccess, onBack, onTrainerRegister,
       >
         <View style={styles.content}>
           {isLoginMode ? (
-            <Animated.View style={[styles.formContainer, { opacity: formOpacity }]}>
-              <Animated.View style={{ opacity: titleOpacity }}>
+            <View style={styles.formContainer}>
+              <View>
                 <Text style={styles.title}>Prijava</Text>
                 <Text style={styles.subtitle}>Unesi podatke za pristup</Text>
-              </Animated.View>
+              </View>
 
               <View style={styles.form}>
                 {/* Email */}
@@ -375,13 +310,13 @@ export default function LoginScreen({ onLoginSuccess, onBack, onTrainerRegister,
                 )}
 
               </View>
-            </Animated.View>
+            </View>
           ) : (
-            <Animated.View style={[styles.formContainer, { opacity: formOpacity }]}>
-              <Animated.View style={{ opacity: titleOpacity }}>
+            <View style={styles.formContainer}>
+              <View>
                 <Text style={styles.title}>Registracija</Text>
                 <Text style={styles.subtitle}>Kreiraj svoj račun</Text>
-              </Animated.View>
+              </View>
 
               <View style={styles.form}>
                 {/* Name */}
@@ -511,7 +446,7 @@ export default function LoginScreen({ onLoginSuccess, onBack, onTrainerRegister,
                 )}
 
               </View>
-            </Animated.View>
+            </View>
           )}
         </View>
       </ScrollView>

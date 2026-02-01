@@ -94,8 +94,9 @@ export async function GET() {
       .insert({
         id: exerciseId,
         session_id: sessionId,
-        exercise_name: 'Test Bench Press',
-        exercise_name_hr: 'Test Bench Press HR',
+        exercise_id: 'barbell_bench_press_medium_grip', // ID iz baze vježbi
+        exercise_name: 'Barbell Bench Press - Medium Grip',
+        exercise_name_hr: 'Potisak s ravne klupe - srednji hvat',
         order_index: 1,
         sets: 3,
         reps_target: '8-12',

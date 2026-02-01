@@ -41,5 +41,6 @@
     "mobile",
     "**/*.test.ts",
     "**/__tests__/**"
-  ]
+  ],
+  "extends": "expo/tsconfig.base"
 }

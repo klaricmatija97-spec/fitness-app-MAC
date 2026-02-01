@@ -11,8 +11,15 @@ import { Platform } from 'react-native';
 // Koristi localhost za development (Expo Go na istom WiFi-u)
 // Za production, koristi environment varijablu ili postavi pravi URL
 export const getApiBaseUrl = () => {
-  // Koristi EXPO_PUBLIC_API_URL iz .env ako postoji, inače Vercel URL
-  return process.env.EXPO_PUBLIC_API_URL || 'https://fitness-app-mac.vercel.app';
+  // PRODUCTION: Koristi Vercel URL
+  // Za lokalno testiranje, promijeni USE_LOCAL na true
+  const LOCAL_IP = '192.168.1.3';
+  const USE_LOCAL = false; // FALSE = Vercel, TRUE = lokalni server
+  
+  if (USE_LOCAL) {
+    return `http://${LOCAL_IP}:3000`;
+  }
+  return 'https://fitness-app-mac.vercel.app';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

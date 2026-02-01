@@ -12,7 +12,7 @@ const registerSchema = z.object({
   username: z.string()
     .min(3, "Korisničko ime mora imati najmanje 3 znaka")
     .max(30, "Korisničko ime je predugačko")
-    .regex(/^[a-zA-Z0-9_]+$/, "Korisničko ime može sadržavati samo slova, brojeve i donju crtu"),
+    .regex(/^[a-zA-Z0-9_\s]+$/, "Korisničko ime može sadržavati samo slova, brojeve, razmake i donju crtu"),
   email: z.string()
     .min(5, "Email mora imati najmanje 5 znakova")
     .max(255, "Email je predugačak")
@@ -118,9 +118,10 @@ export async function POST(request: Request) {
       throw validationError;
     }
     
-    // Normaliziraj email (lowercase) i username (lowercase)
+    // Normaliziraj email (lowercase) i username (lowercase, ukloni razmake)
     const name = parsed.name.trim();
-    const username = parsed.username.trim().toLowerCase();
+    // Username: ukloni razmake i posebne znakove, samo slova, brojevi i donja crta
+    const username = parsed.username.trim().toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9_]/g, '');
     const email = parsed.email.trim().toLowerCase();
     const phone = parsed.phone.trim();
     const password = parsed.password;
@@ -144,18 +145,28 @@ export async function POST(request: Request) {
       );
     }
 
-    // Provjeri postoji li već korisnik s tim emailom (ne koristi .single() jer može vratiti error ako ne postoji)
+    // Provjeri postoji li već korisnik s tim emailom (provjeri i clients i trainers)
     let existingClientsByEmail;
+    let existingTrainersByEmail;
     let emailCheckError;
     
     try {
-      const result = await supabase
-      .from("clients")
-      .select("id, email")
+      // Provjeri clients
+      const clientsResult = await supabase
+        .from("clients")
+        .select("id, email")
         .eq("email", email);
       
-      existingClientsByEmail = result.data;
-      emailCheckError = result.error;
+      existingClientsByEmail = clientsResult.data;
+      emailCheckError = clientsResult.error;
+      
+      // Provjeri trainers
+      const trainersResult = await supabase
+        .from("trainers")
+        .select("id, email")
+        .eq("email", email);
+      
+      existingTrainersByEmail = trainersResult.data;
       
       if (emailCheckError && emailCheckError.code !== "PGRST116") {
         // PGRST116 je "no rows returned" - to je OK
@@ -182,15 +193,21 @@ export async function POST(request: Request) {
       );
     }
 
+    // Ako email postoji kao klijent, ne dozvoli registraciju
     if (existingClientsByEmail && existingClientsByEmail.length > 0) {
       return NextResponse.json(
         { 
           ok: false, 
-          message: `Email "${email}" je već registriran. Koristi drugi email ili se prijavi s ovim računom.`,
+          message: `Email "${email}" je već registriran kao klijent. Koristi drugi email ili se prijavi s ovim računom.`,
           field: "email",
         },
         { status: 400 }
       );
+    }
+    
+    // Ako email postoji kao trener, dozvoli registraciju klijenta (korisnik može biti i trener i klijent)
+    if (existingTrainersByEmail && existingTrainersByEmail.length > 0) {
+      console.log("[auth/register] Email exists as trainer, but allowing client registration");
     }
 
     // Provjeri postoji li već korisnik s tim korisničkim imenom u user_accounts

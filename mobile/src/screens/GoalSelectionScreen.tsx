@@ -89,11 +89,11 @@ export default function GoalSelectionScreen({ onComplete, onBack }: GoalSelectio
     })
   ).current;
 
-  // Rotiraj pozadinske slike svakih 8 sekundi
+  // Rotiraj pozadinske slike svakih 15 sekundi (usporeno za stabilnost)
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentBgImage((prev) => (prev + 1) % backgroundImages.length);
-    }, 8000);
+    }, 15000);
     return () => clearInterval(interval);
   }, []);
 

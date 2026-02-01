@@ -522,8 +522,9 @@ let currentProgramId: string | null = null;
  */
 export function resetVjezbaTracker(programId?: string): void {
   koristeneVjezbeTracker = new Map();
+  koristeniObrasciTracker = new Set(); // Reset obrazaca također
   currentProgramId = programId || null;
-  log('debug', 'Tracker vježbi resetiran');
+  log('debug', 'Tracker vježbi i obrazaca resetiran');
 }
 
 /**
@@ -556,7 +557,45 @@ function jeVjezbaKoristenaUTjednu(vjezbaId: string, weekNumber: number): boolean
 function getPrioritetVjezbe(vjezbaId: string): number {
   const usage = koristeneVjezbeTracker.get(vjezbaId);
   if (!usage) return 100; // Nekorištena vježba ima najviši prioritet
-  return Math.max(0, 100 - usage.timesUsed * 20); // Svako korištenje smanjuje prioritet
+  return Math.max(0, 100 - usage.timesUsed * 30); // POJAČANO: Svako korištenje smanjuje prioritet više
+}
+
+// ============================================
+// ROTACIJA OBRAZACA POKRETA
+// ============================================
+
+/**
+ * Tracker korištenih obrazaca pokreta po tjednu i danu
+ * Ključ: `${weekNumber}-${sessionNumber}-${obrazac}`
+ */
+let koristeniObrasciTracker: Set<string> = new Set();
+
+/**
+ * Resetira tracker obrazaca (poziva se zajedno s resetVjezbaTracker)
+ */
+function resetObrasciTracker(): void {
+  koristeniObrasciTracker = new Set();
+}
+
+/**
+ * Označava obrazac pokreta kao korišten za određeni dan
+ */
+function oznaciObrazacKaoKoristen(obrazac: string, weekNumber: number, sessionNumber: number): void {
+  const key = `${weekNumber}-${sessionNumber}-${obrazac}`;
+  koristeniObrasciTracker.add(key);
+}
+
+/**
+ * Provjerava koliko puta je obrazac korišten u ovom tjednu (ali drugim danima)
+ * Vraća broj - više korištenja = manje preferirano
+ */
+function getBrojKoristenjaObrasca(obrazac: string, weekNumber: number, currentSession: number): number {
+  let count = 0;
+  for (let session = 1; session < currentSession; session++) {
+    const key = `${weekNumber}-${session}-${obrazac}`;
+    if (koristeniObrasciTracker.has(key)) count++;
+  }
+  return count;
 }
 
 // ============================================
@@ -920,13 +959,21 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
   
   const sortirajPoIFTPrioritetu = (vjezbe: VjezbaProširena[]): VjezbaProširena[] => {
     return [...vjezbe].sort((a, b) => {
-      // 1. Prioritet: Nekorištene vježbe u ovom tjednu (smanjen utjecaj)
-      const koristenaA = jeVjezbaKoristenaUTjednu(a.id, tjedanBroj) ? 0 : 30;
-      const koristenaB = jeVjezbaKoristenaUTjednu(b.id, tjedanBroj) ? 0 : 30;
+      // 1. Prioritet: Nekorištene vježbe u ovom tjednu - POJAČANO za bolju rotaciju!
+      // Vježba koja je već korištena ovaj tjedan dobiva -80 bodova (snažna penalizacija)
+      const koristenaA = jeVjezbaKoristenaUTjednu(a.id, tjedanBroj) ? -80 : 50;
+      const koristenaB = jeVjezbaKoristenaUTjednu(b.id, tjedanBroj) ? -80 : 50;
       
-      // 2. Prioritet: Manje korištene vježbe ukupno (smanjen utjecaj)
-      const frekvencijaA = getPrioritetVjezbe(a.id);
-      const frekvencijaB = getPrioritetVjezbe(b.id);
+      // 1b. NOVO: Penalizacija za obrazac pokreta korišten u prethodnim danima ovog tjedna
+      // Ako je squat korišten dan 1, dan 2 preferira leg press ili lunge
+      const obrazacKoristenjaA = getBrojKoristenjaObrasca(a.obrazac_pokreta, tjedanBroj, redniBrojTreninga);
+      const obrazacKoristenjaB = getBrojKoristenjaObrasca(b.obrazac_pokreta, tjedanBroj, redniBrojTreninga);
+      const obrazacRotacijaA = obrazacKoristenjaA > 0 ? -25 * obrazacKoristenjaA : 20; // Penalizacija za ponavljanje
+      const obrazacRotacijaB = obrazacKoristenjaB > 0 ? -25 * obrazacKoristenjaB : 20;
+      
+      // 2. Prioritet: Manje korištene vježbe ukupno - POJAČANO
+      const frekvencijaA = getPrioritetVjezbe(a.id) * 1.5; // Povećan utjecaj
+      const frekvencijaB = getPrioritetVjezbe(b.id) * 1.5;
       
       // 3. Prioritet: Obrazac pokreta prema fazi (POJAČAN - najvažniji za fazu)
       const obrazacIdxA = iftStruktura.obrazciPokretaPrioritet.indexOf(a.obrazac_pokreta);
@@ -1062,8 +1109,8 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
         // Može se dodati u budućnosti ako bude potrebno
       }
       
-      const scoreA = koristenaA + frekvencijaA + obrazacPrioritetA + kategorijaBonusA + opremaBonusA + powerliftingBonusA + prioritetnaVjezbaBonusA + opremaPoBonusA + genderBonusA;
-      const scoreB = koristenaB + frekvencijaB + obrazacPrioritetB + kategorijaBonusB + opremaBonusB + powerliftingBonusB + prioritetnaVjezbaBonusB + opremaPoBonusB + genderBonusB;
+      const scoreA = koristenaA + obrazacRotacijaA + frekvencijaA + obrazacPrioritetA + kategorijaBonusA + opremaBonusA + powerliftingBonusA + prioritetnaVjezbaBonusA + opremaPoBonusA + genderBonusA;
+      const scoreB = koristenaB + obrazacRotacijaB + frekvencijaB + obrazacPrioritetB + kategorijaBonusB + opremaBonusB + powerliftingBonusB + prioritetnaVjezbaBonusB + opremaPoBonusB + genderBonusB;
       
       return scoreB - scoreA;
     });
@@ -1187,6 +1234,7 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
     ));
     
     oznaciVjezbuKaoKoristenu(vjezba.id, tjedanBroj, redniBrojTreninga);
+    oznaciObrazacKaoKoristen(vjezba.obrazac_pokreta, tjedanBroj, redniBrojTreninga);
   }
   
   // ISOLATION VJEŽBE - kraj treninga, niži intenzitet
@@ -1211,6 +1259,7 @@ export async function selectExercises(input: SelectExercisesInput): Promise<Vjez
     ));
     
     oznaciVjezbuKaoKoristenu(vjezba.id, tjedanBroj, redniBrojTreninga);
+    oznaciObrazacKaoKoristen(vjezba.obrazac_pokreta, tjedanBroj, redniBrojTreninga);
   }
   
   log('info', `IFT Odabrano ${vjezbe.length} vježbi: ${odabraneCompound.length} compound + ${odabraneIsolation.length} isolation`);

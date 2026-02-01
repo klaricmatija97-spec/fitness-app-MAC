@@ -505,6 +505,24 @@ function calculateMealMacros(components: MealComponent[], scaleFactor: number = 
   return components.map(comp => {
     const namirnica = findNamirnica(comp.food);
     if (!namirnica) {
+      // POBOLJŠANJE: Pokušaj pronaći po displayName ako food nije pronađen
+      const alternativeNamirnica = comp.displayName ? findNamirnica(comp.displayName) : null;
+      if (alternativeNamirnica) {
+        console.log(`⚠️ Namirnica pronađena po displayName: ${comp.displayName} (originalni food: ${comp.food})`);
+        const scaledGrams = clampToPortionLimits(comp.displayName, comp.grams * scaleFactor);
+        const macros = calculateMacrosForGrams(alternativeNamirnica, scaledGrams);
+        return {
+          name: comp.displayName || comp.food,
+          food: comp.food,
+          grams: scaledGrams,
+          calories: Math.round(macros.calories),
+          protein: Math.round(macros.protein * 10) / 10,
+          carbs: Math.round(macros.carbs * 10) / 10,
+          fat: Math.round(macros.fat * 10) / 10,
+        };
+      }
+      
+      console.warn(`⚠️ NAMIRNICA NIJE PRONAĐENA: "${comp.food}" (displayName: "${comp.displayName}") - vraćam 0 makroe!`);
       return {
         name: comp.displayName || comp.food,
         grams: Math.round(comp.grams * scaleFactor / 5) * 5,
@@ -816,7 +834,31 @@ async function generateMeal(
   const baseComponents = calculateMealMacros(selectedMeal.components, 1);
   const baseTotals = calculateMealTotals(baseComponents);
 
-  if (baseTotals.calories === 0) return null;
+  // POBOLJŠANJE: Ako su kalorije 0, logiraj detalje i pokušaj ponovno
+  if (baseTotals.calories === 0) {
+    console.error(`❌ OBROK "${selectedMeal.name}" IMA 0 KALORIJA!`);
+    console.error(`   Komponente:`, selectedMeal.components.map(c => `${c.food} (${c.grams}g)`).join(', '));
+    console.error(`   Izračunate komponente:`, baseComponents.map(c => `${c.name}: ${c.calories}kcal`).join(', '));
+    
+    // Pokušaj ručno izračunati makroe za svaku komponentu
+    let manualCalories = 0;
+    for (const comp of selectedMeal.components) {
+      const namirnica = findNamirnica(comp.food);
+      if (namirnica) {
+        const macros = calculateMacrosForGrams(namirnica, comp.grams);
+        manualCalories += macros.calories;
+        console.log(`   ✓ ${comp.food}: pronađena namirnica, ${macros.calories.toFixed(0)} kcal`);
+      } else {
+        console.warn(`   ✗ ${comp.food}: NIJE PRONAĐENA U BAZI!`);
+      }
+    }
+    
+    if (manualCalories > 0) {
+      console.log(`   💡 Ručno izračunato: ${manualCalories.toFixed(0)} kcal - postoji greška u calculateMealMacros!`);
+    }
+    
+    return null;
+  }
 
   // NOVA SCALING LOGIKA - prioritet makronutrijentima
   // Primarni faktor: protein, sekundarni: carbs, treći: fat
@@ -885,10 +927,11 @@ async function generateMeal(
     totals: scaledTotals,
   };
 
-  // Validiraj jelo s Edamam API-om za točnije podatke (kao u web verziji)
-  const validatedMeal = await validateMealWithEdamam(meal);
+  // VAŽNO: Edamam validacija se NE poziva ovdje jer bi uzrokovala osilacije
+  // Edamam validacija će se pozvati NAKON scaleAllMealsToTarget u glavnoj petlji
+  // Tako će svi obroci biti prvo skalirani na target, a zatim validirani s Edamam API-jem
   
-  return validatedMeal;
+  return meal;
 }
 
 /**
@@ -917,8 +960,8 @@ function scaleAllMealsToTarget(
   goalType: "lose" | "maintain" | "gain"
 ): Record<string, GeneratedMeal> {
   const MAX_ITERATIONS = 150; // Povećano za maksimalnu preciznost
-  const CALORIE_TOLERANCE = 20; // ±20 kcal (kao web verzija - razumno)
-  const MACRO_TOLERANCE = 0.02; // ±2% (kao web verzija - razumno)
+  const CALORIE_TOLERANCE = 50; // ±50 kcal (povećano da osigura postizanje targeta)
+  const MACRO_TOLERANCE = 0.03; // ±3% (povećano za bolje skaliranje)
   
   let currentMeals = { ...meals };
 
@@ -1009,12 +1052,35 @@ function scaleAllMealsToTarget(
       combinedFactor = Math.max(combinedFactor, targetCalories / currentTotals.calories);
     }
 
+    // Za maintain: kalorije trebaju biti što bliže targetu (osiguraj da nisu preniske)
+    // Ako su kalorije > 5% ispod targeta, povećaj ih
+    if (goalType === "maintain" && currentTotals.calories < targetCalories * 0.95) {
+      const maintainFactor = targetCalories / currentTotals.calories;
+      combinedFactor = Math.max(combinedFactor, maintainFactor);
+      console.log(`   ⚠️ MAINTAIN: Kalorije (${currentTotals.calories}) su ${((1 - currentTotals.calories / targetCalories) * 100).toFixed(1)}% ispod targeta, povećavam faktor na ${maintainFactor.toFixed(2)}`);
+    }
+
     // INTELIGENTNO SKALIRANJE PO KATEGORIJAMA
     // Umjesto jednog faktora, računamo zasebne faktore za protein, carb i fat namirnice
-    // Fleksibilnije granice za bolje skaliranje
-    const proteinScale = Math.max(0.5, Math.min(1.5, proteinFactor)); // Fleksibilnije skaliranje proteina
-    const carbsScale = Math.max(0.7, Math.min(1.6, carbsFactor)); // Fleksibilnije skaliranje UH
-    const fatScale = Math.max(0.5, Math.min(1.5, fatFactor)); // Fleksibilnije skaliranje masti
+    // Povećane granice za bolje skaliranje i manje osilacije
+    // VAŽNO: Ako su kalorije preniske, povećaj granice za skaliranje
+    const isCaloriesTooLow = currentTotals.calories < targetCalories * 0.90; // > 10% ispod targeta
+    
+    // Protein: 0.3-2.5 (povećano ako su kalorije preniske)
+    const proteinScaleMax = isCaloriesTooLow ? 2.5 : 2.0;
+    const proteinScale = Math.max(0.3, Math.min(proteinScaleMax, proteinFactor));
+    
+    // UH: 0.5-2.0 (povećano ako su kalorije preniske - carbs su glavni izvor kalorija)
+    const carbsScaleMax = isCaloriesTooLow ? 2.0 : 1.8;
+    const carbsScale = Math.max(0.5, Math.min(carbsScaleMax, carbsFactor));
+    
+    // Masti: 0.4-1.8 (povećano ako su kalorije preniske)
+    const fatScaleMax = isCaloriesTooLow ? 1.8 : 1.7;
+    const fatScale = Math.max(0.4, Math.min(fatScaleMax, fatFactor));
+    
+    if (isCaloriesTooLow) {
+      console.log(`   ⚠️ Kalorije su ${((1 - currentTotals.calories / targetCalories) * 100).toFixed(1)}% ispod targeta - povećavam granice skaliranja`);
+    }
 
     // Skaliraj sve obroke
     const scaledMeals: Record<string, GeneratedMeal> = {};
@@ -1047,7 +1113,18 @@ function scaleAllMealsToTarget(
           scaleFactor = Math.max(0.6, Math.min(1.6, combinedFactor));
         }
 
-        const newGrams = clampToPortionLimits(foodKey, comp.grams * scaleFactor);
+        // VAŽNO: Ako su kalorije preniske, povećaj granice za portion limits
+        // Ovo osigurava da se može postići target kalorija
+        let newGrams = comp.grams * scaleFactor;
+        
+        // Ako su kalorije > 10% ispod targeta, povećaj maksimalne granice za 50%
+        if (currentTotals.calories < targetCalories * 0.90) {
+          const limits = getPortionLimits(foodKey, goalType);
+          const adjustedMax = Math.round(limits.max * 1.5); // Povećaj max za 50%
+          newGrams = Math.max(limits.min, Math.min(adjustedMax, Math.round(newGrams / 5) * 5));
+        } else {
+          newGrams = clampToPortionLimits(foodKey, newGrams, goalType);
+        }
         const macros = calculateMacrosForGrams(namirnica, newGrams);
 
         return {
@@ -1138,9 +1215,10 @@ function scaleAllMealsToTarget(
   const carbsDiff = Math.abs(checkCarbs - targetCarbs) / targetCarbs;
   const fatDiff = Math.abs(checkFat - targetFat) / targetFat;
   
-  // Ako smo unutar 10% ali ne točno, pokušaj još jednom fino prilagoditi
-  if ((calDiff <= 100 || calDiff / targetCalories <= 0.10) && 
-      proteinDiff <= 0.10 && carbsDiff <= 0.10 && fatDiff <= 0.10 &&
+  // Povećana tolerancija za fine-tuning (15% umjesto 10%) i manje stroga provjera
+  // Fine-tuning se izvršava ako smo unutar 15% ali izvan stroge tolerancije
+  if ((calDiff <= 150 || calDiff / targetCalories <= 0.15) && 
+      proteinDiff <= 0.15 && carbsDiff <= 0.15 && fatDiff <= 0.15 &&
       (calDiff > CALORIE_TOLERANCE || proteinDiff > MACRO_TOLERANCE || carbsDiff > MACRO_TOLERANCE || fatDiff > MACRO_TOLERANCE)) {
     
     // Izračunaj faktore za točno postizanje targeta
@@ -1149,13 +1227,14 @@ function scaleAllMealsToTarget(
     const carbsFactor = targetCarbs / checkCarbs;
     const fatFactor = targetFat / checkFat;
     
-    // Kombiniraj faktore (jednako važni)
-    const fineTuneFactor = (calFactor + proteinFactor + carbsFactor + fatFactor) / 4;
+    // Kombiniraj faktore s većom težinom na protein (jer je najvažniji)
+    // Protein ima 40% težine, ostali 20% svaki
+    const fineTuneFactor = proteinFactor * 0.4 + carbsFactor * 0.2 + fatFactor * 0.2 + calFactor * 0.2;
     
-    // Ograniči na malu prilagodbu (0.95x - 1.05x) za bolju preciznost
-    const fineScale = Math.max(0.95, Math.min(1.05, fineTuneFactor));
+    // Smanjene granice za fine-tuning (0.90x - 1.10x) za manje osilacije u makronutrijentima
+    const fineScale = Math.max(0.90, Math.min(1.10, fineTuneFactor));
     
-    // Primijeni fine-tuning
+    // Primijeni fine-tuning s različitim faktorima po kategorijama
     const fineTunedMeals: Record<string, GeneratedMeal> = {};
     for (const [mealType, meal] of Object.entries(currentMeals)) {
       const fineComponents = meal.components.map(comp => {
@@ -1166,7 +1245,27 @@ function scaleAllMealsToTarget(
           return comp;
         }
         
-        const newGrams = clampToPortionLimits(foodKey, comp.grams * fineScale);
+        // Primijeni različite faktore po kategorijama za bolju preciznost
+        // VAŽNO: Koristi manje agresivne faktore da se smanje osilacije
+        let componentScale = fineScale;
+        const category = namirnica.category;
+        
+        // Ograniči faktore na manji raspon (0.90-1.10) za fine-tuning da se smanje osilacije
+        if (category === 'protein') {
+          // Protein namirnice - koristi protein faktor direktno (ograničen na ±10%)
+          componentScale = Math.max(0.90, Math.min(1.10, proteinFactor));
+        } else if (category === 'carb') {
+          // UH namirnice - koristi carbs faktor (ograničen na ±10%)
+          componentScale = Math.max(0.90, Math.min(1.10, carbsFactor));
+        } else if (category === 'fat') {
+          // Masne namirnice - koristi fat faktor (ograničen na ±10%)
+          componentScale = Math.max(0.90, Math.min(1.10, fatFactor));
+        } else {
+          // Ostalo koristi kombinirani faktor (ograničen na ±10%)
+          componentScale = Math.max(0.90, Math.min(1.10, fineScale));
+        }
+        
+        const newGrams = clampToPortionLimits(foodKey, comp.grams * componentScale);
         const macros = calculateMacrosForGrams(namirnica, newGrams);
         
         return {
@@ -2246,8 +2345,143 @@ export async function generateWeeklyMealPlanWithCalculations(
       calculations.goalType
     );
 
+    // Validiraj sve obroke s Edamam API-om NAKON skaliranja (za točnije podatke)
+    // VAŽNO: Edamam validacija se koristi samo za provjeru i logiranje, NE mijenja makroe
+    // Ovo sprječava osilacije jer se makroe ne mijenjaju nakon skaliranja
+    const validatedMeals: Record<string, GeneratedMeal> = {};
+    for (const [mealType, meal] of Object.entries(scaledMeals)) {
+      // Validiraj ali ne mijenjaj makroe (samo logiraj razlike)
+      const edamamValidated = await validateMealWithEdamam(meal);
+      
+      // Ako je Edamam validacija promijenila makroe, provjeri razliku
+      const calDiff = Math.abs(edamamValidated.totals.calories - meal.totals.calories);
+      const proteinDiff = Math.abs(edamamValidated.totals.protein - meal.totals.protein);
+      const carbsDiff = Math.abs(edamamValidated.totals.carbs - meal.totals.carbs);
+      const fatDiff = Math.abs(edamamValidated.totals.fat - meal.totals.fat);
+      
+      // VAŽNO: Koristi Edamam podatke samo ako su točniji, ali provjeri da ne smanjuju kalorije previše
+      // Ako Edamam smanjuje kalorije za > 5%, zadrži skalirane makroe (osigurava target)
+      const edamamReducesCalories = edamamValidated.totals.calories < meal.totals.calories;
+      const calorieReductionPercent = edamamReducesCalories 
+        ? ((meal.totals.calories - edamamValidated.totals.calories) / meal.totals.calories) * 100
+        : 0;
+      
+      if (calDiff > meal.totals.calories * 0.10 || 
+          proteinDiff > meal.totals.protein * 0.10 ||
+          carbsDiff > meal.totals.carbs * 0.10 ||
+          fatDiff > meal.totals.fat * 0.10) {
+        // Ako Edamam smanjuje kalorije previše (> 5%), zadrži skalirane makroe
+        if (edamamReducesCalories && calorieReductionPercent > 5) {
+          console.log(`⚠️ Edamam smanjuje kalorije za ${calorieReductionPercent.toFixed(1)}% u ${mealType}: zadržavam skalirane makroe`);
+          validatedMeals[mealType] = meal;
+        } else {
+          console.log(`✅ Koristim Edamam podatke za ${mealType} (razlika: ${calDiff.toFixed(0)} kcal)`);
+          validatedMeals[mealType] = edamamValidated;
+        }
+      } else {
+        // Zadrži skalirane makroe (manje osilacije)
+        validatedMeals[mealType] = meal;
+      }
+    }
+
+    // DODATNO SKALIRANJE NAKON EDAMAM VALIDACIJE (samo ako je potrebno)
+    // Provjeri da li su makroe unutar tolerancije
+    const checkTotals = Object.values(validatedMeals).reduce(
+      (totals, meal) => ({
+        protein: totals.protein + meal.totals.protein,
+        carbs: totals.carbs + meal.totals.carbs,
+        fat: totals.fat + meal.totals.fat,
+      }),
+      { protein: 0, carbs: 0, fat: 0 }
+    );
+    
+    const checkProtein = Math.round(checkTotals.protein * 10) / 10;
+    const checkCarbs = Math.round(checkTotals.carbs * 10) / 10;
+    const checkFat = Math.round(checkTotals.fat * 10) / 10;
+    const checkCalories = Math.round(checkProtein * 4 + checkCarbs * 4 + checkFat * 9);
+    
+    const calDiff = Math.abs(checkCalories - calculations.targetCalories);
+    const proteinDiff = Math.abs(checkProtein - calculations.targetProtein) / calculations.targetProtein;
+    const carbsDiff = Math.abs(checkCarbs - calculations.targetCarbs) / calculations.targetCarbs;
+    const fatDiff = Math.abs(checkFat - calculations.targetFat) / calculations.targetFat;
+    
+    // VAŽNO: Uvijek skaliraj ako je odstupanje > 2% (ne samo 5%)
+    // Ovo osigurava da se kalorije ne smanjuju previše
+    let finalMeals = validatedMeals;
+    const calDiffPercent = (calDiff / calculations.targetCalories) * 100;
+    
+    if (calDiffPercent > 2 || proteinDiff > 0.02 || carbsDiff > 0.02 || fatDiff > 0.02) {
+      console.log(`   🔄 Dodatno skaliranje nakon Edamam validacije (kalorije: ${calDiffPercent.toFixed(1)}%, P: ${(proteinDiff * 100).toFixed(1)}%, C: ${(carbsDiff * 100).toFixed(1)}%, F: ${(fatDiff * 100).toFixed(1)}%)`);
+      finalMeals = scaleAllMealsToTarget(
+        validatedMeals,
+        calculations.targetCalories,
+        calculations.targetProtein,
+        calculations.targetCarbs,
+        calculations.targetFat,
+        calculations.goalType
+      );
+      
+      // Provjeri da li je nakon dodatnog skaliranja još uvijek odstupanje
+      const finalCheckTotals = Object.values(finalMeals).reduce(
+        (totals, meal) => ({
+          protein: totals.protein + meal.totals.protein,
+          carbs: totals.carbs + meal.totals.carbs,
+          fat: totals.fat + meal.totals.fat,
+        }),
+        { protein: 0, carbs: 0, fat: 0 }
+      );
+      
+      const finalCheckProtein = Math.round(finalCheckTotals.protein * 10) / 10;
+      const finalCheckCarbs = Math.round(finalCheckTotals.carbs * 10) / 10;
+      const finalCheckFat = Math.round(finalCheckTotals.fat * 10) / 10;
+      const finalCheckCalories = Math.round(finalCheckProtein * 4 + finalCheckCarbs * 4 + finalCheckFat * 9);
+      const finalCalDiff = Math.abs(finalCheckCalories - calculations.targetCalories);
+      const finalCalDiffPercent = (finalCalDiff / calculations.targetCalories) * 100;
+      
+      // Ako je nakon skaliranja još uvijek odstupanje > 3%, pokušaj još jednom
+      if (finalCalDiffPercent > 3) {
+        console.warn(`   ⚠️ Nakon skaliranja kalorije su još uvijek ${finalCalDiffPercent.toFixed(1)}% od targeta (${finalCheckCalories} vs ${calculations.targetCalories})`);
+        console.log(`   🔄 Pokušavam još jednom skalirati...`);
+        
+        // Još jednom skaliraj s agresivnijim pristupom
+        const retryMeals = scaleAllMealsToTarget(
+          finalMeals,
+          calculations.targetCalories,
+          calculations.targetProtein,
+          calculations.targetCarbs,
+          calculations.targetFat,
+          calculations.goalType
+        );
+        
+        // Provjeri rezultat
+        const retryTotals = Object.values(retryMeals).reduce(
+          (totals, meal) => ({
+            protein: totals.protein + meal.totals.protein,
+            carbs: totals.carbs + meal.totals.carbs,
+            fat: totals.fat + meal.totals.fat,
+          }),
+          { protein: 0, carbs: 0, fat: 0 }
+        );
+        
+        const retryProtein = Math.round(retryTotals.protein * 10) / 10;
+        const retryCarbs = Math.round(retryTotals.carbs * 10) / 10;
+        const retryFat = Math.round(retryTotals.fat * 10) / 10;
+        const retryCalories = Math.round(retryProtein * 4 + retryCarbs * 4 + retryFat * 9);
+        const retryCalDiff = Math.abs(retryCalories - calculations.targetCalories);
+        const retryCalDiffPercent = (retryCalDiff / calculations.targetCalories) * 100;
+        
+        if (retryCalDiffPercent < finalCalDiffPercent) {
+          console.log(`   ✅ Poboljšanje: ${retryCalDiffPercent.toFixed(1)}% (bilo ${finalCalDiffPercent.toFixed(1)}%)`);
+          finalMeals = retryMeals;
+        } else {
+          console.log(`   ⚠️ Nema poboljšanja, zadržavam prethodne rezultate`);
+        }
+      }
+    }
+
     // Izračunaj dnevne totale (zbroji makroe, zatim izračunaj kalorije)
-    const dailyMacroTotals = Object.values(scaledMeals).reduce(
+    // Koristi finalMeals (nakon Edamam validacije i dodatnog skaliranja)
+    const dailyMacroTotals = Object.values(finalMeals).reduce(
       (totals, meal) => ({
         protein: totals.protein + meal.totals.protein,
         carbs: totals.carbs + meal.totals.carbs,
@@ -2274,7 +2508,7 @@ export async function generateWeeklyMealPlanWithCalculations(
     days.push({
       date: dateStr,
       dayName: dayNames[i],
-      meals: scaledMeals,
+      meals: finalMeals, // Koristi finalne obroke (Edamam validirani + ponovno skalirani)
       dailyTotals,
     });
     

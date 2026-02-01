@@ -1,9 +1,16 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Animated, View, StyleSheet, Alert } from "react-native";
+import { Animated, View, StyleSheet, Alert, LogBox } from "react-native";
 import { API_BASE_URL } from "./src/services/api";
+import ErrorBoundary from "./src/components/ErrorBoundary";
 import WelcomeScreen from "./src/screens/WelcomeScreen";
 import LoginScreen from "./src/screens/LoginScreen";
 import OnboardingScreen from "./src/screens/OnboardingScreen";
+
+// Suppress specific warnings that can cause visual noise
+LogBox.ignoreLogs([
+  'Non-serializable values were found in the navigation state',
+  'Sending `onAnimatedValueUpdate` with no listeners registered',
+]);
 import { GoalType } from "./src/screens/IntakeFlowScreen";
 import IntakeFlowScreen from "./src/screens/IntakeFlowScreen";
 import CalculatorScreen from "./src/screens/CalculatorScreen";
@@ -30,7 +37,7 @@ import TrainerWorkoutLogScreen from "./src/screens/TrainerWorkoutLogScreen";
 import { goalStorage, authStorage, appStateStorage, AppScreen } from "./src/services/storage";
 
 
-export default function App() {
+function App() {
   // Auth state za trenera
   const [trainerToken, setTrainerToken] = useState<string | null>(null);
   const [trainerId, setTrainerId] = useState<string | null>(null);
@@ -174,13 +181,24 @@ export default function App() {
 
   // Učitaj spremljene podatke trenera i stanje aplikacije pri pokretanju
   useEffect(() => {
+    let isMounted = true; // Prevent state updates after unmount
+    
     const loadSavedData = async () => {
       try {
         console.log('[App] Loading saved data...');
         
         // 0. Učitaj client_id i JWT token ako postoji (iz registracije/logina)
-        const savedClientId = await authStorage.getClientId();
-        const savedToken = await authStorage.getToken();
+        let savedClientId: string | null = null;
+        let savedToken: string | null = null;
+        
+        try {
+          savedClientId = await authStorage.getClientId();
+          savedToken = await authStorage.getToken();
+        } catch (storageError) {
+          console.warn('[App] Error reading client storage:', storageError);
+        }
+        
+        if (!isMounted) return;
         
         if (savedClientId) {
           setLoggedInClientId(savedClientId);
@@ -193,9 +211,18 @@ export default function App() {
           }
         }
         
-      // 1. Učitaj trener podatke
-      const savedTrainerId = await authStorage.getTrainerId();
-        const savedTrainerToken = await authStorage.getTrainerToken();
+        // 1. Učitaj trener podatke
+        let savedTrainerId: string | null = null;
+        let savedTrainerToken: string | null = null;
+        
+        try {
+          savedTrainerId = await authStorage.getTrainerId();
+          savedTrainerToken = await authStorage.getTrainerToken();
+        } catch (storageError) {
+          console.warn('[App] Error reading trainer storage:', storageError);
+        }
+        
+        if (!isMounted) return;
         
         console.log('[App] Checking trainer data:', {
           hasTrainerId: !!savedTrainerId,
@@ -204,68 +231,81 @@ export default function App() {
         });
       
         if (savedTrainerId && savedTrainerToken) {
-        setTrainerId(savedTrainerId);
+          setTrainerId(savedTrainerId);
           setTrainerToken(savedTrainerToken);
-        console.log('[App] Loaded trainer data:', savedTrainerId);
-        // Ako je trener, prikaži trainer home
-        setShowTrainerHome(true);
-        return;
-      }
+          console.log('[App] Loaded trainer data:', savedTrainerId);
+          // Ako je trener, prikaži trainer home
+          setShowTrainerHome(true);
+          return;
+        }
       
-      // 2. Učitaj stanje aplikacije za klijente
-      const savedState = await appStateStorage.getAppState();
-      if (savedState) {
-        console.log('[App] Restoring saved state:', savedState.currentScreen);
-        
-        // Vrati spremljene podatke
-        if (savedState.intakeFormData) {
-          setIntakeFormData(savedState.intakeFormData);
-        }
-        if (savedState.calculatorResults) {
-          setCalculatorResults(savedState.calculatorResults);
-        }
-        if (savedState.connectedTrainerId) {
-          setConnectedTrainerId(savedState.connectedTrainerId);
-          setConnectedTrainerName(savedState.connectedTrainerName || null);
+        // 2. Učitaj stanje aplikacije za klijente
+        let savedState = null;
+        try {
+          savedState = await appStateStorage.getAppState();
+        } catch (stateError) {
+          console.warn('[App] Error reading app state:', stateError);
         }
         
-        // Vrati na spremljeni screen
-        switch (savedState.currentScreen) {
-          case 'intakeFlow':
-            setShowIntakeFlow(true);
-            break;
-          case 'calculator':
-            setShowIntakeFlow(false);
-            setShowCalculator(true);
-            break;
-          case 'calculationsSummary':
-            setShowCalculationsSummary(true);
-            break;
-          case 'mealPlan':
-            setShowMealPlan(true);
-            break;
-          case 'clientDashboard':
-            setShowClientDashboard(true);
-            break;
-          case 'onboarding':
+        if (!isMounted) return;
+        
+        if (savedState) {
+          console.log('[App] Restoring saved state:', savedState.currentScreen);
+        
+          // Vrati spremljene podatke
+          if (savedState.intakeFormData) {
+            setIntakeFormData(savedState.intakeFormData);
+          }
+          if (savedState.calculatorResults) {
+            setCalculatorResults(savedState.calculatorResults);
+          }
+          if (savedState.connectedTrainerId) {
+            setConnectedTrainerId(savedState.connectedTrainerId);
+            setConnectedTrainerName(savedState.connectedTrainerName || null);
+          }
+        
+          // Vrati na spremljeni screen
+          switch (savedState.currentScreen) {
+            case 'intakeFlow':
+              setShowIntakeFlow(true);
+              break;
+            case 'calculator':
+              setShowIntakeFlow(false);
+              setShowCalculator(true);
+              break;
+            case 'calculationsSummary':
+              setShowCalculationsSummary(true);
+              break;
+            case 'mealPlan':
+              setShowMealPlan(true);
+              break;
+            case 'clientDashboard':
+              setShowClientDashboard(true);
+              break;
+            case 'onboarding':
               // PRESKOČI onboarding ako ima problema - idi direktno na intakeFlow
               console.log('[App] Skipping onboarding, going to intakeFlow');
               setShowIntakeFlow(true);
-            break;
-          case 'login':
+              break;
+            case 'login':
               // Login je tranzicija - vrati na welcome umjesto da zapneš na loginu
               // Korisnik može ponovno kliknuti "Započni"
               console.log('[App] Login state found, showing welcome instead');
-            break;
-          // 'welcome' je default, ne treba ništa
-        }
+              break;
+            // 'welcome' je default, ne treba ništa
+          }
         }
       } catch (error) {
         console.error('[App] Error loading saved data:', error);
         // Ako ima grešku, jednostavno prikaži welcome screen
       }
     };
+    
     loadSavedData();
+    
+    return () => {
+      isMounted = false; // Cleanup - prevent state updates after unmount
+    };
   }, []);
 
   useEffect(() => {
@@ -1735,6 +1775,29 @@ export default function App() {
     <View style={styles.container}>
       <WelcomeScreen onGetStarted={handleGetStarted} />
     </View>
+  );
+}
+
+// Wrapper komponenta s Error Boundary
+export default function AppWithErrorBoundary() {
+  const handleErrorReset = useCallback(async () => {
+    // Pokušaj očistiti problematične podatke pri resetu
+    try {
+      const { appStateStorage } = await import("./src/services/storage");
+      // Ne briši sve podatke, samo resetiraj trenutni screen na welcome
+      await appStateStorage.saveAppState({
+        currentScreen: 'welcome',
+        lastUpdated: Date.now(),
+      });
+    } catch (e) {
+      console.error('[App] Error during reset:', e);
+    }
+  }, []);
+
+  return (
+    <ErrorBoundary onReset={handleErrorReset}>
+      <App />
+    </ErrorBoundary>
   );
 }
 

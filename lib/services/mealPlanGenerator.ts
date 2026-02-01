@@ -128,13 +128,22 @@ function calculateRecipeMacros(recipe: Recipe, scaleFactor: number = 1) {
 
 /**
  * Dodaj makronutrijente
+ * VAŽNO: Kalorije se UVIJEK računaju iz makroa (P×4 + UH×4 + M×9), ne zbrajaju direktno!
  */
 function addMacros(macro1: { calories: number; protein: number; carbs: number; fat: number }, macro2: { calories: number; protein: number; carbs: number; fat: number }) {
+  // Zbroji makroe
+  const totalProtein = macro1.protein + macro2.protein;
+  const totalCarbs = macro1.carbs + macro2.carbs;
+  const totalFat = macro1.fat + macro2.fat;
+  
+  // UVIJEK računaj kalorije iz makroa (formula: P×4 + UH×4 + M×9)
+  const totalCalories = Math.round(totalProtein * 4 + totalCarbs * 4 + totalFat * 9);
+  
   return {
-    calories: macro1.calories + macro2.calories,
-    protein: macro1.protein + macro2.protein,
-    carbs: macro1.carbs + macro2.carbs,
-    fat: macro1.fat + macro2.fat,
+    calories: totalCalories,
+    protein: totalProtein,
+    carbs: totalCarbs,
+    fat: totalFat,
   };
 }
 
@@ -352,10 +361,19 @@ export async function generateDailyMealPlanForClient(
     // ============================================
     // IZRAČUNAJ UKUPNE MAKROE
     // ============================================
-    dailyMeal.totals = addMacros(
+    // Zbroji sve makroe prvo
+    const allTotals = addMacros(
       addMacros(breakfastTotals, lunchTotals),
       addMacros(dinnerTotals, snacksTotals)
     );
+    
+    // UVIJEK računaj kalorije iz makroa (formula: P×4 + UH×4 + M×9)
+    dailyMeal.totals = {
+      calories: Math.round(allTotals.protein * 4 + allTotals.carbs * 4 + allTotals.fat * 9),
+      protein: Math.round(allTotals.protein * 10) / 10,
+      carbs: Math.round(allTotals.carbs * 10) / 10,
+      fat: Math.round(allTotals.fat * 10) / 10,
+    };
 
     // Vrati dnevni plan
     const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
