@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase";
 import { requireTrainer } from "@/lib/api/auth-helpers";
+import bcrypt from "bcryptjs";
 
 const supabase = createServiceClient();
 
@@ -194,6 +195,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ============================================
+    // KREIRAJ USER_ACCOUNTS ZAPIS ZA PRIJAVU
+    // ============================================
+    // Klijenti dodani od trenera dobivaju automatski generirani username i privremenu lozinku
+    // Username je email bez domene + random broj (npr. "matija_1234")
+    // Lozinka je "corpex" + zadnje 4 znamenke telefona ili "1234" ako nema telefona
+    
+    const emailPrefix = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000); // 4-znamenkasti broj
+    const generatedUsername = `${emailPrefix}_${randomSuffix}`;
+    
+    // Generiraj privremenu lozinku
+    const phoneSuffix = phone?.replace(/\D/g, '').slice(-4) || '1234';
+    const temporaryPassword = `corpex${phoneSuffix}`;
+    const passwordHash = await bcrypt.hash(temporaryPassword, 10);
+    
+    console.log(`[trainer/clients] Creating user_account for client ${newClient.id}`);
+    console.log(`[trainer/clients] Generated username: ${generatedUsername}`);
+    console.log(`[trainer/clients] Temporary password hint: corpex + last 4 digits of phone (or 1234)`);
+    
+    const { error: accountError } = await supabase
+      .from("user_accounts")
+      .insert({
+        client_id: newClient.id,
+        username: generatedUsername,
+        password_hash: passwordHash,
+      });
+    
+    if (accountError) {
+      console.error("[trainer/clients] Error creating user_account:", accountError);
+      // Ne prekidaj - klijent je kreiran, samo prijava neće raditi dok se ne registrira
+    } else {
+      console.log(`[trainer/clients] User account created successfully for ${newClient.email}`);
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -203,6 +239,12 @@ export async function POST(request: NextRequest) {
         phone: newClient.phone,
         trainerId: newClient.trainer_id,
         createdAt: newClient.created_at,
+        // Dodaj informacije o prijavi za trenera
+        loginInfo: {
+          username: generatedUsername,
+          temporaryPassword: temporaryPassword,
+          note: "Klijent se može prijaviti s ovim podacima ili se registrirati s istim emailom",
+        },
       },
       message: "Klijent je uspješno dodan",
     });
